@@ -1,0 +1,274 @@
+<?xml version="1.0"?>
+<api prefix="medcom_">
+	<types>
+		<!-- audio -->
+		<enum name="medcom_audio_state" mnemonic="u32">
+			<value name="AUDIO_STATE_UNKNOWN" value="0"/>
+		</enum>
+		<enum name="medcom_audio_control" mnemonic="u32">
+			<description short="audio control"/>
+			<value name="AUDIO_CONTROL_UNKNOWN" value="0"/>
+			<value name="AUDIO_CONTROL_MASTER_STEREO"/>
+			<value name="AUDIO_CONTROL_MASTER_MONO"/>
+			<value name="AUDIO_CONTROL_HEADPHONES"/>
+			<value name="AUDIO_CONTROL_PC_SPEAKER"/>
+			<value name="AUDIO_CONTROL_PHONE"/>
+			<value name="AUDIO_CONTROL_MICROPHONE"/>
+			<value name="AUDIO_CONTROL_LINE_IN"/>
+			<value name="AUDIO_CONTROL_CD"/>
+			<value name="AUDIO_CONTROL_VIDEO"/>
+			<value name="AUDIO_CONTROL_AUX"/>
+			<value name="AUDIO_CONTROL_PCM"/>
+		</enum>
+		<!-- SmartCard -->
+		<enum name="medcom_card_type" mnemonic="u32">
+			<value name="CARD_TYPE_NONE" VALUE="100"/>
+			<value name="CARD_TYPE_UNKNOWN"/>
+			<value name="CARD_TYPE_SERIAL"/>
+			<value name="CARD_TYPE_T0"/>
+			<value name="CARD_TYPE_T1"/>
+			<value name="CARD_TYPE_I2C"/>
+			<value name="CARD_TYPE_SLE4418"/>
+			<value name="CARD_TYPE_SLE4428"/>
+			<value name="CARD_TYPE_SLE4432"/>
+			<value name="CARD_TYPE_SLE4442"/>
+		</enum>
+		<!-- Modem -->
+		<enum name="medcom_modem_event" mnemonic="u32">
+			<value name="MODEM_EVT_ERROR" value="-1"/>
+			<value name="MODEM_EVT_RING" value="0"/>
+			<value name="MODEM_EVT_CONNECT"/>
+			<value name="MODEM_EVT_DISCONNECT"/>
+		</enum>
+		<!-- Tuner -->
+		<enum name="medcom_tuner_source" mnemonic="u32">
+			<value name="MEDCOM_TUNER_SOURCE_FM"/>
+			<value name="MEDCOM_TUNER_SOURCE_TV_PAL"/>
+			<value name="MEDCOM_TUNER_SOURCE_TV_SECAM_I"/>
+		</enum>
+		<enum name="medcom_tuner_channel" mnemonic="u32">
+			<value name="MEDCOM_TUNER_CHANNEL_OFF"/>
+			<value name="MEDCOM_TUNER_CHANNEL_AUX"/>
+			<value name="MEDCOM_TUNER_CHANNEL_TV"/>
+		</enum>
+		<!-- IRQ -->
+		<enum name="medcom_irq_source" mnemonic="u32">
+			<value name="MEDCOM_IRQ_SOURCE_UNKNOWN"/>
+			<value name="MEDCOM_IRQ_SOURCE_HOOK"/>
+			<value name="MEDCOM_IRQ_SOURCE_CARD"/>
+			<value name="MEDCOM_IRQ_SOURCE_RING"/>
+			<value name="MEDCOM_IRQ_SOURCE_IO"/>
+			<value name="MEDCOM_IRQ_SOURCE_RDP"/>
+		</enum>
+		<struct name="medcom_voip_account">
+			<field name="server" type="string"/>
+			<field name="port" type="uint16_t"/>
+			<field name="username" type="string"/>
+			<field name="password" type="string"/>
+		</struct>
+	</types>
+	<functions>
+		<!-- audio -->
+		<func name="medcom_audio_set_state" returns="int32_t" opcode="100">
+			<arg name="state" type="medcom_audio_state" mode="in"/>
+			<arg name="force" type="bool" mode="in"/>
+		</func>
+		<func name="medcom_audio_get_state" returns="int32_t" opcode="101">
+			<arg name="state" type="medcom_audio_state" mode="out"/>
+		</func>
+		<func name="medcom_audio_set_volume" returns="int32_t" opcode="102">
+			<arg name="volume" type="uint8_t" mode="in"/>
+		</func>
+		<func name="medcom_audio_get_volume" returns="int32_t" opcode="103">
+			<arg name="volume" type="uint8_t" mode="out"/>
+		</func>
+		<func name="medcom_audio_enable_speakers" returns="int32_t" opcode="104">
+			<arg name="enable" type="bool" mode="in"/>
+		</func>
+		<func name="medcom_audio_speakers_enabled" returns="int32_t" opcode="105">
+			<arg name="enable" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_audio_call_function" returns="int32_t" opcode="106">
+			<arg name="opcode" type="uint32_t" mode="in"/>
+			<arg name="param" type="uint16_t" mode="in"/>
+		</func>
+		<!-- backlight -->
+		<func name="medcom_backlight_enable" returns="int32_t" opcode="200">
+			<arg name="flags" type="uint32_t" mode="in"/>
+		</func>
+		<func name="medcom_backlight_set" returns="int32_t" opcode="201">
+			<arg name="brightness" type="uint8_t" mode="in"/>
+		</func>
+		<func name="medcom_backlight_get" returns="int32_t" opcode="202">
+			<arg name="brightness" type="uint8_t" mode="out"/>
+		</func>
+		<!-- SmartCard -->
+		<func name="medcom_card_get_type" returns="int32_t" opcode="300">
+			<arg name="type" type="medcom_card_type" mode="out"/>
+		</func>
+		<func name="medcom_card_read" returns="int32_t" opcode="301">
+			<arg name="offset" type="off_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<func name="medcom_card_write" returns="int32_t" opcode="302">
+			<arg name="offset" type="off_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<!-- Modem -->
+		<func name="medcom_modem_init" returns="int32_t" opcode="400"/>
+		<func name="medcom_modem_deinit" returns="int32_t" opcode="401"/>
+		<func name="medcom_modem_pick_up" returns="int32_t" opcode="402"/>
+		<func name="medcom_modem_hang_up" returns="int32_t" opcode="403"/>
+		<func name="medcom_modem_dial" returns="int32_t" opcode="404">
+			<arg name="number" type="const char *" mode="in"/>
+		</func>
+		<func name="medcom_modem_is_calling" returns="int32_t" opcode="405">
+			<arg name="calling" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_modem_is_connected" returns="int32_t" opcode="406">
+			<arg name="connected" type="bool" mode="out"/>
+		</func>
+		<!-- ADMP -->
+		<func name="medcom_media_player_start" returns="int32_t" opcode="500"/>
+		<func name="medcom_media_player_stop" returns="int32_t" opcode="501"/>
+		<func name="medcom_media_player_is_running" returns="int32_t" opcode="502">
+			<arg name="running" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_media_player_set_stream" returns="int32_t" opcode="503">
+			<arg name="url" type="const char *" mode="in"/>
+		</func>
+		<func name="medcom_media_player_get_stream" returns="int32_t" opcode="504">
+			<arg name="url" type="char *" mode="out"/>
+		</func>
+		<func name="medcom_media_player_set_output_window" returns="int32_t" opcode="505">
+			<arg name="x" type="uint16_t" mode="in"/>
+			<arg name="y" type="uint16_t" mode="in"/>
+			<arg name="width" type="uint16_t" mode="in"/>
+			<arg name="height" type="uint16_t" mode="in"/>
+		</func>
+		<!-- Tuner -->
+		<func name="medcom_tuner_set_output_window" returns="int32_t" opcode="600">
+			<arg name="x" type="uint16_t" mode="in"/>
+			<arg name="y" type="uint16_t" mode="in"/>
+			<arg name="width" type="uint16_t" mode="in"/>
+			<arg name="height" type="uint16_t" mode="in"/>
+		</func>
+		<func name="medcom_tuner_set_output_channel" returns="int32_t" opcode="601">
+			<arg name="channel" type="medcom_tuner_channel" mode="in"/>
+		</func>
+		<func name="medcom_tuner_set_source" returns="int32_t" opcode="602">
+			<arg name="source" type="medcom_tuner_source" mode="in"/>
+		</func>
+		<func name="medcom_tuner_set_frequency" returns="int32_t" opcode="603">
+			<arg name="frequency" type="uint32_t" mode="in"/>
+		</func>
+		<!-- VOIP -->
+		<func name="medcom_voip_get_version" returns="int32_t" opcode="700">
+			<arg name="version" type="uint32_t" mode="out"/>
+		</func>
+		<func name="medcom_voip_get_status" returns="int32_t" opcode="701">
+			<arg name="status" type="uint32_t" mode="out"/>
+		</func>
+		<func name="medcom_voip_get_status_string" returns="int32_t" opcode="702">
+			<arg name="status" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="char *" mode="out"/>
+		</func>
+		<func name="medcom_voip_login" returns="int32_t" opcode="703">
+			<arg name="account" type="medcom_voip_account" mode="in"/>
+		</func>
+		<func name="medcom_voip_logout" returns="int32_t" opcode="704"/>
+		<func name="medcom_voip_still_logged_in" returns="int32_t" opcode="705">
+			<arg name="status" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_voip_connect_to" returns="int32_t" opcode="706">
+			<arg name="uri" type="const char *" mode="in"/>
+		</func>
+		<func name="medcom_voip_accept_incoming" returns="int32_t" opcode="707">
+			<arg name="uri" type="char *" mode="out"/>
+		</func>
+		<func name="medcom_voip_disconnect" returns="int32_t" opcode="708"/>
+		<func name="medcom_voip_is_connected" returns="int32_t" opcode="709">
+			<arg name="state" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_voip_is_calling" returns="int32_t" opcode="710">
+			<arg name="state" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_voip_get_last_contact" returns="int32_t" opcode="711">
+			<arg name="contact" type="char *" mode="out"/>
+		</func>
+		<!-- miscellaneous -->
+		<func name="medcom_reset" returns="int32_t" opcode="800"/>
+		<func name="medcom_check_io" returns="int32_t" opcode="801">
+			<arg name="value" type="uint8_t" mode="out"/>
+		</func>
+		<func name="medcom_justaboard_set_mask" returns="int32_t" opcode="802">
+			<arg name="mask" type="uint32_t" mode="in"/>
+		</func>
+		<func name="medcom_justaboard_get_mask" returns="int32_t" opcode="803">
+			<arg name="mask" type="uint32_t" mode="out"/>
+		</func>
+		<!-- IRQ functions -->
+		<func name="medcom_irq_enable" returns="int32_t" opcode="900">
+			<arg name="virtkey" type="uint8_t" mode="in"/>
+		</func>
+		<func name="medcom_irq_get_mask" returns="int32_t" opcode="901">
+			<arg name="mask" type="uint32_t" mode="out"/>
+		</func>
+		<func name="medcom_irq_get_info" returns="int32_t" opcode="902">
+			<arg name="source" type="enum medcom_irq_source" mode="in"/>
+			<arg name="info" type="uint32_t" mode="out"/>
+		</func>
+		<!-- network functions -->
+		<func name="medcom_net_config" returns="int32_t" opcode="1000">
+			<arg name="port" type="uint32_t" mode="in"/>
+			<arg name="timeout" type="uint32_t" mode="in"/>
+			<arg name="repeat" type="uint32_t" mode="in"/>
+			<arg name="host" type="const char *" mode="in"/>
+		</func>
+		<func name="medcom_net_read" returns="int32_t" opcode="1001">
+			<arg name="mode" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<func name="medcom_net_write" returns="int32_t" opcode="1002">
+			<arg name="mode" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<!-- sound functions -->
+		<func name="medcom_sound_play_async" returns="int32_t" opcode="1100">
+			<arg name="filename" type="const char *" mode="in"/>
+		</func>
+		<func name="medcom_sound_play_sync" returns="int32_t" opcode="1101">
+			<arg name="filename" type="const char *" mode="in"/>
+		</func>
+		<!-- media functions -->
+		<func name="medcom_media_run" returns="int32_t" opcode="1200">
+			<arg name="media" type="const char *" mode="in"/>
+		</func>
+		<func name="medcom_media_command" returns="int32_t" opcode="1201">
+			<arg name="command" type="uint32_t" mode="in"/>
+			<arg name="p1" type="int32_t" mode="in"/>
+			<arg name="p2" type="const char *" mode="in"/>
+		</func>
+		<!-- LLDP functions -->
+		<func name="medcom_lldp_enable" returns="int32_t" opcode="1300">
+			<arg name="enable" type="bool" mode="in"/>
+		</func>
+		<func name="medcom_lldp_read" returns="int32_t" opcode="1301">
+			<arg name="mode" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+	</functions>
+	<events>
+		<event name="medcom_card_event" opcode="10300">
+			<param name="type" type="uint32_t"/>
+		</event>
+		<event name="medcom_modem_event" opcode="10400">
+			<param name="type" type="uint32_t"/>
+		</event>
+		<event name="medcom_voip_event" opcode="10700">
+			<param name="type" type="uint32_t"/>
+		</event>
+	</events>
+</api>
+
+<!-- vim: set sts=4 sw=4 ts=4: -->

@@ -1,0 +1,2 @@
+SUBDIRS = \
+	remote-control
