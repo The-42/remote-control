@@ -1,6 +1,9 @@
 noinst_LTLIBRARIES = \
 	libremote-control.la
 
+libremote_control_la_CFLAGS = \
+	@GLIB_GIO_CFLAGS@
+
 libremote_control_la_SOURCES = \
 	audio.c \
 	backlight.c \
