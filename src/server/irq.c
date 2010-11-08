@@ -1,5 +1,6 @@
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int32_t medcom_irq_enable(void *priv, uint8_t virtkey)

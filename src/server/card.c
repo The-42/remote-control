@@ -1,5 +1,6 @@
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type)

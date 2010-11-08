@@ -1,5 +1,6 @@
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int32_t medcom_net_config(void *priv, uint32_t port, uint32_t timeout, uint32_t repeat, const char *host)

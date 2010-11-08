@@ -1,5 +1,6 @@
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int32_t medcom_sound_play_async(void *priv, const char *filename)

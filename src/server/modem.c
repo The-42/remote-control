@@ -1,5 +1,6 @@
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int32_t medcom_modem_init(void *priv)

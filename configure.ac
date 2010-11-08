@@ -14,11 +14,25 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
-PKG_CHECK_MODULES(LIBRPC, librpc >= 0.2.1)
 PKG_CHECK_MODULES(GLIB_GIO, glib-2.0 gio-2.0)
+PKG_CHECK_MODULES(LINPHONE, linphone >= 3.3.99.8)
+PKG_CHECK_MODULES(WEBKIT, webkit-1.0)
+PKG_CHECK_MODULES(LIBVLC, libvlc)
+PKG_CHECK_MODULES(GTK, gtk+-2.0)
+PKG_CHECK_MODULES(LIBSH, libsh)
 
+PKG_CHECK_MODULES(LIBRPC, librpc >= 0.3.0)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
+
+AC_CHECK_HEADER([readline/readline.h])
+AC_CHECK_LIB([readline], [readline], [use_readline=yes], [use_readline=no])
+if test "x$use_readline" = "xyes"; then
+	READLINE_CFLAGS="-DUSE_READLINE"
+	READLINE_LIBS="-lreadline"
+fi
+AC_SUBST(READLINE_CFLAGS)
+AC_SUBST(READLINE_LIBS)
 
 CFLAGS="$CFLAGS -Wall"
 
@@ -38,4 +52,6 @@ AC_OUTPUT([
 	src/server/Makefile
 	bin/Makefile
 	bin/remote-control/Makefile
+	bin/remote-control-client/Makefile
+	bin/remote-control-gtk/Makefile
 ])

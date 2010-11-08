@@ -1,0 +1,142 @@
+/*
+ * Copyright (C) 2010 Avionic Design GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <errno.h>
+
+#include <gdk/gdkscreen.h>
+#include <gdk/gdkwindow.h>
+#include <gdk/gdkx.h>
+#include <vlc/vlc.h>
+
+#include "remote-control-stub.h"
+
+struct media_player {
+	GdkWindow *window;
+
+	libvlc_instance_t *vlc;
+	libvlc_media_player_t *player;
+	libvlc_event_manager_t *evman;
+	libvlc_media_t *media;
+};
+
+static void on_playing(const struct libvlc_event_t *event, void *data)
+{
+	struct media_player *player = data;
+	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
+	gdk_window_show(player->window);
+	g_debug("< %s()", __func__);
+}
+
+static void on_stopped(const struct libvlc_event_t *event, void *data)
+{
+	struct media_player *player = data;
+	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
+	gdk_window_hide(player->window);
+	g_debug("< %s()", __func__);
+}
+
+int media_player_create(struct media_player **playerp)
+{
+	GdkWindowAttr attributes = {
+		.width = 320,
+		.height = 240,
+		.wclass = GDK_INPUT_OUTPUT,
+		.window_type = GDK_WINDOW_CHILD,
+		.override_redirect = TRUE,
+	};
+	struct media_player *player;
+	XID xid;
+
+	if (!playerp)
+		return -EINVAL;
+
+	player = malloc(sizeof(*player));
+	if (!player)
+		return -ENOMEM;
+
+	memset(player, 0, sizeof(*player));
+
+	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
+	xid = gdk_x11_drawable_get_xid(player->window);
+	gdk_window_set_decorations(player->window, 0);
+
+	player->vlc = libvlc_new(0, NULL);
+	player->player = libvlc_media_player_new(player->vlc);
+	player->evman = libvlc_media_player_event_manager(player->player);
+	libvlc_media_player_set_xwindow(player->player, xid);
+
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerPlaying,
+			on_playing, player);
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerStopped,
+			on_stopped, player);
+
+	*playerp = player;
+	return 0;
+}
+
+int media_player_free(struct media_player *player)
+{
+	if (!player)
+		return -EINVAL;
+
+	libvlc_media_player_release(player->player);
+	libvlc_media_release(player->media);
+	libvlc_release(player->vlc);
+
+	gdk_window_destroy(player->window);
+
+	free(player);
+	return 0;
+}
+
+int media_player_set_output_window(struct media_player *player,
+		unsigned int x, unsigned int y, unsigned int width,
+		unsigned int height)
+{
+	if (!player)
+		return -EINVAL;
+
+	gdk_window_move_resize(player->window, x, y, width, height);
+
+	return 0;
+}
+
+int media_player_set_uri(struct media_player *player, const char *uri)
+{
+	if (player->media)
+		libvlc_media_release(player->media);
+
+	if (uri) {
+		gdk_window_hide(player->window);
+		player->media = libvlc_media_new_location(player->vlc, uri);
+	}
+
+	return 0;
+}
+
+int media_player_get_uri(struct media_player *player, char **urip)
+{
+	return -ENOSYS;
+}
+
+int media_player_play(struct media_player *player)
+{
+	libvlc_media_player_set_media(player->player, player->media);
+	libvlc_media_player_play(player->player);
+	return 0;
+}
+
+int media_player_stop(struct media_player *player)
+{
+	libvlc_media_player_stop(player->player);
+	return 0;
+}
