@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=de.avionic-design.RemoteControl
+Exec=/usr/bin/remote-control
