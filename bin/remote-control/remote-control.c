@@ -211,7 +211,7 @@ static gboolean g_remote_control_source_check(GSource *source)
 	    (src->poll_client.revents & G_IO_ERR)) {
 		g_debug("%s(): connection closed by %s", __func__, src->peer);
 		src->state = REMOTE_CONTROL_UNCONNECTED;
-		return FALSE;
+		return TRUE;
 	}
 
 	if (src->poll_client.revents & G_IO_IN) {
@@ -236,7 +236,6 @@ static gboolean g_remote_control_source_dispatch(GSource *source, GSourceFunc ca
 		err = rpc_server_accept(server);
 		if (err < 0) {
 			g_debug("rpc_server_accept(): %s", strerror(-err));
-			ret = FALSE;
 			break;
 		}
 
@@ -388,8 +387,8 @@ static void on_window_destroy(GtkWidget *widget, gpointer user_data)
 int main(int argc, char *argv[])
 {
 	GOptionContext *context;
+	const gchar *uri = NULL;
 	GtkWidget *window;
-	const gchar *uri;
 	GMainLoop *loop;
 	GSource *source;
 	GError *error;
@@ -410,31 +409,33 @@ int main(int argc, char *argv[])
 
 	g_option_context_free(context);
 
-	if (argc < 2)
-		uri = "http://www.google.de";
-	else
+	if (argc >= 2)
 		uri = argv[1];
 
 	loop = g_loop = g_main_loop_new(NULL, FALSE);
 	g_assert(loop != NULL);
 
-	owner = g_bus_own_name(G_BUS_TYPE_SYSTEM, REMOTE_CONTROL_BUS_NAME,
+	owner = g_bus_own_name(G_BUS_TYPE_SESSION, REMOTE_CONTROL_BUS_NAME,
 			G_BUS_NAME_OWNER_FLAGS_NONE, g_dbus_bus_acquired,
 			g_dbus_name_acquired, g_dbus_name_lost, NULL, NULL);
 
 	source = g_remote_control_source_new(loop);
 	g_assert(source != NULL);
 
-	window = remote_control_window_new();
-	g_signal_connect(G_OBJECT(window), "destroy",
-			G_CALLBACK(on_window_destroy), loop);
-	remote_control_window_load_uri(REMOTE_CONTROL_WINDOW(window), uri);
-	gtk_window_fullscreen(GTK_WINDOW(window));
-	gtk_widget_show_all(window);
+	if (uri) {
+		window = remote_control_window_new();
+		g_signal_connect(G_OBJECT(window), "destroy",
+				G_CALLBACK(on_window_destroy), loop);
+		remote_control_window_load_uri(REMOTE_CONTROL_WINDOW(window), uri);
+		gtk_window_fullscreen(GTK_WINDOW(window));
+		gtk_widget_show_all(window);
+	}
 
 	g_main_loop_run(loop);
 
-	gtk_widget_unref(window);
+	if (uri)
+		gtk_widget_unref(window);
+
 	g_source_destroy(source);
 	g_bus_unown_name(owner);
 	g_main_loop_unref(loop);

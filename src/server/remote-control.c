@@ -12,7 +12,7 @@ int remote_control_create(struct remote_control **rcp)
 	if (!rcp)
 		return -EINVAL;
 
-	err = rpc_server_create(&server, sizeof(*rc));
+	err = rpc_server_create(&server, RPC_INTERFACE, sizeof(*rc));
 	if (err < 0) {
 		g_error("rpc_server_create(): %s", strerror(-err));
 		return err;
@@ -26,15 +26,39 @@ int remote_control_create(struct remote_control **rcp)
 
 	rc = rpc_server_priv(server);
 
+	err = event_manager_create(&rc->event_manager, server);
+	if (err < 0) {
+		g_error("event_manager_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = media_player_create(&rc->player);
 	if (err < 0) {
 		g_error("media_player_create(): %s", strerror(-err));
 		return err;
 	}
 
+	err = smartcard_create(&rc->smartcard);
+	if (err < 0) {
+		g_error("smartcard_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = voip_create(&rc->voip, server);
 	if (err < 0) {
 		g_error("voip_create(): %s", strerror(-err));
+		return err;
+	}
+
+	err = net_create(&rc->net);
+	if (err < 0) {
+		g_error("net_create(): %s", strerror(-err));
+		return err;
+	}
+
+	err = lldp_monitor_create(&rc->lldp);
+	if (err < 0) {
+		g_error("lldp_monitor_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -49,8 +73,12 @@ int remote_control_free(struct remote_control *rc)
 	if (!rc)
 		return -EINVAL;
 
+	lldp_monitor_free(rc->lldp);
+	net_free(rc->net);
 	voip_free(rc->voip);
+	smartcard_free(rc->smartcard);
 	media_player_free(rc->player);
+	event_manager_free(rc->event_manager);
 	rpc_server_free(server);
 	return 0;
 }

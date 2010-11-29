@@ -2,6 +2,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
+#include "remote-control.h"
 
 struct voip {
 	LinphoneCore *core;
@@ -254,7 +255,7 @@ static void *voip_thread(void *context)
 	return NULL;
 }
 
-int voip_create(struct voip **voipp)
+int voip_create(struct voip **voipp, struct rpc_server *server)
 {
 	struct voip *voip;
 	int err;
@@ -434,5 +435,21 @@ int voip_terminate(struct voip *voip)
 	if (err < 0)
 		return err;
 
+	return 0;
+}
+
+int voip_get_state(struct voip *voip, enum voip_state *statep)
+{
+	enum voip_state state = VOIP_STATE_LOGGED_OUT;
+	LinphoneProxyConfig *proxy = NULL;
+
+	if (!voip || !statep)
+		return -EINVAL;
+
+	linphone_core_get_default_proxy(voip->core, &proxy);
+	if (proxy && linphone_proxy_config_is_registered(proxy))
+		state = VOIP_STATE_LOGGED_IN;
+
+	*statep = state;
 	return 0;
 }

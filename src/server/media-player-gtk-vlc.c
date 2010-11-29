@@ -28,11 +28,42 @@ struct media_player {
 	libvlc_media_t *media;
 };
 
+static char *vlc_rewrite_url(const char *url)
+{
+	static const char scheme_separator[] = "://";
+	size_t len;
+	char *ptr;
+	char *vlc;
+
+	ptr = strstr(url, scheme_separator);
+	if (!ptr)
+		return NULL;
+
+	ptr += strlen(scheme_separator);
+
+	if (*ptr == '@')
+		return strdup(url);
+
+	len = strlen(url) + 2;
+
+	vlc = g_malloc0(len);
+	if (!vlc)
+		return NULL;
+
+	strncpy(vlc, url, ptr - url);
+	strcat(vlc, "@");
+	strcat(vlc, ptr);
+
+	return vlc;
+}
+
 static void on_playing(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
 	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
+	gdk_threads_enter();
 	gdk_window_show(player->window);
+	gdk_threads_leave();
 	g_debug("< %s()", __func__);
 }
 
@@ -40,7 +71,9 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
 	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
+	gdk_threads_enter();
 	gdk_window_hide(player->window);
+	gdk_threads_leave();
 	g_debug("< %s()", __func__);
 }
 
@@ -116,8 +149,14 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		libvlc_media_release(player->media);
 
 	if (uri) {
+		char *url = vlc_rewrite_url(uri);
+		if (!url)
+			return -EINVAL;
+
 		gdk_window_hide(player->window);
-		player->media = libvlc_media_new_location(player->vlc, uri);
+		player->media = libvlc_media_new_location(player->vlc, url);
+
+		g_free(url);
 	}
 
 	return 0;

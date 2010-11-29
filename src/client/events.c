@@ -11,3 +11,7 @@ void medcom_modem_event(void *priv, uint32_t type)
 void medcom_voip_event(void *priv, uint32_t type)
 {
 }
+
+void medcom_irq_event(void *priv, uint32_t type)
+{
+}

@@ -1,5 +1,5 @@
 AC_PREREQ(2.67)
-AC_INIT([rc], [0.0.0], [bugs@avionic-design.de], [rc])
+AC_INIT([rc], [0], [bugs@avionic-design.de], [rc])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADER([config.h])
@@ -25,6 +25,13 @@ PKG_CHECK_MODULES(LIBRPC, librpc >= 0.3.0)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
+PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard,
+	[have_libsmartcard=yes],
+	[have_libsmartcard=no])
+AM_CONDITIONAL(HAVE_LIBSMARTCARD, [test "x$have_libsmartcard" = "xyes"])
+
+AC_CHECK_HEADERS([linux/gpiodev.h])
+
 AC_CHECK_HEADER([readline/readline.h])
 AC_CHECK_LIB([readline], [readline], [use_readline=yes], [use_readline=no])
 if test "x$use_readline" = "xyes"; then
@@ -46,12 +53,14 @@ if test "x$enable_werror" = "xyes"; then
 fi
 
 AC_OUTPUT([
-	Makefile
-	src/Makefile
-	src/client/Makefile
-	src/server/Makefile
 	bin/Makefile
-	bin/remote-control/Makefile
 	bin/remote-control-client/Makefile
 	bin/remote-control-gtk/Makefile
+	bin/remote-control/Makefile
+	data/de.avionic-design.RemoteControl.service
+	data/Makefile
+	Makefile
+	src/client/Makefile
+	src/Makefile
+	src/server/Makefile
 ])

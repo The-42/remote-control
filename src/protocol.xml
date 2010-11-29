@@ -1,24 +1,22 @@
 <?xml version="1.0"?>
-<api prefix="medcom_">
+<interface name="de.avionic-design.RemoteControl" prefix="medcom_">
 	<types>
 		<!-- audio -->
 		<enum name="medcom_audio_state" mnemonic="u32">
 			<value name="AUDIO_STATE_UNKNOWN" value="0"/>
 		</enum>
-		<enum name="medcom_audio_control" mnemonic="u32">
+		<enum name="medcom_mixer_control" mnemonic="u32">
 			<description short="audio control"/>
-			<value name="AUDIO_CONTROL_UNKNOWN" value="0"/>
-			<value name="AUDIO_CONTROL_MASTER_STEREO"/>
-			<value name="AUDIO_CONTROL_MASTER_MONO"/>
-			<value name="AUDIO_CONTROL_HEADPHONES"/>
-			<value name="AUDIO_CONTROL_PC_SPEAKER"/>
-			<value name="AUDIO_CONTROL_PHONE"/>
-			<value name="AUDIO_CONTROL_MICROPHONE"/>
-			<value name="AUDIO_CONTROL_LINE_IN"/>
-			<value name="AUDIO_CONTROL_CD"/>
-			<value name="AUDIO_CONTROL_VIDEO"/>
-			<value name="AUDIO_CONTROL_AUX"/>
-			<value name="AUDIO_CONTROL_PCM"/>
+			<value name="MIXER_CONTROL_PLAYBACK_MASTER" value="0"/>
+			<value name="MIXER_CONTROL_PLAYBACK_PCM"/>
+			<value name="MIXER_CONTROL_PLAYBACK_HEADSET"/>
+			<value name="MIXER_CONTROL_PLAYBACK_SPEAKER"/>
+			<value name="MIXER_CONTROL_PLAYBACK_FRONT"/>
+			<value name="MIXER_CONTROL_CAPTURE_MASTER"/>
+			<value name="MIXER_CONTROL_CAPTURE_HEADSET"/>
+			<value name="MIXER_CONTROL_CAPTURE_FRONT"/>
+			<value name="MIXER_CONTROL_CAPTURE_LINE"/>
+			<value name="MIXER_CONTROL_MAX"/>
 		</enum>
 		<!-- SmartCard -->
 		<enum name="medcom_card_type" mnemonic="u32">
@@ -61,10 +59,10 @@
 			<value name="MEDCOM_IRQ_SOURCE_RDP"/>
 		</enum>
 		<struct name="medcom_voip_account">
-			<field name="server" type="string"/>
 			<field name="port" type="uint16_t"/>
 			<field name="username" type="string"/>
 			<field name="password" type="string"/>
+			<field name="server" type="string"/>
 		</struct>
 	</types>
 	<functions>
@@ -91,6 +89,29 @@
 		<func name="medcom_audio_call_function" returns="int32_t" opcode="106">
 			<arg name="opcode" type="uint32_t" mode="in"/>
 			<arg name="param" type="uint16_t" mode="in"/>
+		</func>
+		<!-- audio mixer -->
+		<func name="medcom_mixer_set_volume" returns="int32_t" opcode="150">
+			<arg name="control" type="medcom_mixer_control" mode="in"/>
+			<arg name="volume" type="uint8_t" mode="in"/>
+		</func>
+		<func name="medcom_mixer_get_volume" returns="int32_t" opcode="151">
+			<arg name="control" type="medcom_mixer_control" mode="in"/>
+			<arg name="volume" type="uint8_t" mode="out"/>
+		</func>
+		<func name="medcom_mixer_set_mute" returns="int32_t" opcode="152">
+			<arg name="control" type="medcom_mixer_control" mode="in"/>
+			<arg name="mute" type="bool" mode="in"/>
+		</func>
+		<func name="medcom_mixer_is_muted" returns="int32_t" opcode="153">
+			<arg name="control" type="medcom_mixer_control" mode="in"/>
+			<arg name="mute" type="bool" mode="out"/>
+		</func>
+		<func name="medcom_mixer_set_capture_source" returns="int32_t" opcode="154">
+			<arg name="control" type="medcom_mixer_control" mode="in"/>
+		</func>
+		<func name="medcom_mixer_get_capture_source" returns="int32_t" opcode="155">
+			<arg name="control" type="medcom_mixer_control" mode="out"/>
 		</func>
 		<!-- backlight -->
 		<func name="medcom_backlight_enable" returns="int32_t" opcode="200">
@@ -173,9 +194,15 @@
 			<arg name="status" type="uint32_t" mode="in"/>
 			<arg name="buffer" type="char *" mode="out"/>
 		</func>
+		<!-- this is currently completely fucked up -->
+		<func name="medcom_voip_login" returns="int32_t" opcode="703">
+			<arg name="options" type="buffer" mode="inout"/>
+		</func>
+		<!--
 		<func name="medcom_voip_login" returns="int32_t" opcode="703">
 			<arg name="account" type="medcom_voip_account" mode="in"/>
 		</func>
+		-->
 		<func name="medcom_voip_logout" returns="int32_t" opcode="704"/>
 		<func name="medcom_voip_still_logged_in" returns="int32_t" opcode="705">
 			<arg name="status" type="bool" mode="out"/>
@@ -268,7 +295,10 @@
 		<event name="medcom_voip_event" opcode="10700">
 			<param name="type" type="uint32_t"/>
 		</event>
+		<event name="medcom_irq_event" opcode="10900">
+			<param name="type" type="uint32_t"/>
+		</event>
 	</events>
-</api>
+</interface>
 
 <!-- vim: set sts=4 sw=4 ts=4: -->
