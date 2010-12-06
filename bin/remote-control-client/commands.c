@@ -14,6 +14,57 @@
 
 #include "cli.h"
 
+const char *true_values[] = { "true", "on", "yes", "enable" };
+const char *false_values[] = { "false", "off", "no", "disable" };
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+static int parse_bool(const char *string, bool *res)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(true_values); i++) {
+		if (strcasecmp(string, true_values[i]) == 0) {
+			*res = true;
+			return 0;
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(false_values); i++) {
+		if (strcasecmp(string, false_values[i]) == 0) {
+			*res = false;
+			return 0;
+		}
+	}
+
+	return -EILSEQ;
+}
+
+static enum medcom_mixer_control parse_mixer_control(const char *control)
+{
+	enum medcom_mixer_control ret = MIXER_CONTROL_UNKNOWN;
+
+	if (strcasecmp(control, "master") == 0)
+		ret = MIXER_CONTROL_PLAYBACK_MASTER;
+
+	if (strcasecmp(control, "pcm") == 0)
+		ret = MIXER_CONTROL_PLAYBACK_PCM;
+
+	if (strcasecmp(control, "headset") == 0)
+		ret = MIXER_CONTROL_PLAYBACK_HEADSET;
+
+	if (strcasecmp(control, "speaker") == 0)
+		ret = MIXER_CONTROL_PLAYBACK_SPEAKER;
+
+	if (strcasecmp(control, "handset") == 0)
+		ret = MIXER_CONTROL_PLAYBACK_HANDSET;
+
+	if (strcasecmp(control, "capture") == 0)
+		ret = MIXER_CONTROL_CAPTURE_MASTER;
+
+	return ret;
+}
+
 /*
  * "help" command
  */
@@ -53,6 +104,115 @@ static int cmd_help(struct shctl *ctl, const struct shcmd *cmd)
 }
 
 /*
+ * "mixer-volume" command
+ */
+static const struct shcmd_info info_mixer_volume[] = {
+	{ "help", gettext_noop("set audio volume") },
+	{ "desc", gettext_noop("Sets audio volume.") },
+	{ NULL, NULL },
+};
+
+static const struct shcmd_opt_def opts_mixer_volume[] = {
+	{ "control", SHCMD_OT_DATA, 0, gettext_noop("audio control") },
+	{ "volume", SHCMD_OT_DATA, 0, gettext_noop("volume") },
+	{ NULL, 0, 0, NULL },
+};
+
+static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
+{
+	struct cli *cli = shctl_priv(ctl);
+	enum medcom_mixer_control control = MIXER_CONTROL_UNKNOWN;
+	char *data = NULL;
+	int err;
+
+	err = shcmd_get_opt_string(cmd, "control", &data);
+	if (err < 0) {
+		shctl_log(ctl, 0, "control not specified\n");
+		return -EINVAL;
+	}
+
+	control = parse_mixer_control(data);
+
+	err = shcmd_get_opt_string(cmd, "volume", &data);
+	if (err < 0) {
+		uint8_t volume = 0;
+
+		err = medcom_mixer_get_volume(cli->client, control, &volume);
+		if (err < 0)
+			return err;
+
+		shctl_log(ctl, 0, "volume: %u\n", volume);
+	} else {
+		uint8_t volume = 0;
+
+		/* TODO: parse volume */
+
+		err = medcom_mixer_set_volume(cli->client, control, volume);
+		if (err < 0)
+			return err;
+	}
+
+	return 0;
+}
+
+/*
+ * "mixer-mute" command
+ */
+static const struct shcmd_info info_mixer_mute[] = {
+	{ "help", gettext_noop("mute or unmute audio control") },
+	{ "desc", gettext_noop("Mutes or unmutes an audio control.") },
+	{ NULL, NULL },
+};
+
+static const struct shcmd_opt_def opts_mixer_mute[] = {
+	{ "control", SHCMD_OT_DATA, 0, gettext_noop("audio control") },
+	{ "mute", SHCMD_OT_DATA, 0, gettext_noop("mute") },
+	{ NULL, 0, 0, NULL },
+};
+
+static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
+{
+	struct cli *cli = shctl_priv(ctl);
+	enum medcom_mixer_control control = MIXER_CONTROL_UNKNOWN;
+	char *data = NULL;
+	int err;
+
+	err = shcmd_get_opt_string(cmd, "control", &data);
+	if (err < 0) {
+		shctl_log(ctl, 0, "control not specified\n");
+		return -EINVAL;
+	}
+
+	control = parse_mixer_control(data);
+
+	err = shcmd_get_opt_string(cmd, "mute", &data);
+	if (err < 0) {
+		bool mute = false;
+
+		err = medcom_mixer_get_mute(cli->client, control, &mute);
+		if (err < 0)
+			return err;
+
+		shctl_log(ctl, 0, "muted: %s\n", mute ? "yes" : "no");
+	} else {
+		bool mute = false;
+
+		err = parse_bool(data, &mute);
+		if (err < 0) {
+			shctl_log(ctl, 0, "Invalid boolean value '%s'.\n",
+					data);
+			return -EINVAL;
+		}
+
+		err = medcom_mixer_set_mute(cli->client, control, mute);
+		if (err < 0)
+			return err;
+	}
+
+	return 0;
+}
+
+/*
  * "backlight-power" command
  */
 static const struct shcmd_info info_backlight_power[] = {
@@ -65,32 +225,6 @@ static const struct shcmd_opt_def opts_backlight_power[] = {
 	{ "power", SHCMD_OT_DATA, 0, gettext_noop("backlight power") },
 	{ NULL, 0, 0, NULL },
 };
-
-const char *true_values[] = { "true", "on", "enable" };
-const char *false_values[] = { "false", "off", "disable" };
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-
-static int parse_bool(const char *string, bool *res)
-{
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(true_values); i++) {
-		if (strcasecmp(string, true_values[i]) == 0) {
-			*res = true;
-			return 0;
-		}
-	}
-
-	for (i = 0; i < ARRAY_SIZE(false_values); i++) {
-		if (strcasecmp(string, false_values[i]) == 0) {
-			*res = false;
-			return 0;
-		}
-	}
-
-	return -EILSEQ;
-}
 
 static int cmd_backlight_power(struct shctl *ctl, const struct shcmd *cmd)
 {
@@ -474,6 +608,9 @@ static int cmd_voip_terminate(struct shctl *ctl, const struct shcmd *cmd)
 
 const struct shcmd_def cli_commands[] = {
 	{ "help", cmd_help, opts_help, info_help },
+	{ "mixer-volume", cmd_mixer_volume, opts_mixer_volume,
+		info_mixer_volume },
+	{ "mixer-mute", cmd_mixer_mute, opts_mixer_mute, info_mixer_mute },
 	{ "backlight-power", cmd_backlight_power, opts_backlight_power,
 		info_backlight_power },
 	{ "backlight-brightness", cmd_backlight_brightness,

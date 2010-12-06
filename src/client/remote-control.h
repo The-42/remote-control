@@ -22,6 +22,11 @@ int medcom_register_event_handler(struct medcom_client *client,
 		enum medcom_event queue, medcom_event_handler_t handler,
 		void *data);
 
+int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control, uint8_t volume);
+int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, uint8_t *volumep);
+int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, bool mute);
+int32_t medcom_mixer_get_mute(void *priv, enum medcom_mixer_control control, bool *mutep);
+
 int32_t medcom_backlight_enable(void *priv, uint32_t flags);
 int32_t medcom_backlight_get(void *priv, uint8_t *brightness);
 int32_t medcom_backlight_set(void *priv, uint8_t brightness);

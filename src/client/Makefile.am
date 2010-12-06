@@ -8,6 +8,7 @@ libremote_control_la_SOURCES = \
 	events.c \
 	media-player.c \
 	medcom.c \
+	mixer.c \
 	remote-control-stub.c \
 	voip.c
 
