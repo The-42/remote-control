@@ -26,8 +26,11 @@ struct _RemoteControlWindowClass {
 
 GType remote_control_window_get_type(void);
 
-GtkWidget *remote_control_window_new(void);
-void remote_control_window_load_uri(RemoteControlWindow *window, const gchar *uri);
+GtkWidget *remote_control_window_new(GMainLoop *loop);
+gboolean remote_control_window_connect(RemoteControlWindow *window,
+		const gchar *hostname, const gchar *username,
+		const gchar *password);
+gboolean remote_control_window_disconnect(RemoteControlWindow *window);
 
 G_END_DECLS
 

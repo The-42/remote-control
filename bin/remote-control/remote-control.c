@@ -423,18 +423,17 @@ int main(int argc, char *argv[])
 	g_assert(source != NULL);
 
 	if (uri) {
-		window = remote_control_window_new();
+		window = remote_control_window_new(loop);
 		g_signal_connect(G_OBJECT(window), "destroy",
 				G_CALLBACK(on_window_destroy), loop);
-		remote_control_window_load_uri(REMOTE_CONTROL_WINDOW(window), uri);
 		gtk_window_fullscreen(GTK_WINDOW(window));
 		gtk_widget_show_all(window);
+
+		remote_control_window_connect(REMOTE_CONTROL_WINDOW(window),
+				uri, "info", "info");
 	}
 
 	g_main_loop_run(loop);
-
-	if (uri)
-		gtk_widget_unref(window);
 
 	g_source_destroy(source);
 	g_bus_unown_name(owner);
