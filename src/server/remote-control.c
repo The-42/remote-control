@@ -62,6 +62,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = mixer_create(&rc->mixer);
+	if (err < 0) {
+		g_error("mixer_create(): %s", strerror(-err));
+		return err;
+	}
+
 	*rcp = rc;
 	return 0;
 }
@@ -73,6 +79,7 @@ int remote_control_free(struct remote_control *rc)
 	if (!rc)
 		return -EINVAL;
 
+	mixer_free(rc->mixer);
 	lldp_monitor_free(rc->lldp);
 	net_free(rc->net);
 	voip_free(rc->voip);

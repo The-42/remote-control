@@ -7,16 +7,23 @@
 		</enum>
 		<enum name="medcom_mixer_control" mnemonic="u32">
 			<description short="audio control"/>
-			<value name="MIXER_CONTROL_PLAYBACK_MASTER" value="0"/>
+			<value name="MIXER_CONTROL_UNKNOWN" value="0"/>
+			<value name="MIXER_CONTROL_PLAYBACK_MASTER"/>
 			<value name="MIXER_CONTROL_PLAYBACK_PCM"/>
 			<value name="MIXER_CONTROL_PLAYBACK_HEADSET"/>
 			<value name="MIXER_CONTROL_PLAYBACK_SPEAKER"/>
-			<value name="MIXER_CONTROL_PLAYBACK_FRONT"/>
+			<value name="MIXER_CONTROL_PLAYBACK_HANDSET"/>
 			<value name="MIXER_CONTROL_CAPTURE_MASTER"/>
 			<value name="MIXER_CONTROL_CAPTURE_HEADSET"/>
-			<value name="MIXER_CONTROL_CAPTURE_FRONT"/>
+			<value name="MIXER_CONTROL_CAPTURE_HANDSET"/>
 			<value name="MIXER_CONTROL_CAPTURE_LINE"/>
 			<value name="MIXER_CONTROL_MAX"/>
+		</enum>
+		<enum name="medcom_mixer_input_source" mnemonic="u32">
+			<description short="audio input source"/>
+			<value name="MIXER_INPUT_SOURCE_HEADSET"/>
+			<value name="MIXER_INPUT_SOURCE_HANDSET"/>
+			<value name="MIXER_INPUT_SOURCE_LINE"/>
 		</enum>
 		<!-- SmartCard -->
 		<enum name="medcom_card_type" mnemonic="u32">

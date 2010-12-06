@@ -22,12 +22,16 @@ int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control,
 		uint8_t *volumep)
 {
 	struct remote_control *rc = priv;
+	unsigned int volume = 0;
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, control=%d, volumep=%p)", __func__, priv, control,
 			volumep);
 
-	ret = mixer_get_volume(rc->mixer, control, volumep);
+	ret = mixer_get_volume(rc->mixer, control, &volume);
+
+	if (volumep)
+		*volumep = volume;
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
