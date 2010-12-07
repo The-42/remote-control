@@ -40,6 +40,25 @@ out:
 	return ret;
 }
 
+int32_t medcom_media_player_is_running(void *priv, bool *running)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int err;
+
+	g_debug("> %s(priv=%p, running=%p)", __func__, priv, running);
+
+	err = medcom_media_player_is_running_stub(rpc, &ret, running);
+	if (err < 0) {
+		ret = err;
+		goto out;
+	}
+
+out:
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
 int32_t medcom_media_player_get_stream(void *priv, char **url)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
