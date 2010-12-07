@@ -52,10 +52,9 @@ int32_t medcom_media_player_set_stream(void *priv, const char *url)
 
 int32_t medcom_media_player_get_stream(void *priv, char **url)
 {
-	int32_t ret = -ENOSYS;
-	g_debug("> %s(priv=%p, url=%p)", __func__, priv, url);
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	struct remote_control *rc = priv;
+
+	return media_player_get_uri(rc->player, url);
 }
 
 int32_t medcom_media_player_set_output_window(void *priv, uint16_t x, uint16_t y, uint16_t width, uint16_t height)

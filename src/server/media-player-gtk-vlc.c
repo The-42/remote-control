@@ -164,7 +164,11 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 
 int media_player_get_uri(struct media_player *player, char **urip)
 {
-	return -ENOSYS;
+	if (!player || !player->media || !urip)
+		return -EINVAL;
+
+	*urip = libvlc_media_get_mrl(player->media);
+	return 0;
 }
 
 int media_player_play(struct media_player *player)
