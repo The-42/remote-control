@@ -143,9 +143,14 @@ static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 
 		shctl_log(ctl, 0, "volume: %u\n", volume);
 	} else {
-		uint8_t volume = 0;
+		unsigned long volume = 0;
+		char *end = NULL;
 
-		/* TODO: parse volume */
+		volume = strtoul(data, &end, 0);
+		if ((end == data) || (volume > 255)) {
+			shctl_log(ctl, 0, "invalid volume: %s\n", data);
+			return -EINVAL;
+		}
 
 		err = medcom_mixer_set_volume(cli->client, control, volume);
 		if (err < 0)
