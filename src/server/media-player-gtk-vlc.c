@@ -18,8 +18,10 @@
 #include <vlc/vlc.h>
 
 #include "remote-control-stub.h"
+#include "remote-control.h"
 
 struct media_player {
+	enum media_player_state state;
 	GdkWindow *window;
 
 	libvlc_instance_t *vlc;
@@ -62,6 +64,7 @@ static void on_playing(const struct libvlc_event_t *event, void *data)
 	struct media_player *player = data;
 	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
 	gdk_threads_enter();
+	player->state = MEDIA_PLAYER_PLAYING;
 	gdk_window_show(player->window);
 	gdk_threads_leave();
 	g_debug("< %s()", __func__);
@@ -72,6 +75,7 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 	struct media_player *player = data;
 	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
 	gdk_threads_enter();
+	player->state = MEDIA_PLAYER_STOPPED;
 	gdk_window_hide(player->window);
 	gdk_threads_leave();
 	g_debug("< %s()", __func__);
@@ -97,6 +101,7 @@ int media_player_create(struct media_player **playerp)
 		return -ENOMEM;
 
 	memset(player, 0, sizeof(*player));
+	player->state = MEDIA_PLAYER_STOPPED;
 
 	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
 	xid = gdk_x11_drawable_get_xid(player->window);
@@ -181,5 +186,15 @@ int media_player_play(struct media_player *player)
 int media_player_stop(struct media_player *player)
 {
 	libvlc_media_player_stop(player->player);
+	return 0;
+}
+
+int media_player_get_state(struct media_player *player,
+		enum media_player_state *statep)
+{
+	if (!player || !statep)
+		return -EINVAL;
+
+	*statep = player->state;
 	return 0;
 }

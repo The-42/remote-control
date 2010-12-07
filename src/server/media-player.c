@@ -31,8 +31,30 @@ int32_t medcom_media_player_stop(void *priv)
 
 int32_t medcom_media_player_is_running(void *priv, bool *running)
 {
-	int32_t ret = -ENOSYS;
+	enum media_player_state state = MEDIA_PLAYER_STOPPED;
+	struct remote_control *rc = priv;
+	int32_t ret = 0;
+	int err;
+
 	g_debug("> %s(priv=%p, running=%p)", __func__, priv, running);
+
+	err = media_player_get_state(rc->player, &state);
+	if (err < 0) {
+		ret = err;
+		goto out;
+	}
+
+	switch (state) {
+	case MEDIA_PLAYER_PLAYING:
+		*running = true;
+		break;
+
+	default:
+		*running = false;
+		break;
+	}
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }

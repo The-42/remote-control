@@ -79,6 +79,12 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 /**
  * media player
  */
+enum media_player_state {
+	MEDIA_PLAYER_STOPPED,
+	MEDIA_PLAYER_PLAYING,
+	MEDIA_PLAYER_PAUSED,
+};
+
 struct media_player;
 
 int media_player_create(struct media_player **playerp);
@@ -90,6 +96,8 @@ int media_player_set_uri(struct media_player *player, const char *uri);
 int media_player_get_uri(struct media_player *player, char **urip);
 int media_player_play(struct media_player *player);
 int media_player_stop(struct media_player *player);
+int media_player_get_state(struct media_player *player,
+		enum media_player_state *statep);
 
 /**
  * smartcard
