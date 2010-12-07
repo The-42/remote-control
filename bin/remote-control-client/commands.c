@@ -466,6 +466,39 @@ static int cmd_media_player_stop(struct shctl *ctl, const struct shcmd *cmd)
 }
 
 /*
+ * "media-player-state" command
+ */
+static const struct shcmd_info info_media_player_state[] = {
+	{ "help", gettext_noop("retrieve player state") },
+	{ "desc", gettext_noop("Retrieves the current media player state.") },
+	{ NULL, NULL },
+};
+
+static const struct shcmd_opt_def opts_media_player_state[] = {
+	{ NULL, 0, 0, NULL },
+};
+
+static int cmd_media_player_state(struct shctl *ctl, const struct shcmd *cmd)
+{
+	struct cli *cli = shctl_priv(ctl);
+	const char *state = "unknown";
+	bool running = false;
+	int32_t err;
+
+	err = medcom_media_player_is_running(cli->client, &running);
+	if (err < 0)
+		return err;
+
+	if (running)
+		state = "playing";
+	else
+		state = "stopped";
+
+	shctl_log(ctl, 0, "state: %s\n", state);
+	return 0;
+}
+
+/*
  * "voip-login" command
  */
 static const struct shcmd_info info_voip_login[] = {
@@ -623,6 +656,8 @@ const struct shcmd_def cli_commands[] = {
 		opts_media_player_play, info_media_player_play },
 	{ "media-player-stop", cmd_media_player_stop,
 		opts_media_player_stop, info_media_player_stop },
+	{ "media-player-state", cmd_media_player_state,
+		opts_media_player_state, info_media_player_state },
 	{ "voip-login", cmd_voip_login, opts_voip_login, info_voip_login },
 	{ "voip-logout", cmd_voip_logout, opts_voip_logout, info_voip_logout },
 	{ "voip-call", cmd_voip_call, opts_voip_call, info_voip_call },
