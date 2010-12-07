@@ -54,9 +54,6 @@ static void *lldp_thread(void *context)
 			break;
 		}
 
-		rc_log(RC_DEBUG "LLDP frame received: %zd bytes\n", err);
-		print_hex_dump(RC_DEBUG, "  ", DUMP_PREFIX_OFFSET, 16,
-				monitor->data, err, true);
 		monitor->len = err;
 	}
 
@@ -69,8 +66,6 @@ int lldp_monitor_create(struct lldp_monitor **monitorp)
 	struct packet_mreq req;
 	struct sockaddr_ll sa;
 	int err;
-
-	rc_log(RC_DEBUG "> %s(monitorp=%p)\n", __func__, monitorp);
 
 	if (!monitorp)
 		return -EINVAL;
@@ -130,9 +125,7 @@ int lldp_monitor_create(struct lldp_monitor **monitorp)
 	}
 
 	*monitorp = monitor;
-out:
-	rc_log(RC_DEBUG "< %s() = %d\n", __func__, err);
-	return err;
+	return 0;
 
 close:
 	close(monitor->sockfd);
@@ -141,7 +134,7 @@ free:
 		free(monitor->data);
 
 	free(monitor);
-	goto out;
+	return err;
 }
 
 int lldp_monitor_free(struct lldp_monitor *monitor)
@@ -149,12 +142,8 @@ int lldp_monitor_free(struct lldp_monitor *monitor)
 	struct packet_mreq req;
 	int err;
 
-	rc_log(RC_DEBUG "> %s(monitor=%p)\n", __func__, monitor);
-
-	if (!monitor) {
-		err = -EINVAL;
-		goto out;
-	}
+	if (!monitor)
+		return -EINVAL;
 
 	monitor->done = true;
 
@@ -181,10 +170,7 @@ int lldp_monitor_free(struct lldp_monitor *monitor)
 		free(monitor->data);
 
 	free(monitor);
-
-out:
-	rc_log(RC_DEBUG "< %s() = %d\n", __func__, err);
-	return err;
+	return 0;
 }
 
 ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
