@@ -393,12 +393,14 @@ int main(int argc, char *argv[])
 	err = shctl_parse(ctl, argc, argv);
 	if (err < 0) {
 		fprintf(stderr, "shctl_parse(): %s\n", strerror(-err));
+		shctl_free(ctl);
 		return 1;
 	}
 
 	err = shctl_init(ctl);
 	if (err < 0) {
 		fprintf(stderr, "shctl_init(): %s\n", strerror(-err));
+		shctl_free(ctl);
 		return 1;
 	}
 
