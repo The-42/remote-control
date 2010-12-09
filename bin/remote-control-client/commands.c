@@ -138,8 +138,10 @@ static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 		uint8_t volume = 0;
 
 		err = medcom_mixer_get_volume(cli->client, control, &volume);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 
 		shctl_log(ctl, 0, "volume: %u\n", volume);
 	} else {
@@ -153,8 +155,10 @@ static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 		}
 
 		err = medcom_mixer_set_volume(cli->client, control, volume);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 	}
 
 	return 0;
@@ -195,8 +199,10 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 		bool mute = false;
 
 		err = medcom_mixer_get_mute(cli->client, control, &mute);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 
 		shctl_log(ctl, 0, "muted: %s\n", mute ? "yes" : "no");
 	} else {
@@ -210,8 +216,10 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 		}
 
 		err = medcom_mixer_set_mute(cli->client, control, mute);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 	}
 
 	return 0;
@@ -346,8 +354,10 @@ static int cmd_backlight_power(struct shctl *ctl, const struct shcmd *cmd)
 	}
 
 	err = medcom_backlight_enable(cli->client, enable);
-	if (err < 0)
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
+	}
 
 	return 0;
 }
@@ -377,8 +387,10 @@ static int cmd_backlight_brightness(struct shctl *ctl, const struct shcmd *cmd)
 		uint8_t brightness = 0;
 
 		err = medcom_backlight_get(cli->client, &brightness);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 
 		shctl_log(ctl, 0, "brightness: %u\n", brightness);
 	} else {
@@ -393,8 +405,10 @@ static int cmd_backlight_brightness(struct shctl *ctl, const struct shcmd *cmd)
 		}
 
 		err = medcom_backlight_set(cli->client, value);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 	}
 
 	return 0;
@@ -423,14 +437,18 @@ static int cmd_media_player_uri(struct shctl *ctl, const struct shcmd *cmd)
 	err = shcmd_get_opt_string(cmd, "uri", &uri);
 	if (err < 0) {
 		err = medcom_media_player_get_stream(cli->client, &uri);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 
 		shctl_log(ctl, 0, "URI: %s\n", uri);
 	} else {
 		err = medcom_media_player_set_stream(cli->client, uri);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 	}
 
 	return 0;
@@ -508,8 +526,10 @@ static int cmd_media_player_output(struct shctl *ctl, const struct shcmd *cmd)
 	} else {
 		err = medcom_media_player_set_output_window(cli->client,
 				x, y, width, height);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 	}
 
 	return 0;
@@ -538,11 +558,19 @@ static int cmd_media_player_play(struct shctl *ctl, const struct shcmd *cmd)
 	err = shcmd_get_opt_string(cmd, "uri", &uri);
 	if (!err) {
 		err = medcom_media_player_set_stream(cli->client, uri);
-		if (err < 0)
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
+		}
 	}
 
-	return medcom_media_player_start(cli->client);
+	err = medcom_media_player_start(cli->client);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 /*
@@ -561,7 +589,15 @@ static const struct shcmd_opt_def opts_media_player_stop[] = {
 static int cmd_media_player_stop(struct shctl *ctl, const struct shcmd *cmd)
 {
 	struct cli *cli = shctl_priv(ctl);
-	return medcom_media_player_stop(cli->client);
+	int err;
+
+	err = medcom_media_player_stop(cli->client);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 /*
@@ -585,8 +621,10 @@ static int cmd_media_player_state(struct shctl *ctl, const struct shcmd *cmd)
 	int32_t err;
 
 	err = medcom_media_player_is_running(cli->client, &running);
-	if (err < 0)
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
+	}
 
 	if (running)
 		state = "playing";
@@ -644,7 +682,13 @@ static int cmd_voip_login(struct shctl *ctl, const struct shcmd *cmd)
 		account.password = NULL;
 		//account.password = "400";
 
-	return medcom_voip_login(cli->client, &account);
+	err = medcom_voip_login(cli->client, &account);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 /*
@@ -663,8 +707,15 @@ static const struct shcmd_opt_def opts_voip_logout[] = {
 static int cmd_voip_logout(struct shctl *ctl, const struct shcmd *cmd)
 {
 	struct cli *cli = shctl_priv(ctl);
+	int err;
 
-	return medcom_voip_logout(cli->client);
+	err = medcom_voip_logout(cli->client);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 /*
@@ -688,8 +739,16 @@ static int cmd_voip_call(struct shctl *ctl, const struct shcmd *cmd)
 	int err;
 
 	err = shcmd_get_opt_string(cmd, "url", &arg);
+	if (err < 0)
+		return err;
 
-	return medcom_voip_connect_to(cli->client, arg);
+	err = medcom_voip_connect_to(cli->client, arg);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 /*
@@ -712,11 +771,13 @@ static int cmd_voip_accept(struct shctl *ctl, const struct shcmd *cmd)
 	int err;
 
 	err = medcom_voip_accept_incoming(cli->client, &arg);
-	if (err < 0)
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
+	}
 
-	printf("  caller:%s\n", arg);
-	return err;
+	shctl_log(ctl, 0, "caller: %s\n", arg);
+	return 0;
 }
 
 /*
@@ -735,7 +796,15 @@ static const struct shcmd_opt_def opts_voip_terminate[] = {
 static int cmd_voip_terminate(struct shctl *ctl, const struct shcmd *cmd)
 {
 	struct cli *cli = shctl_priv(ctl);
-	return medcom_voip_disconnect(cli->client);
+	int err;
+
+	err = medcom_voip_disconnect(cli->client);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 const struct shcmd_def cli_commands[] = {
