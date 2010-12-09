@@ -5,9 +5,9 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-struct mixer_control;
+struct mixer_element;
 
-struct mixer_control_ops {
+struct mixer_element_ops {
 	int (*get_volume_range)(snd_mixer_elem_t *element, long *min, long *max);
 	int (*get_volume)(snd_mixer_elem_t *element, long *value);
 	int (*set_volume)(snd_mixer_elem_t *element, long value);
@@ -15,8 +15,8 @@ struct mixer_control_ops {
 	int (*set_switch)(snd_mixer_elem_t *element, int value);
 };
 
-struct mixer_control {
-	struct mixer_control_ops *ops;
+struct mixer_element {
+	struct mixer_element_ops *ops;
 	snd_mixer_elem_t *element;
 };
 
@@ -34,13 +34,13 @@ static int mixer_callback(snd_mixer_t *mixer, unsigned int mask,
 	return 0;
 }
 
-static int normalize_volume(struct mixer_control *control, long *volume)
+static int normalize_volume(struct mixer_element *element, long *volume)
 {
 	long min = 0;
 	long max = 0;
 	int err;
 
-	err = control->ops->get_volume_range(control->element, &min, &max);
+	err = element->ops->get_volume_range(element->element, &min, &max);
 	if (err < 0)
 		return err;
 
@@ -48,13 +48,13 @@ static int normalize_volume(struct mixer_control *control, long *volume)
 	return 0;
 }
 
-static int scale_volume(struct mixer_control *control, long *volume)
+static int scale_volume(struct mixer_element *element, long *volume)
 {
 	long min = 0;
 	long max = 0;
 	int err;
 
-	err = control->ops->get_volume_range(control->element, &min, &max);
+	err = element->ops->get_volume_range(element->element, &min, &max);
 	if (err < 0)
 		return err;
 
@@ -76,7 +76,7 @@ static int snd_mixer_selem_get_playback_switch_all(snd_mixer_elem_t *element,
 			SND_MIXER_SCHN_MONO, value);
 }
 
-static struct mixer_control_ops playback_ops = {
+static struct mixer_element_ops playback_ops = {
 	.get_volume_range = snd_mixer_selem_get_playback_volume_range,
 	.get_volume = snd_mixer_selem_get_playback_volume_all,
 	.set_volume = snd_mixer_selem_set_playback_volume_all,
@@ -98,7 +98,7 @@ static int snd_mixer_selem_get_capture_switch_all(snd_mixer_elem_t *element,
 			SND_MIXER_SCHN_MONO, value);
 }
 
-static struct mixer_control_ops capture_ops = {
+static struct mixer_element_ops capture_ops = {
 	.get_volume_range = snd_mixer_selem_get_capture_volume_range,
 	.get_volume = snd_mixer_selem_get_capture_volume_all,
 	.set_volume = snd_mixer_selem_set_capture_volume_all,
@@ -106,42 +106,42 @@ static struct mixer_control_ops capture_ops = {
 	.set_switch = snd_mixer_selem_set_capture_switch_all,
 };
 
-static int mixer_control_create(struct mixer_control **controlp, snd_mixer_elem_t *element)
+static int mixer_element_create(struct mixer_element **elementp, snd_mixer_elem_t *elem)
 {
-	struct mixer_control *control;
+	struct mixer_element *element;
 	const char *name;
 
-	if (!controlp || !element)
+	if (!elementp || !elem)
 		return -EINVAL;
 
-	control = calloc(1, sizeof(*control));
-	if (!control)
+	element = calloc(1, sizeof(*element));
+	if (!element)
 		return -ENOMEM;
 
-	name = snd_mixer_selem_get_name(element);
+	name = snd_mixer_selem_get_name(elem);
 
-	control->element = element;
+	element->element = elem;
 
-	if (snd_mixer_selem_has_playback_volume(element)) {
+	if (snd_mixer_selem_has_playback_volume(elem)) {
 		rc_log(RC_DEBUG "element \"%s\" is playback control\n", name);
-		control->ops = &playback_ops;
+		element->ops = &playback_ops;
 	}
 
-	if (snd_mixer_selem_has_capture_volume(element)) {
+	if (snd_mixer_selem_has_capture_volume(elem)) {
 		rc_log(RC_DEBUG "element \"%s\" is capture control\n", name);
-		control->ops = &capture_ops;
+		element->ops = &capture_ops;
 	}
 
-	*controlp = control;
+	*elementp = element;
 	return 0;
 }
 
-static int mixer_control_free(struct mixer_control *control)
+static int mixer_element_free(struct mixer_element *element)
 {
-	if (!control)
+	if (!element)
 		return -EINVAL;
 
-	free(control);
+	free(element);
 	return 0;
 }
 
@@ -151,7 +151,7 @@ struct mixer {
 	int timeout;
 	bool done;
 
-	struct mixer_control *controls[MIXER_CONTROL_MAX];
+	struct mixer_element *elements[MIXER_CONTROL_MAX];
 };
 
 static void *poll_thread(void *data)
@@ -270,7 +270,7 @@ int mixer_create(struct mixer **mixerp)
 		enum medcom_mixer_control type = MIXER_CONTROL_UNKNOWN;
 		const char *name = snd_mixer_selem_get_name(elem);
 		int index = snd_mixer_selem_get_index(elem);
-		struct mixer_control *control = NULL;
+		struct mixer_element *element = NULL;
 		const char *desc = NULL;
 
 		snd_mixer_selem_get_id(elem, sid);
@@ -304,7 +304,7 @@ int mixer_create(struct mixer **mixerp)
 			if (!desc)
 				continue;
 
-			err = mixer_control_create(&control, elem);
+			err = mixer_element_create(&element, elem);
 			if (err < 0) {
 				rc_log(RC_ERR "mixer_control_create(): %s\n",
 						strerror(-err));
@@ -313,7 +313,7 @@ int mixer_create(struct mixer **mixerp)
 
 			rc_log(RC_DEBUG "\"%s\" is %s playback control\n",
 					name, desc);
-			mixer->controls[type] = control;
+			mixer->elements[type] = element;
 			continue;
 		}
 
@@ -326,7 +326,7 @@ int mixer_create(struct mixer **mixerp)
 			if (!desc)
 				continue;
 
-			err = mixer_control_create(&control, elem);
+			err = mixer_element_create(&element, elem);
 			if (err < 0) {
 				rc_log(RC_ERR "mixer_control_create(): %s\n",
 						strerror(-err));
@@ -335,7 +335,7 @@ int mixer_create(struct mixer **mixerp)
 
 			rc_log(RC_DEBUG "\"%s\" is master capture control\n",
 					name);
-			mixer->controls[type] = control;
+			mixer->elements[type] = element;
 			continue;
 		}
 	}
@@ -364,7 +364,7 @@ int mixer_free(struct mixer *mixer)
 	pthread_join(mixer->thread, NULL);
 
 	for (i = 0; i < MIXER_CONTROL_MAX; i++)
-		mixer_control_free(mixer->controls[i]);
+		mixer_element_free(mixer->elements[i]);
 
 	snd_mixer_close(mixer->mixer);
 	free(mixer);
@@ -373,7 +373,7 @@ int mixer_free(struct mixer *mixer)
 
 int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int volume)
 {
-	struct mixer_control *ctl;
+	struct mixer_element *element;
 	long value = volume;
 	const char *name;
 	int ret = 0;
@@ -387,20 +387,20 @@ int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int v
 		goto out;
 	}
 
-	ctl = mixer->controls[control];
-	if (!ctl || !ctl->element) {
+	element = mixer->elements[control];
+	if (!element || !element->element) {
 		ret = -ENODEV;
 		goto out;
 	}
 
-	name = snd_mixer_selem_get_name(ctl->element);
+	name = snd_mixer_selem_get_name(element->element);
 
-	if (!ctl->ops || !ctl->ops->set_volume) {
+	if (!element->ops || !element->ops->set_volume) {
 		ret = -ENOSYS;
 		goto out;
 	}
 
-	err = scale_volume(ctl, &value);
+	err = scale_volume(element, &value);
 	if (err < 0) {
 		rc_log(RC_DEBUG "failed to scale volume for control %s: %s\n",
 				name, snd_strerror(err));
@@ -408,7 +408,7 @@ int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int v
 		goto out;
 	}
 
-	err = ctl->ops->set_volume(ctl->element, value);
+	err = element->ops->set_volume(element->element, value);
 	if (err < 0) {
 		rc_log(RC_DEBUG "failed to set volume for control %s: %s\n",
 				name, snd_strerror(err));
@@ -422,7 +422,7 @@ out:
 
 int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *volumep)
 {
-	struct mixer_control *ctl;
+	struct mixer_element *element;
 	const char *name;
 	long value = 0;
 	int ret = 0;
@@ -436,20 +436,20 @@ int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *
 		goto out;
 	}
 
-	ctl = mixer->controls[control];
-	if (!ctl || !ctl->element) {
+	element = mixer->elements[control];
+	if (!element || !element->element) {
 		ret = -ENODEV;
 		goto out;
 	}
 
-	name = snd_mixer_selem_get_name(ctl->element);
+	name = snd_mixer_selem_get_name(element->element);
 
-	if (!ctl->ops || !ctl->ops->get_volume) {
+	if (!element->ops || !element->ops->get_volume) {
 		ret = -ENOSYS;
 		goto out;
 	}
 
-	err = ctl->ops->get_volume(ctl->element, &value);
+	err = element->ops->get_volume(element->element, &value);
 	if (err < 0) {
 		rc_log(RC_DEBUG "failed to get volume for control %s: %s\n",
 				name, snd_strerror(err));
@@ -457,7 +457,7 @@ int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *
 		goto out;
 	}
 
-	err = normalize_volume(ctl, &value);
+	err = normalize_volume(element, &value);
 	if (err < 0) {
 		rc_log(RC_DEBUG "failed to normalize volume for control %s: "
 				"%s\n", name, snd_strerror(err));
@@ -473,7 +473,7 @@ out:
 
 int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute)
 {
-	struct mixer_control *ctl;
+	struct mixer_element *element;
 	const char *name;
 	int ret = 0;
 	int err;
@@ -484,20 +484,20 @@ int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute)
 	if (control >= MIXER_CONTROL_MAX)
 		return -EINVAL;
 
-	ctl = mixer->controls[control];
-	if (!ctl || !ctl->element) {
+	element = mixer->elements[control];
+	if (!element || !element->element) {
 		ret = -ENODEV;
 		goto out;
 	}
 
-	name = snd_mixer_selem_get_name(ctl->element);
+	name = snd_mixer_selem_get_name(element->element);
 
-	if (!ctl->ops || !ctl->ops->set_switch) {
+	if (!element->ops || !element->ops->set_switch) {
 		ret = -ENOSYS;
 		goto out;
 	}
 
-	err = ctl->ops->set_switch(ctl->element, !mute);
+	err = element->ops->set_switch(element->element, !mute);
 	if (err < 0)
 		ret = err;
 
@@ -508,7 +508,7 @@ out:
 
 int mixer_is_muted(struct mixer *mixer, unsigned short control, bool *mutep)
 {
-	struct mixer_control *ctl;
+	struct mixer_element *element;
 	int value = 0;
 	int ret = 0;
 	int err;
@@ -521,18 +521,18 @@ int mixer_is_muted(struct mixer *mixer, unsigned short control, bool *mutep)
 		goto out;
 	}
 
-	ctl = mixer->controls[control];
-	if (!ctl || !ctl->element) {
+	element = mixer->elements[control];
+	if (!element || !element->element) {
 		ret = -ENODEV;
 		goto out;
 	}
 
-	if (!ctl->ops || !ctl->ops->get_switch) {
+	if (!element->ops || !element->ops->get_switch) {
 		ret = -ENOSYS;
 		goto out;
 	}
 
-	err = ctl->ops->get_switch(ctl->element, &value);
+	err = element->ops->get_switch(element->element, &value);
 	if (!err)
 		*mutep = !value;
 	else
