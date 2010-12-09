@@ -146,6 +146,7 @@ int media_player_set_output_window(struct media_player *player,
 		return -EINVAL;
 
 	gdk_window_move_resize(player->window, x, y, width, height);
+	gdk_window_clear(player->window);
 
 	return 0;
 }
