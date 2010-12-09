@@ -9,8 +9,12 @@ libremote_control_la_SOURCES = \
 	media-player.c \
 	medcom.c \
 	mixer.c \
-	remote-control-stub.c \
+	remote-control.h \
 	voip.c
+
+nodist_libremote_control_la_SOURCES = \
+	remote-control-stub.c \
+	remote-control-stub.h
 
 libremote_control_la_LIBADD = \
 	@GLIB_GIO_LIBS@ \

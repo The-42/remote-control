@@ -10,6 +10,7 @@ remote_control_client_CFLAGS = \
 	@LIBSH_CFLAGS@
 
 remote_control_client_SOURCES = \
+	cli.h \
 	commands.c \
 	main.c
 

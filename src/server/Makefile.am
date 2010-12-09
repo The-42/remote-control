@@ -24,7 +24,7 @@ libremote_control_la_SOURCES = \
 	net.c \
 	net-unix.c \
 	remote-control.c \
-	remote-control-stub.c \
+	remote-control.h \
 	smartcard.c \
 	sound.c \
 	system.c \
@@ -32,6 +32,10 @@ libremote_control_la_SOURCES = \
 	utils.c \
 	voip.c \
 	voip-linphone.c
+
+nodist_libremote_control_la_SOURCES = \
+	remote-control-stub.c \
+	remote-control-stub.h
 
 libremote_control_la_LIBADD = \
 	@LINPHONE_LIBS@ \
