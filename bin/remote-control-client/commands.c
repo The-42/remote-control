@@ -323,33 +323,31 @@ static const struct shcmd_info info_backlight_power[] = {
 };
 
 static const struct shcmd_opt_def opts_backlight_power[] = {
-	{ "power", SHCMD_OT_DATA, 0, gettext_noop("backlight power") },
+	{ "power", SHCMD_OT_DATA, SHCMD_OFLAG_REQ, gettext_noop("backlight power") },
 	{ NULL, 0, 0, NULL },
 };
 
 static int cmd_backlight_power(struct shctl *ctl, const struct shcmd *cmd)
 {
 	struct cli *cli = shctl_priv(ctl);
+	bool enable = false;
 	char *power = NULL;
 	int err;
 
 	err = shcmd_get_opt_string(cmd, "power", &power);
+	if (err < 0)
+		return err;
+
+	err = parse_bool(power, &enable);
 	if (err < 0) {
-		/* TODO: implement backlight power query */
-	} else {
-		bool enable = false;
-
-		err = parse_bool(power, &enable);
-		if (err < 0) {
-			shctl_log(ctl, 0, "Invalid boolean value '%s'.\n",
-					power);
-			return -EINVAL;
-		}
-
-		err = medcom_backlight_enable(cli->client, enable);
-		if (err < 0)
-			return err;
+		shctl_log(ctl, 0, "Invalid boolean value '%s'.\n",
+				power);
+		return -EINVAL;
 	}
+
+	err = medcom_backlight_enable(cli->client, enable);
+	if (err < 0)
+		return err;
 
 	return 0;
 }
