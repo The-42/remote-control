@@ -62,11 +62,16 @@ static char *vlc_rewrite_url(const char *url)
 static void on_playing(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
+
 	g_debug("> %s(event=%p, data=%p)", __func__, event, data);
-	gdk_threads_enter();
+
+	if (libvlc_video_get_track(player->player) != -1) {
+		gdk_threads_enter();
+		gdk_window_show(player->window);
+		gdk_threads_leave();
+	}
+
 	player->state = MEDIA_PLAYER_PLAYING;
-	gdk_window_show(player->window);
-	gdk_threads_leave();
 	g_debug("< %s()", __func__);
 }
 
