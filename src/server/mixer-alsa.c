@@ -152,6 +152,9 @@ struct mixer {
 	bool done;
 
 	struct mixer_element *elements[MIXER_CONTROL_MAX];
+	int input_source[MIXER_INPUT_SOURCE_MAX];
+	unsigned int input_source_bits;
+	snd_mixer_elem_t *input;
 };
 
 static void *poll_thread(void *data)
@@ -222,6 +225,7 @@ int mixer_create(struct mixer **mixerp)
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem;
 	int err;
+	int i;
 
 	if (!mixerp)
 		return -EINVAL;
@@ -229,6 +233,9 @@ int mixer_create(struct mixer **mixerp)
 	mixer = calloc(1, sizeof(*mixer));
 	if (!mixer)
 		return -ENOMEM;
+
+	for (i = 0; i < MIXER_INPUT_SOURCE_MAX; i++)
+		mixer->input_source[i] = -1;
 
 	err = snd_mixer_open(&mixer->mixer, 0);
 	if (err < 0) {
@@ -337,6 +344,50 @@ int mixer_create(struct mixer **mixerp)
 					name);
 			mixer->elements[type] = element;
 			continue;
+		}
+
+		if (snd_mixer_selem_is_enum_capture(elem)) {
+			int num = snd_mixer_selem_get_enum_items(elem);
+			char buf[16];
+
+			if (mixer->input)
+				continue;
+
+			if ((strcmp(name, "Input Source") == 0) && (index == 0))
+				mixer->input = elem;
+
+			for (i = 0; i < num; i++) {
+				err = snd_mixer_selem_get_enum_item_name(elem, i, sizeof(buf), buf);
+				if (err < 0)
+					continue;
+
+				if (strcmp(buf, "Mic") == 0) {
+					mixer->input_source[MIXER_INPUT_SOURCE_HEADSET] = i;
+					rc_log(RC_DEBUG "%s is headset source\n", buf);
+					continue;
+				}
+
+				if (strcmp(buf, "Internal Mic") == 0) {
+					mixer->input_source[MIXER_INPUT_SOURCE_HANDSET] = i;
+					rc_log(RC_DEBUG "%s is handset source\n", buf);
+					continue;
+				}
+
+				if (strcmp(buf, "Line") == 0) {
+					mixer->input_source[MIXER_INPUT_SOURCE_LINE] = i;
+					rc_log(RC_DEBUG "%s is line source\n", buf);
+					continue;
+				}
+			}
+
+			mixer->input_source_bits = 0;
+
+			for (i = 0; i <= SND_MIXER_SCHN_LAST; i++) {
+				unsigned int item = 0;
+
+				if (snd_mixer_selem_get_enum_item(elem, i, &item) >= 0)
+					mixer->input_source_bits |= 1 << i;
+			}
 		}
 	}
 
@@ -541,4 +592,46 @@ int mixer_is_muted(struct mixer *mixer, unsigned short control, bool *mutep)
 out:
 	rc_log(RC_DEBUG "< %s() = %d\n", __func__, ret);
 	return ret;
+}
+
+int mixer_set_input_source(struct mixer *mixer, enum mixer_input_source source)
+{
+	unsigned int i;
+
+	if (source >= MIXER_INPUT_SOURCE_MAX)
+		return -EINVAL;
+
+	for (i = 0; i <= SND_MIXER_SCHN_LAST; i++) {
+		if (mixer->input_source_bits & (1 << i)) {
+			int err = snd_mixer_selem_set_enum_item(mixer->input,
+					i, mixer->input_source[source]);
+			if (err < 0)
+				return err;
+		}
+	}
+
+	return 0;
+}
+
+int mixer_get_input_source(struct mixer *mixer, enum mixer_input_source *sourcep)
+{
+	unsigned int index = 0;
+	unsigned short i;
+	int err;
+
+	if (!sourcep)
+		return -EINVAL;
+
+	err = snd_mixer_selem_get_enum_item(mixer->input, 0, &index);
+	if (err < 0)
+		return err;
+
+	for (i = 0; i < MIXER_INPUT_SOURCE_MAX; i++) {
+		if (mixer->input_source[i] == index) {
+			*sourcep = i;
+			break;
+		}
+	}
+
+	return 0;
 }

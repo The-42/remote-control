@@ -7,23 +7,25 @@
 		</enum>
 		<enum name="medcom_mixer_control" mnemonic="u32">
 			<description short="audio control"/>
-			<value name="MIXER_CONTROL_UNKNOWN" value="0"/>
-			<value name="MIXER_CONTROL_PLAYBACK_MASTER"/>
-			<value name="MIXER_CONTROL_PLAYBACK_PCM"/>
-			<value name="MIXER_CONTROL_PLAYBACK_HEADSET"/>
-			<value name="MIXER_CONTROL_PLAYBACK_SPEAKER"/>
-			<value name="MIXER_CONTROL_PLAYBACK_HANDSET"/>
-			<value name="MIXER_CONTROL_CAPTURE_MASTER"/>
-			<value name="MIXER_CONTROL_CAPTURE_HEADSET"/>
-			<value name="MIXER_CONTROL_CAPTURE_HANDSET"/>
-			<value name="MIXER_CONTROL_CAPTURE_LINE"/>
-			<value name="MIXER_CONTROL_MAX"/>
+			<value name="MEDCOM_MIXER_CONTROL_UNKNOWN" value="0"/>
+			<value name="MEDCOM_MIXER_CONTROL_PLAYBACK_MASTER"/>
+			<value name="MEDCOM_MIXER_CONTROL_PLAYBACK_PCM"/>
+			<value name="MEDCOM_MIXER_CONTROL_PLAYBACK_HEADSET"/>
+			<value name="MEDCOM_MIXER_CONTROL_PLAYBACK_SPEAKER"/>
+			<value name="MEDCOM_MIXER_CONTROL_PLAYBACK_HANDSET"/>
+			<value name="MEDCOM_MIXER_CONTROL_CAPTURE_MASTER"/>
+			<value name="MEDCOM_MIXER_CONTROL_CAPTURE_HEADSET"/>
+			<value name="MEDCOM_MIXER_CONTROL_CAPTURE_HANDSET"/>
+			<value name="MEDCOM_MIXER_CONTROL_CAPTURE_LINE"/>
+			<value name="MEDCOM_MIXER_CONTROL_MAX"/>
 		</enum>
 		<enum name="medcom_mixer_input_source" mnemonic="u32">
 			<description short="audio input source"/>
-			<value name="MIXER_INPUT_SOURCE_HEADSET"/>
-			<value name="MIXER_INPUT_SOURCE_HANDSET"/>
-			<value name="MIXER_INPUT_SOURCE_LINE"/>
+			<value name="MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN" value="0"/>
+			<value name="MEDCOM_MIXER_INPUT_SOURCE_HEADSET"/>
+			<value name="MEDCOM_MIXER_INPUT_SOURCE_HANDSET"/>
+			<value name="MEDCOM_MIXER_INPUT_SOURCE_LINE"/>
+			<value name="MEDCOM_MIXER_INPUT_SOURCE_MAX"/>
 		</enum>
 		<!-- SmartCard -->
 		<enum name="medcom_card_type" mnemonic="u32">
@@ -114,11 +116,11 @@
 			<arg name="control" type="medcom_mixer_control" mode="in"/>
 			<arg name="mute" type="bool" mode="out"/>
 		</func>
-		<func name="medcom_mixer_set_capture_source" returns="int32_t" opcode="154">
-			<arg name="control" type="medcom_mixer_control" mode="in"/>
+		<func name="medcom_mixer_set_input_source" returns="int32_t" opcode="154">
+			<arg name="source" type="medcom_mixer_input_source" mode="in"/>
 		</func>
-		<func name="medcom_mixer_get_capture_source" returns="int32_t" opcode="155">
-			<arg name="control" type="medcom_mixer_control" mode="out"/>
+		<func name="medcom_mixer_get_input_source" returns="int32_t" opcode="155">
+			<arg name="source" type="medcom_mixer_input_source" mode="out"/>
 		</func>
 		<!-- backlight -->
 		<func name="medcom_backlight_enable" returns="int32_t" opcode="200">

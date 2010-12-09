@@ -133,6 +133,25 @@ int voip_get_state(struct voip *voip, enum voip_state *statep);
 /**
  * mixer
  */
+enum mixer_control {
+	MIXER_CONTROL_UNKNOWN,
+	MIXER_CONTROL_PLAYBACK_MASTER,
+	MIXER_CONTROL_PLAYBACK_PCM,
+	MIXER_CONTROL_PLAYBACK_HEADSET,
+	MIXER_CONTROL_PLAYBACK_SPEAKER,
+	MIXER_CONTROL_PLAYBACK_HANDSET,
+	MIXER_CONTROL_CAPTURE_MASTER,
+	MIXER_CONTROL_MAX,
+};
+
+enum mixer_input_source {
+	MIXER_INPUT_SOURCE_UNKNOWN,
+	MIXER_INPUT_SOURCE_HEADSET,
+	MIXER_INPUT_SOURCE_HANDSET,
+	MIXER_INPUT_SOURCE_LINE,
+	MIXER_INPUT_SOURCE_MAX,
+};
+
 struct mixer;
 
 int mixer_create(struct mixer **mixerp);
@@ -141,6 +160,8 @@ int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int v
 int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *volumep);
 int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute);
 int mixer_is_muted(struct mixer *mixer, unsigned short control, bool *mutep);
+int mixer_set_input_source(struct mixer *mixer, enum mixer_input_source source);
+int mixer_get_input_source(struct mixer *mixer, enum mixer_input_source *sourcep);
 
 /**
  * network layer
