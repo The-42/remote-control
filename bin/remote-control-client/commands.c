@@ -42,25 +42,25 @@ static int parse_bool(const char *string, bool *res)
 
 static enum medcom_mixer_control parse_mixer_control(const char *control)
 {
-	enum medcom_mixer_control ret = MIXER_CONTROL_UNKNOWN;
+	enum medcom_mixer_control ret = MEDCOM_MIXER_CONTROL_UNKNOWN;
 
 	if (strcasecmp(control, "master") == 0)
-		ret = MIXER_CONTROL_PLAYBACK_MASTER;
+		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_MASTER;
 
 	if (strcasecmp(control, "pcm") == 0)
-		ret = MIXER_CONTROL_PLAYBACK_PCM;
+		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_PCM;
 
 	if (strcasecmp(control, "headset") == 0)
-		ret = MIXER_CONTROL_PLAYBACK_HEADSET;
+		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_HEADSET;
 
 	if (strcasecmp(control, "speaker") == 0)
-		ret = MIXER_CONTROL_PLAYBACK_SPEAKER;
+		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_SPEAKER;
 
 	if (strcasecmp(control, "handset") == 0)
-		ret = MIXER_CONTROL_PLAYBACK_HANDSET;
+		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_HANDSET;
 
 	if (strcasecmp(control, "capture") == 0)
-		ret = MIXER_CONTROL_CAPTURE_MASTER;
+		ret = MEDCOM_MIXER_CONTROL_CAPTURE_MASTER;
 
 	return ret;
 }
@@ -120,8 +120,8 @@ static const struct shcmd_opt_def opts_mixer_volume[] = {
 
 static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 {
+	enum medcom_mixer_control control = MEDCOM_MIXER_CONTROL_UNKNOWN;
 	struct cli *cli = shctl_priv(ctl);
-	enum medcom_mixer_control control = MIXER_CONTROL_UNKNOWN;
 	char *data = NULL;
 	int err;
 
@@ -177,8 +177,8 @@ static const struct shcmd_opt_def opts_mixer_mute[] = {
 
 static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 {
+	enum medcom_mixer_control control = MEDCOM_MIXER_CONTROL_UNKNOWN;
 	struct cli *cli = shctl_priv(ctl);
-	enum medcom_mixer_control control = MIXER_CONTROL_UNKNOWN;
 	char *data = NULL;
 	int err;
 
@@ -212,6 +212,102 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 		err = medcom_mixer_set_mute(cli->client, control, mute);
 		if (err < 0)
 			return err;
+	}
+
+	return 0;
+}
+
+/*
+ * "mixer-input" command
+ */
+static int mixer_input_source_name(enum medcom_mixer_input_source source,
+		char *buffer, size_t size)
+{
+	int ret;
+
+	switch (source) {
+	case MEDCOM_MIXER_INPUT_SOURCE_HEADSET:
+		ret = snprintf(buffer, size, "headset");
+		break;
+
+	case MEDCOM_MIXER_INPUT_SOURCE_HANDSET:
+		ret = snprintf(buffer, size, "handset");
+		break;
+
+	case MEDCOM_MIXER_INPUT_SOURCE_LINE:
+		ret = snprintf(buffer, size, "line");
+		break;
+
+	default:
+		ret = snprintf(buffer, size, "unknown");
+		break;
+	}
+
+	if (ret < 0)
+		ret = -errno;
+
+	return ret;
+}
+
+static enum medcom_mixer_input_source parse_mixer_input_source(const char *source)
+{
+	if (strcmp(source, "headset") == 0)
+		return MEDCOM_MIXER_INPUT_SOURCE_HEADSET;
+
+	if (strcmp(source, "handset") == 0)
+		return MEDCOM_MIXER_INPUT_SOURCE_HANDSET;
+
+	if (strcmp(source, "line") == 0)
+		return MEDCOM_MIXER_INPUT_SOURCE_LINE;
+
+	return MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+}
+
+static const struct shcmd_info info_mixer_input[] = {
+	{ "help", gettext_noop("get or set mixer input source") },
+	{ "desc", gettext_noop("Gets or sets the mixer input source.") },
+	{ NULL, NULL },
+};
+
+static const struct shcmd_opt_def opts_mixer_input[] = {
+	{ "source", SHCMD_OT_DATA, 0, gettext_noop("input source") },
+	{ NULL, 0, 0, NULL },
+};
+
+static int cmd_mixer_input(struct shctl *ctl, const struct shcmd *cmd)
+{
+	struct cli *cli = shctl_priv(ctl);
+	char *source = NULL;
+	int err;
+
+	err = shcmd_get_opt_string(cmd, "source", &source);
+	if (err < 0) {
+		enum medcom_mixer_input_source input = MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+		char buffer[16];
+
+		err = medcom_mixer_get_input_source(cli->client, &input);
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
+			return err;
+		}
+
+		err = mixer_input_source_name(input, buffer, sizeof(buffer));
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
+			return err;
+		}
+
+		shctl_log(ctl, 0, "input source: %s\n", buffer);
+	} else {
+		enum medcom_mixer_input_source input;
+
+		input = parse_mixer_input_source(source);
+
+		err = medcom_mixer_set_input_source(cli->client, input);
+		if (err < 0) {
+			shctl_log(ctl, 0, "%s\n", strerror(-err));
+			return err;
+		}
 	}
 
 	return 0;
@@ -649,6 +745,7 @@ const struct shcmd_def cli_commands[] = {
 	{ "mixer-volume", cmd_mixer_volume, opts_mixer_volume,
 		info_mixer_volume },
 	{ "mixer-mute", cmd_mixer_mute, opts_mixer_mute, info_mixer_mute },
+	{ "mixer-input", cmd_mixer_input, opts_mixer_input, info_mixer_input },
 	{ "backlight-power", cmd_backlight_power, opts_backlight_power,
 		info_backlight_power },
 	{ "backlight-brightness", cmd_backlight_brightness,

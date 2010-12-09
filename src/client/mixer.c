@@ -53,3 +53,29 @@ int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, u
 
 	return ret;
 }
+
+int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source source)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int32_t err;
+
+	err = medcom_mixer_set_input_source_stub(rpc, &ret, source);
+	if (err < 0)
+		ret = err;
+
+	return ret;
+}
+
+int32_t medcom_mixer_get_input_source(void *priv, enum medcom_mixer_input_source *sourcep)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int32_t err;
+
+	err = medcom_mixer_get_input_source_stub(rpc, &ret, sourcep);
+	if (err < 0)
+		ret = err;
+
+	return ret;
+}
