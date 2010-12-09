@@ -728,7 +728,7 @@ static const struct shcmd_info info_voip_call[] = {
 };
 
 static const struct shcmd_opt_def opts_voip_call[] = {
-	{ "url", SHCMD_OT_DATA, 0, gettext_noop("callee URL") },
+	{ "url", SHCMD_OT_DATA, SHCMD_OFLAG_REQ, gettext_noop("callee URL") },
 	{ NULL, 0, 0, NULL },
 };
 
