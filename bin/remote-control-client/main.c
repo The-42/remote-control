@@ -12,6 +12,7 @@
 
 #include <getopt.h>
 #include <libintl.h>
+#include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
