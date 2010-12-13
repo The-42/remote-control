@@ -1,4 +1,4 @@
-AC_PREREQ(2.67)
+AC_PREREQ(2.66)
 AC_INIT([remote-control], [0.1.3], [bugs@avionic-design.de], [remote-control])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Makefile.am])
@@ -19,7 +19,9 @@ PKG_CHECK_MODULES(LINPHONE, linphone >= 3.3.99.8)
 PKG_CHECK_MODULES(WEBKIT, webkit-1.0)
 PKG_CHECK_MODULES(LIBVLC, libvlc)
 PKG_CHECK_MODULES(GTK, gtk+-2.0)
+PKG_CHECK_MODULES(GLADE, libglade-2.0)
 PKG_CHECK_MODULES(LIBSH, libsh)
+PKG_CHECK_MODULES(ALSA, alsa)
 
 PKG_CHECK_MODULES(LIBRPC, librpc >= 0.3.0)
 RPC_STUBGEN=rpc-stubgen
