@@ -14,6 +14,10 @@ typedef void (*medcom_event_handler_t)(uint32_t type, void *data);
 
 struct medcom_client;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int medcom_init(struct medcom_client **clientp, const char *hostname,
 		const char *service);
 int medcom_exit(struct medcom_client *client);
@@ -21,6 +25,8 @@ int medcom_exit(struct medcom_client *client);
 int medcom_register_event_handler(struct medcom_client *client,
 		enum medcom_event queue, medcom_event_handler_t handler,
 		void *data);
+int medcom_unregister_event_handler(struct medcom_client *client,
+		enum medcom_event queue, medcom_event_handler_t handler);
 
 int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control, uint8_t volume);
 int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, uint8_t *volumep);
@@ -45,5 +51,15 @@ int32_t medcom_voip_logout(void *priv);
 int32_t medcom_voip_connect_to(void *priv, const char *uri);
 int32_t medcom_voip_accept_incoming(void *priv, char **uri);
 int32_t medcom_voip_disconnect(void *priv);
+
+int32_t medcom_card_enable(void *priv, bool enable);
+int32_t medcom_card_reset(void *priv);
+int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type);
+int32_t medcom_card_read(void *priv, off_t offset, void *buffer, size_t size);
+int32_t medcom_card_write(void *priv, off_t offset, const void *buffer, size_t size);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* REMOTE_CONTROL_H */
