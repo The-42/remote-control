@@ -6,6 +6,7 @@ remote_control_CFLAGS = \
 	@GLIB_GIO_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
+	@ALSA_CFLAGS@ \
 	@GTK_CFLAGS@
 
 remote_control_SOURCES = \
@@ -17,4 +18,5 @@ remote_control_LDADD = \
 	../../src/server/libremote-control.la \
 	@GLIB_GIO_LIBS@ \
 	@LIBRPC_LIBS@ \
-	@WEBKIT_LIBS@
+	@WEBKIT_LIBS@ \
+	@ALSA_LIBS@
