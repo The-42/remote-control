@@ -5,6 +5,7 @@ noinst_LTLIBRARIES = \
 
 libremote_control_la_SOURCES = \
 	backlight.c \
+	card.c \
 	events.c \
 	media-player.c \
 	medcom.c \
