@@ -15,9 +15,7 @@ struct smartcard {
 int smartcard_create(struct smartcard **smartcardp)
 {
 	struct smartcard *smartcard;
-#if 0
 	int err;
-#endif
 
 	g_debug("> %s(smartcardp=%p)", __func__, smartcardp);
 
@@ -30,13 +28,11 @@ int smartcard_create(struct smartcard **smartcardp)
 
 	memset(smartcard, 0, sizeof(smartcard));
 
-#if 0
 	err = smartcard_i2c_open(&smartcard->i2c, I2C_DEVICE, I2C_SLAVE);
 	if (err < 0) {
 		free(smartcard);
 		return err;
 	}
-#endif
 
 	*smartcardp = smartcard;
 	g_debug("< %s()", __func__);
@@ -48,9 +44,7 @@ int smartcard_free(struct smartcard *smartcard)
 	if (!smartcard)
 		return -EINVAL;
 
-#if 0
 	smartcard_i2c_close(smartcard->i2c);
-#endif
 	free(smartcard);
 	return 0;
 }
