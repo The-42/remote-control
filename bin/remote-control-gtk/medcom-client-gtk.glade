@@ -66,6 +66,7 @@
                           <widget class="GtkEntry" id="voip_connection_username_entry">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="text" translatable="yes">102</property>
                           </widget>
                           <packing>
                             <property name="left_attach">1</property>
@@ -78,6 +79,7 @@
                           <widget class="GtkEntry" id="voip_connection_password_entry">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="text" translatable="yes">102</property>
                           </widget>
                           <packing>
                             <property name="left_attach">1</property>
@@ -106,6 +108,7 @@
                               <widget class="GtkEntry" id="voip_connection_server_addr_entry">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="text" translatable="yes">sip-0001.mockup.avionic-design.de</property>
                               </widget>
                               <packing>
                                 <property name="position">0</property>
@@ -715,6 +718,7 @@
                           <widget class="GtkEntry" id="url">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="text" translatable="yes">udp://239.0.22.1:4444</property>
                             <signal name="changed" handler="on_url_changed"/>
                           </widget>
                           <packing>
