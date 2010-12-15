@@ -663,8 +663,39 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkStatusbar" id="status">
+          <widget class="GtkHBox" id="status_hbox">
             <property name="visible">True</property>
+            <child>
+              <widget class="GtkStatusbar" id="status_bar">
+                <property name="visible">True</property>
+                <property name="spacing">2</property>
+              </widget>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkImage" id="status_image_event">
+                <property name="visible">True</property>
+                <property name="xpad">1</property>
+                <property name="stock">gtk-yes</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkImage" id="status_image_connection">
+                <property name="visible">True</property>
+                <property name="xpad">1</property>
+                <property name="stock">gtk-disconnect</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
           </widget>
           <packing>
             <property name="expand">False</property>
