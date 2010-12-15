@@ -81,62 +81,16 @@ int medcom_init(struct medcom_client **clientp, const char *hostname,
 
 int medcom_exit(struct medcom_client *client)
 {
-	return -ENOSYS;
-}
+	struct rpc_client *rpc = rpc_client_from_priv(client);
 
-int medcom_register_event_handler(struct medcom_client *client,
-                enum medcom_event queue, medcom_event_handler_t handler,
-                void *data)
-{
-#if 0
-        struct event_handler *eh;
-        struct list_head *head;
+	if (!client)
+		return -EINVAL;
 
-        if (!client || !handler || (queue < 0) || (queue >= MEDCOM_EVENT_MAX))
-                return -EINVAL;
+	/* stop polling thread */
+	client->done = 1;
+	pthread_join(client->thread, NULL);
 
-        head = &client->handlers[queue];
-
-        eh = malloc(sizeof(*eh));
-        if (!eh)
-                return -ENOMEM;
-
-        memset(eh, 0, sizeof(*eh));
-        eh->handler = handler;
-        list_init(&eh->list);
-        eh->data = data;
-
-        list_add_tail(&eh->list, head);
-
-        return 0;
-#else
-	return -ENOSYS;
-#endif
-}
-
-int medcom_unregister_event_handler(struct medcom_client *client,
-                enum medcom_event queue, medcom_event_handler_t handler)
-{
-#if 0
-        struct list_head *node, *temp;
-        struct event_handler *eh;
-        struct list_head *head;
-
-        if (!client || (queue < 0) || (queue >= MEDCOM_EVENT_MAX))
-                return -EINVAL;
-
-        head = &client->handlers[queue];
-
-        list_for_each_safe(node, temp, head) {
-                eh = list_entry(node, struct event_handler, list);
-                if (eh->handler == handler) {
-                        list_del_init(&eh->list);
-                        free(eh);
-                }
-        }
-
-        return 0;
-#else
-	return -ENOSYS;
-#endif
+	/* cleanup */
+	rpc_client_free(rpc);
+	return 0;
 }

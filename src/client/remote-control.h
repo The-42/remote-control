@@ -51,12 +51,17 @@ int32_t medcom_voip_logout(void *priv);
 int32_t medcom_voip_connect_to(void *priv, const char *uri);
 int32_t medcom_voip_accept_incoming(void *priv, char **uri);
 int32_t medcom_voip_disconnect(void *priv);
+int32_t medcom_voip_still_logged_in(void *priv, bool *status);
 
 int32_t medcom_card_enable(void *priv, bool enable);
 int32_t medcom_card_reset(void *priv);
 int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type);
 int32_t medcom_card_read(void *priv, off_t offset, void *buffer, size_t size);
 int32_t medcom_card_write(void *priv, off_t offset, const void *buffer, size_t size);
+
+int32_t medcom_irq_enable(void *priv, uint8_t virtkey);
+int32_t medcom_irq_get_mask(void *priv, uint32_t *mask);
+int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t *info);
 
 #ifdef __cplusplus
 };

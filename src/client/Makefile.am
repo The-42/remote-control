@@ -7,6 +7,7 @@ libremote_control_la_SOURCES = \
 	backlight.c \
 	card.c \
 	events.c \
+	irq.c \
 	media-player.c \
 	medcom.c \
 	mixer.c \
