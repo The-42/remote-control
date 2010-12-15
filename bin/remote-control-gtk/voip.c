@@ -49,6 +49,21 @@ int voip_panel_append(GtkWidget *widget, const gchar* to_append)
 	return 0;
 }
 
+static int voip_panel_update_login_status(struct panel_data *pnl)
+{
+	bool status = false;
+	int32_t ret;
+
+	/* update current status */
+	ret = medcom_voip_still_logged_in(pnl->client, &status);
+	if (ret < 0)
+		return ret;
+
+	gtk_label_set_text(GTK_LABEL(pnl->connection_status),
+		status ? "logged in" : "logged out");
+	return 0;
+}
+
 void on_voip_number_button_undo_clicked(GtkWidget *widget, gpointer data)
 {
 	GtkEntryBuffer* buffer;
@@ -233,7 +248,7 @@ out:
 
 static int voip_panel_create(struct panel *panel, GtkWidget **widget)
 {
-	struct panel_data *priv;;
+	struct panel_data *priv;
 	GtkWidget *container;
 	GladeXML *xml;
 
@@ -266,6 +281,7 @@ static int voip_panel_create(struct panel *panel, GtkWidget **widget)
 
 		priv->call_number       = GTK_ENTRY(glade_xml_get_widget(xml, "voip_number_entry"));
 
+		voip_panel_update_login_status(priv);
 		panel->priv = priv;
 
 		fprintf(stdout, "voip_panel=%p\n", container);
