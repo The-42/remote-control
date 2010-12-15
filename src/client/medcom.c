@@ -61,6 +61,12 @@ int medcom_init(struct medcom_client **clientp, const char *hostname,
 		return err;
 	}
 
+	err = rpc_client_set_event_handler(rpc, rpc_dispatch_event);
+	if (err < 0) {
+		rpc_client_free(rpc);
+		return err;
+	}
+
 	client = rpc_client_priv(rpc);
 
 	err = pthread_create(&client->thread, NULL, poll_event_thread, client);
