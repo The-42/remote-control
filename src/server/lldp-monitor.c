@@ -187,5 +187,5 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 		ret = len;
 	}
 
-	return size;
+	return ret;
 }
