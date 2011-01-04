@@ -8,11 +8,13 @@ remote_control_gtk_SOURCES = \
 	backlight.c \
 	card.c \
 	main.c \
+	medcom-client-gtk.h \
 	mediaplayer.c \
 	miscellaneous.c \
 	modem.c \
 	tuner.c \
 	voip.c \
+	voip.h \
 	webkit.c
 
 remote_control_gtk_CFLAGS = \
