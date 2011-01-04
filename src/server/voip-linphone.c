@@ -101,6 +101,12 @@ static const char *call_state_name(LinphoneCallState state)
 
 	case LinphoneCallUpdatedByRemote:
 		return "LinphoneCallUpdatedByRemote";
+
+	case LinphoneCallIncomingEarlyMedia:
+		return "LinphoneCallIncomingEarlyMedia";
+
+	case LinphoneCallUpdated:
+		return "LinphoneCallUpdated";
 	}
 
 	return NULL;
