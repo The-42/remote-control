@@ -77,6 +77,20 @@ int event_manager_get_status(struct event_manager *manager, uint32_t *statusp);
 int event_manager_get_source_state(struct event_manager *manager, struct event *event);
 
 /**
+ * backlight
+ */
+#define BACKLIGHT_MIN 0x00
+#define BACKLIGHT_MAX 0xff
+
+struct backlight;
+
+int backlight_create(struct backlight **backlightp);
+int backlight_free(struct backlight *backlight);
+int backlight_enable(struct backlight *backlight, bool enable);
+int backlight_set(struct backlight *backlight, unsigned int brightness);
+int backlight_get(struct backlight *backlight);
+
+/**
  * media player
  */
 enum media_player_state {

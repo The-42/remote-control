@@ -10,6 +10,7 @@ libremote_control_la_CFLAGS = \
 libremote_control_la_SOURCES = \
 	audio.c \
 	backlight.c \
+	backlight-dpms.c \
 	event-manager.c \
 	io.c \
 	irq.c \

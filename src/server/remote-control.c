@@ -32,6 +32,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = backlight_create(&rc->backlight);
+	if (err < 0) {
+		g_error("backlight_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = media_player_create(&rc->player);
 	if (err < 0) {
 		g_error("media_player_create(): %s", strerror(-err));
@@ -85,6 +91,7 @@ int remote_control_free(struct remote_control *rc)
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);
 	media_player_free(rc->player);
+	backlight_free(rc->backlight);
 	event_manager_free(rc->event_manager);
 	rpc_server_free(server);
 	return 0;
