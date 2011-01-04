@@ -1,0 +1,20 @@
+Release 0.1.4 (2011-01-04)
+==========================
+- Miscellaneous build fixes.
+- Port Gtk+ client from the former tc project.
+- Enable I2C smartcard functionality.
+- Make event-handling actually work (note: some functionality is still missing
+  though).
+- Use old and broken VoIP login function. The new, proper version has not been
+  implemented on the client side (centralized UI).
+- Add backlight API implementation based on the X DPMS extension. This can
+  actually only enable/disable the backlight, so setting the brightness has no
+  effect besides turning the backlight off (0) or on (> 0).
+- Don't perform RPC handshake upon connection because it has not been
+  implemented on the client side (centralized UI).
+- Fix lldp_read() to return the number of LLDP bytes actually available.
+- Build against linphone 3.3.99.10 or later.
+
+Release 0.1.2 (2010-12-09)
+==========================
+- Fix the "make dist" and "make distcheck" targets.
