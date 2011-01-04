@@ -28,6 +28,7 @@ int32_t medcom_voip_get_status_string(void *priv, uint32_t status, char **buffer
 	return ret;
 }
 
+#if 0
 int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
 {
 	struct remote_control *rc = priv;
@@ -46,6 +47,34 @@ int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
+#else
+struct medcom_voip_login_options {
+	char *server;
+	int auth;
+	int transport;
+	char *username;
+	char *password;
+	char server2[256];
+	char username2[128];
+	char password2[128];
+};
+
+int32_t medcom_voip_login(void *priv, struct rpc_buffer *options)
+{
+	struct medcom_voip_login_options *account;
+	struct remote_control *rc = priv;
+	int32_t ret;
+
+	g_debug("> %s(priv=%p, options=%p)", __func__, priv, options);
+	account = options->rx_buf;
+
+	ret = voip_login(rc->voip, account->server2, 5060, account->username2,
+			account->password2);
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+#endif
 
 int32_t medcom_voip_logout(void *priv)
 {

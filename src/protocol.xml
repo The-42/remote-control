@@ -203,9 +203,15 @@
 			<arg name="status" type="uint32_t" mode="in"/>
 			<arg name="buffer" type="char *" mode="out"/>
 		</func>
+		<!-- this is currently completely fucked up -->
+		<func name="medcom_voip_login" returns="int32_t" opcode="703">
+			<arg name="options" type="buffer" mode="inout"/>
+		</func>
+		<!--
 		<func name="medcom_voip_login" returns="int32_t" opcode="703">
 			<arg name="account" type="medcom_voip_account" mode="in"/>
 		</func>
+		-->
 		<func name="medcom_voip_logout" returns="int32_t" opcode="704"/>
 		<func name="medcom_voip_still_logged_in" returns="int32_t" opcode="705">
 			<arg name="status" type="bool" mode="out"/>
