@@ -1,5 +1,3 @@
-#include <glib.h>
-
 #include "remote-control.h"
 
 int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, bool mute)
