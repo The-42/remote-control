@@ -12,7 +12,7 @@ int remote_control_create(struct remote_control **rcp)
 	if (!rcp)
 		return -EINVAL;
 
-	err = rpc_server_create(&server, RPC_INTERFACE, sizeof(*rc));
+	err = rpc_server_create(&server, NULL, sizeof(*rc));
 	if (err < 0) {
 		g_error("rpc_server_create(): %s", strerror(-err));
 		return err;

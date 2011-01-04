@@ -41,7 +41,7 @@ int medcom_init(struct medcom_client **clientp, const char *hostname,
 	if (!clientp)
 		return -EINVAL;
 
-	err = rpc_client_create(&rpc, RPC_INTERFACE, sizeof(*client));
+	err = rpc_client_create(&rpc, NULL, sizeof(*client));
 	if (err < 0)
 		return err;
 
