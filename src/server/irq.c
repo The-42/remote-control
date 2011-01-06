@@ -94,7 +94,6 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 
 	case MEDCOM_IRQ_SOURCE_CARD:
 		g_debug("  MEDCOM_IRQ_SOURCE_CARD");
-		memset(&event, 0, sizeof(event));
 		event.source = EVENT_SOURCE_SMARTCARD;
 
 		err = event_manager_get_source_state(rc->event_manager, &event);

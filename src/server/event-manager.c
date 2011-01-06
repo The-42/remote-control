@@ -141,6 +141,7 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->fd = -1;
 	manager->irq_status = 0;
 
+	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
 	manager->handset_state = EVENT_HANDSET_STATE_HOOK_ON;
 
 #ifdef HAVE_LINUX_GPIODEV_H
