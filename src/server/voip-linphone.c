@@ -6,6 +6,8 @@
 
 struct voip {
 	LinphoneCore *core;
+	char *contact;
+
 	pthread_t thread;
 	bool done;
 };
@@ -33,6 +35,8 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core, LinphoneP
 static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *call, LinphoneCallState state, const char *message)
 {
 	struct remote_control *rc = linphone_core_get_user_data(core);
+	const LinphoneAddress *address;
+	struct voip *voip = rc->voip;
 	struct event event;
 
 	g_print("LINPHONE: CALL STATE: %p: %s", call, linphone_call_state_to_string(state));
@@ -49,6 +53,18 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 	case LinphoneCallIncomingReceived:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING;
 		event_manager_report(rc->event_manager, &event);
+
+		if (voip->contact) {
+			ms_free(voip->contact);
+			voip->contact = NULL;
+		}
+
+		address = linphone_call_get_remote_address(call);
+		if (address) {
+			const char *name = linphone_address_get_display_name(address);
+			if (name)
+				voip->contact = strdup(name);
+		}
 		break;
 
 	case LinphoneCallEnd:
@@ -219,6 +235,7 @@ int voip_free(struct voip *voip)
 	voip->done = true;
 	pthread_join(voip->thread, NULL);
 
+	ms_free(voip->contact);
 	linphone_core_destroy(voip->core);
 	free(voip);
 	return 0;
@@ -346,7 +363,9 @@ int voip_accept(struct voip *voip, char **caller)
 	if (err < 0)
 		return err;
 
-	//*caller = strdup("monkey");
+	if (caller && voip->contact)
+		*caller = strdup(voip->contact);
+
 	return 0;
 }
 
