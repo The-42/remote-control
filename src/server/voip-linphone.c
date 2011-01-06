@@ -10,111 +10,9 @@ struct voip {
 	bool done;
 };
 
-static const char *global_state_name(LinphoneGlobalState state)
-{
-	switch (state) {
-	case LinphoneGlobalOff:
-		return "LinphoneGlobalOff";
-
-	case LinphoneGlobalStartup:
-		return "LinphoneGlobalStartup";
-
-	case LinphoneGlobalOn:
-		return "LinphoneGlobalOn";
-
-	case LinphoneGlobalShutdown:
-		return "LinphoneGlobalShutdown";
-	}
-
-	return NULL;
-}
-
-static const char *registration_state_name(LinphoneRegistrationState state)
-{
-	switch (state) {
-	case LinphoneRegistrationNone:
-		return "LinphoneRegistrationNone";
-
-	case LinphoneRegistrationProgress:
-		return "LinphoneRegistrationProgress";
-
-	case LinphoneRegistrationOk:
-		return "LinphoneRegistrationOk";
-
-	case LinphoneRegistrationCleared:
-		return "LinphoneRegistrationCleared";
-
-	case LinphoneRegistrationFailed:
-		return "LinphoneRegistrationFailed";
-	}
-
-	return NULL;
-}
-
-static const char *call_state_name(LinphoneCallState state)
-{
-	switch (state) {
-	case LinphoneCallIdle:
-		return "LinphoneCallIdle";
-
-	case LinphoneCallIncomingReceived:
-		return "LinphoneCallIncomingReceived";
-
-	case LinphoneCallOutgoingInit:
-		return "LinphoneCallOutgoingInit";
-
-	case LinphoneCallOutgoingProgress:
-		return "LinphoneCallOutgoingProgress";
-
-	case LinphoneCallOutgoingRinging:
-		return "LinphoneCallOutgoingRinging";
-
-	case LinphoneCallOutgoingEarlyMedia:
-		return "LinphoneCallOutgoingEarlyMedia";
-
-	case LinphoneCallConnected:
-		return "LinphoneCallConnected";
-
-	case LinphoneCallStreamsRunning:
-		return "LinphoneCallStreamsRunning";
-
-	case LinphoneCallPausing:
-		return "LinphoneCallPausing";
-
-	case LinphoneCallPaused:
-		return "LinphoneCallPaused";
-
-	case LinphoneCallResuming:
-		return "LinphoneCallResuming";
-
-	case LinphoneCallRefered:
-		return "LinphoneCallRefered";
-
-	case LinphoneCallError:
-		return "LinphoneCallError";
-
-	case LinphoneCallEnd:
-		return "LinphoneCallEnd";
-
-	case LinphoneCallPausedByRemote:
-		return "LinphoneCallPausedByRemote";
-
-	case LinphoneCallUpdatedByRemote:
-		return "LinphoneCallUpdatedByRemote";
-
-	case LinphoneCallIncomingEarlyMedia:
-		return "LinphoneCallIncomingEarlyMedia";
-
-	case LinphoneCallUpdated:
-		return "LinphoneCallUpdated";
-	}
-
-	return NULL;
-}
-
 static void linphone_global_state_changed_cb(LinphoneCore *core, LinphoneGlobalState state, const char *message)
 {
-	g_print("LINPHONE: GLOBAL STATE: %s", global_state_name(state));
+	g_print("LINPHONE: GLOBAL STATE: %s", linphone_global_state_to_string(state));
 
 	if (message)
 		g_print(" (%s)", message);
@@ -124,7 +22,7 @@ static void linphone_global_state_changed_cb(LinphoneCore *core, LinphoneGlobalS
 
 static void linphone_registration_state_changed_cb(LinphoneCore *core, LinphoneProxyConfig *proxy, LinphoneRegistrationState state, const char *message)
 {
-	g_print("LINPHONE: REGISTRATION STATE: %p: %s", proxy, registration_state_name(state));
+	g_print("LINPHONE: REGISTRATION STATE: %p: %s", proxy, linphone_registration_state_to_string(state));
 
 	if (message)
 		g_print(" (%s)", message);
@@ -137,7 +35,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 	struct remote_control *rc = linphone_core_get_user_data(core);
 	struct event event;
 
-	g_print("LINPHONE: CALL STATE: %p: %s", call, call_state_name(state));
+	g_print("LINPHONE: CALL STATE: %p: %s", call, linphone_call_state_to_string(state));
 
 	if (message)
 		g_print(" (%s)", message);
