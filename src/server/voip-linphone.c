@@ -398,3 +398,12 @@ int voip_get_state(struct voip *voip, enum voip_state *statep)
 	*statep = state;
 	return 0;
 }
+
+int voip_get_contact(struct voip *voip, const char **contactp)
+{
+	if (!voip || !contactp)
+		return -EINVAL;
+
+	*contactp = voip->contact;
+	return 0;
+}
