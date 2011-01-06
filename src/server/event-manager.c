@@ -38,6 +38,7 @@ struct event_manager {
 	uint32_t irq_status;
 
 	enum event_smartcard_state smartcard_state;
+	enum event_handset_state handset_state;
 };
 
 #ifdef HAVE_LINUX_GPIODEV_H
@@ -140,6 +141,8 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->fd = -1;
 	manager->irq_status = 0;
 
+	manager->handset_state = EVENT_HANDSET_STATE_HOOK_ON;
+
 #ifdef HAVE_LINUX_GPIODEV_H
 	manager->fd = open("/dev/gpio-0", O_RDWR);
 	if (manager->fd < 0) {
@@ -233,6 +236,8 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		break;
 
 	case EVENT_SOURCE_HANDSET:
+		g_debug("  HANDSET interrupt");
+		manager->handset_state = event->handset.state;
 		irq_status |= BIT(EVENT_SOURCE_HANDSET);
 		break;
 
@@ -278,6 +283,11 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 	case EVENT_SOURCE_SMARTCARD:
 		manager->irq_status &= ~BIT(EVENT_SOURCE_SMARTCARD);
 		event->smartcard.state = manager->smartcard_state;
+		break;
+
+	case EVENT_SOURCE_HANDSET:
+		manager->irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
+		event->handset.state = manager->handset_state;
 		break;
 
 	default:

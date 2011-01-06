@@ -41,6 +41,9 @@ int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
 	if (status & BIT(EVENT_SOURCE_SMARTCARD))
 		*mask |= BIT(IRQ_SMARTCARD);
 
+	if (status & BIT(EVENT_SOURCE_HANDSET))
+		*mask |= BIT(IRQ_HANDSET);
+
 out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
@@ -64,6 +67,29 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 
 	case MEDCOM_IRQ_SOURCE_HOOK:
 		g_debug("  MEDCOM_IRQ_SOURCE_HOOK");
+		event.source = EVENT_SOURCE_HANDSET;
+
+		err = event_manager_get_source_state(rc->event_manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		switch (event.handset.state) {
+		case EVENT_HANDSET_STATE_HOOK_OFF:
+			g_debug("    EVENT_HANDSET_STATE_HOOK_OFF");
+			*info = 0;
+			break;
+
+		case EVENT_HANDSET_STATE_HOOK_ON:
+			g_debug("    EVENT_HANDSET_STATE_HOOK_ON");
+			*info = 1;
+			break;
+
+		default:
+			ret = -ENXIO;
+			break;
+		}
 		break;
 
 	case MEDCOM_IRQ_SOURCE_CARD:
