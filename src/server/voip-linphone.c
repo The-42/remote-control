@@ -245,10 +245,12 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 		const char *username, const char *password)
 {
 	LinphoneProxyConfig *proxy;
+	const char *domain = host;
 	LinphoneAddress *address;
 	bool use_default = true;
 	LinphoneAuthInfo *auth;
 	char *server = NULL;
+	char *user = NULL;
 	char *identity;
 	int len;
 
@@ -291,15 +293,27 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 
 	snprintf(server, len + 1, "sip:%s", host);
 
+	user = strdup(username);
+	if (!user) {
+		free(server);
+		return -ENOMEM;
+	}
+
+	if (strchr(username, '@') != NULL) {
+		char *ptr = strchr(user, '@');
+		domain = ptr + 1;
+		ptr[0] = '\0';
+	}
+
 	address = linphone_address_new(server);
-	linphone_address_set_display_name(address, username);
-	linphone_address_set_username(address, username);
-	linphone_address_set_domain(address, host);
+	linphone_address_set_display_name(address, user);
+	linphone_address_set_username(address, user);
+	linphone_address_set_domain(address, domain);
 	linphone_address_set_port_int(address, port);
 	identity = linphone_address_as_string(address);
 	linphone_address_destroy(address);
 
-	auth = linphone_auth_info_new(username, NULL, password, NULL, NULL);
+	auth = linphone_auth_info_new(user, NULL, password, NULL, NULL);
 	linphone_core_add_auth_info(voip->core, auth);
 
 	linphone_proxy_config_set_server_addr(proxy, server);
@@ -315,6 +329,7 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 
 	ms_free(identity);
 	free(server);
+	free(user);
 
 	return 0;
 }
