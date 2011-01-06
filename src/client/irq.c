@@ -16,7 +16,7 @@ static int poll_irq_status(void *priv)
 	static struct irq_status table[] = {
 		{ MEDCOM_IRQ_SOURCE_HOOK, 0 },
 		{ MEDCOM_IRQ_SOURCE_CARD, 0 },
-		{ MEDCOM_IRQ_SOURCE_RING, 0 },
+		{ MEDCOM_IRQ_SOURCE_VOIP, 0 },
 		{ MEDCOM_IRQ_SOURCE_IO,   0 },
 		{ MEDCOM_IRQ_SOURCE_RDP,  0 }
 	};

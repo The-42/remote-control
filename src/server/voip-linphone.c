@@ -134,12 +134,33 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core, LinphoneP
 
 static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *call, LinphoneCallState state, const char *message)
 {
+	struct remote_control *rc = linphone_core_get_user_data(core);
+	struct event event;
+
 	g_print("LINPHONE: CALL STATE: %p: %s", call, call_state_name(state));
 
 	if (message)
 		g_print(" (%s)", message);
 
 	g_print("\n");
+
+	memset(&event, 0, sizeof(event));
+	event.source = EVENT_SOURCE_VOIP;
+
+	switch (state) {
+	case LinphoneCallIncomingReceived:
+		event.voip.state = EVENT_VOIP_STATE_INCOMING;
+		event_manager_report(rc->event_manager, &event);
+		break;
+
+	case LinphoneCallEnd:
+		event.voip.state = EVENT_VOIP_STATE_INCOMING_DISCONNECTED;
+		event_manager_report(rc->event_manager, &event);
+		break;
+
+	default:
+		break;
+	}
 }
 
 static void linphone_notify_presence_recv_cb(LinphoneCore *core, LinphoneFriend *friend)
@@ -263,6 +284,7 @@ static void *voip_thread(void *context)
 
 int voip_create(struct voip **voipp, struct rpc_server *server)
 {
+	struct remote_control *rc = rpc_server_priv(server);
 	struct voip *voip;
 	int err;
 
@@ -275,7 +297,7 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 
 	memset(voip, 0, sizeof(*voip));
 
-	voip->core = linphone_core_new(&vtable, NULL, NULL, NULL);
+	voip->core = linphone_core_new(&vtable, NULL, NULL, rc);
 	if (!voip->core) {
 		free(voip);
 		return -ENOMEM;

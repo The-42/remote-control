@@ -37,6 +37,7 @@ struct event_manager {
 
 	uint32_t irq_status;
 
+	enum event_voip_state voip_state;
 	enum event_smartcard_state smartcard_state;
 	enum event_handset_state handset_state;
 };
@@ -141,6 +142,7 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->fd = -1;
 	manager->irq_status = 0;
 
+	manager->voip_state = EVENT_VOIP_STATE_IDLE;
 	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
 	manager->handset_state = EVENT_HANDSET_STATE_HOOK_ON;
 
@@ -227,6 +229,8 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		break;
 
 	case EVENT_SOURCE_VOIP:
+		g_debug("  VOIP interrupt");
+		manager->voip_state = event->voip.state;
 		irq_status |= BIT(EVENT_SOURCE_VOIP);
 		break;
 
@@ -281,6 +285,11 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 		return -EINVAL;
 
 	switch (event->source) {
+	case EVENT_SOURCE_VOIP:
+		manager->irq_status &= ~BIT(EVENT_SOURCE_VOIP);
+		event->voip.state = manager->voip_state;
+		break;
+
 	case EVENT_SOURCE_SMARTCARD:
 		manager->irq_status &= ~BIT(EVENT_SOURCE_SMARTCARD);
 		event->smartcard.state = manager->smartcard_state;

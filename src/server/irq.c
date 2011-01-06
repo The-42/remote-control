@@ -38,6 +38,9 @@ int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
 	g_debug("  event_manager_get_status(): %d", ret);
 	g_debug("  status: %08x", status);
 
+	if (status & BIT(EVENT_SOURCE_VOIP))
+		*mask |= BIT(IRQ_VOIP);
+
 	if (status & BIT(EVENT_SOURCE_SMARTCARD))
 		*mask |= BIT(IRQ_SMARTCARD);
 
@@ -117,8 +120,71 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		}
 		break;
 
-	case MEDCOM_IRQ_SOURCE_RING:
-		g_debug("  MEDCOM_IRQ_SOURCE_RING");
+	case MEDCOM_IRQ_SOURCE_VOIP:
+		g_debug("  MEDCOM_IRQ_SOURCE_VOIP");
+		event.source = EVENT_SOURCE_VOIP;
+
+		err = event_manager_get_source_state(rc->event_manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		switch (event.voip.state) {
+		case EVENT_VOIP_STATE_IDLE:
+			g_debug("    EVENT_VOIP_STATE_IDLE");
+			*info = 0; /* VOIP_EVT_IDLE */
+			break;
+
+		case EVENT_VOIP_STATE_LOGGED_ON:
+			g_debug("    EVENT_VOIP_STATE_LOGGED_ON");
+			*info = 1; /* VOIP_EVT_LOGON */
+			break;
+
+		case EVENT_VOIP_STATE_LOGGED_OFF:
+			g_debug("    EVENT_VOIP_STATE_LOGGED_OFF");
+			*info = 2; /* VOIP_EVT_LOGOFF */
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING");
+			*info = 6; /* VOIP_EVT_CALLING */
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING_CONNECTED:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING_CONNECTED");
+			*info = 3; /* VOIP_EVT_CONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING_DISCONNECTED:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING_DISCONNECTED");
+			*info = 4; /* VOIP_EVT_DISCONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING:
+			g_debug("    EVENT_VOIP_STATE_INCOMING");
+			*info = 7; /* VOIP_EVT_INCOMMING [sic] */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_CONNECTED:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_CONNECTED");
+			*info = 3; /* VOIP_EVT_CONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_DISCONNECTED:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_DISCONNECTED");
+			*info = 4; /* VOIP_EVT_DISCONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_MISSED:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_MISSED");
+			*info = 8; /* VOIP_EVT_MISSEDCALL */
+			break;
+
+		default:
+			ret = -ENXIO;
+			break;
+		}
 		break;
 
 	case MEDCOM_IRQ_SOURCE_IO:

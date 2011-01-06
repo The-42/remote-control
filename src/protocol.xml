@@ -63,7 +63,7 @@
 			<value name="MEDCOM_IRQ_SOURCE_UNKNOWN"/>
 			<value name="MEDCOM_IRQ_SOURCE_HOOK"/>
 			<value name="MEDCOM_IRQ_SOURCE_CARD"/>
-			<value name="MEDCOM_IRQ_SOURCE_RING"/>
+			<value name="MEDCOM_IRQ_SOURCE_VOIP"/>
 			<value name="MEDCOM_IRQ_SOURCE_IO"/>
 			<value name="MEDCOM_IRQ_SOURCE_RDP"/>
 		</enum>
