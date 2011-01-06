@@ -168,8 +168,30 @@ int32_t medcom_voip_is_calling(void *priv, bool *state)
 
 int32_t medcom_voip_get_last_contact(void *priv, char **contact)
 {
-	int32_t ret = -ENOSYS;
+	struct remote_control *rc = priv;
+	const char *name = NULL;
+	int32_t ret;
+
 	g_debug("> %s(priv=%p, contact=%p)", __func__, priv, contact);
+
+	if (!priv || !contact) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = voip_get_contact(rc->voip, &name);
+	if (ret < 0)
+		goto out;
+
+	if (name) {
+		char *copy = strdup(name);
+		if (copy)
+			*contact = copy;
+		else
+			ret = -ENOMEM;
+	}
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
