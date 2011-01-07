@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2010-2011 Avionic Design GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
 #include "remote-control.h"
 
 int medcom_register_event_handler(struct medcom_client *client,
