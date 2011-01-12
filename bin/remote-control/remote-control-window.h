@@ -38,6 +38,7 @@ GtkWidget *remote_control_window_new(GMainLoop *loop);
 gboolean remote_control_window_connect(RemoteControlWindow *window,
 		const gchar *hostname, const gchar *username,
 		const gchar *password);
+gboolean remote_control_window_reconnect(RemoteControlWindow *window);
 gboolean remote_control_window_disconnect(RemoteControlWindow *window);
 
 G_END_DECLS

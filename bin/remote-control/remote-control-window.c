@@ -25,6 +25,12 @@ struct _RemoteControlWindowPrivate {
 	GMainLoop *loop;
 	GSource *watch;
 	GPid xfreerdp;
+
+	struct {
+		gchar *hostname;
+		gchar *username;
+		gchar *password;
+	} rdp;
 };
 
 enum {
@@ -136,6 +142,22 @@ gboolean remote_control_window_connect(RemoteControlWindow *self,
 		const gchar *password)
 {
 	RemoteControlWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+
+	if (priv->xfreerdp)
+		remote_control_window_disconnect(self);
+
+	priv->rdp.hostname = g_strdup(hostname);
+	priv->rdp.username = g_strdup(username);
+	priv->rdp.password = g_strdup(password);
+
+	return remote_control_window_reconnect(self);
+}
+
+gboolean remote_control_window_reconnect(RemoteControlWindow *self)
+{
+	RemoteControlWindowPrivate *priv;
 	GMainContext *context;
 	GError *error = NULL;
 	gchar **argv;
@@ -152,12 +174,12 @@ gboolean remote_control_window_connect(RemoteControlWindow *self,
 
 	argv[0] = g_strdup("xfreerdp");
 	argv[1] = g_strdup("-u");
-	argv[2] = g_strdup(username);
+	argv[2] = g_strdup(priv->rdp.username);
 	argv[3] = g_strdup("-p");
-	argv[4] = g_strdup(password);
+	argv[4] = g_strdup(priv->rdp.password);
 	argv[5] = g_strdup("-X");
 	argv[6] = g_strdup_printf("%lx", xid);
-	argv[7] = g_strdup(hostname);
+	argv[7] = g_strdup(priv->rdp.hostname);
 	argv[8] = NULL;
 
 	if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD |
@@ -213,6 +235,10 @@ gboolean remote_control_window_disconnect(RemoteControlWindow *window)
 		g_spawn_close_pid(pid);
 		priv->xfreerdp = 0;
 	}
+
+	g_free(priv->rdp.password);
+	g_free(priv->rdp.username);
+	g_free(priv->rdp.hostname);
 
 	return TRUE;
 }
