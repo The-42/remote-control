@@ -47,6 +47,7 @@ static inline struct remote_control_source *REMOTE_CONTROL_SOURCE(GSource *sourc
 	return (struct remote_control_source *)source;
 }
 
+#ifdef ENABLE_DBUS
 static void g_dbus_remote_control_method_call(GDBusConnection *connection,
 		const gchar *sender, const gchar *object,
 		const gchar *interface, const gchar *method,
@@ -153,6 +154,7 @@ static void g_dbus_name_lost(GDBusConnection *connection, const gchar *name,
 			connection, name, user_data);
 	g_debug("< %s()", __func__);
 }
+#endif /* ENABLE_DBUS */
 
 static gboolean g_remote_control_source_prepare(GSource *source, gint *timeout)
 {
@@ -423,7 +425,9 @@ int main(int argc, char *argv[])
 	GSource *source;
 	GKeyFile *conf;
 	GError *error;
+#ifdef ENABLE_DBUS
 	guint owner;
+#endif
 
 	if (!setup_signal_handler()) {
 		g_print("failed to setup signal handler\n");
@@ -452,9 +456,11 @@ int main(int argc, char *argv[])
 	loop = g_loop = g_main_loop_new(NULL, FALSE);
 	g_assert(loop != NULL);
 
+#ifdef ENABLE_DBUS
 	owner = g_bus_own_name(G_BUS_TYPE_SESSION, REMOTE_CONTROL_BUS_NAME,
 			G_BUS_NAME_OWNER_FLAGS_NONE, g_dbus_bus_acquired,
 			g_dbus_name_acquired, g_dbus_name_lost, NULL, NULL);
+#endif
 
 	source = g_remote_control_source_new(loop);
 	g_assert(source != NULL);
@@ -503,7 +509,9 @@ int main(int argc, char *argv[])
 	g_main_loop_run(loop);
 
 	g_source_destroy(source);
+#ifdef ENABLE_DBUS
 	g_bus_unown_name(owner);
+#endif
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
 	return 0;
