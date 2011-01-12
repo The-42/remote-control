@@ -1,8 +1,11 @@
 bin_PROGRAMS = \
 	remote-control
 
+remote_control_CPPFLAGS = \
+	-DSYSCONF_DIR=\"$(sysconfdir)\" \
+	-I $(top_srcdir)/src/server
+
 remote_control_CFLAGS = \
-	-I $(top_srcdir)/src/server \
 	@GLIB_GIO_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \

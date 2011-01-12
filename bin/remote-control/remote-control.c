@@ -6,6 +6,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <errno.h>
 #include <netdb.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -14,6 +15,7 @@
 #include <string.h>
 
 #include <librpc.h>
+#include <glib.h>
 
 #include "remote-control-window.h"
 #include "remote-control.h"
@@ -392,19 +394,46 @@ static void on_window_destroy(GtkWidget *widget, gpointer user_data)
 	g_main_loop_quit(loop);
 }
 
+int get_rdp_username(char *username, size_t namelen)
+{
+	char hostname[HOST_NAME_MAX];
+	char *serial;
+	int err;
+
+	err = gethostname(hostname, sizeof(hostname));
+	if (err < 0)
+		return errno;
+
+	serial = strchr(hostname, '-');
+	if (!serial)
+		return -EINVAL;
+
+	return snprintf(username, namelen, "MT%s", serial + 1);
+}
+
 int main(int argc, char *argv[])
 {
+	const gchar *conffile = SYSCONF_DIR "/remote-control.conf";
 	GOptionContext *context;
-	const gchar *uri = NULL;
+	gchar *hostname = NULL;
+	gchar *username = NULL;
+	gchar *password = NULL;
 	GtkWidget *window;
 	GMainLoop *loop;
 	GSource *source;
+	GKeyFile *conf;
 	GError *error;
 	guint owner;
 
 	if (!setup_signal_handler()) {
 		g_print("failed to setup signal handler\n");
 		return 1;
+	}
+
+	conf = g_key_file_new();
+	if (!conf) {
+		g_print("failed to create key file\n");
+		return EXIT_FAILURE;
 	}
 
 	context = g_option_context_new("- remote control service");
@@ -417,8 +446,8 @@ int main(int argc, char *argv[])
 
 	g_option_context_free(context);
 
-	if (argc >= 2)
-		uri = argv[1];
+	if (!g_key_file_load_from_file(conf, conffile, G_KEY_FILE_NONE, NULL))
+		g_warning("failed to load configuration file %s", conffile);
 
 	loop = g_loop = g_main_loop_new(NULL, FALSE);
 	g_assert(loop != NULL);
@@ -430,7 +459,33 @@ int main(int argc, char *argv[])
 	source = g_remote_control_source_new(loop);
 	g_assert(source != NULL);
 
-	if (uri) {
+	if (g_key_file_has_group(conf, "rdp")) {
+		hostname = g_key_file_get_value(conf, "rdp", "hostname", NULL);
+		username = g_key_file_get_value(conf, "rdp", "username", NULL);
+		password = g_key_file_get_value(conf, "rdp", "password", NULL);
+	}
+
+	if (!hostname && (argc > 1))
+		hostname = g_strdup(argv[1]);
+
+	if (hostname) {
+		if (!username || !password) {
+			char buffer[HOST_NAME_MAX];
+			int err;
+
+			err = get_rdp_username(buffer, sizeof(buffer));
+			if (err < 0) {
+				g_print("get_rdp_username(): %s\n", strerror(-err));
+				return 1;
+			}
+
+			if (!username)
+				username = g_strdup(buffer);
+
+			if (!password)
+				password = g_strdup(buffer);
+		}
+
 		window = remote_control_window_new(loop);
 		g_signal_connect(G_OBJECT(window), "destroy",
 				G_CALLBACK(on_window_destroy), loop);
@@ -438,7 +493,11 @@ int main(int argc, char *argv[])
 		gtk_widget_show_all(window);
 
 		remote_control_window_connect(REMOTE_CONTROL_WINDOW(window),
-				uri, "info", "info");
+				hostname, username, password);
+
+		g_free(password);
+		g_free(username);
+		g_free(hostname);
 	}
 
 	g_main_loop_run(loop);
@@ -446,5 +505,6 @@ int main(int argc, char *argv[])
 	g_source_destroy(source);
 	g_bus_unown_name(owner);
 	g_main_loop_unref(loop);
+	g_key_file_free(conf);
 	return 0;
 }
