@@ -6,7 +6,7 @@
  * published by the Free Software Foundation.
  */
 
-#include "medcom-client-gtk.h"
+#include "remote-control-gtk.h"
 
 static int modem_panel_create(struct panel *panel, GtkWidget **widget)
 {

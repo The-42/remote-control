@@ -17,6 +17,9 @@ remote_control_gtk_SOURCES = \
 	voip.h \
 	webkit.c
 
+remote_control_gtk_CPPFLAGS = \
+	-DPKG_DATA_DIR=\"$(pkgdatadir)\"
+
 remote_control_gtk_CFLAGS = \
 	@LIBRPC_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
@@ -31,3 +34,6 @@ remote_control_gtk_LDADD = \
 	@WEBKIT_LIBS@ \
 	@GLADE_LIBS@ \
 	@GTK_LIBS@
+
+pkgdata_DATA = \
+	remote-control-gtk.glade

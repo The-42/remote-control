@@ -6,7 +6,7 @@
  * published by the Free Software Foundation.
  */
 
-#include "medcom-client-gtk.h"
+#include "remote-control-gtk.h"
 
 void on_brightness_value_changed(GtkWidget *widget, gpointer data)
 {

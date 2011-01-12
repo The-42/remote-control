@@ -7,7 +7,8 @@
  */
 
 #include <string.h>
-#include "medcom-client-gtk.h"
+
+#include "remote-control-gtk.h"
 
 #define USER_DATA_KEY        "s7zasdv"
 

@@ -6,8 +6,8 @@
  * published by the Free Software Foundation.
  */
 
-#ifndef RCC_GTK_H
-#define RCC_GTK_H 1
+#ifndef REMOTE_CONTROL_GTK_H
+#define REMOTE_CONTROL_GTK_H 1
 
 #include <errno.h>
 #include <stdint.h>
@@ -43,4 +43,4 @@ static inline int panel_destroy(struct panel *panel)
 	return panel ? -ENOSYS : -EINVAL;
 }
 
-#endif /* !RCC_GTK_H */
+#endif /* REMOTE_CONTROL_GTK_H */

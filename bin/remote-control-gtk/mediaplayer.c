@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "medcom-client-gtk.h"
+#include "remote-control-gtk.h"
 
 struct mediaplayer_panel {
 	unsigned int x, y, width, height;

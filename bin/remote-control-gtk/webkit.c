@@ -8,7 +8,7 @@
 
 #include <webkit/webkit.h>
 
-#include "medcom-client-gtk.h"
+#include "remote-control-gtk.h"
 
 static int webkit_panel_create(struct panel *panel, GtkWidget **widget)
 {

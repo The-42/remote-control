@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "medcom-client-gtk.h"
+#include "remote-control-gtk.h"
 
 struct card_panel {
 	GtkWidget *widget;

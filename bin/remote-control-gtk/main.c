@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "medcom-client-gtk.h"
+#include "remote-control-gtk.h"
 
 extern struct panel audio_panel;
 extern struct panel backlight_panel;
@@ -46,7 +46,7 @@ void on_menu_help_about_activate(GtkWidget *widget, gpointer ptr)
 	GtkWidget *dialog;
 	GladeXML *xml;
 
-	xml = glade_xml_new("medcom-client-gtk.glade", "about_dialog", NULL);
+	xml = glade_xml_new(PKG_DATA_DIR "/remote-control-gtk.glade", "about_dialog", NULL);
 	glade_xml_signal_autoconnect(xml);
 
 	dialog = glade_xml_get_widget(xml, "about_dialog");
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 
 	g_client = client;
 
-	xml = glade_xml_new("medcom-client-gtk.glade", "main_window", NULL);
+	xml = glade_xml_new(PKG_DATA_DIR "/remote-control-gtk.glade", "main_window", NULL);
 	glade_xml_signal_autoconnect(xml);
 
 	window = glade_xml_get_widget(xml, "main_window");
