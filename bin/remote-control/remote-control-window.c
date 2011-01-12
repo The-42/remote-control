@@ -16,6 +16,8 @@
 
 #include "remote-control-window.h"
 
+#define RDP_RECONNECT_DELAY 3
+
 G_DEFINE_TYPE(RemoteControlWindow, remote_control_window, GTK_TYPE_WINDOW);
 
 #define REMOTE_CONTROL_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), REMOTE_CONTROL_TYPE_WINDOW, RemoteControlWindowPrivate))
@@ -137,11 +139,19 @@ GtkWidget *remote_control_window_new(GMainLoop *loop)
 
 static void child_watch(GPid pid, gint status, gpointer data)
 {
-	RemoteControlWindowPrivate *priv = data;
+	RemoteControlWindow *self = data;
+	RemoteControlWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
 
 	g_source_destroy(priv->watch);
 	g_spawn_close_pid(pid);
+
+	priv->watch = NULL;
 	priv->xfreerdp = 0;
+
+	g_usleep(RDP_RECONNECT_DELAY * G_USEC_PER_SEC);
+	remote_control_window_reconnect(self);
 }
 
 gboolean remote_control_window_connect(RemoteControlWindow *self,
@@ -206,7 +216,7 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 		return FALSE;
 	}
 
-	g_source_set_callback(priv->watch, (GSourceFunc)child_watch, priv,
+	g_source_set_callback(priv->watch, (GSourceFunc)child_watch, self,
 			NULL);
 	context = g_main_loop_get_context(priv->loop);
 	g_source_attach(priv->watch, context);
