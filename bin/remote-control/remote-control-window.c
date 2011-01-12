@@ -103,6 +103,11 @@ static void remote_control_window_class_init(RemoteControlWindowClass *klass)
 				G_PARAM_STATIC_STRINGS));
 }
 
+static gboolean plug_removed(GtkSocket *sock, gpointer data)
+{
+	return TRUE;
+}
+
 static void remote_control_window_init(RemoteControlWindow *self)
 {
 	GtkWindow *window = GTK_WINDOW(self);
@@ -120,6 +125,8 @@ static void remote_control_window_init(RemoteControlWindow *self)
 	gtk_widget_set_size_request(GTK_WIDGET(window), cx, cy);
 
 	priv->socket = gtk_socket_new();
+	g_signal_connect(G_OBJECT(priv->socket), "plug-removed",
+			(GCallback)plug_removed, NULL);
 	gtk_container_add(GTK_CONTAINER(window), priv->socket);
 }
 
