@@ -198,7 +198,7 @@ static gpointer voip_thread(gpointer data)
 
 	while (!voip->done) {
 		linphone_core_iterate(voip->core);
-		usleep(50000);
+		g_usleep(50000);
 	}
 
 	return NULL;
