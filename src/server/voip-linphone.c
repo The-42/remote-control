@@ -75,6 +75,11 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 		}
 		break;
 
+	case LinphoneCallConnected:
+		event.voip.state = EVENT_VOIP_STATE_INCOMING_CONNECTED;
+		event_manager_report(rc->event_manager, &event);
+		break;
+
 	case LinphoneCallEnd:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_DISCONNECTED;
 		event_manager_report(rc->event_manager, &event);
