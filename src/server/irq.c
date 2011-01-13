@@ -89,12 +89,12 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		switch (event.handset.state) {
 		case EVENT_HANDSET_STATE_HOOK_OFF:
 			g_debug("    EVENT_HANDSET_STATE_HOOK_OFF");
-			*info = 0;
+			*info = 1;
 			break;
 
 		case EVENT_HANDSET_STATE_HOOK_ON:
 			g_debug("    EVENT_HANDSET_STATE_HOOK_ON");
-			*info = 1;
+			*info = 0;
 			break;
 
 		default:
