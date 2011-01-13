@@ -157,7 +157,6 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->fd = open("/dev/gpio-0", O_RDWR);
 	if (manager->fd < 0) {
 		err = -errno;
-		event_manager_free(manager);
 		goto out;
 	}
 
@@ -170,7 +169,6 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 		err = ioctl(manager->fd, GPIO_IOC_ENABLE_IRQ, &enable);
 		if (err < 0) {
 			err = -errno;
-			event_manager_free(manager);
 			goto out;
 		}
 	}
@@ -178,7 +176,6 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->thread = g_thread_create(event_thread, manager, TRUE, NULL);
 	if (!manager->thread) {
 		err = -ENOMEM;
-		event_manager_free(manager);
 		goto out;
 	}
 #endif /* HAVE_LINUX_GPIODEV_H */
