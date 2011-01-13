@@ -242,6 +242,8 @@ int mixer_create(struct mixer **mixerp)
 	if (!mixer)
 		return -ENOMEM;
 
+	mixer->timeout = 250;
+
 	for (i = 0; i < MIXER_INPUT_SOURCE_MAX; i++)
 		mixer->input_source[i] = -1;
 
@@ -404,8 +406,6 @@ int mixer_create(struct mixer **mixerp)
 		rc_log(RC_ERR "failed to create polling thread\n");
 		return err;
 	}
-
-	mixer->timeout = 250;
 
 	*mixerp = mixer;
 	return 0;
