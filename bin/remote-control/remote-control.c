@@ -156,6 +156,18 @@ static void g_dbus_name_lost(GDBusConnection *connection, const gchar *name,
 }
 #endif /* ENABLE_DBUS */
 
+static int rpc_log(int priority, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vprintf(fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
+
 static gboolean g_remote_control_source_prepare(GSource *source, gint *timeout)
 {
 	struct remote_control_source *src = REMOTE_CONTROL_SOURCE(source);
@@ -286,6 +298,7 @@ static gboolean g_remote_control_source_dispatch(GSource *source, GSourceFunc ca
 		err = remote_control_dispatch(server, request);
 		if (err < 0) {
 			g_debug("rpc_dispatch(): %s", strerror(-err));
+			rpc_packet_dump(request, rpc_log, 0);
 			rpc_packet_free(request);
 			ret = FALSE;
 			break;
