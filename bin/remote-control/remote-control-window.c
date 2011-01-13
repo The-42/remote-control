@@ -250,6 +250,8 @@ gboolean remote_control_window_disconnect(RemoteControlWindow *self)
 		g_debug("xfreerdp exited: %d", WEXITSTATUS(status));
 		g_source_destroy(priv->watch);
 		g_spawn_close_pid(pid);
+
+		priv->watch = NULL;
 		priv->xfreerdp = 0;
 	}
 
