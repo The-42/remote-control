@@ -8,7 +8,7 @@ remote_control_gtk_SOURCES = \
 	backlight.c \
 	card.c \
 	main.c \
-	medcom-client-gtk.h \
+	remote-control-gtk.h \
 	mediaplayer.c \
 	miscellaneous.c \
 	modem.c \
@@ -36,4 +36,7 @@ remote_control_gtk_LDADD = \
 	@GTK_LIBS@
 
 pkgdata_DATA = \
+	remote-control-gtk.glade
+
+EXTRA_DIST = \
 	remote-control-gtk.glade
