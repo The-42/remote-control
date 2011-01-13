@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
 
 	if (!setup_signal_handler()) {
 		g_print("failed to setup signal handler\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	conf = g_key_file_new();
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
 
 	if (!g_option_context_parse(context, &argc, &argv, &error)) {
 		g_print("option parsing failed: %s\n", error->message);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	g_option_context_free(context);
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
 			err = get_rdp_username(buffer, sizeof(buffer));
 			if (err < 0) {
 				g_print("get_rdp_username(): %s\n", strerror(-err));
-				return 1;
+				return EXIT_FAILURE;
 			}
 
 			if (!username)
@@ -530,5 +530,5 @@ int main(int argc, char *argv[])
 #endif
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
-	return 0;
+	return EXIT_SUCCESS;
 }
