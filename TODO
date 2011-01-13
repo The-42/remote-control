@@ -1,0 +1,4 @@
+* Enhance medcom_voip_login() to allow a domain to be specified. The signature
+  will be changed eventually anyway to take the parameters from a VoIP account
+  structure, at which point the account structure could easily be extended by
+  an extra "domain" field.
