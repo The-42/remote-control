@@ -6,9 +6,9 @@
  * published by the Free Software Foundation.
  */
 
-#include <pthread.h>
 #include <sys/poll.h>
 #include <alsa/asoundlib.h>
+#include <glib.h>
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
@@ -155,7 +155,7 @@ static int mixer_element_free(struct mixer_element *element)
 
 struct mixer {
 	snd_mixer_t *mixer;
-	pthread_t thread;
+	GThread *thread;
 	int timeout;
 	bool done;
 
@@ -165,7 +165,7 @@ struct mixer {
 	snd_mixer_elem_t *input;
 };
 
-static void *poll_thread(void *data)
+static gpointer poll_thread(gpointer data)
 {
 	struct mixer *mixer = data;
 	struct pollfd *fds = NULL;
@@ -399,10 +399,9 @@ int mixer_create(struct mixer **mixerp)
 		}
 	}
 
-	err = pthread_create(&mixer->thread, NULL, poll_thread, mixer);
-	if (err < 0) {
-		rc_log(RC_ERR "failed to create polling thread: %s\n",
-				strerror(-err));
+	mixer->thread = g_thread_create(poll_thread, mixer, TRUE, NULL);
+	if (!mixer->thread) {
+		rc_log(RC_ERR "failed to create polling thread\n");
 		return err;
 	}
 
@@ -420,7 +419,7 @@ int mixer_free(struct mixer *mixer)
 		return -EINVAL;
 
 	mixer->done = true;
-	pthread_join(mixer->thread, NULL);
+	g_thread_join(mixer->thread);
 
 	for (i = 0; i < MIXER_CONTROL_MAX; i++)
 		mixer_element_free(mixer->elements[i]);

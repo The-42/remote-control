@@ -429,6 +429,9 @@ int main(int argc, char *argv[])
 	guint owner;
 #endif
 
+	if (g_thread_supported())
+		g_thread_init(NULL);
+
 	if (!setup_signal_handler()) {
 		g_print("failed to setup signal handler\n");
 		return 1;

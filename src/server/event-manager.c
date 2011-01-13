@@ -12,7 +12,6 @@
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <pthread.h>
 
 #include <glib.h>
 
@@ -39,7 +38,7 @@ enum gpio gpio_list[] = {
 
 struct event_manager {
 	struct rpc_server *server;
-	pthread_t thread;
+	GThread *thread;
 	bool done;
 	int fd;
 
@@ -51,11 +50,11 @@ struct event_manager {
 };
 
 #ifdef HAVE_LINUX_GPIODEV_H
-static void *event_thread(void *context)
+static gpointer event_thread(gpointer data)
 {
-	struct event_manager *manager = context;
+	struct event_manager *manager = data;
 
-	g_debug("> %s(context=%p)", __func__, context);
+	g_debug("> %s(data=%p)", __func__, data);
 
 	while (!manager->done) {
 		struct gpio_event gpio;
@@ -176,9 +175,9 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 		}
 	}
 
-	err = pthread_create(&manager->thread, NULL, event_thread, manager);
-	if (err) {
-		err = -err;
+	manager->thread = g_thread_create(event_thread, manager, TRUE, NULL);
+	if (!manager->thread) {
+		err = -ENOMEM;
 		event_manager_free(manager);
 		goto out;
 	}
@@ -206,7 +205,7 @@ int event_manager_free(struct event_manager *manager)
 
 	if (manager->thread) {
 		g_debug("  waiting for thread to finish ...");
-		pthread_join(manager->thread, NULL);
+		g_thread_join(manager->thread);
 		g_debug("  done");
 	}
 

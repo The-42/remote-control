@@ -16,7 +16,7 @@ struct voip {
 	LinphoneCore *core;
 	char *contact;
 
-	pthread_t thread;
+	GThread *thread;
 	bool done;
 };
 
@@ -192,9 +192,9 @@ static const LinphoneCoreVTable vtable = {
 	.show = linphone_show_cb,
 };
 
-static void *voip_thread(void *context)
+static gpointer voip_thread(gpointer data)
 {
-	struct voip *voip = context;
+	struct voip *voip = data;
 
 	while (!voip->done) {
 		linphone_core_iterate(voip->core);
@@ -208,7 +208,6 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 {
 	struct remote_control *rc = rpc_server_priv(server);
 	struct voip *voip;
-	int err;
 
 	if (!voipp)
 		return -EINVAL;
@@ -225,10 +224,10 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 		return -ENOMEM;
 	}
 
-	err = pthread_create(&voip->thread, NULL, voip_thread, voip);
-	if (err != 0) {
-		g_error("failed to create thread: %d", err);
-		return err;
+	voip->thread = g_thread_create(voip_thread, voip, TRUE, NULL);
+	if (!voip->thread) {
+		g_error("failed to create thread");
+		return -ENOMEM;
 	}
 
 	*voipp = voip;
@@ -241,7 +240,7 @@ int voip_free(struct voip *voip)
 		return -EINVAL;
 
 	voip->done = true;
-	pthread_join(voip->thread, NULL);
+	g_thread_join(voip->thread);
 
 	ms_free(voip->contact);
 	linphone_core_destroy(voip->core);

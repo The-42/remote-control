@@ -8,7 +8,6 @@
 
 #include <ctype.h>
 #include <glib.h>
-#include <pthread.h>
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <net/if.h>
@@ -30,16 +29,16 @@ struct lldp_monitor {
 	int ifindex;
 	int sockfd;
 
-	pthread_t thread;
+	GThread *thread;
 	bool done;
 
 	void *data;
 	size_t len;
 };
 
-static void *lldp_thread(void *context)
+static gpointer lldp_thread(gpointer data)
 {
-	struct lldp_monitor *monitor = context;
+	struct lldp_monitor *monitor = data;
 	struct timeval timeout;
 	fd_set rfds;
 	ssize_t err;
@@ -113,9 +112,9 @@ int lldp_monitor_create(struct lldp_monitor **monitorp)
 		goto close;
 	}
 
-	err = pthread_create(&monitor->thread, NULL, lldp_thread, monitor);
-	if (err != 0) {
-		err = -err;
+	monitor->thread = g_thread_create(lldp_thread, monitor, TRUE, NULL);
+	if (!monitor->thread) {
+		err = -ENOMEM;
 		goto close;
 	}
 
@@ -170,9 +169,7 @@ int lldp_monitor_free(struct lldp_monitor *monitor)
 		close(monitor->sockfd);
 	}
 
-	err = pthread_join(monitor->thread, NULL);
-	if (err != 0)
-		rc_log(RC_NOTICE "pthread_join(): %s\n", strerror(err));
+	g_thread_join(monitor->thread);
 
 	if (monitor->data)
 		free(monitor->data);
