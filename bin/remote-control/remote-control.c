@@ -234,7 +234,7 @@ static gboolean g_remote_control_source_check(GSource *source)
 	if ((src->poll_client.revents & G_IO_HUP) ||
 	    (src->poll_client.revents & G_IO_ERR)) {
 		g_debug("%s(): connection closed by %s", __func__, src->peer);
-		src->state = REMOTE_CONTROL_UNCONNECTED;
+		src->state = REMOTE_CONTROL_DISCONNECTED;
 		return TRUE;
 	}
 
