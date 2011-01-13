@@ -20,6 +20,8 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#define LIBVLC_AUDIO_VOLUME_MAX 200
+
 struct media_player {
 	enum media_player_state state;
 	GdkWindow *window;
@@ -116,6 +118,7 @@ int media_player_create(struct media_player **playerp)
 	player->vlc = libvlc_new(0, NULL);
 	player->player = libvlc_media_player_new(player->vlc);
 	libvlc_video_set_deinterlace(player->player, "linear");
+	libvlc_audio_set_volume(player->player, LIBVLC_AUDIO_VOLUME_MAX);
 	player->evman = libvlc_media_player_event_manager(player->player);
 	libvlc_media_player_set_xwindow(player->player, xid);
 
