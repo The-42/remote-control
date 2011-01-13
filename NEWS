@@ -1,3 +1,21 @@
+Release 0.2.0 (2011-01-13)
+==========================
+- Fix handling of hook on/off events.
+- Implement basic VoIP event handling.
+- Store VoIP contact for later retrieval.
+- Add support for SIP domains by allowing a domain to be encoded within the
+  username (i.e. user@domain.tld).
+- Add INI file type configuration file support. Currently only the [rdp] group
+  is supported, which contains RDP connection information (hostname, username
+  and password.
+- Disable D-Bus code.
+- Automatically reconnect RDP sessions.
+- Make video window input-transparent so that events are passed through to the
+  window below (user-interface).
+- Set the media playback audio volume to maximum.
+- Fix a bug where event processing would be blocked between when a client
+  disconnects and when another connection is established.
+
 Release 0.1.4 (2011-01-04)
 ==========================
 - Miscellaneous build fixes.
