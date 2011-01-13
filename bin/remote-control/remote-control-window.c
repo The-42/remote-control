@@ -224,11 +224,11 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 	return TRUE;
 }
 
-gboolean remote_control_window_disconnect(RemoteControlWindow *window)
+gboolean remote_control_window_disconnect(RemoteControlWindow *self)
 {
 	RemoteControlWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(window);
+	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
 
 	if (priv->xfreerdp) {
 		pid_t pid = priv->xfreerdp;
