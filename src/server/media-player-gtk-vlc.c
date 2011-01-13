@@ -92,6 +92,7 @@ int media_player_create(struct media_player **playerp)
 		.override_redirect = TRUE,
 	};
 	struct media_player *player;
+	GdkRegion *region;
 	XID xid;
 
 	if (!playerp)
@@ -107,6 +108,10 @@ int media_player_create(struct media_player **playerp)
 	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
 	xid = gdk_x11_drawable_get_xid(player->window);
 	gdk_window_set_decorations(player->window, 0);
+
+	region = gdk_region_new();
+	gdk_window_input_shape_combine_region(player->window, region, 0, 0);
+	gdk_region_destroy(region);
 
 	player->vlc = libvlc_new(0, NULL);
 	player->player = libvlc_media_player_new(player->vlc);
