@@ -4,8 +4,11 @@ noinst_LTLIBRARIES = \
 libremote_control_la_CFLAGS = \
 	@GLIB_GIO_CFLAGS@ \
 	@LINPHONE_CFLAGS@ \
-	@LIBVLC_CFLAGS@ \
 	@GTK_CFLAGS@
+
+libremote_control_la_LIBADD = \
+	@LINPHONE_LIBS@ \
+	@GTK_LIBS@
 
 libremote_control_la_SOURCES = \
 	audio.c \
@@ -18,7 +21,6 @@ libremote_control_la_SOURCES = \
 	lldp-monitor.c \
 	media.c \
 	media-player.c \
-	media-player-gtk-vlc.c \
 	mixer.c \
 	mixer-alsa.c \
 	modem.c \
@@ -38,10 +40,30 @@ nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
 
-libremote_control_la_LIBADD = \
-	@LINPHONE_LIBS@ \
-	@LIBVLC_LIBS@ \
-	@GTK_LIBS@
+if ENABLE_LIBVLC
+libremote_control_la_CFLAGS += \
+	@LIBVLC_CFLAGS@
+
+libremote_control_la_LIBADD += \
+	@LIBVLC_LIBS@
+
+libremote_control_la_SOURCES += \
+	media-player-gtk-vlc.c
+else
+if ENABLE_GSTREAMER
+libremote_control_la_CFLAGS += \
+	@GSTREAMER_CFLAGS@
+
+libremote_control_la_LIBADD += \
+	@GSTREAMER_LIBS@
+
+libremote_control_la_SOURCES += \
+	media-player-gtk-gst.c
+else
+libremote_control_la_SOURCES += \
+	media-player-null.c
+endif  # ENABLE_GSTREAMER
+endif # ENABLE_LIBVLC
 
 if HAVE_LIBSMARTCARD
 libremote_control_la_CFLAGS += \
