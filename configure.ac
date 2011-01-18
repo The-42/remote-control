@@ -83,3 +83,12 @@ AC_OUTPUT([
 	src/Makefile
 	src/server/Makefile
 ])
+
+echo "
+remote-control was configured with the following options:
+
+Features:
+  readline support:    $use_readline
+  libsmartcard:        $have_libsmartcard
+  Video Backend:       $with_video_backend
+"
