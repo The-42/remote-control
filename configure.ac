@@ -31,26 +31,23 @@ PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard,
 	[have_libsmartcard=no])
 AM_CONDITIONAL(HAVE_LIBSMARTCARD, [test "x$have_libsmartcard" = "xyes"])
 
-AC_DEFINE(ac_video_backend, ["none"], ["Video Backend to use. Possible values are: none, libvlc, gstreamer"])
-AC_ARG_WITH(video_backend,[AS_HELP_STRING([--with-video-backend],
-	[Use the specified backend (libvlc|gstreamer) for video playback. [default=none] ])
-	],[ ac_video_backend="$withval" ],[ ac_video_backend="" ])
+AC_ARG_WITH(video_backend,
+	[AS_HELP_STRING([--with-video-backend=@<:@none/libvlc/gst@:>@],
+		[Use the specified video backend. [default=none]])
+	], [], [with_video_backend=none])
 
-AS_IF([test "x$ac_video_backend" = "xlibvlc"], [
-	PKG_CHECK_MODULES(LIBVLC, libvlc)
-	enable_libvlc=yes
-], [
-	enable_libvlc=no
-])
+enable_libvlc=no
+enable_gst=no
+
+AS_CASE([$with_video_backend],
+	[none], [],
+	[libvlc], [PKG_CHECK_MODULES(LIBVLC, libvlc, [enable_libvlc=yes])],
+	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10, [enable_gst=yes])],
+	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
+)
+
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
-
-AS_IF([test "x$ac_video_backend" = "xgstreamer"], [
-	PKG_CHECK_MODULES(GSTREAMER, gstreamer-0.10)
-	enable_gstreamer=yes
-],[
-	enable_gstreamer=no
-])
-AM_CONDITIONAL(ENABLE_GSTREAMER, [test "x$enable_gstreamer" = "xyes"])
+AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
 

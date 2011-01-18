@@ -50,19 +50,19 @@ libremote_control_la_LIBADD += \
 libremote_control_la_SOURCES += \
 	media-player-gtk-vlc.c
 else
-if ENABLE_GSTREAMER
+if ENABLE_GST
 libremote_control_la_CFLAGS += \
-	@GSTREAMER_CFLAGS@
+	@GST_CFLAGS@
 
 libremote_control_la_LIBADD += \
-	@GSTREAMER_LIBS@
+	@GST_LIBS@
 
 libremote_control_la_SOURCES += \
 	media-player-gtk-gst.c
 else
 libremote_control_la_SOURCES += \
 	media-player-null.c
-endif  # ENABLE_GSTREAMER
+endif # ENABLE_GST
 endif # ENABLE_LIBVLC
 
 if HAVE_LIBSMARTCARD
