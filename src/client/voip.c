@@ -51,8 +51,8 @@ int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
 	strncpy(options.password2, account->password, sizeof(options.password2));
 
 	memset(&buffer, 0, sizeof(buffer));
-	buffer.rx_buf = &options;
-	buffer.rx_num = sizeof(options);
+	buffer.tx_buf = &options;
+	buffer.tx_num = sizeof(options);
 
 	err = medcom_voip_login_stub(rpc, &ret, &buffer);
 	if (err < 0) {
