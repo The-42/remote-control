@@ -39,6 +39,10 @@ int32_t medcom_lldp_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 	g_debug("    tx: %p (%zu bytes)", buffer->tx_buf, buffer->tx_num);
 
 	err = lldp_monitor_read(lldp, buffer->tx_buf, buffer->tx_num);
+	if (err >= 0)
+		buffer->tx_num = err;
+	else
+		buffer->tx_num = 0;
 
 	g_debug("< %s() = %d", __func__, err);
 	return err;
