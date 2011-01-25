@@ -122,7 +122,7 @@ static int mixer_element_create(struct mixer_element **elementp, snd_mixer_elem_
 	if (!elementp || !elem)
 		return -EINVAL;
 
-	element = calloc(1, sizeof(*element));
+	element = g_new0(struct mixer_element, 1);
 	if (!element)
 		return -ENOMEM;
 
@@ -149,15 +149,17 @@ static int mixer_element_free(struct mixer_element *element)
 	if (!element)
 		return -EINVAL;
 
-	free(element);
+	g_free(element);
 	return 0;
 }
 
 struct mixer {
+	GSource source;
+	unsigned int num_fds;
+	GPollFD *fds;
+
 	snd_mixer_t *mixer;
-	GThread *thread;
 	int timeout;
-	bool done;
 
 	struct mixer_element *elements[MIXER_CONTROL_MAX];
 	int input_source[MIXER_INPUT_SOURCE_MAX];
@@ -165,121 +167,71 @@ struct mixer {
 	snd_mixer_elem_t *input;
 };
 
-static gpointer poll_thread(gpointer data)
+static gboolean mixer_source_prepare(GSource *source, gint *timeout)
 {
-	struct mixer *mixer = data;
-	struct pollfd *fds = NULL;
-	int num = 0;
+	gboolean ret = FALSE;
 
-	while (!mixer->done) {
-		unsigned short events = 0;
-		int err;
+	if (timeout)
+		*timeout = -1;
 
-		err = snd_mixer_poll_descriptors_count(mixer->mixer);
-		if (err < 0) {
-			rc_log(RC_ERR "snd_mixer_poll_descriptors_count(): %s\n",
-					snd_strerror(err));
-			break;
-		}
-
-		if (err != num) {
-			if (fds)
-				free(fds);
-
-			fds = calloc(num, sizeof(*fds));
-			if (!fds) {
-				rc_log(RC_ERR "failed to allocate file poll "
-						"descriptors\n");
-				break;
-			}
-
-			num = err;
-		}
-
-		err = snd_mixer_poll_descriptors(mixer->mixer, fds, num);
-		if (err < 0) {
-			rc_log(RC_ERR "snd_mixer_poll_descriptors(): %s\n",
-					snd_strerror(err));
-			break;
-		}
-
-		err = poll(fds, num, mixer->timeout);
-		if (err < 0) {
-			rc_log(RC_ERR "poll(): %s\n", snd_strerror(err));
-			break;
-		}
-
-		err = snd_mixer_poll_descriptors_revents(mixer->mixer, fds, num, &events);
-		if (err < 0) {
-			rc_log(RC_ERR "snd_mixer_poll_descriptors_revents(): %s\n",
-					snd_strerror(err));
-			break;
-		}
-
-		if (events & POLLIN)
-			snd_mixer_handle_events(mixer->mixer);
-	}
-
-	if (fds)
-		free(fds);
-
-	return NULL;
+	return ret;
 }
 
-int mixer_create(struct mixer **mixerp)
+static gboolean mixer_source_check(GSource *source)
 {
-	static const char card[] = "default";
-	struct mixer *mixer = NULL;
+	struct mixer *mixer = (struct mixer *)source;
+	gboolean ret = FALSE;
+	unsigned int i;
+
+	for (i = 0; i < mixer->num_fds; i++) {
+		if (mixer->fds[i].revents & G_IO_IN) {
+			ret = TRUE;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static gboolean mixer_source_dispatch(GSource *source, GSourceFunc callback,
+		gpointer user_data)
+{
+	struct mixer *mixer = (struct mixer *)source;
+	gboolean ret = TRUE;
+
+	snd_mixer_handle_events(mixer->mixer);
+
+	if (callback)
+		ret = callback(user_data);
+
+	return ret;
+}
+
+static void mixer_source_finalize(GSource *source)
+{
+	struct mixer *mixer = (struct mixer *)source;
+	unsigned int i;
+
+	for (i = 0; i < MIXER_CONTROL_MAX; i++)
+		mixer_element_free(mixer->elements[i]);
+
+	snd_mixer_close(mixer->mixer);
+
+}
+
+static GSourceFuncs mixer_source_funcs = {
+	.prepare = mixer_source_prepare,
+	.check = mixer_source_check,
+	.dispatch = mixer_source_dispatch,
+	.finalize = mixer_source_finalize,
+};
+
+static int mixer_probe(struct mixer *mixer)
+{
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem;
 	int err;
 	int i;
-
-	if (!mixerp)
-		return -EINVAL;
-
-	mixer = calloc(1, sizeof(*mixer));
-	if (!mixer)
-		return -ENOMEM;
-
-	mixer->timeout = 250;
-
-	for (i = 0; i < MIXER_INPUT_SOURCE_MAX; i++)
-		mixer->input_source[i] = -1;
-
-	err = snd_mixer_open(&mixer->mixer, 0);
-	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_open(): %s\n", snd_strerror(err));
-		free(mixer);
-		return -ENODEV;
-	}
-
-	snd_mixer_set_callback(mixer->mixer, mixer_callback);
-
-	err = snd_mixer_attach(mixer->mixer, card);
-	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_attach(): %s\n", snd_strerror(err));
-		snd_mixer_close(mixer->mixer);
-		free(mixer);
-		return -ENODEV;
-	}
-
-	err = snd_mixer_selem_register(mixer->mixer, NULL, NULL);
-	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_selem_register(): %s\n",
-				snd_strerror(err));
-		snd_mixer_close(mixer->mixer);
-		free(mixer);
-		return -ENODEV;
-	}
-
-	err = snd_mixer_load(mixer->mixer);
-	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_load(): %s\n", snd_strerror(err));
-		snd_mixer_close(mixer->mixer);
-		free(mixer);
-		return -ENODEV;
-	}
 
 	snd_mixer_selem_id_alloca(&sid);
 
@@ -401,32 +353,101 @@ int mixer_create(struct mixer **mixerp)
 		}
 	}
 
-	mixer->thread = g_thread_create(poll_thread, mixer, TRUE, NULL);
-	if (!mixer->thread) {
-		rc_log(RC_ERR "failed to create polling thread\n");
-		return err;
-	}
-
-	*mixerp = mixer;
 	return 0;
 }
 
-int mixer_free(struct mixer *mixer)
+int mixer_create(struct mixer **mixerp)
 {
-	unsigned int i;
+	static const char card[] = "default";
+	struct mixer *mixer = NULL;
+	struct pollfd *fds;
+	GSource *source;
+	int err;
+	int i;
 
-	if (!mixer)
-		return -EINVAL;
+	source = g_source_new(&mixer_source_funcs, sizeof(*mixer));
+	if (!source)
+		return -ENOMEM;
 
-	mixer->done = true;
-	g_thread_join(mixer->thread);
+	mixer = (struct mixer *)source;
+	mixer->timeout = 250;
 
-	for (i = 0; i < MIXER_CONTROL_MAX; i++)
-		mixer_element_free(mixer->elements[i]);
+	for (i = 0; i < MIXER_INPUT_SOURCE_MAX; i++)
+		mixer->input_source[i] = -1;
 
-	snd_mixer_close(mixer->mixer);
-	free(mixer);
+	err = snd_mixer_open(&mixer->mixer, 0);
+	if (err < 0) {
+		rc_log(RC_NOTICE "snd_mixer_open(): %s\n", snd_strerror(err));
+		goto free;
+	}
+
+	snd_mixer_set_callback(mixer->mixer, mixer_callback);
+
+	err = snd_mixer_attach(mixer->mixer, card);
+	if (err < 0) {
+		rc_log(RC_NOTICE "snd_mixer_attach(): %s\n", snd_strerror(err));
+		goto close;
+	}
+
+	err = snd_mixer_selem_register(mixer->mixer, NULL, NULL);
+	if (err < 0) {
+		rc_log(RC_NOTICE "snd_mixer_selem_register(): %s\n",
+				snd_strerror(err));
+		goto close;
+	}
+
+	err = snd_mixer_load(mixer->mixer);
+	if (err < 0) {
+		rc_log(RC_NOTICE "snd_mixer_load(): %s\n", snd_strerror(err));
+		goto close;
+	}
+
+	err = mixer_probe(mixer);
+	if (err < 0) {
+		rc_log(RC_NOTICE "mixer_probe(): %s\n", snd_strerror(err));
+		goto close;
+	}
+
+	err = snd_mixer_poll_descriptors_count(mixer->mixer);
+	if (err < 0) {
+		g_debug("  snd_mixer_poll_descriptors_count(): %d", err);
+		goto close;
+	}
+
+	mixer->num_fds = err;
+
+	mixer->fds = g_new0(GPollFD, mixer->num_fds);
+	if (!mixer->fds) {
+		g_debug("  g_new0() failed");
+		goto close;
+	}
+
+	fds = (struct pollfd *)mixer->fds;
+
+	err = snd_mixer_poll_descriptors(mixer->mixer, fds, mixer->num_fds);
+	if (err < 0) {
+		g_debug("snd_mixer_poll_descriptors(): %d", err);
+		goto free_fds;
+	}
+
+	for (i = 0; i < mixer->num_fds; i++)
+		g_source_add_poll(source, &mixer->fds[i]);
+
+	*mixerp = mixer;
 	return 0;
+
+free_fds:
+	g_free(mixer->fds);
+close:
+	snd_mixer_close(mixer->mixer);
+free:
+	g_free(source);
+	return err;
+}
+
+GSource *mixer_get_source(struct mixer *mixer)
+{
+	return mixer ? &mixer->source : NULL;
 }
 
 int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int volume)
@@ -604,20 +625,21 @@ out:
 int mixer_set_input_source(struct mixer *mixer, enum mixer_input_source source)
 {
 	unsigned int i;
+	int err = 0;
 
 	if (source >= MIXER_INPUT_SOURCE_MAX)
 		return -EINVAL;
 
 	for (i = 0; i <= SND_MIXER_SCHN_LAST; i++) {
 		if (mixer->input_source_bits & (1 << i)) {
-			int err = snd_mixer_selem_set_enum_item(mixer->input,
+			err = snd_mixer_selem_set_enum_item(mixer->input,
 					i, mixer->input_source[source]);
 			if (err < 0)
-				return err;
+				break;
 		}
 	}
 
-	return 0;
+	return err;
 }
 
 int mixer_get_input_source(struct mixer *mixer, enum mixer_input_source *sourcep)

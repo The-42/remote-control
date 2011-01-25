@@ -184,7 +184,7 @@ enum mixer_input_source {
 struct mixer;
 
 int mixer_create(struct mixer **mixerp);
-int mixer_free(struct mixer *mixer);
+GSource *mixer_get_source(struct mixer *mixer);
 int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int volume);
 int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *volumep);
 int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute);

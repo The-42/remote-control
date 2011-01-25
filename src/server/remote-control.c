@@ -364,6 +364,10 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	source = mixer_get_source(rc->mixer);
+	g_source_add_child_source(rc->source, source);
+	g_source_unref(source);
+
 	*rcp = rc;
 	return 0;
 }
@@ -380,7 +384,6 @@ int remote_control_free(struct remote_control *rc)
 	if (!rc)
 		return -EINVAL;
 
-	mixer_free(rc->mixer);
 	net_free(rc->net);
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);
