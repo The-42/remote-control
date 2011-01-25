@@ -16,48 +16,85 @@
 #include "remote-control.h"
 
 struct media_player {
+	enum media_player_state state;
 };
 
 
 int media_player_create(struct media_player **playerp)
 {
-	return -ENOSYS;
+	struct media_player *player;
+
+	if (!playerp)
+		return -EINVAL;
+
+	player = malloc(sizeof(*player));
+	if (!player)
+		return -ENOMEM;
+
+	memset(player, 0, sizeof(*player));
+	player->state = MEDIA_PLAYER_STOPPED;
+
+	*playerp = player;
+	return 0;
 }
 
 int media_player_free(struct media_player *player)
 {
-	return -ENOSYS;
+	if (!player)
+		return -EINVAL;
+
+	free(player);
+	return 0;
 }
 
 int media_player_set_output_window(struct media_player *player,
 		unsigned int x, unsigned int y, unsigned int width,
 		unsigned int height)
 {
+	if (!player)
+		return -EINVAL;
+
 	return -ENOSYS;
 }
 
 int media_player_set_uri(struct media_player *player, const char *uri)
 {
+	if (!player || !uri)
+		return -EINVAL;
+
 	return -ENOSYS;
 }
 
 int media_player_get_uri(struct media_player *player, char **urip)
 {
+	if (!player || !urip)
+		return -EINVAL;
+
 	return -ENOSYS;
 }
 
 int media_player_play(struct media_player *player)
 {
+	if (!player)
+		return -EINVAL;
+
 	return -ENOSYS;
 }
 
 int media_player_stop(struct media_player *player)
 {
+	if (!player)
+		return -EINVAL;
+
 	return -ENOSYS;
 }
 
 int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep)
 {
-	return -ENOSYS;
+	if (!player || !statep)
+		return -EINVAL;
+
+	*statep = player->state;
+	return 0;
 }
