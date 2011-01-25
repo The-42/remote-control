@@ -12,6 +12,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#include <glib.h>
+
 #define stringify1(x) #x
 #define stringify(x)  stringify1(x)
 
@@ -216,6 +218,7 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 struct remote_control;
 
 int remote_control_create(struct remote_control **rcp);
+GSource *remote_control_get_source(struct remote_control *rc);
 int remote_control_free(struct remote_control *rc);
 
 struct event_manager *remote_control_get_event_manager(struct remote_control *rc);
