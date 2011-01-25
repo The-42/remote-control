@@ -18,6 +18,7 @@ const char *true_values[] = { "true", "on", "yes", "enable" };
 const char *false_values[] = { "false", "off", "no", "disable" };
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define LLDP_MAX_FRAME_SIZE 1500
 
 static int parse_bool(const char *string, bool *res)
 {
@@ -411,6 +412,44 @@ static int cmd_backlight_brightness(struct shctl *ctl, const struct shcmd *cmd)
 		}
 	}
 
+	return 0;
+}
+
+/*
+ * "lldp-dump" command
+ */
+static const struct shcmd_info info_lldp_dump[] = {
+	{ "help", gettext_noop("dump raw LLDP frame") },
+	{ "desc", gettext_noop("Dumps a raw LLDP frame.") },
+	{ NULL, NULL },
+};
+
+static const struct shcmd_opt_def opts_lldp_dump[] = {
+	{ NULL, 0, 0, NULL },
+};
+
+static int cmd_lldp_dump(struct shctl *ctl, const struct shcmd *cmd)
+{
+	struct cli *cli = shctl_priv(ctl);
+	void *frame;
+	int err;
+
+	frame = malloc(LLDP_MAX_FRAME_SIZE);
+	if (!frame)
+		return -ENOMEM;
+
+	err = medcom_lldp_read(cli->client, frame, LLDP_MAX_FRAME_SIZE);
+	if (err < 0) {
+		shctl_log(ctl, 0, "%s\n", strerror(-err));
+		free(frame);
+		return err;
+	}
+
+	shctl_log(ctl, 0, "LLDP frame:\n");
+	shctl_log_hexdump(ctl, 0, "  ", DUMP_PREFIX_OFFSET, 16, 1, frame, err,
+			true);
+
+	free(frame);
 	return 0;
 }
 
@@ -817,6 +856,7 @@ const struct shcmd_def cli_commands[] = {
 		info_backlight_power },
 	{ "backlight-brightness", cmd_backlight_brightness,
 		opts_backlight_brightness, info_backlight_brightness },
+	{ "lldp-dump", cmd_lldp_dump, opts_lldp_dump, info_lldp_dump },
 	{ "media-player-uri", cmd_media_player_uri, opts_media_player_uri,
 		info_media_player_uri },
 	{ "media-player-output", cmd_media_player_output,
