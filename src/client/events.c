@@ -96,33 +96,15 @@ static int medcom_call_events(struct medcom_client *client,
 
 void medcom_card_event(void *priv, uint32_t type)
 {
-	struct medcom_client *client = priv;
-
-	printf("> %s(priv=%p, type=%x)\n", __func__, priv, type);
-
-	medcom_call_events(client, MEDCOM_EVENT_CARD, type);
-
-	printf("< %s()\n", __func__);
+	medcom_call_events(priv, MEDCOM_EVENT_CARD, type);
 }
 
 void medcom_modem_event(void *priv, uint32_t type)
 {
-	struct medcom_client *client = priv;
-
-	printf("> %s(priv=%p, type=%x)\n", __func__, priv, type);
-
-	medcom_call_events(client, MEDCOM_EVENT_MODEM, type);
-
-	printf("< %s()\n", __func__);
+	medcom_call_events(priv, MEDCOM_EVENT_MODEM, type);
 }
 
 void medcom_voip_event(void *priv, uint32_t type)
 {
-	struct medcom_client *client = priv;
-
-	printf("> %s(priv=%p, type=%x)\n", __func__, priv, type);
-
-	medcom_call_events(client, MEDCOM_EVENT_VOIP, type);
-
-	printf("< %s()\n", __func__);
+	medcom_call_events(priv, MEDCOM_EVENT_VOIP, type);
 }
