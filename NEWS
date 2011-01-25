@@ -1,5 +1,18 @@
-Release ?.?.? (????-??-??)
+Release 0.2.2 (2011-01-25)
 ==========================
+- Make video playback backend selectable.
+  * Add initial gstreamer video backend implementation.
+  * Add initial null video backend implementation.
+- Use as few threads as possible in order to avoid multithreading issues. This
+  fixes a bug where the mixer commands would not work properly in the ALSA
+  implementation.
+- Add an lldp-dump command to the remote-control-client.
+- Fix a bug in the client VoIP login implementation that would crash the
+  remote-control server.
+- Fix LLDP frame transmission. Only the amount of data contained in an LLDP
+  frame should be transferred, instead of the maximum number of bytes
+  requested.
+- Miscellaneous cleanups and removal of most debugging output messages.
 
 Release 0.2.0 (2011-01-13)
 ==========================
