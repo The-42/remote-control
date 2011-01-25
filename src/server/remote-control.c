@@ -354,6 +354,10 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	source = lldp_monitor_get_source(rc->lldp);
+	g_source_add_child_source(rc->source, source);
+	g_source_unref(source);
+
 	err = mixer_create(&rc->mixer);
 	if (err < 0) {
 		g_error("mixer_create(): %s", strerror(-err));
@@ -377,7 +381,6 @@ int remote_control_free(struct remote_control *rc)
 		return -EINVAL;
 
 	mixer_free(rc->mixer);
-	lldp_monitor_free(rc->lldp);
 	net_free(rc->net);
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);

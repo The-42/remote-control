@@ -26,133 +26,55 @@ static const uint8_t LLDP_MULTICAST_ADDR[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0
 static const uint16_t ETH_P_LLDP = 0x88cc;
 
 struct lldp_monitor {
+	GSource source;
+
 	int ifindex;
 	int sockfd;
-
-	GThread *thread;
-	bool done;
+	GPollFD fd;
 
 	void *data;
 	size_t len;
 };
 
-static gpointer lldp_thread(gpointer data)
+static gboolean lldp_monitor_source_prepare(GSource *source, gint *timeout)
 {
-	struct lldp_monitor *monitor = data;
-	struct timeval timeout;
-	fd_set rfds;
+	gboolean ret = FALSE;
+
+	if (timeout)
+		*timeout = -1;
+
+	return ret;
+}
+
+static gboolean lldp_monitor_source_check(GSource *source)
+{
+	struct lldp_monitor *monitor = (struct lldp_monitor *)source;
+	gboolean ret = FALSE;
+
+	if (monitor->fd.revents & G_IO_IN)
+		ret = TRUE;
+
+	return ret;
+}
+
+static gboolean lldp_monitor_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
+{
+	struct lldp_monitor *monitor = (struct lldp_monitor *)source;
 	ssize_t err;
 
-	while (!monitor->done) {
-		memset(&timeout, 0, sizeof(timeout));
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 250000;
+	err = recv(monitor->sockfd, monitor->data, LLDP_MAX_SIZE, 0);
+	if (err <= 0)
+		rc_log(RC_NOTICE "recv(): %s\n", strerror(errno));
 
-		FD_ZERO(&rfds);
-		FD_SET(monitor->sockfd, &rfds);
-
-		err = select(monitor->sockfd + 1, &rfds, NULL, NULL, &timeout);
-		if (err == 0) /* timeout */
-			continue;
-
-		err = recv(monitor->sockfd, monitor->data, LLDP_MAX_SIZE, 0);
-		if (err <= 0) {
-			rc_log(RC_NOTICE "recv(): %s\n", strerror(errno));
-			break;
-		}
-
-		monitor->len = err;
-	}
-
-	return NULL;
+	monitor->len = err;
+	return TRUE;
 }
 
-int lldp_monitor_create(struct lldp_monitor **monitorp)
+static void lldp_monitor_source_finalize(GSource *source)
 {
-	struct lldp_monitor *monitor;
-	struct packet_mreq req;
-	struct sockaddr_ll sa;
-	int err;
-
-	if (!monitorp)
-		return -EINVAL;
-
-	monitor = calloc(1, sizeof(*monitor));
-	if (!monitor)
-		return -ENOMEM;
-
-	monitor->data = calloc(1, LLDP_MAX_SIZE);
-	if (!monitor->data) {
-		free(monitor);
-		return -ENOMEM;
-	}
-
-	monitor->ifindex = if_nametoindex("eth0");
-	if (monitor->ifindex == 0) {
-		err = -ENODEV;
-		goto free;
-	}
-
-	err = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_LLDP));
-	if (err < 0) {
-		err = -errno;
-		goto free;
-	}
-
-	monitor->sockfd = err;
-
-	memset(&sa, 0, sizeof(sa));
-	sa.sll_family = AF_PACKET;
-	sa.sll_protocol = htons(ETH_P_LLDP);
-	sa.sll_ifindex = monitor->ifindex;
-
-	err = bind(monitor->sockfd, (struct sockaddr *)&sa, sizeof(sa));
-	if (err < 0) {
-		err = -errno;
-		goto close;
-	}
-
-	monitor->thread = g_thread_create(lldp_thread, monitor, TRUE, NULL);
-	if (!monitor->thread) {
-		err = -ENOMEM;
-		goto close;
-	}
-
-	memset(&req, 0, sizeof(req));
-	req.mr_ifindex = monitor->ifindex;
-	req.mr_type = PACKET_MR_MULTICAST;
-	req.mr_alen = ETH_ALEN;
-	memcpy(req.mr_address, LLDP_MULTICAST_ADDR, ETH_ALEN);
-
-	err = setsockopt(monitor->sockfd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-			&req, sizeof(req));
-	if (err < 0) {
-		err = -errno;
-		goto close;
-	}
-
-	*monitorp = monitor;
-	return 0;
-
-close:
-	close(monitor->sockfd);
-free:
-	if (monitor->data)
-		free(monitor->data);
-
-	free(monitor);
-	return err;
-}
-
-int lldp_monitor_free(struct lldp_monitor *monitor)
-{
+	struct lldp_monitor *monitor = (struct lldp_monitor *)source;
 	struct packet_mreq req;
 	int err;
-
-	if (!monitor)
-		return -EINVAL;
-
-	monitor->done = true;
 
 	if (monitor->sockfd >= 0) {
 		memset(&req, 0, sizeof(req));
@@ -169,13 +91,97 @@ int lldp_monitor_free(struct lldp_monitor *monitor)
 		close(monitor->sockfd);
 	}
 
-	g_thread_join(monitor->thread);
+	g_free(monitor->data);
+}
 
-	if (monitor->data)
-		free(monitor->data);
+static GSourceFuncs lldp_monitor_source_funcs = {
+	.prepare = lldp_monitor_source_prepare,
+	.check = lldp_monitor_source_check,
+	.dispatch = lldp_monitor_source_dispatch,
+	.finalize = lldp_monitor_source_finalize,
+};
 
-	free(monitor);
+int lldp_monitor_create(struct lldp_monitor **monitorp)
+{
+	struct lldp_monitor *monitor;
+	struct packet_mreq req;
+	struct sockaddr_ll sa;
+	GSource *source;
+	int err;
+
+	if (!monitorp)
+		return -EINVAL;
+
+	source = g_source_new(&lldp_monitor_source_funcs, sizeof(*monitor));
+	if (!source)
+		return -ENOMEM;
+
+	monitor = (struct lldp_monitor *)source;
+
+	monitor->data = g_malloc0(LLDP_MAX_SIZE);
+	if (!monitor->data) {
+		err = -ENOMEM;
+		goto free;
+	}
+
+	monitor->ifindex = if_nametoindex("eth0");
+	if (monitor->ifindex == 0) {
+		err = -ENODEV;
+		goto freedata;
+	}
+
+	err = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_LLDP));
+	if (err < 0) {
+		err = -errno;
+		goto freedata;
+	}
+
+	monitor->sockfd = err;
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sll_family = AF_PACKET;
+	sa.sll_protocol = htons(ETH_P_LLDP);
+	sa.sll_ifindex = monitor->ifindex;
+
+	err = bind(monitor->sockfd, (struct sockaddr *)&sa, sizeof(sa));
+	if (err < 0) {
+		err = -errno;
+		goto close;
+	}
+
+	memset(&req, 0, sizeof(req));
+	req.mr_ifindex = monitor->ifindex;
+	req.mr_type = PACKET_MR_MULTICAST;
+	req.mr_alen = ETH_ALEN;
+	memcpy(req.mr_address, LLDP_MULTICAST_ADDR, ETH_ALEN);
+
+	err = setsockopt(monitor->sockfd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
+			&req, sizeof(req));
+	if (err < 0) {
+		err = -errno;
+		goto close;
+	}
+
+	monitor->fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+	monitor->fd.fd = monitor->sockfd;
+
+	g_source_add_poll(source, &monitor->fd);
+
+	*monitorp = monitor;
 	return 0;
+
+close:
+	close(monitor->sockfd);
+freedata:
+	g_free(monitor->data);
+free:
+	g_free(source);
+	return err;
+}
+
+GSource *lldp_monitor_get_source(struct lldp_monitor *monitor)
+{
+	return monitor ? &monitor->source : NULL;
 }
 
 ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
