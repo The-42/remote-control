@@ -47,6 +47,8 @@ int32_t medcom_backlight_enable(void *priv, uint32_t flags);
 int32_t medcom_backlight_get(void *priv, uint8_t *brightness);
 int32_t medcom_backlight_set(void *priv, uint8_t brightness);
 
+int32_t medcom_lldp_read(void *priv, void *data, size_t size);
+
 int32_t medcom_media_player_start(void *priv);
 int32_t medcom_media_player_stop(void *priv);
 int32_t medcom_media_player_is_running(void *priv, bool *running);
