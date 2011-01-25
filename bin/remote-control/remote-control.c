@@ -429,7 +429,7 @@ int get_rdp_username(char *username, size_t namelen)
 int main(int argc, char *argv[])
 {
 	const gchar *conffile = SYSCONF_DIR "/remote-control.conf";
-	GOptionContext *context;
+	GOptionContext *options;
 	gchar *hostname = NULL;
 	gchar *username = NULL;
 	gchar *password = NULL;
@@ -458,15 +458,15 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	context = g_option_context_new("- remote control service");
-	g_option_context_add_group(context, gtk_get_option_group(TRUE));
+	options = g_option_context_new("- remote control service");
+	g_option_context_add_group(options, gtk_get_option_group(TRUE));
 
-	if (!g_option_context_parse(context, &argc, &argv, &error)) {
+	if (!g_option_context_parse(options, &argc, &argv, &error)) {
 		g_print("option parsing failed: %s\n", error->message);
 		return EXIT_FAILURE;
 	}
 
-	g_option_context_free(context);
+	g_option_context_free(options);
 
 	if (!g_key_file_load_from_file(conf, conffile, G_KEY_FILE_NONE, NULL))
 		g_warning("failed to load configuration file %s", conffile);
