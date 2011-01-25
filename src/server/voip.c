@@ -69,14 +69,14 @@ struct medcom_voip_login_options {
 
 int32_t medcom_voip_login(void *priv, struct rpc_buffer *options)
 {
+	struct voip *voip = remote_control_get_voip(priv);
 	struct medcom_voip_login_options *account;
-	struct remote_control *rc = priv;
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, options=%p)", __func__, priv, options);
 	account = options->rx_buf;
 
-	ret = voip_login(rc->voip, account->server2, 5060, account->username2,
+	ret = voip_login(voip, account->server2, 5060, account->username2,
 			account->password2);
 
 	g_debug("< %s() = %d", __func__, ret);
@@ -86,12 +86,12 @@ int32_t medcom_voip_login(void *priv, struct rpc_buffer *options)
 
 int32_t medcom_voip_logout(void *priv)
 {
-	struct remote_control *rc = priv;
+	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
 
-	ret = voip_logout(rc->voip);
+	ret = voip_logout(voip);
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
@@ -99,13 +99,13 @@ int32_t medcom_voip_logout(void *priv)
 
 int32_t medcom_voip_still_logged_in(void *priv, bool *status)
 {
+	struct voip *voip = remote_control_get_voip(priv);
 	enum voip_state state = VOIP_STATE_LOGGED_OUT;
-	struct remote_control *rc = priv;
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, status=%p)", __func__, priv, status);
 
-	ret = voip_get_state(rc->voip, &state);
+	ret = voip_get_state(voip, &state);
 	if (ret < 0)
 		goto out;
 
@@ -121,12 +121,12 @@ out:
 
 int32_t medcom_voip_connect_to(void *priv, const char *uri)
 {
-	struct remote_control *rc = priv;
+	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, uri=%p)", __func__, priv, uri);
 
-	ret = voip_call(rc->voip, uri);
+	ret = voip_call(voip, uri);
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
@@ -134,12 +134,12 @@ int32_t medcom_voip_connect_to(void *priv, const char *uri)
 
 int32_t medcom_voip_accept_incoming(void *priv, char **uri)
 {
-	struct remote_control *rc = priv;
+	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, uri=%p)", __func__, priv, uri);
 
-	ret = voip_accept(rc->voip, uri);
+	ret = voip_accept(voip, uri);
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
@@ -147,12 +147,12 @@ int32_t medcom_voip_accept_incoming(void *priv, char **uri)
 
 int32_t medcom_voip_disconnect(void *priv)
 {
-	struct remote_control *rc = priv;
+	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
 
-	ret = voip_terminate(rc->voip);
+	ret = voip_terminate(voip);
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
@@ -176,7 +176,7 @@ int32_t medcom_voip_is_calling(void *priv, bool *state)
 
 int32_t medcom_voip_get_last_contact(void *priv, char **contact)
 {
-	struct remote_control *rc = priv;
+	struct voip *voip = remote_control_get_voip(priv);
 	const char *name = NULL;
 	int32_t ret;
 
@@ -187,7 +187,7 @@ int32_t medcom_voip_get_last_contact(void *priv, char **contact)
 		goto out;
 	}
 
-	ret = voip_get_contact(rc->voip, &name);
+	ret = voip_get_contact(voip, &name);
 	if (ret < 0)
 		goto out;
 

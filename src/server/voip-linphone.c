@@ -43,8 +43,9 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core, LinphoneP
 static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *call, LinphoneCallState state, const char *message)
 {
 	struct remote_control *rc = linphone_core_get_user_data(core);
+	struct event_manager *manager = remote_control_get_event_manager(rc);
+	struct voip *voip = remote_control_get_voip(rc);
 	const LinphoneAddress *address;
-	struct voip *voip = rc->voip;
 	struct event event;
 
 	g_print("LINPHONE: CALL STATE: %p: %s", call, linphone_call_state_to_string(state));
@@ -60,7 +61,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 	switch (state) {
 	case LinphoneCallIncomingReceived:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING;
-		event_manager_report(rc->event_manager, &event);
+		event_manager_report(manager, &event);
 
 		if (voip->contact) {
 			ms_free(voip->contact);
@@ -77,12 +78,12 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 
 	case LinphoneCallConnected:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_CONNECTED;
-		event_manager_report(rc->event_manager, &event);
+		event_manager_report(manager, &event);
 		break;
 
 	case LinphoneCallEnd:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_DISCONNECTED;
-		event_manager_report(rc->event_manager, &event);
+		event_manager_report(manager, &event);
 		break;
 
 	default:

@@ -213,19 +213,19 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 /**
  * remote control
  */
-struct remote_control {
-	struct event_manager *event_manager;
-	struct backlight *backlight;
-	struct media_player *player;
-	struct smartcard *smartcard;
-	struct voip *voip;
-	struct mixer *mixer;
-	struct net *net;
-	struct lldp_monitor *lldp;
-};
+struct remote_control;
 
 int remote_control_create(struct remote_control **rcp);
 int remote_control_free(struct remote_control *rc);
+
+struct event_manager *remote_control_get_event_manager(struct remote_control *rc);
+struct backlight *remote_control_get_backlight(struct remote_control *rc);
+struct media_player *remote_control_get_media_player(struct remote_control *rc);
+struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
+struct voip *remote_control_get_voip(struct remote_control *rc);
+struct mixer *remote_control_get_mixer(struct remote_control *rc);
+struct net *remote_control_get_net(struct remote_control *rc);
+struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 

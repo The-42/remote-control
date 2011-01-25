@@ -73,7 +73,7 @@ int32_t medcom_net_config(void *priv, uint32_t port, uint32_t timeout, uint32_t 
 
 int32_t medcom_net_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
-	struct remote_control *rc = priv;
+	struct net *net = remote_control_get_net(priv);
 	int ret = -ENOSYS;
 
 	g_debug("> %s(priv=%p, mode=%#x, buffer=%p)", __func__, priv, mode,
@@ -85,7 +85,7 @@ int32_t medcom_net_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 		break;
 
 	case NET_READ_MODE_UDP:
-		ret = net_recv_sync(rc->net, buffer->tx_buf, buffer->tx_num);
+		ret = net_recv_sync(net, buffer->tx_buf, buffer->tx_num);
 		break;
 
 	case NET_READ_MODE_HOSTNAME:
@@ -106,7 +106,7 @@ int32_t medcom_net_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 
 int32_t medcom_net_write(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
-	struct remote_control *rc = priv;
+	struct net *net = remote_control_get_net(priv);
 	int ret = -ENOSYS;
 
 	g_debug("> %s(priv=%p, mode=%#x, buffer=%p)", __func__, priv, mode,
@@ -118,7 +118,7 @@ int32_t medcom_net_write(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 		break;
 
 	case NET_WRITE_MODE_UDP:
-		ret = net_send_sync(rc->net, buffer->rx_buf, buffer->rx_num);
+		ret = net_send_sync(net, buffer->rx_buf, buffer->rx_num);
 		break;
 	}
 

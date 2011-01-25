@@ -11,6 +11,17 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+struct remote_control {
+	struct event_manager *event_manager;
+	struct backlight *backlight;
+	struct media_player *player;
+	struct smartcard *smartcard;
+	struct voip *voip;
+	struct mixer *mixer;
+	struct net *net;
+	struct lldp_monitor *lldp;
+};
+
 int remote_control_create(struct remote_control **rcp)
 {
 	struct rpc_server *server;
@@ -103,6 +114,46 @@ int remote_control_free(struct remote_control *rc)
 	event_manager_free(rc->event_manager);
 	rpc_server_free(server);
 	return 0;
+}
+
+struct event_manager *remote_control_get_event_manager(struct remote_control *rc)
+{
+	return rc ? rc->event_manager : NULL;
+}
+
+struct backlight *remote_control_get_backlight(struct remote_control *rc)
+{
+	return rc ? rc->backlight : NULL;
+}
+
+struct media_player *remote_control_get_media_player(struct remote_control *rc)
+{
+	return rc ? rc->player : NULL;
+}
+
+struct smartcard *remote_control_get_smartcard(struct remote_control *rc)
+{
+	return rc ? rc->smartcard : NULL;
+}
+
+struct voip *remote_control_get_voip(struct remote_control *rc)
+{
+	return rc ? rc->voip : NULL;
+}
+
+struct mixer *remote_control_get_mixer(struct remote_control *rc)
+{
+	return rc ? rc->mixer : NULL;
+}
+
+struct net *remote_control_get_net(struct remote_control *rc)
+{
+	return rc ? rc->net : NULL;
+}
+
+struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc)
+{
+	return rc ? rc->lldp : NULL;
 }
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request)

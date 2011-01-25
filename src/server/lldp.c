@@ -29,7 +29,7 @@ int32_t medcom_lldp_enable(void *priv, bool enable)
 
 int32_t medcom_lldp_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
-	struct remote_control *rc = priv;
+	struct lldp_monitor *lldp = remote_control_get_lldp_monitor(priv);
 	int32_t err = -ENOSYS;
 
 	g_debug("> %s(priv=%p, mode=%#x, buffer=%p)", __func__, priv, mode,
@@ -38,7 +38,7 @@ int32_t medcom_lldp_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 	g_debug("    rx: %p (%zu bytes)", buffer->rx_buf, buffer->rx_num);
 	g_debug("    tx: %p (%zu bytes)", buffer->tx_buf, buffer->tx_num);
 
-	err = lldp_monitor_read(rc->lldp, buffer->tx_buf, buffer->tx_num);
+	err = lldp_monitor_read(lldp, buffer->tx_buf, buffer->tx_num);
 
 	g_debug("< %s() = %d", __func__, err);
 	return err;

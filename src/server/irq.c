@@ -31,7 +31,7 @@ int32_t medcom_irq_enable(void *priv, uint8_t virtkey)
 
 int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
 {
-	struct remote_control *rc = priv;
+	struct event_manager *manager = remote_control_get_event_manager(priv);
 	uint32_t status = 0;
 	int32_t ret;
 
@@ -42,7 +42,7 @@ int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
 		goto out;
 	}
 
-	ret = event_manager_get_status(rc->event_manager, &status);
+	ret = event_manager_get_status(manager, &status);
 	g_debug("  event_manager_get_status(): %d", ret);
 	g_debug("  status: %08x", status);
 
@@ -62,7 +62,7 @@ out:
 
 int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t *info)
 {
-	struct remote_control *rc = priv;
+	struct event_manager *manager = remote_control_get_event_manager(priv);
 	struct event event;
 	int32_t ret = 0;
 	int err;
@@ -80,7 +80,7 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		g_debug("  MEDCOM_IRQ_SOURCE_HOOK");
 		event.source = EVENT_SOURCE_HANDSET;
 
-		err = event_manager_get_source_state(rc->event_manager, &event);
+		err = event_manager_get_source_state(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
@@ -107,7 +107,7 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		g_debug("  MEDCOM_IRQ_SOURCE_CARD");
 		event.source = EVENT_SOURCE_SMARTCARD;
 
-		err = event_manager_get_source_state(rc->event_manager, &event);
+		err = event_manager_get_source_state(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
@@ -132,7 +132,7 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		g_debug("  MEDCOM_IRQ_SOURCE_VOIP");
 		event.source = EVENT_SOURCE_VOIP;
 
-		err = event_manager_get_source_state(rc->event_manager, &event);
+		err = event_manager_get_source_state(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
