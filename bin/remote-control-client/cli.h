@@ -28,4 +28,14 @@ struct cli {
 
 extern const struct shcmd_def cli_commands[];
 
+enum {
+	DUMP_PREFIX_NONE,
+	DUMP_PREFIX_ADDRESS,
+	DUMP_PREFIX_OFFSET,
+};
+
+void shctl_log_hexdump(struct shctl *ctl, int level, const char *prefix,
+		int prefix_type, int rowsize, int groupsize, const void *buf,
+		size_t len, bool ascii);
+
 #endif /* CLI_H */

@@ -12,7 +12,8 @@ remote_control_client_CFLAGS = \
 remote_control_client_SOURCES = \
 	cli.h \
 	commands.c \
-	main.c
+	main.c \
+	utils.c
 
 remote_control_client_LDADD = \
 	../../src/client/libremote-control.la \
