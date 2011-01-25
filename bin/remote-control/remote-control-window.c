@@ -183,6 +183,8 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
 	xid = gtk_socket_get_id(GTK_SOCKET(priv->socket));
 
+	/* TODO: check for network connection (netlink socket, libnl?) */
+
 	argv = g_new0(gchar *, 9);
 	if (!argv) {
 		g_error("g_new0() failed");
