@@ -1,7 +1,8 @@
-AM_CPPFLAGS = @GLIB_GIO_CFLAGS@
-
 noinst_LTLIBRARIES = \
 	libremote-control.la
+
+libremote_control_la_CPPFLAGS = \
+	@GLIB_CFLAGS@
 
 libremote_control_la_SOURCES = \
 	backlight.c \
@@ -19,7 +20,7 @@ nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.h
 
 libremote_control_la_LIBADD = \
-	@GLIB_GIO_LIBS@ \
+	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \
 	-lpthread
 

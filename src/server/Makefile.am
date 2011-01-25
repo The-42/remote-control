@@ -2,11 +2,12 @@ noinst_LTLIBRARIES = \
 	libremote-control.la
 
 libremote_control_la_CFLAGS = \
-	@GLIB_GIO_CFLAGS@ \
+	@GLIB_CFLAGS@ \
 	@LINPHONE_CFLAGS@ \
 	@GTK_CFLAGS@
 
 libremote_control_la_LIBADD = \
+	@GLIB_LIBS@ \
 	@LINPHONE_LIBS@ \
 	@GTK_LIBS@
 
