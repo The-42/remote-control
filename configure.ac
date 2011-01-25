@@ -17,7 +17,7 @@ AC_PROG_INSTALL
 PKG_CHECK_MODULES(GLIB_GIO, glib-2.0 gio-2.0)
 PKG_CHECK_MODULES(LINPHONE, linphone >= 3.3.99.10)
 PKG_CHECK_MODULES(WEBKIT, webkit-1.0)
-PKG_CHECK_MODULES(GTK, gtk+-2.0)
+PKG_CHECK_MODULES(GTK, gtk+-x11-2.0 x11 xext)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
 PKG_CHECK_MODULES(LIBSH, libsh)
 PKG_CHECK_MODULES(ALSA, alsa)
@@ -42,7 +42,7 @@ enable_gst=no
 AS_CASE([$with_video_backend],
 	[none], [],
 	[libvlc], [PKG_CHECK_MODULES(LIBVLC, libvlc, [enable_libvlc=yes])],
-	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10, [enable_gst=yes])],
+	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-interfaces-0.10, [enable_gst=yes])],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 
