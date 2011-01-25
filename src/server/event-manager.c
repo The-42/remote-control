@@ -37,11 +37,11 @@ enum gpio gpio_list[] = {
 };
 
 struct event_manager {
-	struct rpc_server *server;
-	GThread *thread;
-	bool done;
-	int fd;
+	GSource source;
+	GPollFD fd;
+	int gpiofd;
 
+	struct rpc_server *server;
 	uint32_t irq_status;
 
 	enum event_voip_state voip_state;
@@ -49,82 +49,106 @@ struct event_manager {
 	enum event_handset_state handset_state;
 };
 
-#ifdef HAVE_LINUX_GPIODEV_H
-static gpointer event_thread(gpointer data)
+static gboolean event_manager_source_prepare(GSource *source, gint *timeout)
 {
-	struct event_manager *manager = data;
+	gboolean ret = FALSE;
 
-	g_debug("> %s(data=%p)", __func__, data);
 
-	while (!manager->done) {
-		struct gpio_event gpio;
-		struct timeval timeout;
-		struct event event;
-		fd_set rfds;
-		int err;
+	if (timeout)
+		*timeout = -1;
 
-		memset(&timeout, 0, sizeof(timeout));
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 500000;
+	return ret;
+}
 
-		FD_ZERO(&rfds);
-		FD_SET(manager->fd, &rfds);
+static gboolean event_manager_source_check(GSource *source)
+{
+	struct event_manager *manager = (struct event_manager *)source;
+	gboolean ret = FALSE;
 
-		err = select(manager->fd + 1, &rfds, NULL, NULL, &timeout);
-		if (err < 0) {
-			g_error("select(): %s", strerror(errno));
-			break;
-		}
 
-		if (err == 0)
-			continue;
+	if (manager->fd.revents & G_IO_IN)
+		ret = TRUE;
 
-		err = read(manager->fd, &gpio, sizeof(gpio));
-		if (err < 0) {
-			g_error("read(): %s", strerror(errno));
-			break;
-		}
+	return ret;
+}
 
-		switch (gpio.gpio) {
-		case GPIO_HANDSET:
-			event.source = EVENT_SOURCE_HANDSET;
-			if (gpio.value) {
-				g_debug("  HANDSET transitioned to HOOK_OFF state");
-				event.handset.state = EVENT_HANDSET_STATE_HOOK_OFF;
-			} else {
-				g_debug("  HANDSET transitioned to HOOK_ON state");
-				event.handset.state = EVENT_HANDSET_STATE_HOOK_ON;
-			}
-			break;
+static gboolean event_manager_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
+{
+#ifdef HAVE_LINUX_GPIODEV_H
+	struct event_manager *manager = (struct event_manager *)source;
+	struct gpio_event gpio;
+	struct event event;
+	int err;
+#endif
+	gboolean ret = TRUE;
 
-		case GPIO_SMARTCARD:
-			event.source = EVENT_SOURCE_SMARTCARD;
-			if (gpio.value) {
-				g_debug("  SMARTCARD transitioned to REMOVED state");
-				event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
-			} else {
-				g_debug("  SMARTCARD transitioned to INSERTED state");
-				event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
-			}
-			break;
-
-		default:
-			g_debug("  unknown GPIO %u transitioned to %u",
-					gpio.gpio, gpio.value);
-			continue;
-		}
-
-		event_manager_report(manager, &event);
+#ifdef HAVE_LINUX_GPIODEV_H
+	err = read(manager->gpiofd, &gpio, sizeof(gpio));
+	if (err < 0) {
+		g_error("read(): %s", strerror(errno));
+		goto out;
 	}
 
-	g_debug("< %s()", __func__);
-	return NULL;
-}
+	switch (gpio.gpio) {
+	case GPIO_HANDSET:
+		event.source = EVENT_SOURCE_HANDSET;
+		if (gpio.value) {
+			g_debug("  HANDSET transitioned to HOOK_OFF state");
+			event.handset.state = EVENT_HANDSET_STATE_HOOK_OFF;
+		} else {
+			g_debug("  HANDSET transitioned to HOOK_ON state");
+			event.handset.state = EVENT_HANDSET_STATE_HOOK_ON;
+		}
+		break;
+
+	case GPIO_SMARTCARD:
+		event.source = EVENT_SOURCE_SMARTCARD;
+		if (gpio.value) {
+			g_debug("  SMARTCARD transitioned to REMOVED state");
+			event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
+		} else {
+			g_debug("  SMARTCARD transitioned to INSERTED state");
+			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
+		}
+		break;
+
+	default:
+		g_debug("  unknown GPIO %u transitioned to %u",
+				gpio.gpio, gpio.value);
+		break;
+	}
+
+	event_manager_report(manager, &event);
+#endif /* HAVE_LINUX_GPIODEV_H */
+
+	if (callback)
+		ret = callback(user_data);
+
+#ifdef HAVE_LINUX_GPIODEV_H
+out:
 #endif
+	return ret;
+}
+
+static void event_manager_source_finalize(GSource *source)
+{
+	struct event_manager *manager = (struct event_manager *)source;
+
+	if (manager->gpiofd >= 0)
+		close(manager->gpiofd);
+}
+
+static GSourceFuncs event_manager_source_funcs = {
+	.prepare = event_manager_source_prepare,
+	.check = event_manager_source_check,
+	.dispatch = event_manager_source_dispatch,
+	.finalize = event_manager_source_finalize,
+};
 
 int event_manager_create(struct event_manager **managerp, struct rpc_server *server)
 {
 	struct event_manager *manager;
+	GSource *source;
 #ifdef HAVE_LINUX_GPIODEV_H
 	unsigned int i;
 #endif
@@ -137,16 +161,15 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 		goto out;
 	}
 
-	manager = malloc(sizeof(*manager));
-	if (!manager) {
+	source = g_source_new(&event_manager_source_funcs, sizeof(*manager));
+	if (!source) {
 		err = -ENOMEM;
 		goto out;
 	}
 
-	memset(manager, 0, sizeof(*manager));
+	manager = (struct event_manager *)source;
 	manager->server = server;
-	manager->done = false;
-	manager->fd = -1;
+	manager->gpiofd = -1;
 	manager->irq_status = 0;
 
 	manager->voip_state = EVENT_VOIP_STATE_IDLE;
@@ -154,10 +177,10 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->handset_state = EVENT_HANDSET_STATE_HOOK_ON;
 
 #ifdef HAVE_LINUX_GPIODEV_H
-	manager->fd = open("/dev/gpio-0", O_RDWR);
-	if (manager->fd < 0) {
+	manager->gpiofd = open("/dev/gpio-0", O_RDWR);
+	if (manager->gpiofd < 0) {
 		err = -errno;
-		goto out;
+		goto free;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
@@ -166,54 +189,36 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 		enable.gpio = gpio_list[i];
 		enable.value = 1;
 
-		err = ioctl(manager->fd, GPIO_IOC_ENABLE_IRQ, &enable);
+		err = ioctl(manager->gpiofd, GPIO_IOC_ENABLE_IRQ, &enable);
 		if (err < 0) {
 			err = -errno;
-			goto out;
+			goto close;
 		}
 	}
 
-	manager->thread = g_thread_create(event_thread, manager, TRUE, NULL);
-	if (!manager->thread) {
-		err = -ENOMEM;
-		goto out;
-	}
+	manager->fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+	manager->fd.fd = manager->gpiofd;
+
+	g_source_add_poll(source, &manager->fd);
 #endif /* HAVE_LINUX_GPIODEV_H */
 
 	*managerp = manager;
+	goto out;
 
+#ifdef HAVE_LINUX_GPIODEV_H
+close:
+	close(manager->gpiofd);
+free:
+	g_free(source);
+#endif /* HAVE_LINUX_GPIODEV_H */
 out:
 	g_debug("< %s() = %d", __func__, err);
 	return err;
 }
 
-int event_manager_free(struct event_manager *manager)
+GSource *event_manager_get_source(struct event_manager *manager)
 {
-	int ret = 0;
-
-	g_debug("> %s(manager=%p)", __func__, manager);
-
-	if (!manager) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	manager->done = true;
-
-	if (manager->thread) {
-		g_debug("  waiting for thread to finish ...");
-		g_thread_join(manager->thread);
-		g_debug("  done");
-	}
-
-	if (manager->fd >= 0)
-		close(manager->fd);
-
-	free(manager);
-
-out:
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return manager ? &manager->source : NULL;
 }
 
 int event_manager_report(struct event_manager *manager, struct event *event)

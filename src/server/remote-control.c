@@ -314,6 +314,10 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	source = event_manager_get_source(rc->event_manager);
+	g_source_add_child_source(rc->source, source);
+	g_source_unref(source);
+
 	err = backlight_create(&rc->backlight);
 	if (err < 0) {
 		g_error("backlight_create(): %s", strerror(-err));
@@ -379,7 +383,6 @@ int remote_control_free(struct remote_control *rc)
 	smartcard_free(rc->smartcard);
 	media_player_free(rc->player);
 	backlight_free(rc->backlight);
-	event_manager_free(rc->event_manager);
 	rpc_server_free(server);
 	return 0;
 }
