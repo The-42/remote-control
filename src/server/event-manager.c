@@ -51,25 +51,20 @@ struct event_manager {
 
 static gboolean event_manager_source_prepare(GSource *source, gint *timeout)
 {
-	gboolean ret = FALSE;
-
-
 	if (timeout)
 		*timeout = -1;
 
-	return ret;
+	return FALSE;
 }
 
 static gboolean event_manager_source_check(GSource *source)
 {
 	struct event_manager *manager = (struct event_manager *)source;
-	gboolean ret = FALSE;
-
 
 	if (manager->fd.revents & G_IO_IN)
-		ret = TRUE;
+		return TRUE;
 
-	return ret;
+	return FALSE;
 }
 
 static gboolean event_manager_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
@@ -79,14 +74,11 @@ static gboolean event_manager_source_dispatch(GSource *source, GSourceFunc callb
 	struct gpio_event gpio;
 	struct event event;
 	int err;
-#endif
-	gboolean ret = TRUE;
 
-#ifdef HAVE_LINUX_GPIODEV_H
 	err = read(manager->gpiofd, &gpio, sizeof(gpio));
 	if (err < 0) {
 		g_error("read(): %s", strerror(errno));
-		goto out;
+		return TRUE;
 	}
 
 	switch (gpio.gpio) {
@@ -122,12 +114,9 @@ static gboolean event_manager_source_dispatch(GSource *source, GSourceFunc callb
 #endif /* HAVE_LINUX_GPIODEV_H */
 
 	if (callback)
-		ret = callback(user_data);
+		return callback(user_data);
 
-#ifdef HAVE_LINUX_GPIODEV_H
-out:
-#endif
-	return ret;
+	return TRUE;
 }
 
 static void event_manager_source_finalize(GSource *source)
@@ -153,8 +142,6 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	unsigned int i;
 #endif
 	int err = 0;
-
-	g_debug("> %s(managerp=%p)", __func__, managerp);
 
 	if (!managerp) {
 		err = -EINVAL;
@@ -212,7 +199,6 @@ free:
 	g_free(source);
 #endif /* HAVE_LINUX_GPIODEV_H */
 out:
-	g_debug("< %s() = %d", __func__, err);
 	return err;
 }
 
@@ -226,8 +212,6 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	uint32_t irq_status = 0;
 	int ret = 0;
 
-	g_debug("> %s(manager=%p, event=%p)", __func__, manager, event);
-
 	switch (event->source) {
 	case EVENT_SOURCE_MODEM:
 		irq_status |= BIT(EVENT_SOURCE_MODEM);
@@ -238,19 +222,16 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		break;
 
 	case EVENT_SOURCE_VOIP:
-		g_debug("  VOIP interrupt");
 		manager->voip_state = event->voip.state;
 		irq_status |= BIT(EVENT_SOURCE_VOIP);
 		break;
 
 	case EVENT_SOURCE_SMARTCARD:
-		g_debug("  SMARTCARD interrupt");
 		manager->smartcard_state = event->smartcard.state;
 		irq_status |= BIT(EVENT_SOURCE_SMARTCARD);
 		break;
 
 	case EVENT_SOURCE_HANDSET:
-		g_debug("  HANDSET interrupt");
 		manager->handset_state = event->handset.state;
 		irq_status |= BIT(EVENT_SOURCE_HANDSET);
 		break;
@@ -259,8 +240,6 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		ret = -ENXIO;
 		break;
 	}
-
-	g_debug("  IRQ status: %08x", irq_status);
 
 	if (irq_status != manager->irq_status) {
 		ret = medcom_irq_event_stub(manager->server, 0);
@@ -272,8 +251,6 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		manager->irq_status = irq_status;
 	}
 
-	g_debug("  IRQ status: %08x", manager->irq_status);
-	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 

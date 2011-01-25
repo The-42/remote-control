@@ -62,11 +62,9 @@ static gboolean rpc_source_prepare(GSource *source, gint *timeout)
 
 	switch (src->state) {
 	case REMOTE_CONTROL_UNCONNECTED:
-		//g_debug("state: unconnected");
 		break;
 
 	case REMOTE_CONTROL_CONNECTED:
-		//g_debug("state: connected");
 		err = rpc_server_get_client_socket(server);
 		if (err < 0) {
 			g_debug("rpc_server_get_client_socket(): %s", strerror(-err));
@@ -82,11 +80,9 @@ static gboolean rpc_source_prepare(GSource *source, gint *timeout)
 		break;
 
 	case REMOTE_CONTROL_IDLE:
-		//g_debug("state: idle");
 		break;
 
 	case REMOTE_CONTROL_DISCONNECTED:
-		//g_debug("state: disconnected");
 		g_source_remove_poll(source, &src->poll_client);
 		src->poll_client.events = 0;
 		src->poll_client.fd = -1;
@@ -106,15 +102,11 @@ static gboolean rpc_source_check(GSource *source)
 
 	/* handle server socket */
 	if ((src->poll_listen.revents & G_IO_HUP) ||
-	    (src->poll_listen.revents & G_IO_ERR)) {
-		g_error("  listen: G_IO_HUP | G_IO_ERR");
+	    (src->poll_listen.revents & G_IO_ERR))
 		return FALSE;
-	}
 
-	if (src->poll_listen.revents & G_IO_IN) {
-		g_debug("  listen: G_IO_IN");
+	if (src->poll_listen.revents & G_IO_IN)
 		return TRUE;
-	}
 
 	/* handle client socket */
 	if ((src->poll_client.revents & G_IO_HUP) ||
@@ -124,10 +116,8 @@ static gboolean rpc_source_check(GSource *source)
 		return TRUE;
 	}
 
-	if (src->poll_client.revents & G_IO_IN) {
-		g_debug("  client: G_IO_IN (state: %d)", src->state);
+	if (src->poll_client.revents & G_IO_IN)
 		return TRUE;
-	}
 
 	return FALSE;
 }
@@ -140,8 +130,6 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 	struct sockaddr *addr = NULL;
 	gboolean ret = TRUE;
 	int err;
-
-	g_debug("> %s(source=%p, callback=%p, user_data=%p)", __func__, source, callback, user_data);
 
 	switch (src->state) {
 	case REMOTE_CONTROL_UNCONNECTED:
@@ -199,19 +187,13 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 		break;
 	}
 
-	g_debug("< %s() = %s", __func__, ret ? "TRUE" : "FALSE");
 	return ret;
 }
 
 static void rpc_source_finalize(GSource *source)
 {
 	struct rpc_source *src = (struct rpc_source *)source;
-
-	g_debug("> %s(source=%p)", __func__, source);
-
 	remote_control_free(src->rc);
-
-	g_debug("< %s()", __func__);
 }
 
 static GSourceFuncs rpc_source_funcs = {
@@ -390,6 +372,7 @@ int remote_control_free(struct remote_control *rc)
 	media_player_free(rc->player);
 	backlight_free(rc->backlight);
 	rpc_server_free(server);
+
 	return 0;
 }
 

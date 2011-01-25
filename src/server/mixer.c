@@ -15,15 +15,7 @@ int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control,
 		uint8_t volume)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
-	int32_t ret;
-
-	g_debug("> %s(priv=%p, control=%d, volume=%d)", __func__, priv, control,
-			volume);
-
-	ret = mixer_set_volume(mixer, control, volume);
-
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return mixer_set_volume(mixer, control, volume);
 }
 
 int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control,
@@ -33,42 +25,24 @@ int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control,
 	unsigned int volume = 0;
 	int32_t ret;
 
-	g_debug("> %s(priv=%p, control=%d, volumep=%p)", __func__, priv, control,
-			volumep);
-
 	ret = mixer_get_volume(mixer, control, &volume);
 
 	if (volumep)
 		*volumep = volume;
 
-	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, bool mute)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
-	int32_t ret;
-
-	g_debug("> %s(priv=%p, control=%d, mute=%d)", __func__, priv, control, mute);
-
-	ret = mixer_set_mute(mixer, control, mute);
-
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return mixer_set_mute(mixer, control, mute);
 }
 
 int32_t medcom_mixer_is_muted(void *priv, enum medcom_mixer_control control, bool *mutep)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
-	int32_t ret;
-
-	g_debug("> %s(priv=%p, control=%d, mutep=%p)", __func__, priv, control, mutep);
-
-	ret = mixer_is_muted(mixer, control, mutep);
-
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return mixer_is_muted(mixer, control, mutep);
 }
 
 int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source source)

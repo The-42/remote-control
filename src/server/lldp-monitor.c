@@ -38,23 +38,20 @@ struct lldp_monitor {
 
 static gboolean lldp_monitor_source_prepare(GSource *source, gint *timeout)
 {
-	gboolean ret = FALSE;
-
 	if (timeout)
 		*timeout = -1;
 
-	return ret;
+	return FALSE;
 }
 
 static gboolean lldp_monitor_source_check(GSource *source)
 {
 	struct lldp_monitor *monitor = (struct lldp_monitor *)source;
-	gboolean ret = FALSE;
 
 	if (monitor->fd.revents & G_IO_IN)
-		ret = TRUE;
+		return TRUE;
 
-	return ret;
+	return FALSE;
 }
 
 static gboolean lldp_monitor_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
@@ -63,10 +60,13 @@ static gboolean lldp_monitor_source_dispatch(GSource *source, GSourceFunc callba
 	ssize_t err;
 
 	err = recv(monitor->sockfd, monitor->data, LLDP_MAX_SIZE, 0);
-	if (err <= 0)
+	if (err <= 0) {
 		rc_log(RC_NOTICE "recv(): %s\n", strerror(errno));
+		monitor->len = 0;
+	} else {
+		monitor->len = err;
+	}
 
-	monitor->len = err;
 	return TRUE;
 }
 
