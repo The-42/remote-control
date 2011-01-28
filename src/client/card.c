@@ -14,24 +14,32 @@
 #include "remote-control.h"
 
 remote_public
-int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type)
+int remote_card_get_type(void *priv, enum remote_card_type *typep)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	enum medcom_card_type type = CARD_TYPE_UNKNOWN;
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_card_get_type_stub(rpc, &ret, type);
+	err = medcom_card_get_type_stub(rpc, &ret, &type);
 	if (err < 0) {
 		ret = err;
 		goto out;
 	}
+
+	/*
+	 * TODO: Use a proper mapping between remote_card_type and
+	 *       medcom_card_type. This currently works because both
+	 *       enumerations are defined identically.
+	 */
+	*typep = type;
 
 out:
 	return ret;
 }
 
 remote_public
-int32_t medcom_card_read(void *priv, off_t offset, void *buffer, size_t size)
+int remote_card_read(void *priv, off_t offset, void *buffer, size_t size)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	struct rpc_buffer buf;
@@ -54,7 +62,7 @@ out:
 }
 
 remote_public
-int32_t medcom_card_write(void *priv, off_t offset, const void *buffer,
+int remote_card_write(void *priv, off_t offset, const void *buffer,
 		size_t size)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);

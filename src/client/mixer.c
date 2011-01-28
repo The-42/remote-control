@@ -14,7 +14,8 @@
 #include "remote-control.h"
 
 remote_public
-int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, bool mute)
+int remote_mixer_set_mute(void *priv, enum remote_mixer_control control,
+		bool mute)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -28,7 +29,8 @@ int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, boo
 }
 
 remote_public
-int32_t medcom_mixer_get_mute(void *priv, enum medcom_mixer_control control, bool *mutep)
+int remote_mixer_get_mute(void *priv, enum remote_mixer_control control,
+		bool *mutep)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -42,7 +44,8 @@ int32_t medcom_mixer_get_mute(void *priv, enum medcom_mixer_control control, boo
 }
 
 remote_public
-int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control, uint8_t volume)
+int remote_mixer_set_volume(void *priv, enum remote_mixer_control control,
+		uint8_t volume)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -56,7 +59,8 @@ int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control, u
 }
 
 remote_public
-int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, uint8_t *volumep)
+int remote_mixer_get_volume(void *priv, enum remote_mixer_control control,
+		uint8_t *volumep)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -70,13 +74,21 @@ int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, u
 }
 
 remote_public
-int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source source)
+int remote_mixer_set_input_source(void *priv,
+		enum remote_mixer_input_source source)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	enum medcom_mixer_input_source input = source;
 	int32_t ret = 0;
 	int32_t err;
 
-	err = medcom_mixer_set_input_source_stub(rpc, &ret, source);
+	/*
+	 * TODO: Use a proper mapping between remote_mixer_input_source and
+	 *       medcom_mixer_input_source. This currently works because both
+	 *       enumerations are defined identically.
+	 */
+
+	err = medcom_mixer_set_input_source_stub(rpc, &ret, input);
 	if (err < 0)
 		ret = err;
 
@@ -84,15 +96,22 @@ int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source
 }
 
 remote_public
-int32_t medcom_mixer_get_input_source(void *priv, enum medcom_mixer_input_source *sourcep)
+int remote_mixer_get_input_source(void *priv, enum remote_mixer_input_source *sourcep)
 {
+	enum medcom_mixer_input_source source = MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
 	int32_t err;
 
-	err = medcom_mixer_get_input_source_stub(rpc, &ret, sourcep);
+	err = medcom_mixer_get_input_source_stub(rpc, &ret, &source);
 	if (err < 0)
 		ret = err;
 
+	/*
+	 * TODO: Use a proper mapping between remote_mixer_input_source and
+	 *       medcom_mixer_input_source. This currently works because both
+	 *       enumerations are defined identically.
+	 */
+	*sourcep = source;
 	return ret;
 }

@@ -10,6 +10,7 @@
 #  include "config.h"
 #endif
 
+#include <errno.h>
 #include <getopt.h>
 #include <libintl.h>
 #include <locale.h>
@@ -22,6 +23,7 @@
 #  include <readline/history.h>
 #endif
 
+#include <librpc.h>
 #include <libsh.h>
 
 #include "cli.h"
@@ -210,13 +212,13 @@ static int cli_init(struct shctl *ctl)
 	host.hostname = cli->hostname;
 	host.service = cli->service;
 
-	err = medcom_init(&cli->client, cli->hostname, cli->service);
+	err = remote_init(&cli->client, cli->hostname, cli->service);
 	if (err < 0) {
 		fprintf(stderr, "medcom_init(): %s\n", strerror(-err));
 		return err;
 	}
 
-	medcom_register_event_handler(cli->client, MEDCOM_EVENT_VOIP,
+	remote_register_event_handler(cli->client, REMOTE_EVENT_VOIP,
 			on_voip_event, cli->client);
 
 	return 0;
@@ -226,7 +228,7 @@ static int cli_exit(struct shctl *ctl)
 {
 	struct cli *cli = shctl_priv(ctl);
 
-	medcom_exit(cli->client);
+	remote_exit(cli->client);
 
 	return 0;
 }

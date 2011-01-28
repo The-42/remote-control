@@ -15,22 +15,22 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-struct medcom_client {
-	unsigned int done;
+struct remote_client {
 	pthread_t thread;
+	bool done;
 };
 
 static void *poll_event_thread(void *context)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(context);
-	struct medcom_client *client = context;
+	struct remote_client *client = context;
 	ssize_t ret = 0;
 
 	while (!client->done) {
 		ret = rpc_client_poll(rpc, 250);
 		if (ret < 0) {
 			if (ret != -ETIMEDOUT)
-				client->done = 1;
+				client->done = true;
 
 			continue;
 		}
@@ -44,11 +44,11 @@ static void *poll_event_thread(void *context)
 }
 
 remote_public
-int medcom_init(struct medcom_client **clientp, const char *hostname,
+int remote_init(struct remote_client **clientp, const char *hostname,
 		const char *service)
 {
 	struct rpc_client *rpc = NULL;
-	struct medcom_client *client;
+	struct remote_client *client;
 	struct rpc_host host;
 	int err;
 
@@ -82,6 +82,7 @@ int medcom_init(struct medcom_client **clientp, const char *hostname,
 	}
 
 	client = rpc_client_priv(rpc);
+	client->done = false;
 
 	err = pthread_create(&client->thread, NULL, poll_event_thread, client);
 	if (err < 0) {
@@ -94,7 +95,7 @@ int medcom_init(struct medcom_client **clientp, const char *hostname,
 }
 
 remote_public
-int medcom_exit(struct medcom_client *client)
+int remote_exit(struct remote_client *client)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(client);
 
@@ -102,7 +103,7 @@ int medcom_exit(struct medcom_client *client)
 		return -EINVAL;
 
 	/* stop polling thread */
-	client->done = 1;
+	client->done = true;
 	pthread_join(client->thread, NULL);
 
 	/* cleanup */

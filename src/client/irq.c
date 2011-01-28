@@ -15,33 +15,35 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-static void notify_event_handlers(enum medcom_irq_source source, uint32_t status)
+static void notify_event_handlers(enum remote_irq_source source,
+		uint32_t status)
 {
-	fprintf(stdout, "%s: irq %d changed to 0x%08x\n", __func__, source, status);
+	fprintf(stdout, "%s: irq %d changed to 0x%08x\n", __func__, source,
+			status);
 }
 
 struct irq_status {
-	enum medcom_irq_source source;
+	enum remote_irq_source source;
 	uint32_t status;
 };
 
 static int poll_irq_status(void *priv)
 {
 	static struct irq_status table[] = {
-		{ MEDCOM_IRQ_SOURCE_HOOK, 0 },
-		{ MEDCOM_IRQ_SOURCE_CARD, 0 },
-		{ MEDCOM_IRQ_SOURCE_VOIP, 0 },
-		{ MEDCOM_IRQ_SOURCE_IO,   0 },
-		{ MEDCOM_IRQ_SOURCE_RDP,  0 }
+		{ REMOTE_IRQ_SOURCE_HANDSET,   0 },
+		{ REMOTE_IRQ_SOURCE_SMARTCARD, 0 },
+		{ REMOTE_IRQ_SOURCE_VOIP,      0 },
+		{ REMOTE_IRQ_SOURCE_IO,        0 },
+		{ REMOTE_IRQ_SOURCE_RDP,       0 }
 	};
 	uint32_t mask = 0;
 	uint32_t old;
 	int ret;
 	int i;
 
-//	ret = medcom_irq_enable(client, TRUE);
+//	ret = remote_irq_enable(client, TRUE);
 
-	ret = medcom_irq_get_mask(priv, &mask);
+	ret = remote_irq_get_mask(priv, &mask);
 	if (ret < 0) {
 		fprintf(stderr, "unable to get irq mask [%s]\n", strerror(-ret));
 		return ret;
@@ -50,7 +52,7 @@ static int poll_irq_status(void *priv)
 	for (i = 0; i < G_N_ELEMENTS(table); i++) {
 		if (mask & table[i].source) {
 			old = table[i].status;
-			ret = medcom_irq_get_info(priv, table[i].source, &table[i].status);
+			ret = remote_irq_get_info(priv, table[i].source, &table[i].status);
 			if (ret < 0) {
 				fprintf(stderr, "unable to get irq %d info [%s]\n",
 					table[i].source, strerror(-ret));
@@ -81,7 +83,7 @@ void medcom_irq_event(void *priv, uint32_t type)
 	printf("< %s()\n", __func__);
 }
 
-int32_t medcom_irq_enable(void *priv, uint8_t virtkey)
+int remote_irq_enable(void *priv, uint8_t virtkey)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -94,7 +96,7 @@ int32_t medcom_irq_enable(void *priv, uint8_t virtkey)
 	return ret;
 }
 
-int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
+int remote_irq_get_mask(void *priv, uint32_t *mask)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -110,7 +112,7 @@ int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
 	return ret;
 }
 
-int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t *info)
+int remote_irq_get_info(void *priv, enum remote_irq_source source, uint32_t *info)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;

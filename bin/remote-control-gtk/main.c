@@ -6,6 +6,11 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <stdbool.h>
 #include <string.h>
 
 #include "remote-control-gtk.h"
@@ -32,7 +37,7 @@ static struct panel *panels[] = {
 	&webkit_panel,
 };
 
-struct medcom_client *g_client = NULL;
+struct remote_client *g_client = NULL;
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -113,7 +118,7 @@ static void usage(FILE *fp, const char *program)
 
 int main(int argc, char *argv[])
 {
-	struct medcom_client *client = NULL;
+	struct remote_client *client = NULL;
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	GtkListStore *store;
@@ -132,7 +137,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	ret = medcom_init(&client, argv[1], NULL);
+	ret = remote_init(&client, argv[1], NULL);
 	if (ret < 0) {
 		fprintf(stderr, "failed to initialize: %s\n",
 				strerror(-ret));
@@ -172,6 +177,6 @@ int main(int argc, char *argv[])
 
 	gtk_main();
 
-	medcom_exit(client);
+	remote_exit(client);
 	return 0;
 }

@@ -6,13 +6,19 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <stdbool.h>
+
 #include "remote-control-gtk.h"
 
 void on_brightness_value_changed(GtkWidget *widget, gpointer data)
 {
 	gdouble value = gtk_range_get_value(GTK_RANGE(widget));
 	uint8_t brightness = (uint8_t)value;
-	medcom_backlight_set(g_client, brightness);
+	remote_backlight_set(g_client, brightness);
 }
 
 void on_backlight_enable_toggled(GtkWidget *widget, gpointer data)
@@ -22,7 +28,7 @@ void on_backlight_enable_toggled(GtkWidget *widget, gpointer data)
 
 	enabled = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 
-	ret = medcom_backlight_enable(g_client, enabled);
+	ret = remote_backlight_enable(g_client, enabled);
 	if (ret < 0) {
 		fprintf(stderr, "failed to %s backlight: %d\n",
 				enabled ? "enable" : "disable", ret);
@@ -50,7 +56,7 @@ static int backlight_panel_create(struct panel *panel, GtkWidget **widget)
 	control = glade_xml_get_widget(xml, "brightness");
 	if (control) {
 		uint8_t brightness = 255;
-		medcom_backlight_get(g_client, &brightness);
+		remote_backlight_get(g_client, &brightness);
 		gtk_range_set_value(GTK_RANGE(control), brightness);
 	}
 

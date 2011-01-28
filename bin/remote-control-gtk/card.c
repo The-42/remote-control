@@ -6,6 +6,12 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "remote-control-gtk.h"
@@ -21,7 +27,7 @@ struct card_context {
 };
 
 struct card_type_mapping {
-	enum medcom_card_type type;
+	enum remote_card_type type;
 	const char *name;
 };
 
@@ -31,16 +37,8 @@ struct card_type_mapping {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof ((a)[0]))
 
 static struct card_type_mapping card_type_name[] = {
-	DEFINE_CARD_TYPE(CARD_TYPE_NONE, "none"),
-	DEFINE_CARD_TYPE(CARD_TYPE_UNKNOWN, "unknown"),
-	DEFINE_CARD_TYPE(CARD_TYPE_SERIAL, "serial"),
-	DEFINE_CARD_TYPE(CARD_TYPE_T0, "T0"),
-	DEFINE_CARD_TYPE(CARD_TYPE_T1, "T1"),
-	DEFINE_CARD_TYPE(CARD_TYPE_I2C, "I2C"),
-	DEFINE_CARD_TYPE(CARD_TYPE_SLE4418, "SLE 4418"),
-	DEFINE_CARD_TYPE(CARD_TYPE_SLE4428, "SLE 4428"),
-	DEFINE_CARD_TYPE(CARD_TYPE_SLE4432, "SLE 4432"),
-	DEFINE_CARD_TYPE(CARD_TYPE_SLE4442, "SLE 4442"),
+	DEFINE_CARD_TYPE(REMOTE_CARD_TYPE_UNKNOWN, "unknown"),
+	DEFINE_CARD_TYPE(REMOTE_CARD_TYPE_I2C, "I2C"),
 };
 
 gpointer card_thread(gpointer data)
@@ -79,12 +77,12 @@ void on_card_event(uint32_t type, void *data)
 
 void on_refresh_clicked(GtkWidget *widget, gpointer data)
 {
-	enum medcom_card_type type = 0;
+	enum remote_card_type type = REMOTE_CARD_TYPE_UNKNOWN;
 	gchar buf[32];
 	int err;
 	int i;
 
-	err = medcom_card_get_type(g_client, &type);
+	err = remote_card_get_type(g_client, &type);
 	if (err < 0) {
 		fprintf(stderr, "failed to get card type: %d\n", err);
 		return;
@@ -120,7 +118,7 @@ void on_read_clicked(GtkWidget *widget, gpointer user_data)
 	memset(text, 0, sizeof(text));
 	memset(data, 0, sizeof(data));
 
-	ret = medcom_card_read(g_client, 0, data, sizeof(data));
+	ret = remote_card_read(g_client, 0, data, sizeof(data));
 	if (ret < 0) {
 		fprintf(stderr, "failed to read card: %d\n", ret);
 		return;
@@ -182,7 +180,7 @@ static int card_panel_create(struct panel *panel, GtkWidget **widget)
 		cp->enabled = TRUE;
 		cp->widget = NULL;
 
-		medcom_register_event_handler(g_client, MEDCOM_EVENT_CARD,
+		remote_register_event_handler(g_client, REMOTE_EVENT_CARD,
 				on_card_event, cp);
 		panel->priv = cp;
 	} else {
@@ -224,7 +222,7 @@ static int card_panel_destroy(struct panel *panel)
 	if (!panel)
 		return -EINVAL;
 
-	medcom_unregister_event_handler(g_client, MEDCOM_EVENT_CARD,
+	remote_unregister_event_handler(g_client, REMOTE_EVENT_CARD,
 			on_card_event);
 
 	if (panel->priv) {

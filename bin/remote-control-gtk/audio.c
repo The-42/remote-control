@@ -6,6 +6,12 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "remote-control-gtk.h"
@@ -15,10 +21,10 @@
 #define LEGACY_AUDIO_SUPPORT 0
 
 struct panel_data {
-	struct medcom_client *client;
+	struct remote_client *client;
 	/* the currently select mixer control */
-	enum medcom_mixer_control mixer_value;
-	enum medcom_mixer_input_source input_source;
+	enum remote_mixer_control mixer_value;
+	enum remote_mixer_input_source input_source;
 	/* the mixer controls */
 	GtkComboBox *mixer_combo;
 	GtkHScale *mixer_volume;
@@ -34,29 +40,29 @@ struct control_mapping {
 };
 
 static const struct control_mapping mixer_map[] = {
-	{ MEDCOM_MIXER_CONTROL_PLAYBACK_MASTER,  "Playback - Master" },
-	{ MEDCOM_MIXER_CONTROL_PLAYBACK_PCM,     "Playback - PCM" },
-	{ MEDCOM_MIXER_CONTROL_PLAYBACK_HEADSET, "Playback - Headset" },
-	{ MEDCOM_MIXER_CONTROL_PLAYBACK_SPEAKER, "Playback - Speaker" },
-	{ MEDCOM_MIXER_CONTROL_PLAYBACK_HANDSET, "Playback - Handset" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_MASTER,  "Playback - Master" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_PCM,     "Playback - PCM" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_HEADSET, "Playback - Headset" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_SPEAKER, "Playback - Speaker" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_HANDSET, "Playback - Handset" },
 
-	{ MEDCOM_MIXER_CONTROL_CAPTURE_MASTER,   "Capture - Master" },
-	{ MEDCOM_MIXER_CONTROL_CAPTURE_HEADSET,  "Capture - Headset" },
-	{ MEDCOM_MIXER_CONTROL_CAPTURE_HANDSET,  "Capture - Handset" },
-	{ MEDCOM_MIXER_CONTROL_CAPTURE_LINE,     "Capture - Line"},
+	{ REMOTE_MIXER_CONTROL_CAPTURE_MASTER,   "Capture - Master" },
+	{ REMOTE_MIXER_CONTROL_CAPTURE_HEADSET,  "Capture - Headset" },
+	{ REMOTE_MIXER_CONTROL_CAPTURE_HANDSET,  "Capture - Handset" },
+	{ REMOTE_MIXER_CONTROL_CAPTURE_LINE,     "Capture - Line"},
 	{ 0, NULL }
 };
 
 static const struct control_mapping input_map[] = {
-//	{ MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN, "Unknown" },
-	{ MEDCOM_MIXER_INPUT_SOURCE_HANDSET, "Headset" },
-	{ MEDCOM_MIXER_INPUT_SOURCE_HEADSET, "Handset" },
-	{ MEDCOM_MIXER_INPUT_SOURCE_LINE,    "Line" },
+//	{ REMOTE_MIXER_INPUT_SOURCE_UNKNOWN, "Unknown" },
+	{ REMOTE_MIXER_INPUT_SOURCE_HANDSET, "Headset" },
+	{ REMOTE_MIXER_INPUT_SOURCE_HEADSET, "Handset" },
+	{ REMOTE_MIXER_INPUT_SOURCE_LINE,    "Line" },
 	{ 0, NULL }
 };
 
 
-static enum medcom_mixer_control mixer_name_to_id(const gchar* text)
+static enum remote_mixer_control mixer_name_to_id(const gchar* text)
 {
 	int i;
 
@@ -64,10 +70,10 @@ static enum medcom_mixer_control mixer_name_to_id(const gchar* text)
 		if (g_strcmp0(mixer_map[i].text, text) == 0)
 			return mixer_map[i].control_id;
 
-	return MEDCOM_MIXER_CONTROL_MAX;
+	return REMOTE_MIXER_CONTROL_MAX;
 }
 
-static enum medcom_mixer_input_source input_name_to_id(const gchar* text)
+static enum remote_mixer_input_source input_name_to_id(const gchar* text)
 {
 	int i;
 
@@ -75,7 +81,7 @@ static enum medcom_mixer_input_source input_name_to_id(const gchar* text)
 		if (g_strcmp0(input_map[i].text, text) == 0)
 			return input_map[i].control_id;
 
-	return MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+	return REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
 }
 /*
 static void audio_panel_dump_priv(struct panel_data *priv)
@@ -97,18 +103,18 @@ static int audio_panel_update_mixer_controls(struct panel_data *pnl)
 	if (!pnl)
 		return -EINVAL;
 
-	ret = medcom_mixer_get_volume(pnl->client, pnl->mixer_value, &volume);
+	ret = remote_mixer_get_volume(pnl->client, pnl->mixer_value, &volume);
 	if (ret < 0) {
-		printf(" medcom_mixer_get_volume(%p, %d, ...) failed with %d\n",
+		printf(" remote_mixer_get_volume(%p, %d, ...) failed with %d\n",
 			pnl->client, pnl->mixer_value, ret);
 		return ret;
 	}
 
 	gtk_range_set_value(GTK_RANGE(pnl->mixer_volume), (gdouble)volume);
 
-	ret = medcom_mixer_get_mute(pnl->client, pnl->mixer_value, &muted);
+	ret = remote_mixer_get_mute(pnl->client, pnl->mixer_value, &muted);
 	if (ret < 0) {
-		printf(" medcom_mixer_get_mute(%p, %d, ...) failed with %d\n",
+		printf(" remote_mixer_get_mute(%p, %d, ...) failed with %d\n",
 			pnl->client, pnl->mixer_value, ret);
 		return ret;
 	}
@@ -119,23 +125,23 @@ static int audio_panel_update_mixer_controls(struct panel_data *pnl)
 
 static int audio_panel_update_input_controls(struct panel_data *pnl)
 {
-	enum medcom_mixer_input_source source = MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+	enum remote_mixer_input_source source = REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
 	int32_t ret;
 	int i;
 
 	if (!pnl)
 		return -EINVAL;
 
-	ret = medcom_mixer_set_input_source(pnl->client, pnl->input_source);
+	ret = remote_mixer_set_input_source(pnl->client, pnl->input_source);
 	if (ret < 0) {
-		printf(" medcom_mixer_set_input_source(%p, %d) failed with %d\n",
+		printf(" remote_mixer_set_input_source(%p, %d) failed with %d\n",
 			pnl->client, pnl->input_source, ret);
 		return ret;
 	}
 
-	ret = medcom_mixer_get_input_source(pnl->client, &source);
+	ret = remote_mixer_get_input_source(pnl->client, &source);
 	if (ret < 0) {
-		printf(" medcom_mixer_get_input_source(%p, ...) failed with %d\n",
+		printf(" remote_mixer_get_input_source(%p, ...) failed with %d\n",
 			pnl->client, ret);
 		return ret;
 	}
@@ -204,9 +210,9 @@ void on_mixer_channel_volume_changed(GtkWidget *widget, gpointer data)
 
 	val = gtk_range_get_value(GTK_RANGE(widget));
 
-	ret = medcom_mixer_set_volume(pnl->client, pnl->mixer_value, (uint8_t)val);
+	ret = remote_mixer_set_volume(pnl->client, pnl->mixer_value, (uint8_t)val);
 	if (ret < 0) {
-		printf("ERR:%s: medcom_mixer_set_volume failed %d\n", __func__, ret);
+		printf("ERR:%s: remote_mixer_set_volume failed %d\n", __func__, ret);
 	}
 
 out:
@@ -229,9 +235,9 @@ void on_mixer_channel_mute_toggled(GtkWidget *widget, gpointer data)
 
 	mute = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 
-	ret = medcom_mixer_set_mute(pnl->client, pnl->mixer_value, mute);
+	ret = remote_mixer_set_mute(pnl->client, pnl->mixer_value, mute);
 	if (ret < 0) {
-		printf("ERR:%s: medcom_mixer_set_mute failed %d\n", __func__, ret);
+		printf("ERR:%s: remote_mixer_set_mute failed %d\n", __func__, ret);
 	}
 
 out:
@@ -286,9 +292,9 @@ void on_legacy_volume_value_changed(GtkWidget *widget, gpointer data)
 
 	val = gtk_range_get_value(GTK_RANGE(widget));
 
-	ret = medcom_audio_set_volume(g_client, (uint8_t)val);
+	ret = remote_audio_set_volume(g_client, (uint8_t)val);
 	if (ret < 0) {
-		printf("ERR:%s: medcom_audio_set_volume failed %d\n", __func__, ret);
+		printf("ERR:%s: remote_audio_set_volume failed %d\n", __func__, ret);
 	}
 #endif
 }
@@ -301,7 +307,7 @@ void on_legacy_speakers_enable_toggled(GtkWidget *widget, gpointer data)
 
 	enabled = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 
-	ret = medcom_audio_enable_speakers(g_client, enabled);
+	ret = remote_audio_enable_speakers(g_client, enabled);
 	if (ret < 0) {
 		fprintf(stderr, "failed to %s speakers: %s\n",
 				enabled ? "disable" : "enable",
@@ -358,7 +364,7 @@ static int audio_panel_fill_input_combo_box(GtkComboBox *combo)
 
 static int audio_panel_create_mixer(GladeXML *xml, struct panel_data *priv)
 {
-	priv->mixer_value = MEDCOM_MIXER_CONTROL_PLAYBACK_MASTER;
+	priv->mixer_value = REMOTE_MIXER_CONTROL_PLAYBACK_MASTER;
 
 	priv->mixer_combo = GTK_COMBO_BOX(glade_xml_get_widget(xml, "channel_select"));
 	if (priv->mixer_combo)
@@ -381,7 +387,7 @@ static int audio_panel_create_mixer(GladeXML *xml, struct panel_data *priv)
 
 static int audio_panel_create_input(GladeXML *xml, struct panel_data *priv)
 {
-	priv->input_source = MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+	priv->input_source = REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
 
 	priv->input_combo = GTK_COMBO_BOX(glade_xml_get_widget(xml, "frame_input_combobox_source"));
 	if (priv->input_combo)
@@ -413,7 +419,7 @@ static int audio_panel_create_legacy(GladeXML *xml, struct panel_data *priv)
 		bool enabled = false;
 		int ret;
 
-		ret = medcom_audio_speakers_enabled(g_client, &enabled);
+		ret = remote_audio_speakers_enabled(g_client, &enabled);
 		if (ret < 0)
 			fprintf(stderr, "failed to get audio speakers status\n");
 

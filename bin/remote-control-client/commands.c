@@ -10,6 +10,8 @@
 #  include "config.h"
 #endif
 
+#include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "cli.h"
@@ -41,27 +43,27 @@ static int parse_bool(const char *string, bool *res)
 	return -EILSEQ;
 }
 
-static enum medcom_mixer_control parse_mixer_control(const char *control)
+static enum remote_mixer_control parse_mixer_control(const char *control)
 {
-	enum medcom_mixer_control ret = MEDCOM_MIXER_CONTROL_UNKNOWN;
+	enum remote_mixer_control ret = REMOTE_MIXER_CONTROL_UNKNOWN;
 
 	if (strcasecmp(control, "master") == 0)
-		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_MASTER;
+		ret = REMOTE_MIXER_CONTROL_PLAYBACK_MASTER;
 
 	if (strcasecmp(control, "pcm") == 0)
-		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_PCM;
+		ret = REMOTE_MIXER_CONTROL_PLAYBACK_PCM;
 
 	if (strcasecmp(control, "headset") == 0)
-		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_HEADSET;
+		ret = REMOTE_MIXER_CONTROL_PLAYBACK_HEADSET;
 
 	if (strcasecmp(control, "speaker") == 0)
-		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_SPEAKER;
+		ret = REMOTE_MIXER_CONTROL_PLAYBACK_SPEAKER;
 
 	if (strcasecmp(control, "handset") == 0)
-		ret = MEDCOM_MIXER_CONTROL_PLAYBACK_HANDSET;
+		ret = REMOTE_MIXER_CONTROL_PLAYBACK_HANDSET;
 
 	if (strcasecmp(control, "capture") == 0)
-		ret = MEDCOM_MIXER_CONTROL_CAPTURE_MASTER;
+		ret = REMOTE_MIXER_CONTROL_CAPTURE_MASTER;
 
 	return ret;
 }
@@ -121,7 +123,7 @@ static const struct shcmd_opt_def opts_mixer_volume[] = {
 
 static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 {
-	enum medcom_mixer_control control = MEDCOM_MIXER_CONTROL_UNKNOWN;
+	enum remote_mixer_control control = REMOTE_MIXER_CONTROL_UNKNOWN;
 	struct cli *cli = shctl_priv(ctl);
 	char *data = NULL;
 	int err;
@@ -138,7 +140,7 @@ static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 	if (err < 0) {
 		uint8_t volume = 0;
 
-		err = medcom_mixer_get_volume(cli->client, control, &volume);
+		err = remote_mixer_get_volume(cli->client, control, &volume);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -155,7 +157,7 @@ static int cmd_mixer_volume(struct shctl *ctl, const struct shcmd *cmd)
 			return -EINVAL;
 		}
 
-		err = medcom_mixer_set_volume(cli->client, control, volume);
+		err = remote_mixer_set_volume(cli->client, control, volume);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -182,7 +184,7 @@ static const struct shcmd_opt_def opts_mixer_mute[] = {
 
 static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 {
-	enum medcom_mixer_control control = MEDCOM_MIXER_CONTROL_UNKNOWN;
+	enum remote_mixer_control control = REMOTE_MIXER_CONTROL_UNKNOWN;
 	struct cli *cli = shctl_priv(ctl);
 	char *data = NULL;
 	int err;
@@ -199,7 +201,7 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 	if (err < 0) {
 		bool mute = false;
 
-		err = medcom_mixer_get_mute(cli->client, control, &mute);
+		err = remote_mixer_get_mute(cli->client, control, &mute);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -216,7 +218,7 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 			return -EINVAL;
 		}
 
-		err = medcom_mixer_set_mute(cli->client, control, mute);
+		err = remote_mixer_set_mute(cli->client, control, mute);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -229,21 +231,21 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 /*
  * "mixer-input" command
  */
-static int mixer_input_source_name(enum medcom_mixer_input_source source,
+static int mixer_input_source_name(enum remote_mixer_input_source source,
 		char *buffer, size_t size)
 {
 	int ret;
 
 	switch (source) {
-	case MEDCOM_MIXER_INPUT_SOURCE_HEADSET:
+	case REMOTE_MIXER_INPUT_SOURCE_HEADSET:
 		ret = snprintf(buffer, size, "headset");
 		break;
 
-	case MEDCOM_MIXER_INPUT_SOURCE_HANDSET:
+	case REMOTE_MIXER_INPUT_SOURCE_HANDSET:
 		ret = snprintf(buffer, size, "handset");
 		break;
 
-	case MEDCOM_MIXER_INPUT_SOURCE_LINE:
+	case REMOTE_MIXER_INPUT_SOURCE_LINE:
 		ret = snprintf(buffer, size, "line");
 		break;
 
@@ -258,18 +260,18 @@ static int mixer_input_source_name(enum medcom_mixer_input_source source,
 	return ret;
 }
 
-static enum medcom_mixer_input_source parse_mixer_input_source(const char *source)
+static enum remote_mixer_input_source parse_mixer_input_source(const char *source)
 {
 	if (strcmp(source, "headset") == 0)
-		return MEDCOM_MIXER_INPUT_SOURCE_HEADSET;
+		return REMOTE_MIXER_INPUT_SOURCE_HEADSET;
 
 	if (strcmp(source, "handset") == 0)
-		return MEDCOM_MIXER_INPUT_SOURCE_HANDSET;
+		return REMOTE_MIXER_INPUT_SOURCE_HANDSET;
 
 	if (strcmp(source, "line") == 0)
-		return MEDCOM_MIXER_INPUT_SOURCE_LINE;
+		return REMOTE_MIXER_INPUT_SOURCE_LINE;
 
-	return MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+	return REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
 }
 
 static const struct shcmd_info info_mixer_input[] = {
@@ -291,10 +293,10 @@ static int cmd_mixer_input(struct shctl *ctl, const struct shcmd *cmd)
 
 	err = shcmd_get_opt_string(cmd, "source", &source);
 	if (err < 0) {
-		enum medcom_mixer_input_source input = MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+		enum remote_mixer_input_source input = REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
 		char buffer[16];
 
-		err = medcom_mixer_get_input_source(cli->client, &input);
+		err = remote_mixer_get_input_source(cli->client, &input);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -308,11 +310,11 @@ static int cmd_mixer_input(struct shctl *ctl, const struct shcmd *cmd)
 
 		shctl_log(ctl, 0, "input source: %s\n", buffer);
 	} else {
-		enum medcom_mixer_input_source input;
+		enum remote_mixer_input_source input;
 
 		input = parse_mixer_input_source(source);
 
-		err = medcom_mixer_set_input_source(cli->client, input);
+		err = remote_mixer_set_input_source(cli->client, input);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -354,7 +356,7 @@ static int cmd_backlight_power(struct shctl *ctl, const struct shcmd *cmd)
 		return -EINVAL;
 	}
 
-	err = medcom_backlight_enable(cli->client, enable);
+	err = remote_backlight_enable(cli->client, enable);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -387,7 +389,7 @@ static int cmd_backlight_brightness(struct shctl *ctl, const struct shcmd *cmd)
 	if (err < 0) {
 		uint8_t brightness = 0;
 
-		err = medcom_backlight_get(cli->client, &brightness);
+		err = remote_backlight_get(cli->client, &brightness);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -405,7 +407,7 @@ static int cmd_backlight_brightness(struct shctl *ctl, const struct shcmd *cmd)
 			return -EINVAL;
 		}
 
-		err = medcom_backlight_set(cli->client, value);
+		err = remote_backlight_set(cli->client, value);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -438,7 +440,7 @@ static int cmd_lldp_dump(struct shctl *ctl, const struct shcmd *cmd)
 	if (!frame)
 		return -ENOMEM;
 
-	err = medcom_lldp_read(cli->client, frame, LLDP_MAX_FRAME_SIZE);
+	err = remote_lldp_read(cli->client, frame, LLDP_MAX_FRAME_SIZE);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		free(frame);
@@ -475,7 +477,7 @@ static int cmd_media_player_uri(struct shctl *ctl, const struct shcmd *cmd)
 
 	err = shcmd_get_opt_string(cmd, "uri", &uri);
 	if (err < 0) {
-		err = medcom_media_player_get_stream(cli->client, &uri);
+		err = remote_media_player_get_stream(cli->client, &uri);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -483,7 +485,7 @@ static int cmd_media_player_uri(struct shctl *ctl, const struct shcmd *cmd)
 
 		shctl_log(ctl, 0, "URI: %s\n", uri);
 	} else {
-		err = medcom_media_player_set_stream(cli->client, uri);
+		err = remote_media_player_set_stream(cli->client, uri);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
@@ -563,7 +565,7 @@ static int cmd_media_player_output(struct shctl *ctl, const struct shcmd *cmd)
 	if ((x == UINT16_MAX) && (y == UINT16_MAX) &&
 	    (width == UINT16_MAX) && (height == UINT16_MAX)) {
 	} else {
-		err = medcom_media_player_set_output_window(cli->client,
+		err = remote_media_player_set_output_window(cli->client,
 				x, y, width, height);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
@@ -596,14 +598,14 @@ static int cmd_media_player_play(struct shctl *ctl, const struct shcmd *cmd)
 
 	err = shcmd_get_opt_string(cmd, "uri", &uri);
 	if (!err) {
-		err = medcom_media_player_set_stream(cli->client, uri);
+		err = remote_media_player_set_stream(cli->client, uri);
 		if (err < 0) {
 			shctl_log(ctl, 0, "%s\n", strerror(-err));
 			return err;
 		}
 	}
 
-	err = medcom_media_player_start(cli->client);
+	err = remote_media_player_start(cli->client);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -630,7 +632,7 @@ static int cmd_media_player_stop(struct shctl *ctl, const struct shcmd *cmd)
 	struct cli *cli = shctl_priv(ctl);
 	int err;
 
-	err = medcom_media_player_stop(cli->client);
+	err = remote_media_player_stop(cli->client);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -659,7 +661,7 @@ static int cmd_media_player_state(struct shctl *ctl, const struct shcmd *cmd)
 	bool running = false;
 	int32_t err;
 
-	err = medcom_media_player_is_running(cli->client, &running);
+	err = remote_media_player_is_running(cli->client, &running);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -693,15 +695,15 @@ static const struct shcmd_opt_def opts_voip_login[] = {
 
 static int cmd_voip_login(struct shctl *ctl, const struct shcmd *cmd)
 {
-	struct medcom_voip_account account;
+	struct remote_voip_account account;
 	struct cli *cli = shctl_priv(ctl);
 	char *arg = NULL;
 	char *end = NULL;
 	int err;
 
-	err = shcmd_get_opt_string(cmd, "server", &account.server);
+	err = shcmd_get_opt_string(cmd, "server", &account.proxy);
 	if (err)
-		account.server = NULL;
+		account.proxy = NULL;
 		//account.server = "sip-0002.mockup.avionic-design.de";
 
 	err = shcmd_get_opt_string(cmd, "port", &arg);
@@ -721,7 +723,7 @@ static int cmd_voip_login(struct shctl *ctl, const struct shcmd *cmd)
 		account.password = NULL;
 		//account.password = "400";
 
-	err = medcom_voip_login(cli->client, &account);
+	err = remote_voip_login(cli->client, &account);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -748,7 +750,7 @@ static int cmd_voip_logout(struct shctl *ctl, const struct shcmd *cmd)
 	struct cli *cli = shctl_priv(ctl);
 	int err;
 
-	err = medcom_voip_logout(cli->client);
+	err = remote_voip_logout(cli->client);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -781,7 +783,7 @@ static int cmd_voip_call(struct shctl *ctl, const struct shcmd *cmd)
 	if (err < 0)
 		return err;
 
-	err = medcom_voip_connect_to(cli->client, arg);
+	err = remote_voip_connect_to(cli->client, arg);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -809,7 +811,7 @@ static int cmd_voip_accept(struct shctl *ctl, const struct shcmd *cmd)
 	char *arg = NULL;
 	int err;
 
-	err = medcom_voip_accept_incoming(cli->client, &arg);
+	err = remote_voip_accept_incoming(cli->client, &arg);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;
@@ -837,7 +839,7 @@ static int cmd_voip_terminate(struct shctl *ctl, const struct shcmd *cmd)
 	struct cli *cli = shctl_priv(ctl);
 	int err;
 
-	err = medcom_voip_disconnect(cli->client);
+	err = remote_voip_disconnect(cli->client);
 	if (err < 0) {
 		shctl_log(ctl, 0, "%s\n", strerror(-err));
 		return err;

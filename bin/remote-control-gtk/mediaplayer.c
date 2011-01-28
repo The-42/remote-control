@@ -6,6 +6,12 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "remote-control-gtk.h"
@@ -22,7 +28,7 @@ void on_mediaplayer_start_clicked(GtkWidget *widget, gpointer data)
 
 	mpp = g_object_get_data(G_OBJECT(widget), "user");
 
-	ret = medcom_media_player_set_output_window(g_client, mpp->x, mpp->y,
+	ret = remote_media_player_set_output_window(g_client, mpp->x, mpp->y,
 			mpp->width, mpp->height);
 	if (ret < 0) {
 		fprintf(stderr, "failed to set video output window: %d\n",
@@ -30,13 +36,13 @@ void on_mediaplayer_start_clicked(GtkWidget *widget, gpointer data)
 		return;
 	}
 
-	ret = medcom_media_player_set_stream(g_client, mpp->url);
+	ret = remote_media_player_set_stream(g_client, mpp->url);
 	if (ret < 0) {
 		fprintf(stderr, "failed to set stream: %d\n", ret);
 		return;
 	}
 
-	ret = medcom_media_player_start(g_client);
+	ret = remote_media_player_start(g_client);
 	if (ret < 0) {
 		fprintf(stderr, "failed to start stream: %d\n", ret);
 		return;
@@ -47,7 +53,7 @@ void on_mediaplayer_stop_clicked(GtkWidget *widget, gpointer data)
 {
 	int ret;
 
-	ret = medcom_media_player_stop(g_client);
+	ret = remote_media_player_stop(g_client);
 	if (ret < 0) {
 		fprintf(stderr, "failed to stop stream: %d\n", ret);
 		return;

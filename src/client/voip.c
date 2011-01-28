@@ -16,13 +16,20 @@
 #include "remote-control.h"
 
 #if 0
-int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
+int remote_voip_login(void *priv, struct remote_voip_account *account)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	struct medcom_voip_account login;
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_voip_login_stub(rpc, &ret, account);
+	memset(&login, 0, sizeof(login));
+	login.server = account->proxy;
+	login.port = account->port;
+	login.username = account->username;
+	login.password = account->password;
+
+	err = medcom_voip_login_stub(rpc, &ret, &login);
 	if (err < 0)
 		return err;
 
@@ -41,7 +48,7 @@ struct medcom_voip_login_options {
 };
 
 remote_public
-int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
+int remote_voip_login(void *priv, struct remote_voip_account *account)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	struct medcom_voip_login_options options;
@@ -52,7 +59,7 @@ int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
 	g_debug("> %s(priv=%p, account=%p)", __func__, priv, (void *)account);
 
 	memset(&options, 0, sizeof(options));
-	strncpy(options.server2, account->server, sizeof(options.server2));
+	strncpy(options.server2, account->proxy, sizeof(options.server2));
 	strncpy(options.username2, account->username, sizeof(options.username2));
 	strncpy(options.password2, account->password, sizeof(options.password2));
 
@@ -73,7 +80,7 @@ out:
 #endif
 
 remote_public
-int32_t medcom_voip_logout(void *priv)
+int remote_voip_logout(void *priv)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -87,7 +94,7 @@ int32_t medcom_voip_logout(void *priv)
 }
 
 remote_public
-int32_t medcom_voip_connect_to(void *priv, const char *uri)
+int remote_voip_connect_to(void *priv, const char *uri)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -101,7 +108,7 @@ int32_t medcom_voip_connect_to(void *priv, const char *uri)
 }
 
 remote_public
-int32_t medcom_voip_accept_incoming(void *priv, char **uri)
+int remote_voip_accept_incoming(void *priv, char **uri)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -115,7 +122,7 @@ int32_t medcom_voip_accept_incoming(void *priv, char **uri)
 }
 
 remote_public
-int32_t medcom_voip_disconnect(void *priv)
+int remote_voip_disconnect(void *priv)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;
@@ -129,7 +136,7 @@ int32_t medcom_voip_disconnect(void *priv)
 }
 
 remote_public
-int32_t medcom_voip_still_logged_in(void *priv, bool *status)
+int remote_voip_still_logged_in(void *priv, bool *status)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int32_t ret = 0;

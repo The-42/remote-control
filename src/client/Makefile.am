@@ -1,3 +1,6 @@
+include_HEADERS = \
+	remote-control.h
+
 lib_LTLIBRARIES = \
 	libremote-control.la
 
@@ -12,8 +15,8 @@ libremote_control_la_SOURCES = \
 	irq.c \
 	lldp.c \
 	media-player.c \
-	medcom.c \
 	mixer.c \
+	remote-control.c \
 	remote-control.h \
 	voip.c
 

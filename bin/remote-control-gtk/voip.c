@@ -6,6 +6,14 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "remote-control-gtk.h"
 #include "voip.h"
 
@@ -15,7 +23,7 @@
 #define USER_DATA_KEY "d7zsfiac3"
 
 struct panel_data {
-	struct medcom_client *client;
+	struct remote_client *client;
 	/* connection */
 	GtkEntry *server_address;
 	GtkEntry *server_port;
@@ -63,7 +71,7 @@ static int voip_panel_update_login_status(struct panel_data *pnl)
 	int32_t ret;
 
 	/* update current status */
-	ret = medcom_voip_still_logged_in(pnl->client, &status);
+	ret = remote_voip_still_logged_in(pnl->client, &status);
 	if (ret < 0)
 		return ret;
 
@@ -108,7 +116,7 @@ void on_voip_number_button_undo_clicked(GtkWidget *widget, gpointer data)
 
 void on_voip_server_button_login_clicked(GtkWidget *widget, gpointer data)
 {
-	struct medcom_voip_account login;
+	struct remote_voip_account login;
 	struct panel_data *pnl = NULL;
 	int32_t ret;
 
@@ -137,13 +145,13 @@ void on_voip_server_button_login_clicked(GtkWidget *widget, gpointer data)
 
 	memset(&login, 0, sizeof(login));
 
-	login.server   = g_strdup(gtk_entry_get_text(pnl->server_address));
+	login.proxy    = g_strdup(gtk_entry_get_text(pnl->server_address));
 	if (sscanf(gtk_entry_get_text(pnl->server_port), "%hd", &login.port) != 1)
 		login.port = 5060;
 	login.username = g_strdup(gtk_entry_get_text(pnl->server_username));
 	login.password = g_strdup(gtk_entry_get_text(pnl->server_password));
 
-	ret = medcom_voip_login(pnl->client, &login);
+	ret = remote_voip_login(pnl->client, &login);
 	if (ret < 0) {
 		fprintf(stderr, "login failed %d\n", ret);
 		goto out;
@@ -171,7 +179,7 @@ void on_voip_server_button_logout_clicked(GtkWidget *widget, gpointer data)
 		goto out;
 	}
 
-	ret = medcom_voip_logout(pnl->client);
+	ret = remote_voip_logout(pnl->client);
 	if (ret < 0) {
 		fprintf(stderr, "logout failed %d\n", ret);
 		goto out;
@@ -207,7 +215,7 @@ void on_voip_button_hook_clicked(GtkWidget *widget, gpointer data)
 	if (uri == NULL) {
 		gchar *caller = NULL;
 
-		ret = medcom_voip_accept_incoming(pnl->client, &caller);
+		ret = remote_voip_accept_incoming(pnl->client, &caller);
 		/* update caller info */
 		gtk_entry_set_text(GTK_ENTRY(pnl->call_number), caller);
 
@@ -215,7 +223,7 @@ void on_voip_button_hook_clicked(GtkWidget *widget, gpointer data)
 			free(caller);
 	}
 	else
-		ret = medcom_voip_connect_to(pnl->client, uri);
+		ret = remote_voip_connect_to(pnl->client, uri);
 
 	if (ret < 0) {
 		fprintf(stderr, "logout failed %d\n", ret);
@@ -244,7 +252,7 @@ void on_voip_button_unhook_clicked(GtkWidget *widget, gpointer data)
 		goto out;
 	}
 
-	ret = medcom_voip_disconnect(pnl->client);
+	ret = remote_voip_disconnect(pnl->client);
 	if (ret < 0) {
 		fprintf(stderr, "disconnect failed %d\n", ret);
 		goto out;

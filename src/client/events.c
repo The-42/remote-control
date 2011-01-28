@@ -14,8 +14,8 @@
 #include "remote-control.h"
 
 remote_public
-int medcom_register_event_handler(struct medcom_client *client,
-                enum medcom_event queue, medcom_event_handler_t handler,
+int remote_register_event_handler(struct remote_client *client,
+                enum remote_event queue, remote_event_handler_t handler,
                 void *data)
 {
 #if 0
@@ -45,8 +45,8 @@ int medcom_register_event_handler(struct medcom_client *client,
 }
 
 remote_public
-int medcom_unregister_event_handler(struct medcom_client *client,
-                enum medcom_event queue, medcom_event_handler_t handler)
+int remote_unregister_event_handler(struct remote_client *client,
+                enum remote_event queue, remote_event_handler_t handler)
 {
 #if 0
 	struct list_head *node, *temp;
@@ -72,8 +72,8 @@ int medcom_unregister_event_handler(struct medcom_client *client,
 #endif
 }
 
-static int medcom_call_events(struct medcom_client *client,
-		enum medcom_event queue, uint32_t type)
+static int remote_call_events(struct remote_client *client,
+		enum remote_event queue, uint32_t type)
 {
 #if 0
 	struct event_handler *eh;
@@ -103,15 +103,15 @@ static int medcom_call_events(struct medcom_client *client,
 
 void medcom_card_event(void *priv, uint32_t type)
 {
-	medcom_call_events(priv, MEDCOM_EVENT_CARD, type);
+	remote_call_events(priv, REMOTE_EVENT_CARD, type);
 }
 
 void medcom_modem_event(void *priv, uint32_t type)
 {
-	medcom_call_events(priv, MEDCOM_EVENT_MODEM, type);
+	remote_call_events(priv, REMOTE_EVENT_MODEM, type);
 }
 
 void medcom_voip_event(void *priv, uint32_t type)
 {
-	medcom_call_events(priv, MEDCOM_EVENT_VOIP, type);
+	remote_call_events(priv, REMOTE_EVENT_VOIP, type);
 }
