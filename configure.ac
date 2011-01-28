@@ -83,6 +83,7 @@ AC_OUTPUT([
 	data/Makefile
 	Makefile
 	src/client/Makefile
+	src/client/remote-control.pc
 	src/Makefile
 	src/server/Makefile
 ])

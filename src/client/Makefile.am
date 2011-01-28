@@ -4,6 +4,9 @@ include_HEADERS = \
 lib_LTLIBRARIES = \
 	libremote-control.la
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = remote-control.pc
+
 libremote_control_la_CPPFLAGS = \
 	@VISIBILITY_CFLAGS@ \
 	@GLIB_CFLAGS@
