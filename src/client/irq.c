@@ -6,7 +6,13 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <glib.h>
+
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 static void notify_event_handlers(enum medcom_irq_source source, uint32_t status)

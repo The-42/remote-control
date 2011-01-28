@@ -1,7 +1,8 @@
-noinst_LTLIBRARIES = \
+lib_LTLIBRARIES = \
 	libremote-control.la
 
 libremote_control_la_CPPFLAGS = \
+	@VISIBILITY_CFLAGS@ \
 	@GLIB_CFLAGS@
 
 libremote_control_la_SOURCES = \

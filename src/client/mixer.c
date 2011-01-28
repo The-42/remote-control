@@ -6,8 +6,14 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
+remote_public
 int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, bool mute)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -21,6 +27,7 @@ int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, boo
 	return ret;
 }
 
+remote_public
 int32_t medcom_mixer_get_mute(void *priv, enum medcom_mixer_control control, bool *mutep)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -34,6 +41,7 @@ int32_t medcom_mixer_get_mute(void *priv, enum medcom_mixer_control control, boo
 	return ret;
 }
 
+remote_public
 int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control, uint8_t volume)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -47,6 +55,7 @@ int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control, u
 	return ret;
 }
 
+remote_public
 int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, uint8_t *volumep)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -60,6 +69,7 @@ int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control, u
 	return ret;
 }
 
+remote_public
 int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source source)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -73,6 +83,7 @@ int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source
 	return ret;
 }
 
+remote_public
 int32_t medcom_mixer_get_input_source(void *priv, enum medcom_mixer_input_source *sourcep)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);

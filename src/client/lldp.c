@@ -10,8 +10,10 @@
 #  include "config.h"
 #endif
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
+remote_public
 int32_t medcom_lldp_read(void *priv, void *data, size_t size)
 {
 	struct rpc_client *client = rpc_client_from_priv(priv);

@@ -6,8 +6,14 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
+remote_public
 int32_t medcom_backlight_enable(void *priv, uint32_t flags)
 {
 	struct rpc_client *client = rpc_client_from_priv(priv);
@@ -21,6 +27,7 @@ int32_t medcom_backlight_enable(void *priv, uint32_t flags)
 	return ret;
 }
 
+remote_public
 int32_t medcom_backlight_get(void *priv, uint8_t *brightness)
 {
 	struct rpc_client *client = rpc_client_from_priv(priv);
@@ -34,6 +41,7 @@ int32_t medcom_backlight_get(void *priv, uint8_t *brightness)
 	return ret;
 }
 
+remote_public
 int32_t medcom_backlight_set(void *priv, uint8_t brightness)
 {
 	struct rpc_client *client = rpc_client_from_priv(priv);

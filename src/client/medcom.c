@@ -6,8 +6,13 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <pthread.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct medcom_client {
@@ -38,6 +43,7 @@ static void *poll_event_thread(void *context)
 	return NULL;
 }
 
+remote_public
 int medcom_init(struct medcom_client **clientp, const char *hostname,
 		const char *service)
 {
@@ -87,6 +93,7 @@ int medcom_init(struct medcom_client **clientp, const char *hostname,
 	return 0;
 }
 
+remote_public
 int medcom_exit(struct medcom_client *client)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(client);

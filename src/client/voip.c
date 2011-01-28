@@ -6,8 +6,13 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #if 0
@@ -35,6 +40,7 @@ struct medcom_voip_login_options {
 	char password2[128];
 };
 
+remote_public
 int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -66,6 +72,7 @@ out:
 }
 #endif
 
+remote_public
 int32_t medcom_voip_logout(void *priv)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -79,6 +86,7 @@ int32_t medcom_voip_logout(void *priv)
 	return ret;
 }
 
+remote_public
 int32_t medcom_voip_connect_to(void *priv, const char *uri)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -92,6 +100,7 @@ int32_t medcom_voip_connect_to(void *priv, const char *uri)
 	return ret;
 }
 
+remote_public
 int32_t medcom_voip_accept_incoming(void *priv, char **uri)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -105,6 +114,7 @@ int32_t medcom_voip_accept_incoming(void *priv, char **uri)
 	return ret;
 }
 
+remote_public
 int32_t medcom_voip_disconnect(void *priv)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -118,6 +128,7 @@ int32_t medcom_voip_disconnect(void *priv)
 	return ret;
 }
 
+remote_public
 int32_t medcom_voip_still_logged_in(void *priv, bool *status)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);

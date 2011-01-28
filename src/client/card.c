@@ -6,8 +6,14 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
+remote_public
 int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -24,6 +30,7 @@ out:
 	return ret;
 }
 
+remote_public
 int32_t medcom_card_read(void *priv, off_t offset, void *buffer, size_t size)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
@@ -46,6 +53,7 @@ out:
 	return ret;
 }
 
+remote_public
 int32_t medcom_card_write(void *priv, off_t offset, const void *buffer,
 		size_t size)
 {

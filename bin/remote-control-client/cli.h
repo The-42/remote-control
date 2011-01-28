@@ -11,6 +11,12 @@
 
 #include <libsh.h>
 
+/*
+ * TODO: get rid of the requirement to include this header file, because it
+ *       will allow distributing the remote-control client library for use
+ *       in external projects
+ */
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #define gettext_noop(str) str
