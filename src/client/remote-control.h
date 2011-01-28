@@ -9,6 +9,7 @@
 #ifndef REMOTE_CONTROL_H
 #define REMOTE_CONTROL_H 1
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)

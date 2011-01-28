@@ -10,8 +10,6 @@
 #  include "config.h"
 #endif
 
-#include <stdbool.h>
-
 #include "remote-control-gtk.h"
 
 static int tuner_panel_create(struct panel *panel, GtkWidget **widget)

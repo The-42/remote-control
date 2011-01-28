@@ -10,8 +10,6 @@
 #  include "config.h"
 #endif
 
-#include <stdbool.h>
-
 #include "remote-control-gtk.h"
 
 void on_brightness_value_changed(GtkWidget *widget, gpointer data)
