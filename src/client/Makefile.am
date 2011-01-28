@@ -1,3 +1,5 @@
+VERSION_INFO = 0:0:0
+
 include_HEADERS = \
 	remote-control.h
 
@@ -26,6 +28,8 @@ libremote_control_la_SOURCES = \
 nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
+
+libremote_control_la_LDFLAGS = -version-info $(VERSION_INFO)
 
 libremote_control_la_LIBADD = \
 	@GLIB_LIBS@ \
