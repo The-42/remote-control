@@ -37,6 +37,7 @@ static struct panel *panels[] = {
 	&webkit_panel,
 };
 
+/* TODO: get rid of this global variable */
 struct remote_client *g_client = NULL;
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))

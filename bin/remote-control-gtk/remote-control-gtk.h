@@ -16,6 +16,7 @@
 
 #include "remote-control.h"
 
+/* TODO: get rid of this global variable */
 extern struct remote_client *g_client;
 
 struct panel {

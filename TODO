@@ -1,3 +1,4 @@
+* remote-control-gtk: Get rid of the g_client global variable.
 
 * Enhance medcom_voip_login() to allow a domain to be specified. The signature
   will be changed eventually anyway to take the parameters from a VoIP account
