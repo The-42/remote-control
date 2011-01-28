@@ -43,27 +43,75 @@ static int parse_bool(const char *string, bool *res)
 	return -EILSEQ;
 }
 
+static const struct {
+	enum remote_mixer_control id;
+	const char *name;
+} mixer_control_map[] = {
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_MASTER, "master" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_PCM, "pcm" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_HEADSET, "headset" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_SPEAKER, "speaker" },
+	{ REMOTE_MIXER_CONTROL_PLAYBACK_HANDSET, "handset" },
+	{ REMOTE_MIXER_CONTROL_CAPTURE_MASTER, "capture" },
+};
+
 static enum remote_mixer_control parse_mixer_control(const char *control)
 {
 	enum remote_mixer_control ret = REMOTE_MIXER_CONTROL_UNKNOWN;
+	unsigned int i;
 
-	if (strcasecmp(control, "master") == 0)
-		ret = REMOTE_MIXER_CONTROL_PLAYBACK_MASTER;
+	for (i = 0; i < ARRAY_SIZE(mixer_control_map); i++) {
+		if (strcasecmp(mixer_control_map[i].name, "master") == 0) {
+			ret = mixer_control_map[i].id;
+			break;
+		}
+	}
 
-	if (strcasecmp(control, "pcm") == 0)
-		ret = REMOTE_MIXER_CONTROL_PLAYBACK_PCM;
+	return ret;
+}
 
-	if (strcasecmp(control, "headset") == 0)
-		ret = REMOTE_MIXER_CONTROL_PLAYBACK_HEADSET;
+static const struct {
+	enum remote_mixer_input_source id;
+	const char *name;
+} mixer_input_map[] = {
+	{ REMOTE_MIXER_INPUT_SOURCE_HEADSET, "headset" },
+	{ REMOTE_MIXER_INPUT_SOURCE_HANDSET, "handset" },
+	{ REMOTE_MIXER_INPUT_SOURCE_LINE, "line" },
+};
 
-	if (strcasecmp(control, "speaker") == 0)
-		ret = REMOTE_MIXER_CONTROL_PLAYBACK_SPEAKER;
+static int mixer_input_source_name(enum remote_mixer_input_source source,
+		char *buffer, size_t size)
+{
+	unsigned int i;
+	int ret = 0;
 
-	if (strcasecmp(control, "handset") == 0)
-		ret = REMOTE_MIXER_CONTROL_PLAYBACK_HANDSET;
+	for (i = 0; i < ARRAY_SIZE(mixer_input_map); i++) {
+		if (mixer_input_map[i].id == source) {
+			ret = snprintf(buffer, size, mixer_input_map[i].name);
+			break;
+		}
+	}
 
-	if (strcasecmp(control, "capture") == 0)
-		ret = REMOTE_MIXER_CONTROL_CAPTURE_MASTER;
+	if (ret == 0)
+		ret = snprintf(buffer, size, "unknown");
+
+	if (ret < 0)
+		ret = -errno;
+
+	return ret;
+}
+
+static enum remote_mixer_input_source parse_mixer_input_source(const char *source)
+{
+	enum remote_mixer_input_source ret = REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(mixer_input_map); i++) {
+		if (strcasecmp(source, mixer_input_map[i].name) == 0) {
+			ret = mixer_input_map[i].id;
+			break;
+		}
+	}
 
 	return ret;
 }
@@ -231,49 +279,6 @@ static int cmd_mixer_mute(struct shctl *ctl, const struct shcmd *cmd)
 /*
  * "mixer-input" command
  */
-static int mixer_input_source_name(enum remote_mixer_input_source source,
-		char *buffer, size_t size)
-{
-	int ret;
-
-	switch (source) {
-	case REMOTE_MIXER_INPUT_SOURCE_HEADSET:
-		ret = snprintf(buffer, size, "headset");
-		break;
-
-	case REMOTE_MIXER_INPUT_SOURCE_HANDSET:
-		ret = snprintf(buffer, size, "handset");
-		break;
-
-	case REMOTE_MIXER_INPUT_SOURCE_LINE:
-		ret = snprintf(buffer, size, "line");
-		break;
-
-	default:
-		ret = snprintf(buffer, size, "unknown");
-		break;
-	}
-
-	if (ret < 0)
-		ret = -errno;
-
-	return ret;
-}
-
-static enum remote_mixer_input_source parse_mixer_input_source(const char *source)
-{
-	if (strcmp(source, "headset") == 0)
-		return REMOTE_MIXER_INPUT_SOURCE_HEADSET;
-
-	if (strcmp(source, "handset") == 0)
-		return REMOTE_MIXER_INPUT_SOURCE_HANDSET;
-
-	if (strcmp(source, "line") == 0)
-		return REMOTE_MIXER_INPUT_SOURCE_LINE;
-
-	return REMOTE_MIXER_INPUT_SOURCE_UNKNOWN;
-}
-
 static const struct shcmd_info info_mixer_input[] = {
 	{ "help", gettext_noop("get or set mixer input source") },
 	{ "desc", gettext_noop("Gets or sets the mixer input source.") },
