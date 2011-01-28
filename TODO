@@ -1,3 +1,11 @@
+* Allow the client remote-control shared library to be used by external
+  projects. Currently, the src/client/remote-control.h header requires types
+  and structures defined by the stub generated from the protocol description
+  so that the library can only be used if the stub header is available, which
+  is not the case for external projects. One possible way to solve this would
+  be to abstract and wrap the interface exported by the client library such
+  that any dependency on the generated stub is removed.
+
 * Enhance medcom_voip_login() to allow a domain to be specified. The signature
   will be changed eventually anyway to take the parameters from a VoIP account
   structure, at which point the account structure could easily be extended by
