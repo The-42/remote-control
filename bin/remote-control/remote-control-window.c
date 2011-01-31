@@ -105,6 +105,13 @@ static void remote_control_window_class_init(RemoteControlWindowClass *klass)
 				G_PARAM_STATIC_STRINGS));
 }
 
+static void on_realize(GtkWidget *widget, gpointer user_data)
+{
+	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	gdk_window_set_cursor(widget->window, cursor);
+	gdk_cursor_unref(cursor);
+}
+
 static gboolean plug_removed(GtkSocket *sock, gpointer data)
 {
 	return TRUE;
@@ -119,6 +126,9 @@ static void remote_control_window_init(RemoteControlWindow *self)
 	gint cy;
 
 	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+
+	g_signal_connect(G_OBJECT(self), "realize",
+			(GCallback)on_realize, NULL);
 
 	screen = gtk_window_get_screen(window);
 	cx = gdk_screen_get_width(screen);
@@ -185,7 +195,7 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 
 	/* TODO: check for network connection (netlink socket, libnl?) */
 
-	argv = g_new0(gchar *, 9);
+	argv = g_new0(gchar *, 10);
 	if (!argv) {
 		g_error("g_new0() failed");
 		return FALSE;
@@ -198,8 +208,9 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 	argv[4] = g_strdup(priv->rdp.password);
 	argv[5] = g_strdup("-X");
 	argv[6] = g_strdup_printf("%lx", xid);
-	argv[7] = g_strdup(priv->rdp.hostname);
-	argv[8] = NULL;
+	argv[7] = g_strdup("--kiosk");
+	argv[8] = g_strdup(priv->rdp.hostname);
+	argv[9] = NULL;
 
 	if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD |
 			G_SPAWN_SEARCH_PATH, NULL, NULL, &priv->xfreerdp,
