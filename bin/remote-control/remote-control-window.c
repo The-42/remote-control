@@ -189,7 +189,7 @@ static void child_watch(GPid pid, gint status, gpointer data)
 
 gboolean remote_control_window_connect(RemoteControlWindow *self,
 		const gchar *hostname, const gchar *username,
-		const gchar *password)
+		const gchar *password, guint delay)
 {
 	RemoteControlWindowPrivate *priv;
 
@@ -202,7 +202,7 @@ gboolean remote_control_window_connect(RemoteControlWindow *self,
 	priv->rdp.username = g_strdup(username);
 	priv->rdp.password = g_strdup(password);
 
-	return remote_control_window_reconnect(self);
+	return start_delayed(self, delay);
 }
 
 gboolean remote_control_window_reconnect(RemoteControlWindow *self)

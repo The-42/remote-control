@@ -22,6 +22,9 @@ static const gchar REMOTE_CONTROL_BUS_NAME[] = "de.avionic-design.RemoteControl"
 
 static GMainLoop *g_loop = NULL;
 
+#define RDP_DELAY_MIN  90
+#define RDP_DELAY_MAX 120
+
 #ifdef ENABLE_DBUS
 static void g_dbus_remote_control_method_call(GDBusConnection *connection,
 		const gchar *sender, const gchar *object,
@@ -255,6 +258,8 @@ int main(int argc, char *argv[])
 		hostname = g_strdup(argv[1]);
 
 	if (hostname) {
+		guint delay = g_random_int_range(RDP_DELAY_MIN, RDP_DELAY_MAX + 1);
+
 		if (!username || !password) {
 			char buffer[HOST_NAME_MAX];
 			int err;
@@ -279,7 +284,7 @@ int main(int argc, char *argv[])
 		gtk_widget_show_all(window);
 
 		remote_control_window_connect(REMOTE_CONTROL_WINDOW(window),
-				hostname, username, password);
+				hostname, username, password, delay);
 
 		g_free(password);
 		g_free(username);

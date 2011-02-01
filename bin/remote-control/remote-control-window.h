@@ -37,7 +37,7 @@ GType remote_control_window_get_type(void);
 GtkWidget *remote_control_window_new(GMainLoop *loop);
 gboolean remote_control_window_connect(RemoteControlWindow *window,
 		const gchar *hostname, const gchar *username,
-		const gchar *password);
+		const gchar *password, guint delay);
 gboolean remote_control_window_reconnect(RemoteControlWindow *window);
 gboolean remote_control_window_disconnect(RemoteControlWindow *window);
 
