@@ -16,7 +16,7 @@
 
 #include "remote-control-window.h"
 
-#define RDP_RECONNECT_DELAY 3
+#define RDP_DELAY_RETRY 3
 
 G_DEFINE_TYPE(RemoteControlWindow, remote_control_window, GTK_TYPE_WINDOW);
 
@@ -147,6 +147,30 @@ GtkWidget *remote_control_window_new(GMainLoop *loop)
 	return g_object_new(REMOTE_CONTROL_TYPE_WINDOW, "loop", loop, NULL);
 }
 
+static gboolean reconnect(gpointer data)
+{
+	RemoteControlWindow *self = data;
+	remote_control_window_reconnect(self);
+	return FALSE;
+}
+
+static gboolean start_delayed(gpointer data, guint delay)
+{
+	RemoteControlWindow *self = data;
+	RemoteControlWindowPrivate *priv;
+	GMainContext *context;
+	GSource *timeout;
+
+	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+
+	context = g_main_loop_get_context(priv->loop);
+	timeout = g_timeout_source_new_seconds(delay);
+	g_source_set_callback(timeout, reconnect, data, NULL);
+	g_source_attach(timeout, context);
+
+	return TRUE;
+}
+
 static void child_watch(GPid pid, gint status, gpointer data)
 {
 	RemoteControlWindow *self = data;
@@ -160,8 +184,7 @@ static void child_watch(GPid pid, gint status, gpointer data)
 	priv->watch = NULL;
 	priv->xfreerdp = 0;
 
-	g_usleep(RDP_RECONNECT_DELAY * G_USEC_PER_SEC);
-	remote_control_window_reconnect(self);
+	start_delayed(data, RDP_DELAY_RETRY);
 }
 
 gboolean remote_control_window_connect(RemoteControlWindow *self,
