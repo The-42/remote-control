@@ -26,3 +26,9 @@ int32_t medcom_sound_play_sync(void *priv, const char *filename)
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
+
+int32_t medcom_sound_play(void *priv, const char *uri)
+{
+	struct sound_manager *sound = remote_control_get_sound_manager(priv);
+	return sound_manager_play(sound, uri);
+}

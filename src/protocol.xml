@@ -277,8 +277,8 @@
 			<arg name="filename" type="const char *" mode="in"/>
 		</func>
 		<!-- media functions -->
-		<func name="medcom_media_run" returns="int32_t" opcode="1200">
-			<arg name="media" type="const char *" mode="in"/>
+		<func name="medcom_sound_play" returns="int32_t" opcode="1200">
+			<arg name="uri" type="const char *" mode="in"/>
 		</func>
 		<func name="medcom_media_command" returns="int32_t" opcode="1201">
 			<arg name="command" type="uint32_t" mode="in"/>
