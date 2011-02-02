@@ -33,6 +33,7 @@ struct remote_control {
 	struct event_manager *event_manager;
 	struct backlight *backlight;
 	struct media_player *player;
+	struct sound_manager *sound;
 	struct smartcard *smartcard;
 	struct voip *voip;
 	struct mixer *mixer;
@@ -312,6 +313,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = sound_manager_create(&rc->sound);
+	if (err < 0) {
+		g_error("sound_manager_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = smartcard_create(&rc->smartcard);
 	if (err < 0) {
 		g_error("smartcard_create(): %s", strerror(-err));
@@ -369,6 +376,7 @@ int remote_control_free(struct remote_control *rc)
 	net_free(rc->net);
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);
+	sound_manager_free(rc->sound);
 	media_player_free(rc->player);
 	backlight_free(rc->backlight);
 	rpc_server_free(server);
@@ -389,6 +397,11 @@ struct backlight *remote_control_get_backlight(struct remote_control *rc)
 struct media_player *remote_control_get_media_player(struct remote_control *rc)
 {
 	return rc ? rc->player : NULL;
+}
+
+struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc)
+{
+	return rc ? rc->sound : NULL;
 }
 
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc)

@@ -49,7 +49,8 @@ libremote_control_la_LIBADD += \
 	@LIBVLC_LIBS@
 
 libremote_control_la_SOURCES += \
-	media-player-gtk-vlc.c
+	media-player-gtk-vlc.c \
+	sound-manager-vlc.c
 else
 if ENABLE_GST
 libremote_control_la_CFLAGS += \
@@ -59,10 +60,12 @@ libremote_control_la_LIBADD += \
 	@GST_LIBS@
 
 libremote_control_la_SOURCES += \
-	media-player-gtk-gst.c
+	media-player-gtk-gst.c \
+	sound-manager-null.c
 else
 libremote_control_la_SOURCES += \
-	media-player-null.c
+	media-player-null.c \
+	sound-manager-null.c
 endif # ENABLE_GST
 endif # ENABLE_LIBVLC
 

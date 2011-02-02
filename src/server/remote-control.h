@@ -128,6 +128,15 @@ int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep);
 
 /**
+ * sound manager
+ */
+struct sound_manager;
+
+int sound_manager_create(struct sound_manager **managerp);
+int sound_manager_free(struct sound_manager *manager);
+int sound_manager_play(struct sound_manager *manager, const char *uri);
+
+/**
  * smartcard
  */
 struct smartcard;
@@ -224,6 +233,7 @@ int remote_control_free(struct remote_control *rc);
 struct event_manager *remote_control_get_event_manager(struct remote_control *rc);
 struct backlight *remote_control_get_backlight(struct remote_control *rc);
 struct media_player *remote_control_get_media_player(struct remote_control *rc);
+struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);
