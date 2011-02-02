@@ -23,10 +23,16 @@ enum {
 
 int32_t medcom_irq_enable(void *priv, uint8_t virtkey)
 {
-	int32_t ret = -ENOSYS;
-	g_debug("> %s(priv=%p, virtkey=%#x)", __func__, priv, virtkey);
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	struct rpc_server *server = rpc_server_from_priv(priv);
+	int err;
+
+	err = medcom_irq_event_stub(server, 0);
+	if (err < 0) {
+		g_debug("medcom_irq_event_stub(): %s", strerror(-err));
+		return err;
+	}
+
+	return 0;
 }
 
 int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
