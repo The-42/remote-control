@@ -18,14 +18,14 @@
 #include "remote-control-window.h"
 #include "remote-control.h"
 
-static const gchar REMOTE_CONTROL_BUS_NAME[] = "de.avionic-design.RemoteControl";
-
 static GMainLoop *g_loop = NULL;
 
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
 
 #ifdef ENABLE_DBUS
+static const gchar REMOTE_CONTROL_BUS_NAME[] = "de.avionic-design.RemoteControl";
+
 static void g_dbus_remote_control_method_call(GDBusConnection *connection,
 		const gchar *sender, const gchar *object,
 		const gchar *interface, const gchar *method,
