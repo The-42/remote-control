@@ -1,3 +1,6 @@
+Release x.y.z (YYYY-MM-DD)
+==========================
+
 Release 0.3.0 (2011-02-02)
 ==========================
 - Distribute the client remote-control library as a shared object, so that it
