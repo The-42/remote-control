@@ -1,5 +1,15 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.3.0 (2011-02-02)
 ==========================
+- Distribute the client remote-control library as a shared object, so that it
+  can be shared between the command-line and the Gtk+ clients. Only symbols
+  that are actually used are exported (if supported by the toolchain) in order
+  to slim down the library slim and make it faster to load.
+- Always hide the mouse cursor.
+- Delay 90 to 120 seconds at startup before initiating the RDP session to work
+  around crummy garbage collection algorithms in terminal servers.
+- Implement medcom_sound_play() call (formerly known as medcom_media_run()),
+  used to play VoIP ringtones.
+- Fix initial interrupt processing.
 
 Release 0.2.2 (2011-01-25)
 ==========================
