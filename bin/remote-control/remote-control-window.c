@@ -54,7 +54,8 @@ static void remote_control_window_get_property(GObject *object, guint prop_id,
 		break;
 
 	default:
-		g_assert_not_reached();
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+		break;
 	}
 }
 
@@ -72,7 +73,8 @@ static void remote_control_window_set_property(GObject *object, guint prop_id,
 		break;
 
 	default:
-		g_assert_not_reached();
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+		break;
 	}
 }
 
