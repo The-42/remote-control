@@ -24,7 +24,7 @@ G_DEFINE_TYPE(RemoteControlWindow, remote_control_window, GTK_TYPE_WINDOW);
 
 struct _RemoteControlWindowPrivate {
 	GtkWidget *socket;
-	GMainLoop *loop;
+	GMainContext *context;
 	GSource *watch;
 	GPid xfreerdp;
 
@@ -37,7 +37,7 @@ struct _RemoteControlWindowPrivate {
 
 enum {
 	PROP_0,
-	PROP_LOOP,
+	PROP_CONTEXT,
 };
 
 static void remote_control_window_get_property(GObject *object, guint prop_id,
@@ -49,8 +49,8 @@ static void remote_control_window_get_property(GObject *object, guint prop_id,
 	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(window);
 
 	switch (prop_id) {
-	case PROP_LOOP:
-		g_value_set_pointer(value, priv->loop);
+	case PROP_CONTEXT:
+		g_value_set_pointer(value, priv->context);
 		break;
 
 	default:
@@ -67,8 +67,8 @@ static void remote_control_window_set_property(GObject *object, guint prop_id,
 	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(window);
 
 	switch (prop_id) {
-	case PROP_LOOP:
-		priv->loop = g_value_get_pointer(value);
+	case PROP_CONTEXT:
+		priv->context = g_value_get_pointer(value);
 		break;
 
 	default:
@@ -98,9 +98,9 @@ static void remote_control_window_class_init(RemoteControlWindowClass *klass)
 	object->set_property = remote_control_window_set_property;
 	object->finalize = remote_control_window_finalize;
 
-	g_object_class_install_property(object, PROP_LOOP,
-			g_param_spec_pointer("loop", "application main loop",
-				"Application main loop to integrate with.",
+	g_object_class_install_property(object, PROP_CONTEXT,
+			g_param_spec_pointer("context", "main loop context",
+				"Main loop context to integrate with.",
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 				G_PARAM_STATIC_STRINGS));
 }
@@ -142,9 +142,10 @@ static void remote_control_window_init(RemoteControlWindow *self)
 	gtk_container_add(GTK_CONTAINER(window), priv->socket);
 }
 
-GtkWidget *remote_control_window_new(GMainLoop *loop)
+GtkWidget *remote_control_window_new(GMainContext *context)
 {
-	return g_object_new(REMOTE_CONTROL_TYPE_WINDOW, "loop", loop, NULL);
+	return g_object_new(REMOTE_CONTROL_TYPE_WINDOW, "context", context,
+			NULL);
 }
 
 static gboolean reconnect(gpointer data)
@@ -158,15 +159,13 @@ static gboolean start_delayed(gpointer data, guint delay)
 {
 	RemoteControlWindow *self = data;
 	RemoteControlWindowPrivate *priv;
-	GMainContext *context;
 	GSource *timeout;
 
 	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
 
-	context = g_main_loop_get_context(priv->loop);
 	timeout = g_timeout_source_new_seconds(delay);
 	g_source_set_callback(timeout, reconnect, data, NULL);
-	g_source_attach(timeout, context);
+	g_source_attach(timeout, priv->context);
 
 	return TRUE;
 }
@@ -208,7 +207,6 @@ gboolean remote_control_window_connect(RemoteControlWindow *self,
 gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 {
 	RemoteControlWindowPrivate *priv;
-	GMainContext *context;
 	GError *error = NULL;
 	gchar **argv;
 	XID xid;
@@ -254,8 +252,7 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 
 	g_source_set_callback(priv->watch, (GSourceFunc)child_watch, self,
 			NULL);
-	context = g_main_loop_get_context(priv->loop);
-	g_source_attach(priv->watch, context);
+	g_source_attach(priv->watch, priv->context);
 
 	return TRUE;
 }

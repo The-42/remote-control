@@ -277,7 +277,8 @@ int main(int argc, char *argv[])
 				password = g_strdup(buffer);
 		}
 
-		window = remote_control_window_new(loop);
+		context = g_main_loop_get_context(loop);
+		window = remote_control_window_new(context);
 		g_signal_connect(G_OBJECT(window), "destroy",
 				G_CALLBACK(on_window_destroy), loop);
 		gtk_window_fullscreen(GTK_WINDOW(window));
