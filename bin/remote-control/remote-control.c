@@ -15,6 +15,7 @@
 #include <librpc.h>
 #include <glib.h>
 
+#include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
 
@@ -234,9 +235,36 @@ GtkWidget *create_rdp_window(GKeyFile *conf, GMainContext *context, int argc,
 	return window;
 }
 
+GtkWidget *create_browser_window(GKeyFile *conf, GMainContext *context,
+		int argc, char *argv[])
+{
+	GtkWidget *window = NULL;
+	const gchar *uri = NULL;
+
+	uri = g_key_file_get_value(conf, "browser", "uri", NULL);
+	if (!uri && (argc > 0))
+		uri = argv[1];
+
+	if (uri) {
+		RemoteControlWebkitWindow *webkit;
+
+		window = remote_control_webkit_window_new(context);
+		webkit = REMOTE_CONTROL_WEBKIT_WINDOW(window);
+		remote_control_webkit_window_load(webkit, uri);
+
+		gtk_window_fullscreen(GTK_WINDOW(window));
+		gtk_widget_show_all(window);
+	}
+
+	return window;
+}
+
 GtkWidget *create_window(GKeyFile *conf, GMainContext *context, int argc,
 		char *argv[])
 {
+	if (g_key_file_has_group(conf, "browser"))
+		return create_browser_window(conf, context, argc, argv);
+
 	return create_rdp_window(conf, context, argc, argv);
 }
 
