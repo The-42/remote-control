@@ -231,7 +231,6 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 	}
 
 	linphone_core_set_ring(voip->core, NULL);
-	linphone_core_set_ringback(voip->core, NULL);
 
 	voip->thread = g_thread_create(voip_thread, voip, TRUE, NULL);
 	if (!voip->thread) {
