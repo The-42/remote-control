@@ -14,8 +14,8 @@ remote_control_CFLAGS = \
 
 remote_control_SOURCES = \
 	remote-control.c \
-	remote-control-window.c \
-	remote-control-window.h
+	remote-control-rdp-window.c \
+	remote-control-rdp-window.h
 
 remote_control_LDADD = \
 	../../src/server/libremote-control.la \

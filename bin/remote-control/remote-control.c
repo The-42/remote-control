@@ -15,7 +15,7 @@
 #include <librpc.h>
 #include <glib.h>
 
-#include "remote-control-window.h"
+#include "remote-control-rdp-window.h"
 #include "remote-control.h"
 
 static GMainLoop *g_loop = NULL;
@@ -219,11 +219,11 @@ GtkWidget *create_rdp_window(GKeyFile *conf, GMainContext *context, int argc,
 				password = g_strdup(buffer);
 		}
 
-		window = remote_control_window_new(context);
+		window = remote_control_rdp_window_new(context);
 		gtk_window_fullscreen(GTK_WINDOW(window));
 		gtk_widget_show_all(window);
 
-		remote_control_window_connect(REMOTE_CONTROL_WINDOW(window),
+		remote_control_rdp_window_connect(REMOTE_CONTROL_RDP_WINDOW(window),
 				hostname, username, password, delay);
 
 		g_free(password);

@@ -14,15 +14,15 @@
 
 #include <gdk/gdkx.h>
 
-#include "remote-control-window.h"
+#include "remote-control-rdp-window.h"
 
 #define RDP_DELAY_RETRY 3
 
-G_DEFINE_TYPE(RemoteControlWindow, remote_control_window, GTK_TYPE_WINDOW);
+G_DEFINE_TYPE(RemoteControlRdpWindow, remote_control_rdp_window, GTK_TYPE_WINDOW);
 
-#define REMOTE_CONTROL_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), REMOTE_CONTROL_TYPE_WINDOW, RemoteControlWindowPrivate))
+#define REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), REMOTE_CONTROL_TYPE_RDP_WINDOW, RemoteControlRdpWindowPrivate))
 
-struct _RemoteControlWindowPrivate {
+struct _RemoteControlRdpWindowPrivate {
 	GtkWidget *socket;
 	GMainContext *context;
 	GSource *watch;
@@ -40,13 +40,13 @@ enum {
 	PROP_CONTEXT,
 };
 
-static void remote_control_window_get_property(GObject *object, guint prop_id,
-		GValue *value, GParamSpec *pspec)
+static void remote_control_rdp_window_get_property(GObject *object,
+		guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	RemoteControlWindow *window = REMOTE_CONTROL_WINDOW(object);
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindow *window = REMOTE_CONTROL_RDP_WINDOW(object);
+	RemoteControlRdpWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(window);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(window);
 
 	switch (prop_id) {
 	case PROP_CONTEXT:
@@ -59,13 +59,13 @@ static void remote_control_window_get_property(GObject *object, guint prop_id,
 	}
 }
 
-static void remote_control_window_set_property(GObject *object, guint prop_id,
-		const GValue *value, GParamSpec *pspec)
+static void remote_control_rdp_window_set_property(GObject *object,
+		guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	RemoteControlWindow *window = REMOTE_CONTROL_WINDOW(object);
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindow *window = REMOTE_CONTROL_RDP_WINDOW(object);
+	RemoteControlRdpWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(window);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(window);
 
 	switch (prop_id) {
 	case PROP_CONTEXT:
@@ -78,27 +78,27 @@ static void remote_control_window_set_property(GObject *object, guint prop_id,
 	}
 }
 
-static void remote_control_window_finalize(GObject *object)
+static void remote_control_rdp_window_finalize(GObject *object)
 {
-	RemoteControlWindow *window = REMOTE_CONTROL_WINDOW(object);
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindow *window = REMOTE_CONTROL_RDP_WINDOW(object);
+	RemoteControlRdpWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(window);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(window);
 
-	remote_control_window_disconnect(window);
+	remote_control_rdp_window_disconnect(window);
 
-	G_OBJECT_CLASS(remote_control_window_parent_class)->finalize(object);
+	G_OBJECT_CLASS(remote_control_rdp_window_parent_class)->finalize(object);
 }
 
-static void remote_control_window_class_init(RemoteControlWindowClass *klass)
+static void remote_control_rdp_window_class_init(RemoteControlRdpWindowClass *klass)
 {
 	GObjectClass *object = G_OBJECT_CLASS(klass);
 
-	g_type_class_add_private(klass, sizeof(RemoteControlWindowPrivate));
+	g_type_class_add_private(klass, sizeof(RemoteControlRdpWindowPrivate));
 
-	object->get_property = remote_control_window_get_property;
-	object->set_property = remote_control_window_set_property;
-	object->finalize = remote_control_window_finalize;
+	object->get_property = remote_control_rdp_window_get_property;
+	object->set_property = remote_control_rdp_window_set_property;
+	object->finalize = remote_control_rdp_window_finalize;
 
 	g_object_class_install_property(object, PROP_CONTEXT,
 			g_param_spec_pointer("context", "main loop context",
@@ -119,15 +119,15 @@ static gboolean plug_removed(GtkSocket *sock, gpointer data)
 	return TRUE;
 }
 
-static void remote_control_window_init(RemoteControlWindow *self)
+static void remote_control_rdp_window_init(RemoteControlRdpWindow *self)
 {
 	GtkWindow *window = GTK_WINDOW(self);
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindowPrivate *priv;
 	GdkScreen *screen;
 	gint cx;
 	gint cy;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(self);
 
 	g_signal_connect(G_OBJECT(self), "realize",
 			(GCallback)on_realize, NULL);
@@ -144,26 +144,26 @@ static void remote_control_window_init(RemoteControlWindow *self)
 	gtk_container_add(GTK_CONTAINER(window), priv->socket);
 }
 
-GtkWidget *remote_control_window_new(GMainContext *context)
+GtkWidget *remote_control_rdp_window_new(GMainContext *context)
 {
-	return g_object_new(REMOTE_CONTROL_TYPE_WINDOW, "context", context,
-			NULL);
+	return g_object_new(REMOTE_CONTROL_TYPE_RDP_WINDOW, "context",
+			context, NULL);
 }
 
 static gboolean reconnect(gpointer data)
 {
-	RemoteControlWindow *self = data;
-	remote_control_window_reconnect(self);
+	RemoteControlRdpWindow *self = data;
+	remote_control_rdp_window_reconnect(self);
 	return FALSE;
 }
 
 static gboolean start_delayed(gpointer data, guint delay)
 {
-	RemoteControlWindow *self = data;
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindow *self = data;
+	RemoteControlRdpWindowPrivate *priv;
 	GSource *timeout;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(self);
 
 	timeout = g_timeout_source_new_seconds(delay);
 	g_source_set_callback(timeout, reconnect, data, NULL);
@@ -174,10 +174,10 @@ static gboolean start_delayed(gpointer data, guint delay)
 
 static void child_watch(GPid pid, gint status, gpointer data)
 {
-	RemoteControlWindow *self = data;
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindow *self = data;
+	RemoteControlRdpWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(self);
 
 	g_source_destroy(priv->watch);
 	g_spawn_close_pid(pid);
@@ -188,16 +188,16 @@ static void child_watch(GPid pid, gint status, gpointer data)
 	start_delayed(data, RDP_DELAY_RETRY);
 }
 
-gboolean remote_control_window_connect(RemoteControlWindow *self,
+gboolean remote_control_rdp_window_connect(RemoteControlRdpWindow *self,
 		const gchar *hostname, const gchar *username,
 		const gchar *password, guint delay)
 {
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(self);
 
 	if (priv->xfreerdp)
-		remote_control_window_disconnect(self);
+		remote_control_rdp_window_disconnect(self);
 
 	priv->rdp.hostname = g_strdup(hostname);
 	priv->rdp.username = g_strdup(username);
@@ -206,14 +206,14 @@ gboolean remote_control_window_connect(RemoteControlWindow *self,
 	return start_delayed(self, delay);
 }
 
-gboolean remote_control_window_reconnect(RemoteControlWindow *self)
+gboolean remote_control_rdp_window_reconnect(RemoteControlRdpWindow *self)
 {
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindowPrivate *priv;
 	GError *error = NULL;
 	gchar **argv;
 	XID xid;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(self);
 	xid = gtk_socket_get_id(GTK_SOCKET(priv->socket));
 
 	/* TODO: check for network connection (netlink socket, libnl?) */
@@ -259,11 +259,11 @@ gboolean remote_control_window_reconnect(RemoteControlWindow *self)
 	return TRUE;
 }
 
-gboolean remote_control_window_disconnect(RemoteControlWindow *self)
+gboolean remote_control_rdp_window_disconnect(RemoteControlRdpWindow *self)
 {
-	RemoteControlWindowPrivate *priv;
+	RemoteControlRdpWindowPrivate *priv;
 
-	priv = REMOTE_CONTROL_WINDOW_GET_PRIVATE(self);
+	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(self);
 
 	if (priv->xfreerdp) {
 		pid_t pid = priv->xfreerdp;
