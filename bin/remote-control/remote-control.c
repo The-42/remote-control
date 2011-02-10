@@ -182,14 +182,69 @@ int get_rdp_username(char *username, size_t namelen)
 	return snprintf(username, namelen, "MT%s", serial + 1);
 }
 
+GtkWidget *create_rdp_window(GKeyFile *conf, GMainContext *context, int argc,
+		char *argv[])
+{
+	GtkWidget *window = NULL;
+	gchar *hostname = NULL;
+	gchar *username = NULL;
+	gchar *password = NULL;
+
+	if (g_key_file_has_group(conf, "rdp")) {
+		hostname = g_key_file_get_value(conf, "rdp", "hostname", NULL);
+		username = g_key_file_get_value(conf, "rdp", "username", NULL);
+		password = g_key_file_get_value(conf, "rdp", "password", NULL);
+	}
+
+	if (!hostname && (argc > 1))
+		hostname = g_strdup(argv[1]);
+
+	if (hostname) {
+		guint delay = g_random_int_range(RDP_DELAY_MIN, RDP_DELAY_MAX + 1);
+
+		if (!username || !password) {
+			char buffer[HOST_NAME_MAX];
+			int err;
+
+			err = get_rdp_username(buffer, sizeof(buffer));
+			if (err < 0) {
+				g_print("get_rdp_username(): %s\n", strerror(-err));
+				return NULL;
+			}
+
+			if (!username)
+				username = g_strdup(buffer);
+
+			if (!password)
+				password = g_strdup(buffer);
+		}
+
+		window = remote_control_window_new(context);
+		gtk_window_fullscreen(GTK_WINDOW(window));
+		gtk_widget_show_all(window);
+
+		remote_control_window_connect(REMOTE_CONTROL_WINDOW(window),
+				hostname, username, password, delay);
+
+		g_free(password);
+		g_free(username);
+		g_free(hostname);
+	}
+
+	return window;
+}
+
+GtkWidget *create_window(GKeyFile *conf, GMainContext *context, int argc,
+		char *argv[])
+{
+	return create_rdp_window(conf, context, argc, argv);
+}
+
 int main(int argc, char *argv[])
 {
 	const gchar *conffile = SYSCONF_DIR "/remote-control.conf";
 	struct remote_control *rc;
 	GOptionContext *options;
-	gchar *hostname = NULL;
-	gchar *username = NULL;
-	gchar *password = NULL;
 	GMainContext *context;
 	GtkWidget *window;
 	GMainLoop *loop;
@@ -248,49 +303,9 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (g_key_file_has_group(conf, "rdp")) {
-		hostname = g_key_file_get_value(conf, "rdp", "hostname", NULL);
-		username = g_key_file_get_value(conf, "rdp", "username", NULL);
-		password = g_key_file_get_value(conf, "rdp", "password", NULL);
-	}
-
-	if (!hostname && (argc > 1))
-		hostname = g_strdup(argv[1]);
-
-	if (hostname) {
-		guint delay = g_random_int_range(RDP_DELAY_MIN, RDP_DELAY_MAX + 1);
-
-		if (!username || !password) {
-			char buffer[HOST_NAME_MAX];
-			int err;
-
-			err = get_rdp_username(buffer, sizeof(buffer));
-			if (err < 0) {
-				g_print("get_rdp_username(): %s\n", strerror(-err));
-				return EXIT_FAILURE;
-			}
-
-			if (!username)
-				username = g_strdup(buffer);
-
-			if (!password)
-				password = g_strdup(buffer);
-		}
-
-		context = g_main_loop_get_context(loop);
-		window = remote_control_window_new(context);
-		g_signal_connect(G_OBJECT(window), "destroy",
-				G_CALLBACK(on_window_destroy), loop);
-		gtk_window_fullscreen(GTK_WINDOW(window));
-		gtk_widget_show_all(window);
-
-		remote_control_window_connect(REMOTE_CONTROL_WINDOW(window),
-				hostname, username, password, delay);
-
-		g_free(password);
-		g_free(username);
-		g_free(hostname);
-	}
+	window = create_window(conf, context, argc, argv);
+	g_signal_connect(G_OBJECT(window), "destroy",
+			G_CALLBACK(on_window_destroy), loop);
 
 	source = remote_control_get_source(rc);
 	g_assert(source != NULL);
