@@ -1,5 +1,18 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.3.2 (2011-02-10)
 ==========================
+- The VoIP ringback tone (which is played to signal ringing when placing an
+  outgoing call) needs to be played back by the backend, because in contrast
+  to the ring tone, it is not played by the centralized UI.
+- Add support for opening a (WebKit-based) local web browser as main window
+  instead of an RDP viewer.
+
+  To enable this, add the following group to the configuration file, usually
+  to be found in /etc/remote-control.conf:
+
+    [browser]
+    uri = http://www.google.com/ncr
+
+  If both [rdp] and [browser] groups are present, [browser] wins.
 
 Release 0.3.0 (2011-02-02)
 ==========================
