@@ -270,7 +270,10 @@ GtkWidget *create_window(GKeyFile *conf, GMainContext *context, int argc,
 	if (g_key_file_has_group(conf, "browser"))
 		return create_browser_window(conf, context, argc, argv);
 
-	return create_rdp_window(conf, context, argc, argv);
+	if (g_key_file_has_group(conf, "rdp"))
+		return create_rdp_window(conf, context, argc, argv);
+
+	return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -357,8 +360,10 @@ int main(int argc, char *argv[])
 	}
 
 	window = create_window(conf, context, argc, argv);
-	g_signal_connect(G_OBJECT(window), "destroy",
-			G_CALLBACK(on_window_destroy), loop);
+	if (window) {
+		g_signal_connect(G_OBJECT(window), "destroy",
+				G_CALLBACK(on_window_destroy), loop);
+	}
 
 	source = remote_control_get_source(rc);
 	g_assert(source != NULL);
