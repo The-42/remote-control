@@ -6,7 +6,12 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <errno.h>
+#include <libgen.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -271,6 +276,12 @@ GtkWidget *create_window(GKeyFile *conf, GMainContext *context, int argc,
 int main(int argc, char *argv[])
 {
 	const gchar *conffile = SYSCONF_DIR "/remote-control.conf";
+	gboolean version = FALSE;
+	GOptionEntry entries[] = {
+		{ "version", 'V', 0, G_OPTION_ARG_NONE, &version,
+			"Print version information and exit", NULL },
+		{ NULL, 0, 0, 0, NULL, NULL, NULL }
+	};
 	struct remote_control *rc;
 	GOptionContext *options;
 	GMainContext *context;
@@ -289,6 +300,24 @@ int main(int argc, char *argv[])
 
 	gtk_init(&argc, &argv);
 
+	options = g_option_context_new("- remote control service");
+	g_option_context_add_group(options, gtk_get_option_group(TRUE));
+	g_option_context_add_main_entries(options, entries, NULL);
+
+	if (!g_option_context_parse(options, &argc, &argv, &error)) {
+		g_print("option parsing failed: %s\n", error->message);
+		return EXIT_FAILURE;
+	}
+
+	g_option_context_free(options);
+
+	if (version) {
+		char *copy = strdup(argv[0]);
+		printf("%s %s\n", basename(copy), VERSION);
+		free(copy);
+		return EXIT_SUCCESS;
+	}
+
 	if (!setup_signal_handler()) {
 		g_print("failed to setup signal handler\n");
 		return EXIT_FAILURE;
@@ -300,15 +329,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	options = g_option_context_new("- remote control service");
-	g_option_context_add_group(options, gtk_get_option_group(TRUE));
-
-	if (!g_option_context_parse(options, &argc, &argv, &error)) {
-		g_print("option parsing failed: %s\n", error->message);
-		return EXIT_FAILURE;
-	}
-
-	g_option_context_free(options);
 
 	if (!g_key_file_load_from_file(conf, conffile, G_KEY_FILE_NONE, NULL))
 		g_warning("failed to load configuration file %s", conffile);
