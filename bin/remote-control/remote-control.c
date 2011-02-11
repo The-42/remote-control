@@ -275,9 +275,12 @@ GtkWidget *create_window(GKeyFile *conf, GMainContext *context, int argc,
 
 int main(int argc, char *argv[])
 {
-	const gchar *conffile = SYSCONF_DIR "/remote-control.conf";
+	const gchar *default_config_file = SYSCONF_DIR "/remote-control.conf";
+	gchar *config_file = NULL;
 	gboolean version = FALSE;
 	GOptionEntry entries[] = {
+		{ "config", 'c', 0, G_OPTION_ARG_FILENAME, &config_file,
+			"Load configuration from FILENAME", "FILENAME" },
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &version,
 			"Print version information and exit", NULL },
 		{ NULL, 0, 0, 0, NULL, NULL, NULL }
@@ -329,9 +332,11 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	if (config_file == NULL)
+		config_file = g_strdup(default_config_file);
 
-	if (!g_key_file_load_from_file(conf, conffile, G_KEY_FILE_NONE, NULL))
-		g_warning("failed to load configuration file %s", conffile);
+	if (!g_key_file_load_from_file(conf, config_file, G_KEY_FILE_NONE, NULL))
+		g_warning("failed to load configuration file %s", config_file);
 
 	loop = g_loop = g_main_loop_new(NULL, FALSE);
 	g_assert(loop != NULL);
@@ -369,5 +374,6 @@ int main(int argc, char *argv[])
 #endif
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
+	g_free(config_file);
 	return EXIT_SUCCESS;
 }
