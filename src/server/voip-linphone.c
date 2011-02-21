@@ -71,6 +71,9 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 		address = linphone_call_get_remote_address(call);
 		if (address) {
 			const char *name = linphone_address_get_display_name(address);
+			if (name == NULL)
+				name = linphone_address_get_username(address);
+
 			if (name)
 				voip->contact = strdup(name);
 		}
