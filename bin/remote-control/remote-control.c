@@ -291,11 +291,11 @@ int main(int argc, char *argv[])
 	struct remote_control *rc;
 	GOptionContext *options;
 	GMainContext *context;
+	GError *error = NULL;
 	GtkWidget *window;
 	GMainLoop *loop;
 	GSource *source;
 	GKeyFile *conf;
-	GError *error;
 #ifdef ENABLE_DBUS
 	guint owner;
 #endif
