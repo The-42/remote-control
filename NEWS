@@ -1,3 +1,6 @@
+Release x.y.z (YYYY-MM-DD)
+==========================
+
 Release 0.3.4 (2011-02-22)
 ==========================
 - Add --version, -V command-line option to the remote-control binary.
