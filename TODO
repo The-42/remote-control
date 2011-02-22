@@ -8,3 +8,5 @@
 * Add manual pages for remote-control, remote-control-client and
   remote-control-gtk. Also add documentation for the libremote-control client
   library.
+
+* Wait for network connection before loading URL in browser.
