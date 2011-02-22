@@ -4,3 +4,7 @@
   will be changed eventually anyway to take the parameters from a VoIP account
   structure, at which point the account structure could easily be extended by
   an extra "domain" field.
+
+* Add manual pages for remote-control, remote-control-client and
+  remote-control-gtk. Also add documentation for the libremote-control client
+  library.
