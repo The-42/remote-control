@@ -1,5 +1,13 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.3.4 (2011-02-22)
 ==========================
+- Add --version, -V command-line option to the remote-control binary.
+- Add --config, -c command-line option to the remote-control binary which
+  allows overriding the path to the configuration file.
+- If the configuration file cannot be read or does not contain either an [rdp]
+  or [browser] group, remote-control will now start in headless mode.
+- Use username as fallback if the VoIP proxy doesn't send a display name.
+- Install an HTML-based browser to be displayed if remote-control is started
+  in browser mode.
 
 Release 0.3.2 (2011-02-10)
 ==========================
