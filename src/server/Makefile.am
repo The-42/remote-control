@@ -3,12 +3,10 @@ noinst_LTLIBRARIES = \
 
 libremote_control_la_CFLAGS = \
 	@GLIB_CFLAGS@ \
-	@LINPHONE_CFLAGS@ \
 	@GTK_CFLAGS@
 
 libremote_control_la_LIBADD = \
 	@GLIB_LIBS@ \
-	@LINPHONE_LIBS@ \
 	@GTK_LIBS@
 
 libremote_control_la_SOURCES = \
@@ -34,12 +32,25 @@ libremote_control_la_SOURCES = \
 	system.c \
 	tuner.c \
 	utils.c \
-	voip.c \
-	voip-linphone.c
+	voip.c
 
 nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
+
+if ENABLE_LINPHONE
+libremote_control_la_CFLAGS += \
+	@LINPHONE_CFLAGS@
+
+libremote_control_la_LIBADD += \
+	@LINPHONE_LIBS@
+
+libremote_control_la_SOURCES += \
+	voip-linphone.c
+else
+libremote_control_la_SOURCES += \
+	void-null.c
+endif # ENABLE_LINPHONE
 
 if ENABLE_LIBVLC
 libremote_control_la_CFLAGS += \

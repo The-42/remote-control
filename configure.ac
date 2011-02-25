@@ -15,7 +15,6 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5)
-PKG_CHECK_MODULES(LINPHONE, linphone >= 3.3.99.10)
 PKG_CHECK_MODULES(WEBKIT, webkit-1.0)
 PKG_CHECK_MODULES(GTK, gtk+-x11-2.0 x11 xext)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
@@ -46,8 +45,22 @@ AS_CASE([$with_video_backend],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 
+AC_ARG_WITH(voip_backend,
+	[AS_HELP_STRING([--with-voip-backend=@<:@none/linphone@:>@],
+		[Use the specified void packend. [default=none]])
+	], [], [with_voip_backend=none])
+
+enable_linphone=no
+
+AS_CASE([$with_voip_backend],
+	[none], [],
+	[linphone], [PKG_CHECK_MODULES(LINPHONE, linphone >= 3.4, [enable_linphone=yes])],
+	[AC_MSG_ERROR([Invalid voip backend: must be none or linphone])]
+)
+
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
+AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
 
@@ -95,4 +108,5 @@ Features:
   readline support:    $use_readline
   libsmartcard:        $have_libsmartcard
   Video Backend:       $with_video_backend
+  VoIP Backend:        $with_voip_backend
 "
