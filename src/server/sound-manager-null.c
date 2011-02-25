@@ -14,6 +14,7 @@
 #include "remote-control.h"
 
 struct sound_manager {
+	int foralloc;
 };
 
 int sound_manager_create(struct sound_manager **managerp)
