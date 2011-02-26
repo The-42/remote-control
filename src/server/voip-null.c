@@ -13,18 +13,6 @@ struct voip {
 	int foralloc;
 };
 
-static gpointer voip_thread(gpointer data)
-{
-	struct voip *voip = data;
-
-	while (!voip->done) {
-		linphone_core_iterate(voip->core);
-		g_usleep(50000);
-	}
-
-	return NULL;
-}
-
 int voip_create(struct voip **voipp, struct rpc_server *server)
 {
 	struct voip *voip;
