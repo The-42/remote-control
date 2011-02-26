@@ -49,7 +49,7 @@ libremote_control_la_SOURCES += \
 	voip-linphone.c
 else
 libremote_control_la_SOURCES += \
-	void-null.c
+	voip-null.c
 endif # ENABLE_LINPHONE
 
 if ENABLE_LIBVLC
