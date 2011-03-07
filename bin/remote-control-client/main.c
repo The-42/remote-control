@@ -12,10 +12,12 @@
 
 #include <errno.h>
 #include <getopt.h>
+#include <libgen.h>
 #include <libintl.h>
 #include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef USE_READLINE
@@ -24,15 +26,14 @@
 #endif
 
 #include <librpc.h>
-#include <libsh.h>
 
-#include "cli.h"
+#include "remote-control-client.h"
 
-static const char CLIENT_PROMPT[] = "medcom > ";
+static const char CLIENT_PROMPT[] = "remote > ";
 static const char DEFAULT_HOSTNAME[] = "localhost";
 static const char DEFAULT_SERVICE[] = "7482";
 
-static struct option opt[] = {
+static struct option options[] = {
 	{ "help", 0, 0, 'h' },
 	{ "host", 1, 0, 'H' },
 	{ "port", 1, 0, 'p' },
@@ -43,20 +44,20 @@ static struct option opt[] = {
 };
 
 static const char help_options[] = "" \
-	"  options:\n" \
-	"    -h | --help               show this help screen\n" \
-	"    -H | --host <hostname>    server host name\n" \
-	"    -p | --port <port>        server port\n" \
-	"    -q | --quiet              quiet mode\n" \
-	"    -v | --verbose            increase verbosity level\n" \
-	"    -V | --version            show version information\n";
+	"  Options:\n" \
+	"    -h, --help                show this help screen\n" \
+	"    -H, --host <hostname>     server host name\n" \
+	"    -p, --port <port>         server port\n" \
+	"    -q, --quiet               quiet mode\n" \
+	"    -v, --verbose             increase verbosity level\n" \
+	"    -V, --version             show version information\n";
 
 #ifdef USE_READLINE
-static const struct shcmd_def *shcmd_def_search(const char *name)
+static const struct cli_command_info *find_command_by_name(const char *name)
 {
-	const struct shcmd_def *cmd;
+	const struct cli_command_info *cmd;
 
-	for (cmd = cli_commands; cmd->name; cmd++) {
+	command_foreach (cmd) {
 		if (strcmp(cmd->name, name) == 0)
 			return cmd;
 	}
@@ -66,19 +67,19 @@ static const struct shcmd_def *shcmd_def_search(const char *name)
 
 static char *readline_command_generator(const char *text, int state)
 {
-	static int list_index, len;
-	const char *name;
+	static const struct cli_command_info *cmd;
+	static int len;
 
-	if (!state) {
+	if (state == 0) {
+		cmd = &commands_array_start;
 		len = strlen(text);
-		list_index = 0;
 	}
 
-	while ((name = cli_commands[list_index].name)) {
-		list_index++;
+	while (cmd < &commands_array_end) {
+		if (strncmp(cmd->name, text, len) == 0)
+			return strdup((cmd++)->name);
 
-		if (strncmp(name, text, len) == 0)
-			return strdup(name);
+		cmd++;
 	}
 
 	return NULL;
@@ -86,9 +87,8 @@ static char *readline_command_generator(const char *text, int state)
 
 static char *readline_options_generator(const char *text, int state)
 {
-	static const struct shcmd_def *cmd = NULL;
+	static const struct cli_command_info *cmd = NULL;
 	static int list_index, len;
-	const char *name;
 
 	if (!state) {
 		char *cmdname;
@@ -99,33 +99,16 @@ static char *readline_options_generator(const char *text, int state)
 
 		cmdname = malloc((p - rl_line_buffer) + 1);
 		memcpy(cmdname, rl_line_buffer, p - rl_line_buffer);
-		cmd = shcmd_def_search(cmdname);
+		cmd = find_command_by_name(cmdname);
 		list_index = 0;
 		len = strlen(text);
 		free(cmdname);
 	}
 
-	if (!cmd || !cmd->opts)
+	if (!cmd || !cmd->options)
 		return NULL;
 
-	while ((name = cmd->opts[list_index].name)) {
-		const struct shcmd_opt_def *opt = &cmd->opts[list_index];
-		char *ret;
-
-		list_index++;
-
-		if (opt->type == SHCMD_OT_DATA)
-			continue;
-
-		if (len > 2) {
-			if (strncmp(name, text + 2, len - 2) != 0)
-				continue;
-		}
-
-		ret = malloc(strlen(name) + 3);
-		snprintf(ret, strlen(name) + 3, "--%s", name);
-		return ret;
-	}
+	/* TODO: look up option arguments */
 
 	return NULL;
 }
@@ -202,9 +185,196 @@ static void on_voip_event(uint32_t type, void *data)
 	printf("< %s()\n", __func__);
 }
 
-static int cli_init(struct shctl *ctl)
+static const char *skip_spaces(const char *ptr)
 {
-	struct cli *cli = shctl_priv(ctl);
+	while (isspace(*ptr))
+		ptr++;
+
+	return ptr;
+}
+
+static char *unquote(const char *s, size_t n)
+{
+	size_t length = 0;
+	char quote = 0;
+	char *result;
+	size_t i;
+
+	for (i = 0; i < n; i++) {
+		if ((s[i] == '"') || (s[i] == '\'')) {
+			if (quote != 0) {
+				if (quote == s[i])
+					quote = 0;
+				else
+					length++;
+			} else {
+				quote = s[i];
+			}
+		} else {
+			length++;
+		}
+	}
+
+	result = malloc(length + 1);
+	if (!result)
+		return NULL;
+
+	for (i = 0, length = 0; i < n; i++) {
+		if ((s[i] == '"') || (s[i] == '\'')) {
+			if (quote != 0) {
+				if (quote == s[i])
+					quote = 0;
+				else
+					result[length++] = s[i];
+			} else {
+				quote = s[i];
+			}
+		} else {
+			result[length++] = s[i];
+		}
+	}
+
+	result[length] = '\0';
+	return result;
+}
+
+static int shell_parse(const char *string, int argc, char *argv[])
+{
+	const char *last;
+	const char *ptr;
+	char quote = 0;
+	int count = 0;
+
+	last = ptr = skip_spaces(string);
+
+	while (*ptr) {
+		if ((*ptr == '"') || (*ptr == '\'')) {
+			if (quote != 0) {
+				if (quote == *ptr)
+					quote = 0;
+			} else {
+				quote = *ptr;
+			}
+
+			ptr++;
+		} else {
+			if ((quote == 0) && isspace(*ptr)) {
+				size_t length = ptr - last;
+
+				if (count < argc)
+					argv[count] = unquote(last, length);
+
+				last = ptr = skip_spaces(ptr);
+				count++;
+			} else {
+				ptr++;
+			}
+		}
+	}
+
+	if ((ptr - last) > 0) {
+		if (count < argc)
+			argv[count] = unquote(last, ptr - last);
+
+		count++;
+	}
+
+	return count;
+}
+
+static int cli_parse_command(struct cli *cli, const char *command)
+{
+	int ret;
+
+	strfreev(cli->argv);
+	cli->argv = NULL;
+	cli->argc = 0;
+
+	ret = shell_parse(command, 0, NULL);
+	if (ret < 0)
+		return ret;
+
+	cli->argv = calloc(ret + 1, sizeof(char *));
+	if (!cli->argv)
+		return -ENOMEM;
+
+	cli->argc = ret;
+
+	ret = shell_parse(command, cli->argc, cli->argv);
+	if (ret < 0) {
+		strfreev(cli->argv);
+		cli->argv = NULL;
+		cli->argc = 0;
+	}
+
+	return ret;
+}
+
+static int cli_exec(struct cli *cli)
+{
+	const struct cli_command_info *cmd;
+
+	command_foreach (cmd) {
+		if (strcmp(cmd->name, cli->argv[0]) == 0)
+			return cmd->exec(cli, cli->argc, cli->argv);
+	}
+
+	printf("%s: command not found\n", cli->argv[0]);
+	return -ENOSYS;
+}
+
+static struct cli *cli_new(const struct option *options)
+{
+	struct cli *cli;
+
+	cli = calloc(1, sizeof(*cli));
+	if (!cli)
+		return NULL;
+
+	cli->options = options;
+	cli->client = NULL;
+	cli->hostname = DEFAULT_HOSTNAME;
+	cli->service = DEFAULT_SERVICE;
+	cli->argv = NULL;
+	cli->argc = 0;
+	cli->quiet = 0;
+	cli->verbose = 0;
+
+	return cli;
+}
+
+static int cli_free(struct cli *cli)
+{
+	if (!cli)
+		return -EINVAL;
+
+	remote_exit(cli->client);
+	strfreev(cli->argv);
+	free(cli);
+	return 0;
+}
+
+static void cli_usage(struct cli *cli, FILE *fp, const char *program)
+{
+	const struct cli_command_info *cmd;
+	char *copy = strdup(program);
+
+	fprintf(fp, "\nUsage: %s [options] [commands]\n\n", basename(copy));
+	fprintf(fp, help_options);
+	fprintf(fp, "\n  Commands:\n");
+
+	command_foreach (cmd)
+		fprintf(fp, "    %-25s %s\n", cmd->name, cmd->summary);
+
+	fprintf(fp, "\n");
+	fprintf(fp, "  (specify help <command> for details about the command)\n");
+	fprintf(fp, "\n");
+
+	free(copy);
+}
+
+static int cli_init(struct cli *cli)
+{
 	struct rpc_host host;
 	int err;
 
@@ -214,7 +384,7 @@ static int cli_init(struct shctl *ctl)
 
 	err = remote_init(&cli->client, cli->hostname, cli->service);
 	if (err < 0) {
-		fprintf(stderr, "medcom_init(): %s\n", strerror(-err));
+		fprintf(stderr, "remote_init(): %s\n", strerror(-err));
 		return err;
 	}
 
@@ -224,35 +394,16 @@ static int cli_init(struct shctl *ctl)
 	return 0;
 }
 
-static int cli_exit(struct shctl *ctl)
+static int cli_parse_command_line(struct cli *cli, int argc, char *argv[])
 {
-	struct cli *cli = shctl_priv(ctl);
+	bool version = false;
+	bool help = false;
+	int opt = 0;
 
-	remote_exit(cli->client);
-
-	return 0;
-}
-
-static int cli_parse(struct shctl *ctl, int argc, char *argv[])
-{
-	struct cli *cli = shctl_priv(ctl);
-	int help = 0;
-	int end = 0;
-	int arg = 0;
-	int idx = 0;
-
-	end = shcmd_find_command(argc, argv, opt);
-	if (end < 0) {
-		fprintf(stderr, "shcmd_find_command(): %s\n", strerror(-end));
-		return 1;
-	}
-
-	end = end ? end : argc;
-
-	while ((arg = getopt_long(end, argv, "H:hp:qvV", opt, &idx)) != -1) {
-		switch (arg) {
+	while ((opt = getopt_long(argc, argv, "H:hp:qvV", cli->options, NULL)) != -1) {
+		switch (opt) {
 		case 'h':
-			help = 1;
+			help = true;
 			break;
 
 		case 'H':
@@ -272,96 +423,38 @@ static int cli_parse(struct shctl *ctl, int argc, char *argv[])
 			break;
 
 		case 'V':
-			fprintf(stdout, "%s\n", VERSION);
+			version = true;
 			break;
 
 		default:
 			fprintf(stderr, "unsupported option '-%c'. See "
-					"--help.\n", arg);
+					"--help.\n", opt);
 			break;
 		}
 	}
 
 	if (help) {
-		if (end < argc) {
-			fprintf(stderr, "extra argument '%s'. See --help\n",
-					argv[end]);
-			return 1;
-		}
-
-		shctl_usage(ctl, argv[0]);
+		cli_usage(cli, stdout, argv[0]);
 		return 1;
 	}
 
-	if (argc > end) {
-		char *command;
-		int err;
+	if (version) {
+		char *copy = strdup(argv[0]);
+		printf("%s %s\n", basename(copy), VERSION);
+		free(copy);
+		return 1;
+	}
 
-		cli->imode = 0;
-
-		command = shcmd_make_command(argv, end, argc);
-		if (!command)
-			return -ENOMEM;
-
-		shctl_log(ctl, 2, "command: %s\n", command);
-
-		err = shctl_parse_command(ctl, command);
-		if (err < 0) {
-			fprintf(stderr, "shctl_parse_command(): %s\n",
-					strerror(-err));
-			free(command);
-			return err;
-		}
-
-		free(command);
+	if (argc > optind) {
+		cli->argv = slice_strdup(argv, optind, argc);
+		cli->argc = argc - optind;
 	}
 
 	return 0;
 }
-
-static int cli_usage(struct shctl *ctl, const char *program)
-{
-	struct cli *cli = shctl_priv(ctl);
-	const struct shcmd_def *def;
-
-	shctl_log(ctl, 0, "\n%s [options] [commands]\n\n", program);
-	shctl_log(ctl, 0, help_options);
-	shctl_log(ctl, 0, "\n  commands:\n");
-
-	for (def = cli->commands; def->name; def++) {
-		const char *help = shcmd_def_get_info(def, "help");
-		shctl_log(ctl, 0, "    %-25s %s\n", def->name, help);
-	}
-
-	shctl_log(ctl, 0, "\n");
-	shctl_log(ctl, 0, "  (specify help <command> for details about the command)\n");
-	shctl_log(ctl, 0, "\n");
-
-	return 0;
-}
-
-static int cli_log(struct shctl *ctl, int level, const char *fmt, va_list ap)
-{
-	struct cli *cli = shctl_priv(ctl);
-
-	if (level > cli->verbose)
-		return 0;
-
-	return vprintf(fmt, ap);
-}
-
-static struct shctl_ops cli_ops = {
-	.init = cli_init,
-	.exit = cli_exit,
-	.parse = cli_parse,
-	.usage = cli_usage,
-	.log = cli_log,
-	.release = NULL,
-};
 
 int main(int argc, char *argv[])
 {
-	struct shctl *ctl;
 	struct cli *cli;
 	int err;
 
@@ -378,44 +471,37 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	ctl = shctl_alloc(sizeof(*cli), &cli_ops, cli_commands);
-	if (!ctl) {
-		fprintf(stderr, "failed to allocated parser\n");
+	cli = cli_new(options);
+	if (!cli) {
+		fprintf(stderr, "failed to allocate application context\n");
 		return 1;
 	}
 
-	cli = shctl_priv(ctl);
-	cli->commands = cli_commands;
-	cli->client = NULL;
-	cli->hostname = DEFAULT_HOSTNAME;
-	cli->service = DEFAULT_SERVICE;
-	cli->imode = 1;
-	cli->quiet = 0;
-	cli->verbose = 0;
+	err = cli_parse_command_line(cli, argc, argv);
+	if (err != 0) {
+		if (err < 0) {
+			cli_usage(cli, stderr, argv[0]);
+			cli_free(cli);
+			return 1;
+		}
 
-	err = shctl_parse(ctl, argc, argv);
-	if (err < 0) {
-		fprintf(stderr, "shctl_parse(): %s\n", strerror(-err));
-		shctl_free(ctl);
-		return 1;
+		return 0;
 	}
 
-	err = shctl_init(ctl);
+	err = cli_init(cli);
 	if (err < 0) {
 		fprintf(stderr, "shctl_init(): %s\n", strerror(-err));
-		shctl_free(ctl);
+		cli_free(cli);
 		return 1;
 	}
 
-	if (!cli->imode) {
-		err = shctl_run(ctl, NULL);
-	} else {
+	if (!cli->argc) {
 		const char *prompt = CLIENT_PROMPT;
 		char *command = NULL;
 
 		readline_init();
 
-		do {
+		while (true) {
 			command = readline_read(prompt);
 			if (!command)
 				break;
@@ -423,27 +509,23 @@ int main(int argc, char *argv[])
 			if (*command) {
 				readline_add_history(command);
 
-				err = shctl_parse_command(ctl, command);
+				err = cli_parse_command(cli, command);
 				if (err >= 0)
-					err = shctl_run(ctl, NULL);
+					cli_exec(cli);
 			}
 
 			free(command);
 			command = NULL;
-		} while (cli->imode);
+		}
 
 		if (!command)
 			fputc('\n', stdout);
 
 		readline_exit();
+	} else {
+		cli_exec(cli);
 	}
 
-	err = shctl_exit(ctl);
-	if (err < 0) {
-		fprintf(stderr, "shctl_exit(): %s\n", strerror(-err));
-		return 1;
-	}
-
-	shctl_free(ctl);
+	cli_free(cli);
 	return 0;
 }

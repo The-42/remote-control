@@ -18,7 +18,6 @@ PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5)
 PKG_CHECK_MODULES(WEBKIT, webkit-1.0)
 PKG_CHECK_MODULES(GTK, gtk+-x11-2.0 x11 xext)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
-PKG_CHECK_MODULES(LIBSH, libsh)
 PKG_CHECK_MODULES(ALSA, alsa)
 
 PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.2)
@@ -87,9 +86,15 @@ if test "x$enable_werror" = "xyes"; then
 	CFLAGS="$CFLAGS -Werror"
 fi
 
+COMMANDS_ALIGN=32
+AC_DEFINE_UNQUOTED([COMMANDS_ALIGN], [$COMMANDS_ALIGN],
+	  [Define to the number of bytes to align commands to.])
+AC_SUBST(COMMANDS_ALIGN)
+
 AC_OUTPUT([
 	bin/Makefile
 	bin/remote-control-client/Makefile
+	bin/remote-control-client/remote-control-client.lds
 	bin/remote-control-gtk/Makefile
 	bin/remote-control/Makefile
 	data/de.avionic-design.RemoteControl.service

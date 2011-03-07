@@ -6,16 +6,18 @@ bin_PROGRAMS = \
 remote_control_client_CFLAGS = \
 	-DLOCALEBASEDIR=\""$(datadir)/locale"\" \
 	-DGETTEXT_PACKAGE=\"$(PACKAGE)\" \
-	@READLINE_CFLAGS@ \
-	@LIBSH_CFLAGS@
+	@READLINE_CFLAGS@
 
 remote_control_client_SOURCES = \
-	cli.h \
+	remote-control-client.h \
 	commands.c \
 	main.c \
 	utils.c
 
 remote_control_client_LDADD = \
 	../../src/client/libremote-control.la \
-	@READLINE_LIBS@ \
-	@LIBSH_LIBS@
+	remote-control-client.lds \
+	@READLINE_LIBS@
+
+BUILT_SOURCES = \
+	remote-control-client.lds
