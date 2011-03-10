@@ -30,6 +30,7 @@ libremote_control_la_SOURCES = \
 	smartcard.c \
 	sound.c \
 	system.c \
+	task-manager.c \
 	tuner.c \
 	utils.c \
 	voip.c

@@ -293,6 +293,14 @@
 			<arg name="mode" type="uint32_t" mode="in"/>
 			<arg name="buffer" type="buffer" mode="inout"/>
 		</func>
+		<!-- Task Manager -->
+		<func name="task_manager_exec" returns="int32_t" opcode="1400">
+			<arg name="command_line" type="const char *" mode="in"/>
+		</func>
+		<func name="task_manager_kill" returns="int32_t" opcode="1401">
+			<arg name="pid" type="int32_t" mode="in"/>
+			<arg name="sig" type="int32_t" mode="in"/>
+		</func>
 	</functions>
 	<events>
 		<event name="medcom_card_event" opcode="10300">

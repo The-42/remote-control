@@ -144,6 +144,9 @@ remote_public int remote_irq_get_mask(void *priv, uint32_t *mask);
 remote_public int remote_irq_get_info(void *priv,
 		enum remote_irq_source source, uint32_t *info);
 
+remote_public int remote_task_manager_exec(void *priv, const char *command);
+remote_public int remote_task_manager_kill(void *priv, int pid, int sig);
+
 #ifdef __cplusplus
 };
 #endif

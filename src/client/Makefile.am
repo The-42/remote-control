@@ -23,6 +23,7 @@ libremote_control_la_SOURCES = \
 	mixer.c \
 	remote-control.c \
 	remote-control.h \
+	task-manager.c \
 	voip.c
 
 nodist_libremote_control_la_SOURCES = \

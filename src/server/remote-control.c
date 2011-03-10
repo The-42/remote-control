@@ -39,6 +39,7 @@ struct remote_control {
 	struct mixer *mixer;
 	struct net *net;
 	struct lldp_monitor *lldp;
+	struct task_manager *task_manager;
 
 	GSource *source;
 };
@@ -343,6 +344,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = task_manager_create(&rc->task_manager);
+	if (err < 0) {
+		g_error("task_manager_create(): %s", strerror(-err));
+		return err;
+	}
+
 	source = lldp_monitor_get_source(rc->lldp);
 	g_source_add_child_source(rc->source, source);
 	g_source_unref(source);
@@ -373,6 +380,7 @@ int remote_control_free(struct remote_control *rc)
 	if (!rc)
 		return -EINVAL;
 
+	task_manager_free(rc->task_manager);
 	net_free(rc->net);
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);
@@ -427,6 +435,11 @@ struct net *remote_control_get_net(struct remote_control *rc)
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc)
 {
 	return rc ? rc->lldp : NULL;
+}
+
+struct task_manager *remote_control_get_task_manager(struct remote_control *rc)
+{
+	return rc ? rc->task_manager : NULL;
 }
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request)

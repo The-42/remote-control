@@ -222,6 +222,14 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 		size_t size);
 
 /**
+ * task manager
+ */
+struct task_manager;
+
+int task_manager_create(struct task_manager **managerp);
+int task_manager_free(struct task_manager *manager);
+
+/**
  * remote control
  */
 struct remote_control;
@@ -239,6 +247,7 @@ struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);
 struct net *remote_control_get_net(struct remote_control *rc);
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
+struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 
