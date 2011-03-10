@@ -69,7 +69,9 @@ static gboolean rpc_source_prepare(GSource *source, gint *timeout)
 	case REMOTE_CONTROL_CONNECTED:
 		err = rpc_server_get_client_socket(server);
 		if (err < 0) {
-			g_debug("rpc_server_get_client_socket(): %s", strerror(-err));
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR,
+					"rpc_server_get_client_socket(): %s",
+					strerror(-err));
 			src->state = REMOTE_CONTROL_UNCONNECTED;
 			break;
 		}
@@ -113,7 +115,8 @@ static gboolean rpc_source_check(GSource *source)
 	/* handle client socket */
 	if ((src->poll_client.revents & G_IO_HUP) ||
 	    (src->poll_client.revents & G_IO_ERR)) {
-		g_debug("%s(): connection closed by %s", __func__, src->peer);
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "connection closed by "
+				"%s", src->peer);
 		src->state = REMOTE_CONTROL_DISCONNECTED;
 		return TRUE;
 	}
@@ -137,7 +140,9 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 	case REMOTE_CONTROL_UNCONNECTED:
 		err = rpc_server_accept(server);
 		if (err < 0) {
-			g_debug("rpc_server_accept(): %s", strerror(-err));
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR,
+					"rpc_server_accept(): %s",
+					strerror(-err));
 			break;
 		}
 
@@ -146,7 +151,8 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 			err = getnameinfo(addr, err, src->peer, NI_MAXHOST,
 					NULL, 0, NI_NUMERICHOST);
 			if (!err) {
-				g_debug("connection accepted from %s",
+				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO,
+						"connection accepted from %s",
 						src->peer);
 			}
 
@@ -162,20 +168,24 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 	case REMOTE_CONTROL_IDLE:
 		err = rpc_server_recv(server, &request);
 		if ((err < 0) && (err != -ECONNRESET)) {
-			g_debug("rpc_server_recv(): %s", strerror(-err));
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO,
+					"rpc_server_recv(): %s",
+					strerror(-err));
 			ret = FALSE;
 			break;
 		}
 
 		if ((err == 0) || (err == -ECONNRESET)) {
-			g_debug("%s(): connection closed by %s", __func__, src->peer);
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "connection "
+					"closed by %s", src->peer);
 			src->state = REMOTE_CONTROL_DISCONNECTED;
 			break;
 		}
 
 		err = remote_control_dispatch(server, request);
 		if (err < 0) {
-			g_debug("rpc_dispatch(): %s", strerror(-err));
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO,
+					"rpc_dispatch(): %s", strerror(-err));
 			rpc_packet_dump(request, rpc_log, 0);
 			rpc_packet_free(request);
 			ret = FALSE;
