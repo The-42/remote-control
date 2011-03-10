@@ -21,6 +21,7 @@ G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_
 struct _RemoteControlWebkitWindowPrivate {
 	WebKitWebView *webkit;
 	GMainContext *context;
+	gchar *uri;
 };
 
 enum {
@@ -100,6 +101,30 @@ static void on_realize(GtkWidget *widget, gpointer user_data)
 	gdk_cursor_unref(cursor);
 }
 
+static gboolean navigation_policy(WebKitWebView *webkit,
+		WebKitWebFrame *frame, WebKitNetworkRequest *request,
+		WebKitWebNavigationAction *action,
+		WebKitWebPolicyDecision *decision, gpointer user_data)
+{
+	RemoteControlWebkitWindow *self = REMOTE_CONTROL_WEBKIT_WINDOW(user_data);
+	RemoteControlWebkitWindowPrivate *priv;
+	const gchar *uri;
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+	uri = webkit_network_request_get_uri(request);
+
+	if (frame == webkit_web_view_get_main_frame(webkit)) {
+		if (priv->uri && !g_str_has_prefix(uri, priv->uri))
+			webkit_web_policy_decision_ignore(decision);
+		else
+			webkit_web_policy_decision_use(decision);
+	} else {
+		webkit_web_policy_decision_use(decision);
+	}
+
+	return TRUE;
+}
+
 static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 {
 	RemoteControlWebkitWindowPrivate *priv;
@@ -121,6 +146,10 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
+
+	g_signal_connect(G_OBJECT(priv->webkit),
+			"navigation-policy-decision-requested",
+			G_CALLBACK(navigation_policy), self);
 }
 
 GtkWidget *remote_control_webkit_window_new(GMainContext *context)
@@ -135,6 +164,11 @@ gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
 	webkit_web_view_load_uri(priv->webkit, uri);
+
+	if (priv->uri)
+		g_free(priv->uri);
+
+	priv->uri = g_strdup(uri);
 
 	return TRUE;
 }
