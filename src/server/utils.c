@@ -12,69 +12,90 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-void rc_logv(const char *fmt, va_list ap)
-{
-	vfprintf(stderr, fmt, ap);
-}
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 
-void rc_log(const char *fmt, ...)
+static gint g_hex_dump_to_buffer(gchar *buffer, size_t length, const void *data,
+		size_t size, size_t rowsize, bool ascii)
 {
-	va_list ap;
-
-	va_start(ap, fmt);
-	rc_logv(fmt, ap);
-	va_end(ap);
-}
-
-void print_hex_dump(const char *level, const char *prefix_str, int prefix_type,
-		size_t rowsize, const void *buffer, size_t size, bool ascii)
-{
-	const uint8_t *ptr = buffer;
-	const char *prefix = "";
+	const guchar *ptr = data;
+	const gchar *prefix = "";
+	gint pos = 0;
+	gint num;
 	size_t i;
-	size_t j;
+
+	for (i = 0; i < size; i++) {
+		num = g_snprintf(buffer + pos, length - pos, "%s%02x", prefix,
+				ptr[i]);
+		prefix = " ";
+		pos += num;
+	}
+
+	for (i = i; i < rowsize; i++) {
+		num = g_snprintf(buffer + pos, length - pos, "   ");
+		pos += num;
+	}
+
+	if (ascii) {
+		num = g_snprintf(buffer + pos, length - pos, " |");
+		pos += num;
+
+		for (i = 0; i < size; i++) {
+			if (isprint(ptr[i])) {
+				num = g_snprintf(buffer + pos, length - pos,
+						"%c", ptr[i]);
+			} else {
+				num = g_snprintf(buffer + pos, length - pos,
+						".");
+			}
+
+			pos += num;
+		}
+
+		for (i = i; i < rowsize; i++) {
+			num = g_snprintf(buffer + pos, length - pos, " ");
+			pos += num;
+		}
+
+		num = g_snprintf(buffer + pos, length - pos, "|");
+		pos += num;
+	}
+
+	return pos;
+}
+
+gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
+		const gchar *prefix_str, int prefix_type, size_t rowsize,
+		const void *buffer, size_t size, bool ascii)
+{
+	gsize length = (rowsize * 4) + 3;
+	const guchar *ptr = buffer;
+	gchar *line;
+	size_t i;
+
+	line = g_malloc(length);
+	if (!line)
+		return FALSE;
 
 	for (i = 0; i < size; i += rowsize) {
+		g_hex_dump_to_buffer(line, length, &ptr[i], min(size - i, rowsize), rowsize, ascii);
+
 		switch (prefix_type) {
 		case DUMP_PREFIX_ADDRESS:
-			rc_log("%s%s%p: ", level, prefix_str, ptr + i);
+			g_log(domain, flags, "%s%p: %s", prefix_str, ptr + i, line);
 			break;
 
 		case DUMP_PREFIX_OFFSET:
-			rc_log("%s%s%.8zx: ", level, prefix_str, i);
+			g_log(domain, flags, "%s%.8zx: %s", prefix_str, i, line);
 			break;
 
 		default:
-			rc_log("%s%s", level, prefix_str);
+			g_log(domain, flags, "%s%s", prefix_str, line);
 			break;
 		}
-
-		prefix = "";
-
-		for (j = 0; j < rowsize; j++) {
-			rc_log("%s%02x", prefix, ptr[i + j]);
-			prefix = " ";
-		}
-
-		for (j = j; j < rowsize; j++)
-			rc_log("   ");
-
-		if (ascii) {
-			rc_log(" |");
-
-			for (j = 0; j < rowsize; j++) {
-				if (isprint(ptr[i + j]))
-					rc_log("%c", ptr[i + j]);
-				else
-					rc_log(".");
-			}
-
-			for (j = j; j < rowsize; j++)
-				rc_log(" ");
-
-			rc_log("|");
-		}
-
-		rc_log("\n");
 	}
+
+	g_free(line);
+	return TRUE;
 }

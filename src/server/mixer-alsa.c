@@ -131,12 +131,14 @@ static int mixer_element_create(struct mixer_element **elementp, snd_mixer_elem_
 	element->element = elem;
 
 	if (snd_mixer_selem_has_playback_volume(elem)) {
-		rc_log(RC_DEBUG "element \"%s\" is playback control\n", name);
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "element \"%s\" is "
+				"playback control", name);
 		element->ops = &playback_ops;
 	}
 
 	if (snd_mixer_selem_has_capture_volume(elem)) {
-		rc_log(RC_DEBUG "element \"%s\" is capture control\n", name);
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "element \"%s\" is "
+				"capture control", name);
 		element->ops = &capture_ops;
 	}
 
@@ -268,13 +270,14 @@ static int mixer_probe(struct mixer *mixer)
 
 			err = mixer_element_create(&element, elem);
 			if (err < 0) {
-				rc_log(RC_ERR "mixer_control_create(): %s\n",
-						strerror(-err));
+				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR,
+						"failed to create element: "
+						"%s", strerror(-err));
 				continue;
 			}
 
-			rc_log(RC_DEBUG "\"%s\" is %s playback control\n",
-					name, desc);
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "\"%s\" is %s "
+					"playback control", name, desc);
 			mixer->elements[type] = element;
 			continue;
 		}
@@ -290,13 +293,14 @@ static int mixer_probe(struct mixer *mixer)
 
 			err = mixer_element_create(&element, elem);
 			if (err < 0) {
-				rc_log(RC_ERR "mixer_control_create(): %s\n",
-						strerror(-err));
+				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR,
+						"failed to create element: "
+						"%s", strerror(-err));
 				continue;
 			}
 
-			rc_log(RC_DEBUG "\"%s\" is master capture control\n",
-					name);
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "\"%s\" is "
+					"master capture control", name);
 			mixer->elements[type] = element;
 			continue;
 		}
@@ -318,19 +322,25 @@ static int mixer_probe(struct mixer *mixer)
 
 				if (strcmp(buf, "Mic") == 0) {
 					mixer->input_source[MIXER_INPUT_SOURCE_HEADSET] = i;
-					rc_log(RC_DEBUG "%s is headset source\n", buf);
+					g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
+							"\"%s\" is headset "
+							"source", buf);
 					continue;
 				}
 
 				if (strcmp(buf, "Internal Mic") == 0) {
 					mixer->input_source[MIXER_INPUT_SOURCE_HANDSET] = i;
-					rc_log(RC_DEBUG "%s is handset source\n", buf);
+					g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
+							"\"%s\" is handset "
+							"source", buf);
 					continue;
 				}
 
 				if (strcmp(buf, "Line") == 0) {
 					mixer->input_source[MIXER_INPUT_SOURCE_LINE] = i;
-					rc_log(RC_DEBUG "%s is line source\n", buf);
+					g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
+							"\"%s\" is line "
+							"source", buf);
 					continue;
 				}
 			}
@@ -370,7 +380,8 @@ int mixer_create(struct mixer **mixerp)
 
 	err = snd_mixer_open(&mixer->mixer, 0);
 	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_open(): %s\n", snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to open audio "
+				"mixer: %s", snd_strerror(err));
 		goto free;
 	}
 
@@ -378,32 +389,36 @@ int mixer_create(struct mixer **mixerp)
 
 	err = snd_mixer_attach(mixer->mixer, card);
 	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_attach(): %s\n", snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to attach "
+				"audio mixer to card: %s", snd_strerror(err));
 		goto close;
 	}
 
 	err = snd_mixer_selem_register(mixer->mixer, NULL, NULL);
 	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_selem_register(): %s\n",
-				snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to register "
+				"elements: %s", snd_strerror(err));
 		goto close;
 	}
 
 	err = snd_mixer_load(mixer->mixer);
 	if (err < 0) {
-		rc_log(RC_NOTICE "snd_mixer_load(): %s\n", snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to load "
+				"mixer: %s", snd_strerror(err));
 		goto close;
 	}
 
 	err = mixer_probe(mixer);
 	if (err < 0) {
-		rc_log(RC_NOTICE "mixer_probe(): %s\n", snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to probe "
+				"mixer elements: %s", snd_strerror(err));
 		goto close;
 	}
 
 	err = snd_mixer_poll_descriptors_count(mixer->mixer);
 	if (err < 0) {
-		g_debug("  snd_mixer_poll_descriptors_count(): %d", err);
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to get poll "
+				"descriptor count: %s", snd_strerror(err));
 		goto close;
 	}
 
@@ -411,7 +426,8 @@ int mixer_create(struct mixer **mixerp)
 
 	mixer->fds = g_new0(GPollFD, mixer->num_fds);
 	if (!mixer->fds) {
-		g_debug("  g_new0() failed");
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to allocate "
+				"poll descriptors\n");
 		goto close;
 	}
 
@@ -419,7 +435,8 @@ int mixer_create(struct mixer **mixerp)
 
 	err = snd_mixer_poll_descriptors(mixer->mixer, fds, mixer->num_fds);
 	if (err < 0) {
-		g_debug("snd_mixer_poll_descriptors(): %d", err);
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to get poll "
+				"descriptors: %s", snd_strerror(err));
 		goto free_fds;
 	}
 
@@ -464,15 +481,17 @@ int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int v
 
 	err = scale_volume(element, &value);
 	if (err < 0) {
-		rc_log(RC_DEBUG "failed to scale volume for control %s: %s\n",
-				name, snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to scale "
+				"volume for control %s: %s", name,
+				snd_strerror(err));
 		return err;
 	}
 
 	err = element->ops->set_volume(element->element, value);
 	if (err < 0) {
-		rc_log(RC_DEBUG "failed to set volume for control %s: %s\n",
-				name, snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to set volume "
+				"for control %s: %s", name,
+				snd_strerror(err));
 		return err;
 	}
 
@@ -500,15 +519,17 @@ int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *
 
 	err = element->ops->get_volume(element->element, &value);
 	if (err < 0) {
-		rc_log(RC_DEBUG "failed to get volume for control %s: %s\n",
-				name, snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to get "
+				"volume for control %s: %s", name,
+				snd_strerror(err));
 		return err;
 	}
 
 	err = normalize_volume(element, &value);
 	if (err < 0) {
-		rc_log(RC_DEBUG "failed to normalize volume for control %s: "
-				"%s\n", name, snd_strerror(err));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to normalize "
+				"volume for control %s: %s", name,
+				snd_strerror(err));
 		return err;
 	}
 

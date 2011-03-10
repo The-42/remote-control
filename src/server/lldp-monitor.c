@@ -61,7 +61,8 @@ static gboolean lldp_monitor_source_dispatch(GSource *source, GSourceFunc callba
 
 	err = recv(monitor->sockfd, monitor->data, LLDP_MAX_SIZE, 0);
 	if (err <= 0) {
-		rc_log(RC_NOTICE "recv(): %s\n", strerror(errno));
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to receive "
+				"LLDP frame: %s", strerror(errno));
 		monitor->len = 0;
 	} else {
 		monitor->len = err;
@@ -85,8 +86,11 @@ static void lldp_monitor_source_finalize(GSource *source)
 
 		err = setsockopt(monitor->sockfd, SOL_PACKET,
 				PACKET_DROP_MEMBERSHIP, &req, sizeof(req));
-		if (err < 0)
-			rc_log(RC_NOTICE "setsockopt(): %s\n", strerror(errno));
+		if (err < 0) {
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to "
+					"leave multicast group: %s",
+					strerror(errno));
+		}
 
 		close(monitor->sockfd);
 	}

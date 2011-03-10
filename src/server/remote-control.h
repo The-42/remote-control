@@ -254,27 +254,14 @@ int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *reques
 /**
  * utilities
  */
-#define RC_EMERG   "<0>" /* system is unusable */
-#define RC_ALERT   "<1>" /* action must be taken immediately */
-#define RC_CRIT    "<2>" /* critical conditions */
-#define RC_ERR     "<3>" /* error conditions */
-#define RC_WARNING "<4>" /* warning conditions */
-#define RC_NOTICE  "<5>" /* normal but significant condition */
-#define RC_INFO    "<6>" /* informational */
-#define RC_DEBUG   "<7>" /* debug-level messages */
-
-#define RC_CONT    ""
-
-void rc_logv(const char *fmt, va_list ap);
-void rc_log(const char *fmt, ...);
-
 enum {
 	DUMP_PREFIX_NONE,
 	DUMP_PREFIX_ADDRESS,
 	DUMP_PREFIX_OFFSET,
 };
 
-void print_hex_dump(const char *level, const char *prefix_str, int prefix_type,
-		size_t rowsize, const void *buffer, size_t size, bool ascii);
+gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
+		const char *prefix_str, int prefix_type, size_t rowsize,
+		const void *buffer, size_t size, bool ascii);
 
 #endif /* REMOTE_CONTROL_H */
