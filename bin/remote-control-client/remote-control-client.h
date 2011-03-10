@@ -68,5 +68,6 @@ void print_hex_dump(FILE *fp, const char *prefix, int prefix_type,
 
 char **slice_strdup(char *argv[], int start, int end);
 void strfreev(char *strv[]);
+bool shell_str_needs_escape(const char *s);
 
 #endif /* CLI_H */

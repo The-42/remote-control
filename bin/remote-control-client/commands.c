@@ -10,7 +10,9 @@
 #  include "config.h"
 #endif
 
+#include <ctype.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -515,6 +517,100 @@ const struct cli_command_info cmd_media_player_state _command_ = {
 	.help = NULL,
 	.options = NULL,
 	.exec = exec_media_player_state,
+};
+
+/*
+ * "task-exec" command
+ */
+static int exec_task_exec(struct cli *cli, int argc, char *argv[])
+{
+	size_t length = 0;
+	char *cmdline;
+	int err;
+	int i;
+
+	if (argc < 2)
+		return -1;
+
+	for (i = 1; i < argc; i++) {
+		length += strlen(argv[i]) + 1;
+		if (shell_str_needs_escape(argv[i]))
+			length += 2;
+	}
+
+	cmdline = calloc(1, length);
+	if (!cmdline)
+		return -ENOMEM;
+
+	for (i = 1; i < argc; i++) {
+		bool escape = shell_str_needs_escape(argv[i]);
+
+		if (i > 1)
+			strcat(cmdline, " ");
+
+		if (escape)
+			strcat(cmdline, "'");
+
+		strcat(cmdline, argv[i]);
+
+		if (escape)
+			strcat(cmdline, "'");
+	}
+
+	err = remote_task_manager_exec(cli->client, cmdline);
+	if (err < 0)
+		printf("%s\n", strerror(-err));
+	else
+		printf("PID: %d\n", err);
+
+	free(cmdline);
+	return err;
+}
+
+const struct cli_command_info cmd_task_exec _command_ = {
+	.name = "task-exec",
+	.summary = "execute a task",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_task_exec,
+};
+
+/*
+ * "task-kill" command
+ */
+static int exec_task_kill(struct cli *cli, int argc, char *argv[])
+{
+	int sig = SIGTERM;
+	char *end = NULL;
+	int pid;
+	int err;
+
+	if (argc < 2)
+		return -1;
+
+	pid = strtoul(argv[1], &end, 0);
+	if (end == argv[1])
+		return -1;
+
+	if (argc > 2) {
+		unsigned long signum = strtoul(argv[2], &end, 0);
+		if (end != argv[2])
+			sig = signum;
+	}
+
+	err = remote_task_manager_kill(cli->client, pid, sig);
+	if (err < 0)
+		printf("%s\n", strerror(-err));
+
+	return err;
+}
+
+const struct cli_command_info cmd_task_kill _command_ = {
+	.name = "task-kill",
+	.summary = "kill a running task",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_task_kill,
 };
 
 /*

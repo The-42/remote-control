@@ -195,3 +195,11 @@ void strfreev(char *strv[])
 		free(strv);
 	}
 }
+
+bool shell_str_needs_escape(const char *s)
+{
+	while (*s && !isspace(*s))
+		s++;
+
+	return *s != '\0';
+}
