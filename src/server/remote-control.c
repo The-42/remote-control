@@ -161,13 +161,13 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 
 	case REMOTE_CONTROL_IDLE:
 		err = rpc_server_recv(server, &request);
-		if (err < 0) {
+		if ((err < 0) && (err != -ECONNRESET)) {
 			g_debug("rpc_server_recv(): %s", strerror(-err));
 			ret = FALSE;
 			break;
 		}
 
-		if (err == 0) {
+		if ((err == 0) || (err == -ECONNRESET)) {
 			g_debug("%s(): connection closed by %s", __func__, src->peer);
 			src->state = REMOTE_CONTROL_DISCONNECTED;
 			break;
