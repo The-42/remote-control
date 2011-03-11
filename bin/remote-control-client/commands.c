@@ -213,6 +213,46 @@ const struct cli_command_info cmd_mixer_input _command_ = {
 };
 
 /*
+ * "mixer-loopback" command
+ */
+static int exec_mixer_loopback(struct cli *cli, int argc, char *argv[])
+{
+	bool enable = false;
+	int err;
+
+	if (argc < 2) {
+		err = remote_mixer_loopback_is_enabled(cli->client, &enable);
+		if (err < 0) {
+			printf("ERROR: %s\n", strerror(-err));
+			return err;
+		}
+	} else {
+		err = parse_bool(argv[1], &enable);
+		if (err < 0) {
+			printf("Invalid boolean value '%s'.\n", argv[1]);
+			return -EINVAL;
+		}
+
+		err = remote_mixer_loopback_enable(cli->client, enable);
+		if ((err < 0) && (err != -EBUSY) && (err != -ESRCH)) {
+			printf("ERROR: %s\n", strerror(-err));
+			return err;
+		}
+	}
+
+	printf("loopback %sabled\n", enable ? "en" : "dis");
+	return 0;
+}
+
+const struct cli_command_info cmd_mixer_loopback _command_ = {
+	.name = "mixer-loopback",
+	.summary = "control audio loopback mode",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_mixer_loopback,
+};
+
+/*
  * "backlight-power" command
  */
 static int exec_backlight_power(struct cli *cli, int argc, char *argv[])
