@@ -1,5 +1,15 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.4.0 (2011-03-11)
 ==========================
+- Fix dummy sound-manager implementation.
+- Make VoIP backend selectable.
+- Drop dependency on libsh by rewriting remote-control-client using a custom,
+  more shell-like, command parser and processor.
+- Add task manager functionality which allows the execution of arbitrary
+  commands via the RPC interface.
+- Prevent websites from "breaking out" by not allowing the top frame's URL to
+  leave the original domain.
+- Add mixer audio loopback functionality which can be used for testing audio
+  input and output by creating a software feedback loop.
 
 Release 0.3.4 (2011-02-22)
 ==========================
