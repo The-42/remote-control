@@ -20,58 +20,31 @@ struct sound_manager {
 int sound_manager_create(struct sound_manager **managerp)
 {
 	struct sound_manager *manager;
-	int ret = 0;
 
-	g_debug("> %s(managerp=%p)", __func__, managerp);
-
-	if (!managerp) {
-		ret = -EINVAL;
-		goto out;
-	}
+	if (!managerp)
+		return -EINVAL;
 
 	manager = g_malloc0(sizeof(*manager));
-	if (!manager) {
-		ret = -ENOMEM;
-		goto out;
-	}
+	if (!manager)
+		return -ENOMEM;
 
 	*managerp = manager;
-
-out:
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return 0;
 }
 
 int sound_manager_free(struct sound_manager *manager)
 {
-	int ret = 0;
-
-	g_debug("> %s(manager=%p)", __func__, manager);
-
-	if (!manager) {
-		ret = -EINVAL;
-		goto out;
-	}
+	if (!manager)
+		return -EINVAL;
 
 	g_free(manager);
-
-out:
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return 0;
 }
 
 int sound_manager_play(struct sound_manager *manager, const char *uri)
 {
-	int ret = 0;
+	if (!manager || !uri)
+		return -EINVAL;
 
-	g_debug("> %s(manager=%p, uri=%s)", __func__, manager, uri);
-
-	if (!manager || !uri) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-out:
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return 0;
 }
