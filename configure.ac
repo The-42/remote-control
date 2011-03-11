@@ -37,10 +37,14 @@ AC_ARG_WITH(video_backend,
 enable_libvlc=no
 enable_gst=no
 
+#
+# NOTE: for gstreamer we need pligins-base for header files and
+#       interfaces for the libs. but both is in gstreamer-plugins-base
+#
 AS_CASE([$with_video_backend],
 	[none], [],
 	[libvlc], [PKG_CHECK_MODULES(LIBVLC, libvlc, [enable_libvlc=yes])],
-	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-interfaces-0.10, [enable_gst=yes])],
+	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-plugins-base-0.10 gstreamer-interfaces-0.10, [enable_gst=yes])],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 
