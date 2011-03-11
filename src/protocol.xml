@@ -122,6 +122,12 @@
 		<func name="medcom_mixer_get_input_source" returns="int32_t" opcode="155">
 			<arg name="source" type="medcom_mixer_input_source" mode="out"/>
 		</func>
+		<func name="medcom_mixer_loopback_enable" returns="int32_t" opcode="156">
+			<arg name="enable" type="bool" mode="in"/>
+		</func>
+		<func name="medcom_mixer_loopback_is_enabled" returns="int32_t" opcode="157">
+			<arg name="enabled" type="bool" mode="out"/>
+		</func>
 		<!-- backlight -->
 		<func name="medcom_backlight_enable" returns="int32_t" opcode="200">
 			<arg name="flags" type="uint32_t" mode="in"/>

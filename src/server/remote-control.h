@@ -200,6 +200,8 @@ int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute);
 int mixer_is_muted(struct mixer *mixer, unsigned short control, bool *mutep);
 int mixer_set_input_source(struct mixer *mixer, enum mixer_input_source source);
 int mixer_get_input_source(struct mixer *mixer, enum mixer_input_source *sourcep);
+int mixer_loopback_enable(struct mixer *mixer, bool enable);
+int mixer_loopback_is_enabled(struct mixer *mixer, bool *enabled);
 
 /**
  * network layer

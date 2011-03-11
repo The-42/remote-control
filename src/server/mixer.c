@@ -100,3 +100,17 @@ int32_t medcom_mixer_get_input_source(void *priv, enum medcom_mixer_input_source
 
 	return 0;
 }
+
+int32_t medcom_mixer_loopback_enable(void *priv, bool enable)
+{
+	struct mixer *mixer = remote_control_get_mixer(priv);
+
+	return mixer_loopback_enable(mixer, enable);
+}
+
+int32_t medcom_mixer_loopback_is_enabled(void *priv, bool *enabled)
+{
+	struct mixer *mixer = remote_control_get_mixer(priv);
+
+	return mixer_loopback_is_enabled(mixer, enabled);
+}

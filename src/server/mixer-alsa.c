@@ -167,6 +167,9 @@ struct mixer {
 	int input_source[MIXER_INPUT_SOURCE_MAX];
 	unsigned int input_source_bits;
 	snd_mixer_elem_t *input;
+
+	GThread *thread;
+	gboolean loop;
 };
 
 static gboolean mixer_source_prepare(GSource *source, gint *timeout)
@@ -207,6 +210,11 @@ static void mixer_source_finalize(GSource *source)
 {
 	struct mixer *mixer = (struct mixer *)source;
 	unsigned int i;
+
+	if ((mixer->thread != NULL) || mixer->loop) {
+		mixer->loop = FALSE;
+		g_thread_join(mixer->thread);
+	}
 
 	for (i = 0; i < MIXER_CONTROL_MAX; i++)
 		mixer_element_free(mixer->elements[i]);
@@ -630,5 +638,225 @@ int mixer_get_input_source(struct mixer *mixer, enum mixer_input_source *sourcep
 		}
 	}
 
+	return 0;
+}
+
+static const unsigned int num_samples = 1024;
+
+static int setup_pcm(snd_pcm_t *pcm, unsigned int rate, unsigned int channels,
+		snd_pcm_format_t format)
+{
+	snd_pcm_hw_params_t *params = NULL;
+	int err;
+
+	err = snd_pcm_hw_params_malloc(&params);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_hw_params_any(pcm, params);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_hw_params_set_access(pcm, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_hw_params_set_format(pcm, params, format);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_hw_params_set_rate_near(pcm, params, &rate, 0);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_hw_params_set_channels(pcm, params, channels);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_hw_params(pcm, params);
+	if (err < 0)
+		return err;
+
+	snd_pcm_hw_params_free(params);
+	return 0;
+}
+
+static int create_playback(snd_pcm_t **playback, unsigned int rate,
+		unsigned int channels, snd_pcm_format_t format)
+{
+	snd_pcm_sw_params_t *params;
+	snd_pcm_uframes_t boundary;
+	int err;
+
+	err = snd_pcm_open(playback, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
+	if (err < 0)
+		return err;
+
+	err = setup_pcm(*playback, rate, channels, format);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_sw_params_malloc(&params);
+	if (err < 0)
+		return err;
+
+	err = snd_pcm_sw_params_current(*playback, params);
+	if (err < 0) {
+		snd_pcm_sw_params_free(params);
+		return err;
+	}
+
+	err = snd_pcm_sw_params_get_boundary(params, &boundary);
+	if (err < 0) {
+		snd_pcm_sw_params_free(params);
+		return err;
+	}
+
+	err = snd_pcm_sw_params_set_start_threshold(*playback, params, num_samples * 2);
+	if (err < 0) {
+		snd_pcm_sw_params_free(params);
+		return err;
+	}
+
+	err = snd_pcm_sw_params_set_stop_threshold(*playback, params, boundary);
+	if (err < 0) {
+		snd_pcm_sw_params_free(params);
+		return err;
+	}
+
+	err = snd_pcm_sw_params_set_silence_size(*playback, params, boundary);
+	if (err < 0) {
+		snd_pcm_sw_params_free(params);
+		return err;
+	}
+
+	err = snd_pcm_sw_params_set_avail_min(*playback, params, num_samples * 2);
+	if (err < 0) {
+		snd_pcm_sw_params_free(params);
+		return err;
+	}
+
+	snd_pcm_sw_params_free(params);
+
+	return snd_pcm_prepare(*playback);
+}
+
+static int create_capture(snd_pcm_t **capture, unsigned int rate,
+		unsigned int channels, snd_pcm_format_t format)
+{
+	int err;
+
+	err = snd_pcm_open(capture, "default", SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK);
+	if (err < 0)
+		return err;
+
+	err = setup_pcm(*capture, rate, channels, format);
+	if (err < 0)
+		return err;
+
+	return snd_pcm_prepare(*capture);
+}
+
+static gpointer loopback_thread(gpointer data)
+{
+	struct mixer *mixer = data;
+	snd_pcm_t *playback = NULL;
+	snd_pcm_t *capture = NULL;
+	gboolean written = TRUE;
+	void *samples = NULL;
+	int err;
+
+	err = create_playback(&playback, 44100, 2, SND_PCM_FORMAT_S16_LE);
+	if (err < 0) {
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "create_playback(): %s",
+				snd_strerror(err));
+		return NULL;
+	}
+
+	err = create_capture(&capture, 44100, 2, SND_PCM_FORMAT_S16_LE);
+	if (err < 0) {
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "create_capture(): %s",
+				snd_strerror(err));
+		goto close_playback;
+	}
+
+	samples = g_new(short, num_samples * 2);
+	if (!samples)
+		goto close_capture;
+
+	while (mixer->loop) {
+		if (written) {
+			err = snd_pcm_readi(capture, samples, num_samples);
+			if (err < 0) {
+				if (err == -EAGAIN) {
+					snd_pcm_wait(capture, 100);
+					continue;
+				}
+
+				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "snd_pcm_readi(): %s",
+						snd_strerror(err));
+				break;
+			}
+
+			written = FALSE;
+		}
+
+		err = snd_pcm_writei(playback, samples, num_samples);
+		if (err < 0) {
+			if (err == -EAGAIN)
+				continue;
+
+			if (err == -EPIPE) {
+				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "buffer underrun");
+				snd_pcm_prepare(playback);
+				continue;
+			}
+
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "snd_pcm_writei(): %s",
+					snd_strerror(err));
+			mixer->loop = FALSE;
+		}
+
+		written = TRUE;
+	}
+
+	g_free(samples);
+
+close_capture:
+	snd_pcm_close(capture);
+close_playback:
+	snd_pcm_close(playback);
+	return NULL;
+}
+
+int mixer_loopback_enable(struct mixer *mixer, bool enable)
+{
+	if (enable) {
+		if (mixer->thread)
+			return -EBUSY;
+
+		mixer->loop = TRUE;
+
+		mixer->thread = g_thread_create(loopback_thread, mixer, TRUE, NULL);
+		if (!mixer->thread)
+			return -ENOMEM;
+	} else {
+		if (!mixer->thread)
+			return -ESRCH;
+
+		mixer->loop = FALSE;
+		g_thread_join(mixer->thread);
+		mixer->thread = NULL;
+	}
+
+	return 0;
+}
+
+int mixer_loopback_is_enabled(struct mixer *mixer, bool *enabled)
+{
+	if (!mixer || !enabled)
+		return -EINVAL;
+
+	*enabled = (mixer->thread != NULL) && mixer->loop;
 	return 0;
 }
