@@ -115,3 +115,31 @@ int remote_mixer_get_input_source(void *priv, enum remote_mixer_input_source *so
 	*sourcep = source;
 	return ret;
 }
+
+remote_public
+int remote_mixer_loopback_enable(void *priv, bool enable)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int err;
+
+	err = medcom_mixer_loopback_enable_stub(rpc, &ret, enable);
+	if (err < 0)
+		ret = err;
+
+	return ret;
+}
+
+remote_public
+int remote_mixer_loopback_is_enabled(void *priv, bool *enabled)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int err;
+
+	err = medcom_mixer_loopback_is_enabled_stub(rpc, &ret, enabled);
+	if (err < 0)
+		ret = err;
+
+	return ret;
+}

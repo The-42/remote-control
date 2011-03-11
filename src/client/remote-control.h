@@ -107,6 +107,8 @@ remote_public int remote_mixer_set_input_source(void *priv,
 		enum remote_mixer_input_source source);
 remote_public int remote_mixer_get_input_source(void *priv,
 		enum remote_mixer_input_source *sourcep);
+remote_public int remote_mixer_loopback_enable(void *priv, bool enable);
+remote_public int remote_mixer_loopback_is_enabled(void *priv, bool *enabled);
 
 remote_public int remote_backlight_enable(void *priv, uint32_t flags);
 remote_public int remote_backlight_get(void *priv, uint8_t *brightness);
