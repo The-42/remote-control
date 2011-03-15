@@ -13,6 +13,8 @@ remote_control_CFLAGS = \
 	@GTK_CFLAGS@
 
 remote_control_SOURCES = \
+	guri.c \
+	guri.h \
 	remote-control.c \
 	remote-control-rdp-window.c \
 	remote-control-rdp-window.h \

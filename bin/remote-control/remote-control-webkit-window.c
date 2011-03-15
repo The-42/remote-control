@@ -13,6 +13,7 @@
 #include <sys/wait.h>
 
 #include "remote-control-webkit-window.h"
+#include "guri.h"
 
 G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_WINDOW);
 
@@ -21,7 +22,7 @@ G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_
 struct _RemoteControlWebkitWindowPrivate {
 	WebKitWebView *webkit;
 	GMainContext *context;
-	gchar *uri;
+	GURI *uri;
 };
 
 enum {
@@ -73,6 +74,7 @@ static void webkit_finalize(GObject *object)
 	RemoteControlWebkitWindowPrivate *priv;
 
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(window);
+	g_object_unref(priv->uri);
 
 	G_OBJECT_CLASS(remote_control_webkit_window_parent_class)->finalize(object);
 }
@@ -108,13 +110,15 @@ static gboolean navigation_policy(WebKitWebView *webkit,
 {
 	RemoteControlWebkitWindow *self = REMOTE_CONTROL_WEBKIT_WINDOW(user_data);
 	RemoteControlWebkitWindowPrivate *priv;
-	const gchar *uri;
+	const gchar *s;
+	GURI *uri;
 
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
-	uri = webkit_network_request_get_uri(request);
+	s = webkit_network_request_get_uri(request);
+	uri = g_uri_new(s);
 
 	if (frame == webkit_web_view_get_main_frame(webkit)) {
-		if (priv->uri && !g_str_has_prefix(uri, priv->uri))
+		if (priv->uri && !g_uri_same_origin(uri, priv->uri))
 			webkit_web_policy_decision_ignore(decision);
 		else
 			webkit_web_policy_decision_use(decision);
@@ -122,6 +126,7 @@ static gboolean navigation_policy(WebKitWebView *webkit,
 		webkit_web_policy_decision_use(decision);
 	}
 
+	g_object_unref(uri);
 	return TRUE;
 }
 
@@ -166,9 +171,9 @@ gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 	webkit_web_view_load_uri(priv->webkit, uri);
 
 	if (priv->uri)
-		g_free(priv->uri);
+		g_object_unref(priv->uri);
 
-	priv->uri = g_strdup(uri);
+	priv->uri = g_uri_new(uri);
 
 	return TRUE;
 }
