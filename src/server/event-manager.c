@@ -248,7 +248,7 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		else
 			ret = 0;
 
-		manager->irq_status = irq_status;
+		manager->irq_status |= irq_status;
 	}
 
 	return ret;
