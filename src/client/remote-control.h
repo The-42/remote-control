@@ -132,8 +132,6 @@ remote_public int remote_voip_accept_incoming(void *priv, char **uri);
 remote_public int remote_voip_disconnect(void *priv);
 remote_public int remote_voip_still_logged_in(void *priv, bool *status);
 
-remote_public int remote_card_enable(void *priv, bool enable);
-remote_public int remote_card_reset(void *priv);
 remote_public int remote_card_get_type(void *priv,
 		enum remote_card_type *type);
 remote_public int remote_card_read(void *priv, off_t offset, void *buffer,
