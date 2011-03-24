@@ -127,7 +127,7 @@ static char **readline_completion(const char *text, int start, int end)
 
 static void readline_init(void)
 {
-	rl_readline_name = "medcom-client";
+	rl_readline_name = CLIENT_PROMPT;
 	rl_attempted_completion_function = readline_completion;
 	stifle_history(500);
 }
