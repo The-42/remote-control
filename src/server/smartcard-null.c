@@ -25,20 +25,17 @@ int smartcard_free(struct smartcard *smartcard)
 
 int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep)
 {
-	if (typep)
-		*typep = CARD_TYPE_NONE;
-
-	return 0;
+	return -ENOSYS;
 }
 
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer,
 		size_t size)
 {
-	return -ENODEV;
+	return -ENOSYS;
 }
 
 ssize_t smartcard_write(struct smartcard *smartcard, off_t offset,
 		const void *buffer, size_t size)
 {
-	return -ENODEV;
+	return -ENOSYS;
 }
