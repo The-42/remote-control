@@ -13,38 +13,17 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-struct sound_manager {
-	int foralloc;
-};
-
 int sound_manager_create(struct sound_manager **managerp)
 {
-	struct sound_manager *manager;
-
-	if (!managerp)
-		return -EINVAL;
-
-	manager = g_malloc0(sizeof(*manager));
-	if (!manager)
-		return -ENOMEM;
-
-	*managerp = manager;
 	return 0;
 }
 
 int sound_manager_free(struct sound_manager *manager)
 {
-	if (!manager)
-		return -EINVAL;
-
-	g_free(manager);
 	return 0;
 }
 
 int sound_manager_play(struct sound_manager *manager, const char *uri)
 {
-	if (!manager || !uri)
-		return -EINVAL;
-
-	return 0;
+	return -ENOSYS;
 }
