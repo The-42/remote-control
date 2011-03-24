@@ -20,7 +20,7 @@ int remote_task_manager_exec(void *priv, const char *command)
 	int32_t ret = 0;
 	int err;
 
-	err = task_manager_exec_stub(rpc, &ret, command);
+	err = RPC_STUB(task_manager_exec)(rpc, &ret, command);
 	if (err < 0)
 		return err;
 
@@ -34,7 +34,7 @@ int remote_task_manager_kill(void *priv, int pid, int sig)
 	int32_t ret = 0;
 	int err;
 
-	err = task_manager_kill_stub(rpc, &ret, pid, sig);
+	err = RPC_STUB(task_manager_kill)(rpc, &ret, pid, sig);
 	if (err < 0)
 		return err;
 

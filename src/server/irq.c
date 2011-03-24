@@ -21,21 +21,21 @@ enum {
 	IRQ_MODEM,
 };
 
-int32_t medcom_irq_enable(void *priv, uint8_t virtkey)
+int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
 {
 	struct rpc_server *server = rpc_server_from_priv(priv);
 	int err;
 
-	err = medcom_irq_event_stub(server, 0);
+	err = RPC_STUB(irq_event)(server, 0);
 	if (err < 0) {
-		g_debug("medcom_irq_event_stub(): %s", strerror(-err));
+		g_debug("irq_event(): %s", strerror(-err));
 		return err;
 	}
 
 	return 0;
 }
 
-int32_t medcom_irq_get_mask(void *priv, uint32_t *mask)
+int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 {
 	struct event_manager *manager = remote_control_get_event_manager(priv);
 	uint32_t status = 0;
@@ -66,7 +66,7 @@ out:
 	return ret;
 }
 
-int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t *info)
+int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uint32_t *info)
 {
 	struct event_manager *manager = remote_control_get_event_manager(priv);
 	struct event event;
@@ -78,12 +78,12 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 	memset(&event, 0, sizeof(event));
 
 	switch (source) {
-	case MEDCOM_IRQ_SOURCE_UNKNOWN:
-		g_debug("  MEDCOM_IRQ_SOURCE_UNKNOWN");
+	case RPC_MACRO(IRQ_SOURCE_UNKNOWN):
+		g_debug("  IRQ_SOURCE_UNKNOWN");
 		break;
 
-	case MEDCOM_IRQ_SOURCE_HOOK:
-		g_debug("  MEDCOM_IRQ_SOURCE_HOOK");
+	case RPC_MACRO(IRQ_SOURCE_HOOK):
+		g_debug("  IRQ_SOURCE_HOOK");
 		event.source = EVENT_SOURCE_HANDSET;
 
 		err = event_manager_get_source_state(manager, &event);
@@ -109,8 +109,8 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		}
 		break;
 
-	case MEDCOM_IRQ_SOURCE_CARD:
-		g_debug("  MEDCOM_IRQ_SOURCE_CARD");
+	case RPC_MACRO(IRQ_SOURCE_CARD):
+		g_debug("  IRQ_SOURCE_CARD");
 		event.source = EVENT_SOURCE_SMARTCARD;
 
 		err = event_manager_get_source_state(manager, &event);
@@ -134,8 +134,8 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		}
 		break;
 
-	case MEDCOM_IRQ_SOURCE_VOIP:
-		g_debug("  MEDCOM_IRQ_SOURCE_VOIP");
+	case RPC_MACRO(IRQ_SOURCE_VOIP):
+		g_debug("  IRQ_SOURCE_VOIP");
 		event.source = EVENT_SOURCE_VOIP;
 
 		err = event_manager_get_source_state(manager, &event);
@@ -201,12 +201,12 @@ int32_t medcom_irq_get_info(void *priv, enum medcom_irq_source source, uint32_t 
 		}
 		break;
 
-	case MEDCOM_IRQ_SOURCE_IO:
-		g_debug("  MEDCOM_IRQ_SOURCE_IO");
+	case RPC_MACRO(IRQ_SOURCE_IO):
+		g_debug("  IRQ_SOURCE_IO");
 		break;
 
-	case MEDCOM_IRQ_SOURCE_RDP:
-		g_debug("  MEDCOM_IRQ_SOURCE_RDP");
+	case RPC_MACRO(IRQ_SOURCE_RDP):
+		g_debug("  IRQ_SOURCE_RDP");
 		break;
 
 	default:

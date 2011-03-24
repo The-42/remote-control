@@ -22,7 +22,7 @@ int remote_register_event_handler(struct remote_client *client,
 	struct event_handler *eh;
 	struct list_head *head;
 
-	if (!client || !handler || (queue < 0) || (queue >= MEDCOM_EVENT_MAX))
+	if (!client || !handler || (queue < 0) || (queue >= REMOTE_EVENT_MAX))
 		return -EINVAL;
 
 	head = &client->handlers[queue];
@@ -53,7 +53,7 @@ int remote_unregister_event_handler(struct remote_client *client,
 	struct event_handler *eh;
 	struct list_head *head;
 
-	if (!client || (queue < 0) || (queue >= MEDCOM_EVENT_MAX))
+	if (!client || (queue < 0) || (queue >= REMOTE_EVENT_MAX))
 		return -EINVAL;
 
 	head = &client->handlers[queue];
@@ -80,7 +80,7 @@ static int remote_call_events(struct remote_client *client,
 	struct list_head *node;
 	struct list_head *head;
 
-	if (!client || (queue < 0) || (queue >= MEDCOM_EVENT_MAX))
+	if (!client || (queue < 0) || (queue >= REMOTE_EVENT_MAX))
 		return -EINVAL;
 
 	head = &client->handlers[queue];
@@ -101,17 +101,17 @@ static int remote_call_events(struct remote_client *client,
 #endif
 }
 
-void medcom_card_event(void *priv, uint32_t type)
+void RPC_IMPL(card_event)(void *priv, uint32_t type)
 {
 	remote_call_events(priv, REMOTE_EVENT_CARD, type);
 }
 
-void medcom_modem_event(void *priv, uint32_t type)
+void RPC_IMPL(modem_event)(void *priv, uint32_t type)
 {
 	remote_call_events(priv, REMOTE_EVENT_MODEM, type);
 }
 
-void medcom_voip_event(void *priv, uint32_t type)
+void RPC_IMPL(voip_event)(void *priv, uint32_t type)
 {
 	remote_call_events(priv, REMOTE_EVENT_VOIP, type);
 }

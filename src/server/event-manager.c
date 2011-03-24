@@ -242,9 +242,9 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	}
 
 	if (irq_status != manager->irq_status) {
-		ret = medcom_irq_event_stub(manager->server, 0);
+		ret = RPC_STUB(irq_event)(manager->server, 0);
 		if (ret < 0)
-			g_debug("  medcom_irq_event_stub(): %d", ret);
+			g_debug("  irq_event(): %d", ret);
 		else
 			ret = 0;
 

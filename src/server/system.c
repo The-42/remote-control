@@ -11,7 +11,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_reset(void *priv)
+int32_t RPC_IMPL(reset)(void *priv)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p)", __func__, priv);

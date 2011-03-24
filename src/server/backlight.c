@@ -11,7 +11,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_backlight_enable(void *priv, uint32_t flags)
+int32_t RPC_IMPL(backlight_enable)(void *priv, uint32_t flags)
 {
 	struct backlight *backlight = remote_control_get_backlight(priv);
 	int32_t ret;
@@ -24,7 +24,7 @@ int32_t medcom_backlight_enable(void *priv, uint32_t flags)
 	return ret;
 }
 
-int32_t medcom_backlight_set(void *priv, uint8_t brightness)
+int32_t RPC_IMPL(backlight_set)(void *priv, uint8_t brightness)
 {
 	struct backlight *backlight = remote_control_get_backlight(priv);
 	int32_t ret;
@@ -37,7 +37,7 @@ int32_t medcom_backlight_set(void *priv, uint8_t brightness)
 	return ret;
 }
 
-int32_t medcom_backlight_get(void *priv, uint8_t *brightness)
+int32_t RPC_IMPL(backlight_get)(void *priv, uint8_t *brightness)
 {
 	struct backlight *backlight = remote_control_get_backlight(priv);
 	int32_t ret;

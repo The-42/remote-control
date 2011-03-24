@@ -11,14 +11,14 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_mixer_set_volume(void *priv, enum medcom_mixer_control control,
+int32_t RPC_IMPL(mixer_set_volume)(void *priv, enum RPC_TYPE(mixer_control) control,
 		uint8_t volume)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
 	return mixer_set_volume(mixer, control, volume);
 }
 
-int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control,
+int32_t RPC_IMPL(mixer_get_volume)(void *priv, enum RPC_TYPE(mixer_control) control,
 		uint8_t *volumep)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
@@ -33,33 +33,33 @@ int32_t medcom_mixer_get_volume(void *priv, enum medcom_mixer_control control,
 	return ret;
 }
 
-int32_t medcom_mixer_set_mute(void *priv, enum medcom_mixer_control control, bool mute)
+int32_t RPC_IMPL(mixer_set_mute)(void *priv, enum RPC_TYPE(mixer_control) control, bool mute)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
 	return mixer_set_mute(mixer, control, mute);
 }
 
-int32_t medcom_mixer_is_muted(void *priv, enum medcom_mixer_control control, bool *mutep)
+int32_t RPC_IMPL(mixer_is_muted)(void *priv, enum RPC_TYPE(mixer_control) control, bool *mutep)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
 	return mixer_is_muted(mixer, control, mutep);
 }
 
-int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source source)
+int32_t RPC_IMPL(mixer_set_input_source)(void *priv, enum RPC_TYPE(mixer_input_source) source)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
 	unsigned short input = MIXER_INPUT_SOURCE_UNKNOWN;
 
 	switch (source) {
-	case MEDCOM_MIXER_INPUT_SOURCE_HEADSET:
+	case RPC_MACRO(MIXER_INPUT_SOURCE_HEADSET):
 		input = MIXER_INPUT_SOURCE_HEADSET;
 		break;
 
-	case MEDCOM_MIXER_INPUT_SOURCE_HANDSET:
+	case RPC_MACRO(MIXER_INPUT_SOURCE_HANDSET):
 		input = MIXER_INPUT_SOURCE_HANDSET;
 		break;
 
-	case MEDCOM_MIXER_INPUT_SOURCE_LINE:
+	case RPC_MACRO(MIXER_INPUT_SOURCE_LINE):
 		input = MIXER_INPUT_SOURCE_LINE;
 		break;
 
@@ -70,7 +70,7 @@ int32_t medcom_mixer_set_input_source(void *priv, enum medcom_mixer_input_source
 	return mixer_set_input_source(mixer, input);
 }
 
-int32_t medcom_mixer_get_input_source(void *priv, enum medcom_mixer_input_source *sourcep)
+int32_t RPC_IMPL(mixer_get_input_source)(void *priv, enum RPC_TYPE(mixer_input_source) *sourcep)
 {
 	enum mixer_input_source input = MIXER_INPUT_SOURCE_UNKNOWN;
 	struct mixer *mixer = remote_control_get_mixer(priv);
@@ -82,33 +82,33 @@ int32_t medcom_mixer_get_input_source(void *priv, enum medcom_mixer_input_source
 
 	switch (input) {
 	case MIXER_INPUT_SOURCE_HEADSET:
-		*sourcep = MEDCOM_MIXER_INPUT_SOURCE_HEADSET;
+		*sourcep = RPC_MACRO(MIXER_INPUT_SOURCE_HEADSET);
 		break;
 
 	case MIXER_INPUT_SOURCE_HANDSET:
-		*sourcep = MEDCOM_MIXER_INPUT_SOURCE_HANDSET;
+		*sourcep = RPC_MACRO(MIXER_INPUT_SOURCE_HANDSET);
 		break;
 
 	case MIXER_INPUT_SOURCE_LINE:
-		*sourcep = MEDCOM_MIXER_INPUT_SOURCE_LINE;
+		*sourcep = RPC_MACRO(MIXER_INPUT_SOURCE_LINE);
 		break;
 
 	default:
-		*sourcep = MEDCOM_MIXER_INPUT_SOURCE_UNKNOWN;
+		*sourcep = RPC_MACRO(MIXER_INPUT_SOURCE_UNKNOWN);
 		break;
 	}
 
 	return 0;
 }
 
-int32_t medcom_mixer_loopback_enable(void *priv, bool enable)
+int32_t RPC_IMPL(mixer_loopback_enable)(void *priv, bool enable)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
 
 	return mixer_loopback_enable(mixer, enable);
 }
 
-int32_t medcom_mixer_loopback_is_enabled(void *priv, bool *enabled)
+int32_t RPC_IMPL(mixer_loopback_is_enabled)(void *priv, bool *enabled)
 {
 	struct mixer *mixer = remote_control_get_mixer(priv);
 

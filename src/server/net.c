@@ -62,7 +62,7 @@ static ssize_t gethwaddr(char *hwaddr, size_t len)
 	return err;
 }
 
-int32_t medcom_net_config(void *priv, uint32_t port, uint32_t timeout, uint32_t repeat, const char *host)
+int32_t RPC_IMPL(net_config)(void *priv, uint32_t port, uint32_t timeout, uint32_t repeat, const char *host)
 {
 	int ret = -ENOSYS;
 	g_debug("> %s(priv=%p, port=%u, timeout=%u, repeat=%u, host=%s)",
@@ -71,7 +71,7 @@ int32_t medcom_net_config(void *priv, uint32_t port, uint32_t timeout, uint32_t 
 	return ret;
 }
 
-int32_t medcom_net_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
+int32_t RPC_IMPL(net_read)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
 	struct net *net = remote_control_get_net(priv);
 	int ret = -ENOSYS;
@@ -104,7 +104,7 @@ int32_t medcom_net_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 	return ret;
 }
 
-int32_t medcom_net_write(void *priv, uint32_t mode, struct rpc_buffer *buffer)
+int32_t RPC_IMPL(net_write)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
 	struct net *net = remote_control_get_net(priv);
 	int ret = -ENOSYS;

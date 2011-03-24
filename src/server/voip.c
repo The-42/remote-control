@@ -11,7 +11,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_voip_get_version(void *priv, uint32_t *version)
+int32_t RPC_IMPL(voip_get_version)(void *priv, uint32_t *version)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, version=%p)", __func__, priv, version);
@@ -19,7 +19,7 @@ int32_t medcom_voip_get_version(void *priv, uint32_t *version)
 	return ret;
 }
 
-int32_t medcom_voip_get_status(void *priv, uint32_t *status)
+int32_t RPC_IMPL(voip_get_status)(void *priv, uint32_t *status)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, status=%p)", __func__, priv, status);
@@ -27,7 +27,7 @@ int32_t medcom_voip_get_status(void *priv, uint32_t *status)
 	return ret;
 }
 
-int32_t medcom_voip_get_status_string(void *priv, uint32_t status, char **buffer)
+int32_t RPC_IMPL(voip_get_status_string)(void *priv, uint32_t status, char **buffer)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, status=%#x, buffer=%p)", __func__, priv, status,
@@ -37,7 +37,7 @@ int32_t medcom_voip_get_status_string(void *priv, uint32_t status, char **buffer
 }
 
 #if 0
-int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
+int32_t RPC_IMPL(voip_login)(void *priv, struct RPC_TYPE(voip_account) *account)
 {
 	struct remote_control *rc = priv;
 	int32_t ret;
@@ -56,7 +56,7 @@ int32_t medcom_voip_login(void *priv, struct medcom_voip_account *account)
 	return ret;
 }
 #else
-struct medcom_voip_login_options {
+struct RPC_TYPE(voip_login_options) {
 	char *server;
 	int auth;
 	int transport;
@@ -67,10 +67,10 @@ struct medcom_voip_login_options {
 	char password2[128];
 };
 
-int32_t medcom_voip_login(void *priv, struct rpc_buffer *options)
+int32_t RPC_IMPL(voip_login)(void *priv, struct rpc_buffer *options)
 {
 	struct voip *voip = remote_control_get_voip(priv);
-	struct medcom_voip_login_options *account;
+	struct RPC_TYPE(voip_login_options) *account;
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, options=%p)", __func__, priv, options);
@@ -84,7 +84,7 @@ int32_t medcom_voip_login(void *priv, struct rpc_buffer *options)
 }
 #endif
 
-int32_t medcom_voip_logout(void *priv)
+int32_t RPC_IMPL(voip_logout)(void *priv)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
@@ -97,7 +97,7 @@ int32_t medcom_voip_logout(void *priv)
 	return ret;
 }
 
-int32_t medcom_voip_still_logged_in(void *priv, bool *status)
+int32_t RPC_IMPL(voip_still_logged_in)(void *priv, bool *status)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	enum voip_state state = VOIP_STATE_LOGGED_OUT;
@@ -119,7 +119,7 @@ out:
 	return ret;
 }
 
-int32_t medcom_voip_connect_to(void *priv, const char *uri)
+int32_t RPC_IMPL(voip_connect_to)(void *priv, const char *uri)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
@@ -132,7 +132,7 @@ int32_t medcom_voip_connect_to(void *priv, const char *uri)
 	return ret;
 }
 
-int32_t medcom_voip_accept_incoming(void *priv, char **uri)
+int32_t RPC_IMPL(voip_accept_incoming)(void *priv, char **uri)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
@@ -145,7 +145,7 @@ int32_t medcom_voip_accept_incoming(void *priv, char **uri)
 	return ret;
 }
 
-int32_t medcom_voip_disconnect(void *priv)
+int32_t RPC_IMPL(voip_disconnect)(void *priv)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
@@ -158,7 +158,7 @@ int32_t medcom_voip_disconnect(void *priv)
 	return ret;
 }
 
-int32_t medcom_voip_is_connected(void *priv, bool *state)
+int32_t RPC_IMPL(voip_is_connected)(void *priv, bool *state)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, state=%p)", __func__, priv, state);
@@ -166,7 +166,7 @@ int32_t medcom_voip_is_connected(void *priv, bool *state)
 	return ret;
 }
 
-int32_t medcom_voip_is_calling(void *priv, bool *state)
+int32_t RPC_IMPL(voip_is_calling)(void *priv, bool *state)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, state=%p)", __func__, priv, state);
@@ -174,7 +174,7 @@ int32_t medcom_voip_is_calling(void *priv, bool *state)
 	return ret;
 }
 
-int32_t medcom_voip_get_last_contact(void *priv, char **contact)
+int32_t RPC_IMPL(voip_get_last_contact)(void *priv, char **contact)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	const char *name = NULL;

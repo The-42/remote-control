@@ -11,7 +11,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_sound_play_async(void *priv, const char *filename)
+int32_t RPC_IMPL(sound_play_async)(void *priv, const char *filename)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, filename=%s)", __func__, priv, filename);
@@ -19,7 +19,7 @@ int32_t medcom_sound_play_async(void *priv, const char *filename)
 	return ret;
 }
 
-int32_t medcom_sound_play_sync(void *priv, const char *filename)
+int32_t RPC_IMPL(sound_play_sync)(void *priv, const char *filename)
 {
 	int32_t ret = -ENOSYS;
 	g_debug("> %s(priv=%p, filename=%s)", __func__, priv, filename);
@@ -27,7 +27,7 @@ int32_t medcom_sound_play_sync(void *priv, const char *filename)
 	return ret;
 }
 
-int32_t medcom_sound_play(void *priv, const char *uri)
+int32_t RPC_IMPL(sound_play)(void *priv, const char *uri)
 {
 	struct sound_manager *sound = remote_control_get_sound_manager(priv);
 	return sound_manager_play(sound, uri);

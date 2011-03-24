@@ -71,7 +71,7 @@ static int poll_irq_status(void *priv)
 /**
  * This is the ugly way....
  */
-void medcom_irq_event(void *priv, uint32_t type)
+void RPC_IMPL(irq_event)(void *priv, uint32_t type)
 {
 //	struct rpc_client *rpc = rpc_client_from_priv(priv);
 	int ret;
@@ -89,7 +89,7 @@ int remote_irq_enable(void *priv, uint8_t virtkey)
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_irq_enable_stub(rpc, &ret, virtkey);
+	err = RPC_STUB(irq_enable)(rpc, &ret, virtkey);
 	if (err < 0)
 		return err;
 
@@ -105,7 +105,7 @@ int remote_irq_get_mask(void *priv, uint32_t *mask)
 	if (!mask)
 		return -EINVAL;
 
-	err = medcom_irq_get_mask_stub(rpc, &ret, mask);
+	err = RPC_STUB(irq_get_mask)(rpc, &ret, mask);
 	if (err < 0)
 		return err;
 
@@ -121,7 +121,7 @@ int remote_irq_get_info(void *priv, enum remote_irq_source source, uint32_t *inf
 	if (!info)
 		return -EINVAL;
 
-	err = medcom_irq_get_info_stub(rpc, &ret, source, info);
+	err = RPC_STUB(irq_get_info)(rpc, &ret, source, info);
 	if (err < 0)
 		return err;
 

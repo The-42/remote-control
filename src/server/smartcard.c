@@ -11,7 +11,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type)
+int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *type)
 {
 	struct smartcard *smartcard = remote_control_get_smartcard(priv);
 	int32_t ret;
@@ -24,7 +24,7 @@ int32_t medcom_card_get_type(void *priv, enum medcom_card_type *type)
 	return ret;
 }
 
-int32_t medcom_card_read(void *priv, off_t offset, struct rpc_buffer *buffer)
+int32_t RPC_IMPL(card_read)(void *priv, off_t offset, struct rpc_buffer *buffer)
 {
 	struct smartcard *smartcard = remote_control_get_smartcard(priv);
 	int32_t ret;
@@ -38,7 +38,7 @@ int32_t medcom_card_read(void *priv, off_t offset, struct rpc_buffer *buffer)
 	return ret;
 }
 
-int32_t medcom_card_write(void *priv, off_t offset, struct rpc_buffer *buffer)
+int32_t RPC_IMPL(card_write)(void *priv, off_t offset, struct rpc_buffer *buffer)
 {
 	struct smartcard *smartcard = remote_control_get_smartcard(priv);
 	int32_t ret;

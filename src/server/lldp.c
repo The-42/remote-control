@@ -19,7 +19,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t medcom_lldp_enable(void *priv, bool enable)
+int32_t RPC_IMPL(lldp_enable)(void *priv, bool enable)
 {
 	int err = -ENOSYS;
 	g_debug("> %s(priv=%p, enable=%d)", __func__, priv, enable);
@@ -27,7 +27,8 @@ int32_t medcom_lldp_enable(void *priv, bool enable)
 	return err;
 }
 
-int32_t medcom_lldp_read(void *priv, uint32_t mode, struct rpc_buffer *buffer)
+int32_t RPC_IMPL(lldp_read)(void *priv, uint32_t mode,
+		struct rpc_buffer *buffer)
 {
 	struct lldp_monitor *lldp = remote_control_get_lldp_monitor(priv);
 	int32_t err = -ENOSYS;

@@ -103,7 +103,7 @@ int task_manager_free(struct task_manager *manager)
 	return 0;
 }
 
-int32_t task_manager_exec(void *priv, const char *command_line)
+int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
 	const gchar *display;
@@ -166,7 +166,7 @@ out:
 	return ret;
 }
 
-int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig)
+int32_t RPC_IMPL(task_manager_kill)(void *priv, int32_t pid, int32_t sig)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
 	GList *tasks = manager->tasks;

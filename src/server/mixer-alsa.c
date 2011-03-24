@@ -239,8 +239,8 @@ static int mixer_probe(struct mixer *mixer)
 	snd_mixer_selem_id_alloca(&sid);
 
 	for (elem = snd_mixer_first_elem(mixer->mixer); elem; elem = snd_mixer_elem_next(elem)) {
-		enum medcom_mixer_control type = MIXER_CONTROL_UNKNOWN;
 		const char *name = snd_mixer_selem_get_name(elem);
+		enum mixer_control type = MIXER_CONTROL_UNKNOWN;
 		int index = snd_mixer_selem_get_index(elem);
 		struct mixer_element *element = NULL;
 		const char *desc = NULL;

@@ -19,7 +19,7 @@
 int remote_voip_login(void *priv, struct remote_voip_account *account)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
-	struct medcom_voip_account login;
+	struct RPC_TYPE(voip_account) login;
 	int32_t ret = 0;
 	int err;
 
@@ -29,14 +29,14 @@ int remote_voip_login(void *priv, struct remote_voip_account *account)
 	login.username = account->username;
 	login.password = account->password;
 
-	err = medcom_voip_login_stub(rpc, &ret, &login);
+	err = RPC_STUB(voip_login)(rpc, &ret, &login);
 	if (err < 0)
 		return err;
 
 	return ret;
 }
 #else
-struct medcom_voip_login_options {
+struct voip_login_options {
 	char *server;
 	int auth;
 	int transport;
@@ -51,7 +51,7 @@ remote_public
 int remote_voip_login(void *priv, struct remote_voip_account *account)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
-	struct medcom_voip_login_options options;
+	struct voip_login_options options;
 	struct rpc_buffer buffer;
 	int32_t ret = 0;
 	int err = 0;
@@ -67,7 +67,7 @@ int remote_voip_login(void *priv, struct remote_voip_account *account)
 	buffer.tx_buf = &options;
 	buffer.tx_num = sizeof(options);
 
-	err = medcom_voip_login_stub(rpc, &ret, &buffer);
+	err = RPC_STUB(voip_login)(rpc, &ret, &buffer);
 	if (err < 0) {
 		ret = err;
 		goto out;
@@ -86,7 +86,7 @@ int remote_voip_logout(void *priv)
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_voip_logout_stub(rpc, &ret);
+	err = RPC_STUB(voip_logout)(rpc, &ret);
 	if (err < 0)
 		return err;
 
@@ -100,7 +100,7 @@ int remote_voip_connect_to(void *priv, const char *uri)
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_voip_connect_to_stub(rpc, &ret, uri);
+	err = RPC_STUB(voip_connect_to)(rpc, &ret, uri);
 	if (err < 0)
 		return err;
 
@@ -114,7 +114,7 @@ int remote_voip_accept_incoming(void *priv, char **uri)
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_voip_accept_incoming_stub(rpc, &ret, uri);
+	err = RPC_STUB(voip_accept_incoming)(rpc, &ret, uri);
 	if (err < 0)
 		return err;
 
@@ -128,7 +128,7 @@ int remote_voip_disconnect(void *priv)
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_voip_disconnect_stub(rpc, &ret);
+	err = RPC_STUB(voip_disconnect)(rpc, &ret);
 	if (err < 0)
 		return err;
 
@@ -142,7 +142,7 @@ int remote_voip_still_logged_in(void *priv, bool *status)
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_voip_still_logged_in_stub(rpc, &ret, status);
+	err = RPC_STUB(voip_still_logged_in)(rpc, &ret, status);
 	if (err < 0)
 		return err;
 

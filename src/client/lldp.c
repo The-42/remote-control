@@ -25,7 +25,7 @@ int remote_lldp_read(void *priv, void *data, size_t size)
 	buffer.rx_buf = data;
 	buffer.rx_num = size;
 
-	err = medcom_lldp_read_stub(client, &ret, 0, &buffer);
+	err = RPC_STUB(lldp_read)(client, &ret, 0, &buffer);
 	if (err < 0)
 		ret = err;
 

@@ -16,12 +16,12 @@
 remote_public
 int remote_card_get_type(void *priv, enum remote_card_type *typep)
 {
+	enum RPC_TYPE(card_type) type = RPC_MACRO(CARD_TYPE_UNKNOWN);
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
-	enum medcom_card_type type = CARD_TYPE_UNKNOWN;
 	int32_t ret = 0;
 	int err;
 
-	err = medcom_card_get_type_stub(rpc, &ret, &type);
+	err = RPC_STUB(card_get_type)(rpc, &ret, &type);
 	if (err < 0) {
 		ret = err;
 		goto out;
@@ -29,7 +29,7 @@ int remote_card_get_type(void *priv, enum remote_card_type *typep)
 
 	/*
 	 * TODO: Use a proper mapping between remote_card_type and
-	 *       medcom_card_type. This currently works because both
+	 *       RPC_TYPE(card_type). This currently works because both
 	 *       enumerations are defined identically.
 	 */
 	*typep = type;
@@ -51,7 +51,7 @@ int remote_card_read(void *priv, off_t offset, void *buffer, size_t size)
 	buf.rx_buf = buffer;
 	buf.rx_num = size;
 
-	err = medcom_card_read_stub(rpc, &ret, offset, &buf);
+	err = RPC_STUB(card_read)(rpc, &ret, offset, &buf);
 	if (err < 0) {
 		ret = err;
 		goto out;
@@ -75,7 +75,7 @@ int remote_card_write(void *priv, off_t offset, const void *buffer,
 	buf.rx_buf = NULL;
 	buf.rx_num = 0;
 
-	err = medcom_card_write_stub(rpc, &ret, offset, &buf);
+	err = RPC_STUB(card_write)(rpc, &ret, offset, &buf);
 	if (err < 0) {
 		ret = err;
 		goto out;
