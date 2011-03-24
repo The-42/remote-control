@@ -13,33 +13,13 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-struct voip {
-	int foralloc;
-};
-
 int voip_create(struct voip **voipp, struct rpc_server *server)
 {
-	struct voip *voip;
-
-	if (!voipp)
-		return -EINVAL;
-
-	voip = malloc(sizeof(*voip));
-	if (!voip)
-		return -ENOMEM;
-
-	memset(voip, 0, sizeof(*voip));
-
-	*voipp = voip;
 	return 0;
 }
 
 int voip_free(struct voip *voip)
 {
-	if (!voip)
-		return -EINVAL;
-
-	free(voip);
 	return 0;
 }
 
