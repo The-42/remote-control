@@ -24,10 +24,18 @@ PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.6)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
-PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard,
-	[have_libsmartcard=yes],
-	[have_libsmartcard=no])
-AM_CONDITIONAL(HAVE_LIBSMARTCARD, [test "x$have_libsmartcard" = "xyes"])
+AC_ARG_WITH(smartcard_backend,
+	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard@:>@],
+		[Use the specified SmartCard/RFID backend. [default=none]])
+	], [], [with_smartcard_backend=none])
+
+enable_libsmartcard=no
+
+AS_CASE([$with_smartcard_backend],
+	[none], [],
+	[libsmartcard], [PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])],
+	[AC_MSG_ERROR([Invalid SmartCard/RFID backend: must be none or libsmartcard])]
+)
 
 AC_ARG_WITH(video_backend,
 	[AS_HELP_STRING([--with-video-backend=@<:@none/libvlc/gst@:>@],
@@ -63,6 +71,7 @@ AS_CASE([$with_voip_backend],
 
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
+AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
@@ -114,8 +123,8 @@ echo "
 remote-control was configured with the following options:
 
 Features:
-  readline support:    $use_readline
-  libsmartcard:        $have_libsmartcard
-  Video Backend:       $with_video_backend
-  VoIP Backend:        $with_voip_backend
+  readline support:          $use_readline
+  Video Backend:             $with_video_backend
+  SmartCard/RFID Backend:    $with_smartcard_backend
+  VoIP Backend:              $with_voip_backend
 "

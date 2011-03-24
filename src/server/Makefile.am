@@ -83,19 +83,13 @@ libremote_control_la_SOURCES += \
 endif # ENABLE_GST
 endif # ENABLE_LIBVLC
 
-if HAVE_LIBSMARTCARD
-libremote_control_la_CFLAGS += \
-	@LIBSMARTCARD_CFLAGS@
-
-libremote_control_la_LIBADD += \
-	@LIBSMARTCARD_LIBS@
-
-libremote_control_la_SOURCES += \
-	smartcard-i2c.c
+if ENABLE_LIBSMARTCARD
+libremote_control_la_CFLAGS += @LIBSMARTCARD_CFLAGS@
+libremote_control_la_LIBADD += @LIBSMARTCARD_LIBS@
+libremote_control_la_SOURCES += smartcard-i2c.c
 else
-libremote_control_la_SOURCES += \
-	smartcard-null.c
-endif
+libremote_control_la_SOURCES += smartcard-null.c
+endif # ENABLE_LIBSMARTCARD
 
 remote-control-stub.c: $(srcdir)/../protocol.xml
 	$(AM_V_GEN)$(RPC_STUBGEN) --server --source -o $@ $<
