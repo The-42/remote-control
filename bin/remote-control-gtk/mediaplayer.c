@@ -172,7 +172,7 @@ static int mediaplayer_panel_create(struct panel *panel, GtkWidget **widget)
 		mpp = panel->priv;
 	}
 
-	xml = glade_xml_new("medcom-client-gtk.glade", "mediaplayer_panel", NULL);
+	xml = glade_xml_new("remote-client-gtk.glade", "mediaplayer_panel", NULL);
 	glade_xml_signal_autoconnect(xml);
 
 	entry = glade_xml_get_widget(xml, "url");

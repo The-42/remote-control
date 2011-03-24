@@ -186,7 +186,7 @@ static int card_panel_create(struct panel *panel, GtkWidget **widget)
 		cp = panel->priv;
 	}
 
-	xml = glade_xml_new("medcom-client-gtk.glade", "card_panel", NULL);
+	xml = glade_xml_new("remote-client-gtk.glade", "card_panel", NULL);
 	glade_xml_signal_autoconnect(xml);
 
 	container = glade_xml_get_widget(xml, "card_panel");
