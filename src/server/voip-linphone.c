@@ -6,6 +6,10 @@
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <linphonecore.h>
 #include <glib.h>
 
