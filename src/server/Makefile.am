@@ -27,6 +27,8 @@ libremote_control_la_SOURCES = \
 	net-unix.c \
 	remote-control.c \
 	remote-control.h \
+	rfid.c \
+	rfid-null.c \
 	smartcard.c \
 	sound.c \
 	system.c \

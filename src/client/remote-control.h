@@ -53,6 +53,12 @@ enum remote_card_type {
 	REMOTE_CARD_TYPE_MAX
 };
 
+enum remote_rfid_type {
+	REMOTE_RFID_TYPE_UNKNOWN,
+	REMOTE_RFID_TYPE_MIFARE_1K,
+	REMOTE_RFID_TYPE_MAX
+};
+
 enum remote_irq_source {
 	REMOTE_IRQ_SOURCE_UNKNOWN,
 	REMOTE_IRQ_SOURCE_HANDSET,
@@ -137,6 +143,13 @@ remote_public int remote_card_get_type(void *priv,
 remote_public int remote_card_read(void *priv, off_t offset, void *buffer,
 		size_t size);
 remote_public int remote_card_write(void *priv, off_t offset,
+		const void *buffer, size_t size);
+
+remote_public int remote_rfid_get_type(void *priv,
+		enum remote_rfid_type *type);
+remote_public int remote_rfid_read(void *priv, off_t offset, void *buffer,
+		size_t size);
+remote_public int remote_rfid_write(void *priv, off_t offset,
 		const void *buffer, size_t size);
 
 remote_public int remote_irq_enable(void *priv, uint8_t virtkey);

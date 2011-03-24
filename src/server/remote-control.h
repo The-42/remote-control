@@ -148,6 +148,18 @@ ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, 
 ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *buffer, size_t size);
 
 /**
+ * RFID
+ */
+struct rfid;
+
+int rfid_create(struct rfid **rfidp);
+int rfid_free(struct rfid *rfid);
+int rfid_get_type(struct rfid *rfid, unsigned int *typep);
+ssize_t rfid_read(struct rfid *rfid, off_t offset, void *buffer, size_t size);
+ssize_t rfid_write(struct rfid *rfid, off_t offset, const void *buffer,
+		size_t size);
+
+/**
  * Voice-over-IP
  */
 enum voip_state {
@@ -245,6 +257,7 @@ struct backlight *remote_control_get_backlight(struct remote_control *rc);
 struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
+struct rfid *remote_control_get_rfid(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);
 struct net *remote_control_get_net(struct remote_control *rc);

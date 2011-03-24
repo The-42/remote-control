@@ -27,7 +27,7 @@
 			<value name="MIXER_INPUT_SOURCE_LINE"/>
 			<value name="MIXER_INPUT_SOURCE_MAX"/>
 		</enum>
-		<!-- SmartCard -->
+		<!-- Integrated Circuit Card (ICC) -->
 		<enum name="card_type" mnemonic="u32">
 			<value name="CARD_TYPE_NONE" VALUE="100"/>
 			<value name="CARD_TYPE_UNKNOWN"/>
@@ -39,6 +39,10 @@
 			<value name="CARD_TYPE_SLE4428"/>
 			<value name="CARD_TYPE_SLE4432"/>
 			<value name="CARD_TYPE_SLE4442"/>
+		</enum>
+		<enum name="rfid_type" mnemonic="u32">
+			<value name="RFID_TYPE_UNKNOWN"/>
+			<value name="RFID_TYPE_MIFARE_1K"/>
 		</enum>
 		<!-- Modem -->
 		<enum name="modem_event" mnemonic="u32">
@@ -138,7 +142,7 @@
 		<func name="backlight_get" returns="int32_t" opcode="202">
 			<arg name="brightness" type="uint8_t" mode="out"/>
 		</func>
-		<!-- SmartCard -->
+		<!-- Integrated Circuit Card (ICC) -->
 		<func name="card_get_type" returns="int32_t" opcode="300">
 			<arg name="type" type="card_type" mode="out"/>
 		</func>
@@ -147,6 +151,17 @@
 			<arg name="buffer" type="buffer" mode="inout"/>
 		</func>
 		<func name="card_write" returns="int32_t" opcode="302">
+			<arg name="offset" type="off_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<func name="rfid_get_type" returns="int32_t" opcode="350">
+			<arg name="type" type="rfid_type" mode="out"/>
+		</func>
+		<func name="rfid_read" returns="int32_t" opcode="351">
+			<arg name="offset" type="off_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<func name="rfid_write" returns="int32_t" opcode="352">
 			<arg name="offset" type="off_t" mode="in"/>
 			<arg name="buffer" type="buffer" mode="inout"/>
 		</func>
