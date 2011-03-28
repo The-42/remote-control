@@ -47,6 +47,7 @@ struct event_manager {
 	enum event_voip_state voip_state;
 	enum event_smartcard_state smartcard_state;
 	enum event_handset_state handset_state;
+	enum event_rfid_state rfid_state;
 };
 
 static gboolean event_manager_source_prepare(GSource *source, gint *timeout)
@@ -162,6 +163,7 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->voip_state = EVENT_VOIP_STATE_IDLE;
 	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
 	manager->handset_state = EVENT_HANDSET_STATE_HOOK_ON;
+	manager->rfid_state = EVENT_RFID_STATE_LOST;
 
 #ifdef HAVE_LINUX_GPIODEV_H
 	manager->gpiofd = open("/dev/gpio-0", O_RDWR);
@@ -236,6 +238,11 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		irq_status |= BIT(EVENT_SOURCE_HANDSET);
 		break;
 
+	case EVENT_SOURCE_RFID:
+		manager->rfid_state = event->rfid.state;
+		irq_status |= BIT(EVENT_SOURCE_RFID);
+		break;
+
 	default:
 		ret = -ENXIO;
 		break;
@@ -284,6 +291,11 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 	case EVENT_SOURCE_HANDSET:
 		manager->irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
 		event->handset.state = manager->handset_state;
+		break;
+
+	case EVENT_SOURCE_RFID:
+		manager->irq_status &= ~BIT(EVENT_SOURCE_RFID);
+		event->rfid.state = manager->rfid_state;
 		break;
 
 	default:

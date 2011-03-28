@@ -26,6 +26,7 @@ enum event_source {
 	EVENT_SOURCE_VOIP,
 	EVENT_SOURCE_SMARTCARD,
 	EVENT_SOURCE_HANDSET,
+	EVENT_SOURCE_RFID,
 	EVENT_SOURCE_MAX,
 };
 
@@ -70,6 +71,15 @@ struct event_handset {
 	enum event_handset_state state;
 };
 
+enum event_rfid_state {
+	EVENT_RFID_STATE_DETECTED,
+	EVENT_RFID_STATE_LOST,
+};
+
+struct event_rfid {
+	enum event_rfid_state state;
+};
+
 struct event {
 	enum event_source source;
 
@@ -79,6 +89,7 @@ struct event {
 		struct event_voip voip;
 		struct event_smartcard smartcard;
 		struct event_handset handset;
+		struct event_rfid rfid;
 	};
 };
 
