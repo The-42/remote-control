@@ -73,12 +73,9 @@ static int poll_irq_status(void *priv)
  */
 void RPC_IMPL(irq_event)(void *priv, uint32_t type)
 {
-//	struct rpc_client *rpc = rpc_client_from_priv(priv);
-	int ret;
-
 	printf("> %s(priv=%p, type=%x)\n", __func__, priv, type);
 
-	ret = poll_irq_status(priv);
+	poll_irq_status(priv);
 
 	printf("< %s()\n", __func__);
 }

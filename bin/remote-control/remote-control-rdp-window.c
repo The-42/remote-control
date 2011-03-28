@@ -81,9 +81,6 @@ static void remote_control_rdp_window_set_property(GObject *object,
 static void remote_control_rdp_window_finalize(GObject *object)
 {
 	RemoteControlRdpWindow *window = REMOTE_CONTROL_RDP_WINDOW(object);
-	RemoteControlRdpWindowPrivate *priv;
-
-	priv = REMOTE_CONTROL_RDP_WINDOW_GET_PRIVATE(window);
 
 	remote_control_rdp_window_disconnect(window);
 

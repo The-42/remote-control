@@ -554,7 +554,6 @@ int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *
 int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute)
 {
 	struct mixer_element *element;
-	const char *name;
 	int err;
 
 	if (control >= MIXER_CONTROL_MAX)
@@ -563,8 +562,6 @@ int mixer_set_mute(struct mixer *mixer, unsigned short control, bool mute)
 	element = mixer->elements[control];
 	if (!element || !element->element)
 		return -ENODEV;
-
-	name = snd_mixer_selem_get_name(element->element);
 
 	if (!element->ops || !element->ops->set_switch)
 		return -ENOSYS;

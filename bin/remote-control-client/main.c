@@ -88,7 +88,6 @@ static char *readline_command_generator(const char *text, int state)
 static char *readline_options_generator(const char *text, int state)
 {
 	static const struct cli_command_info *cmd = NULL;
-	static int list_index, len;
 
 	if (!state) {
 		char *cmdname;
@@ -100,8 +99,6 @@ static char *readline_options_generator(const char *text, int state)
 		cmdname = malloc((p - rl_line_buffer) + 1);
 		memcpy(cmdname, rl_line_buffer, p - rl_line_buffer);
 		cmd = find_command_by_name(cmdname);
-		list_index = 0;
-		len = strlen(text);
 		free(cmdname);
 	}
 
