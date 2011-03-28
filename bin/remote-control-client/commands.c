@@ -701,7 +701,7 @@ static int exec_voip_login(struct cli *cli, int argc, char *argv[])
 const struct cli_command_info cmd_voip_login _command_ = {
 	.name = "voip-login",
 	.summary = "register with VoIP proxy",
-	.help = NULL,
+	.help = "<registrar> <port> <user> <passwd>",
 	.options = NULL,
 	.exec = exec_voip_login,
 };
