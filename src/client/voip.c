@@ -148,3 +148,17 @@ int remote_voip_still_logged_in(void *priv, bool *status)
 
 	return ret;
 }
+
+remote_public
+int remote_voip_dial(void *priv, uint8_t dtmf)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int err;
+
+	err = RPC_STUB(voip_dial)(rpc, &ret, dtmf);
+	if (err < 0)
+		return err;
+
+	return ret;
+}

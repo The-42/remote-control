@@ -207,3 +207,24 @@ out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
+
+int32_t RPC_IMPL(voip_dial)(void *priv, uint8_t dtmf)
+{
+	struct voip *voip = remote_control_get_voip(priv);
+	int32_t ret;
+
+	g_debug("> %s(priv=%p, dtmf=%c)", __func__, priv, dtmf);
+
+	if (!priv) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = voip_dial(voip, dtmf);
+	if (ret < 0)
+		goto out;
+
+out:
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}

@@ -253,6 +253,9 @@
 		<func name="voip_get_last_contact" returns="int32_t" opcode="711">
 			<arg name="contact" type="char *" mode="out"/>
 		</func>
+		<func name="voip_dial" returns="int32_t" opcode="712">
+			<arg name="dtmf" type="uint8_t" mode="in"/>
+		</func>
 		<!-- miscellaneous -->
 		<func name="reset" returns="int32_t" opcode="800"/>
 		<func name="check_io" returns="int32_t" opcode="801">

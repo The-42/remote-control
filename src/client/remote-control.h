@@ -137,6 +137,7 @@ remote_public int remote_voip_connect_to(void *priv, const char *uri);
 remote_public int remote_voip_accept_incoming(void *priv, char **uri);
 remote_public int remote_voip_disconnect(void *priv);
 remote_public int remote_voip_still_logged_in(void *priv, bool *status);
+remote_public int remote_voip_dial(void *priv, uint8_t dtmf);
 
 remote_public int remote_card_get_type(void *priv,
 		enum remote_card_type *type);

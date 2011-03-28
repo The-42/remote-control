@@ -444,3 +444,16 @@ int voip_get_contact(struct voip *voip, const char **contactp)
 	*contactp = voip->contact;
 	return 0;
 }
+
+int voip_dial(struct voip *voip, uint8_t dtmf)
+{
+	if (!voip)
+		return -EINVAL;
+
+	/* we can only send dtmf tone on running calls */
+	if (!linphone_core_in_call(voip->core))
+		return -ENOSYS;
+
+	linphone_core_send_dtmf(voip->core, (char)dtmf);
+	return 0;
+}

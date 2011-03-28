@@ -58,3 +58,8 @@ int voip_get_contact(struct voip *voip, const char **contactp)
 {
 	return -ENOSYS;
 }
+
+int voip_dial(struct voip *voip, uint8_t dtmf)
+{
+	return -ENOSYS;
+}
