@@ -1,4 +1,4 @@
-VERSION_INFO = 1:0:1
+VERSION_INFO = 2:0:2
 
 include_HEADERS = \
 	remote-control.h

@@ -1,5 +1,8 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.4.4 (2011-03-28)
 ==========================
+- Add support for RFID smart cards (MIFARE).
+- Get rid of all remaining instances of the "medcom" prefix.
+- Add voip_dial() RPC call.
 
 Release 0.4.2 (2011-03-15)
 ==========================
