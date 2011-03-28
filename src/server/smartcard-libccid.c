@@ -185,11 +185,10 @@ int ccid_open_device(struct ccid *ccid)
 	err = libccid_usb_device_new_with_id(ccid->ccid, &ccid->device,
 			USB_VENDOR_OMNIKEY, USB_DEVICE_OMNIKEY_CARDMAN_5121);
 	if (!err) {
-		g_debug("  using Omnikey Cardman 5121");
+		g_debug("ccid: using Omnikey Cardman 5121");
 
 		err = libccid_device_mifare_load_key(ccid->device, 1,
 				mifare_key, sizeof(mifare_key));
-		g_debug("  libccid_device_mifare_load_key(): %d", err);
 		if (err < 0) {
 			g_warning("  failed to load default MIFARE key: %s",
 					strerror(-err));
@@ -201,7 +200,7 @@ int ccid_open_device(struct ccid *ccid)
 	err = libccid_i2c_device_new_eeprom(ccid->ccid, &ccid->device,
 			I2C_DEVICE);
 	if (!err) {
-		g_debug("  using I2C EEPROM");
+		g_debug("ccid: using I2C EEPROM");
 		return 0;
 	}
 
