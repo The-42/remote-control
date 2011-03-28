@@ -560,6 +560,58 @@ const struct cli_command_info cmd_media_player_state _command_ = {
 };
 
 /*
+ * "rfid-read" command
+ */
+static int exec_rfid_read(struct cli *cli, int argc, char *argv[])
+{
+	uint8_t buffer[256];
+	ssize_t err;
+
+	err = remote_rfid_read(cli->client, 0, buffer, sizeof(buffer));
+	if (err < 0)
+		return err;
+
+	print_hex_dump(stdout, "", DUMP_PREFIX_OFFSET, 16, 1, buffer, err,
+			true);
+
+	return 0;
+}
+
+const struct cli_command_info cmd_rfid_read _command_ = {
+	.name = "rfid-read",
+	.summary = "read from an RFID smart card",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_rfid_read,
+};
+
+/*
+ * "smartcard-read" command
+ */
+static int exec_smartcard_read(struct cli *cli, int argc, char *argv[])
+{
+	uint8_t buffer[256];
+	ssize_t err;
+
+	err = remote_card_read(cli->client, 0, buffer, sizeof(buffer));
+	if (err < 0)
+		return err;
+
+	print_hex_dump(stdout, "", DUMP_PREFIX_OFFSET, 16, 1, buffer, err,
+			true);
+
+	return 0;
+}
+
+const struct cli_command_info cmd_smartcard_read _command_ = {
+	.name = "smartcard-read",
+	.summary = "read from a smart card",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_smartcard_read,
+};
+
+/*
  * "task-exec" command
  */
 static int exec_task_exec(struct cli *cli, int argc, char *argv[])
