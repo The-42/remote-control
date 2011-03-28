@@ -25,16 +25,18 @@ RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
 AC_ARG_WITH(smartcard_backend,
-	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard@:>@],
+	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
 		[Use the specified SmartCard/RFID backend. [default=none]])
 	], [], [with_smartcard_backend=none])
 
 enable_libsmartcard=no
+enable_libccid=no
 
 AS_CASE([$with_smartcard_backend],
 	[none], [],
 	[libsmartcard], [PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])],
-	[AC_MSG_ERROR([Invalid SmartCard/RFID backend: must be none or libsmartcard])]
+	[libccid], [PKG_CHECK_MODULES(LIBCCID, libccid, [enable_libccid=yes])],
+	[AC_MSG_ERROR([Invalid SmartCard/RFID backend: must be none, libsmartcard or libccid])]
 )
 
 AC_ARG_WITH(video_backend,
@@ -72,6 +74,7 @@ AS_CASE([$with_voip_backend],
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
+AM_CONDITIONAL(ENABLE_LIBCCID, [test "x$enable_libccid" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
