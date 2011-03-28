@@ -1,5 +1,6 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.4.6 (2011-03-28)
 ==========================
+- Properly hook up RFID to interrupt processing.
 
 Release 0.4.4 (2011-03-28)
 ==========================
