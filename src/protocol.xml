@@ -70,6 +70,7 @@
 			<value name="IRQ_SOURCE_VOIP"/>
 			<value name="IRQ_SOURCE_IO"/>
 			<value name="IRQ_SOURCE_RDP"/>
+			<value name="IRQ_SOURCE_RFID"/>
 		</enum>
 		<struct name="voip_account">
 			<field name="port" type="uint16_t"/>

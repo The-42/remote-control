@@ -23,6 +23,7 @@ enum {
 	IRQ_VOIP,
 	IRQ_IO,
 	IRQ_MODEM,
+	IRQ_RFID,
 };
 
 int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
@@ -64,6 +65,9 @@ int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 
 	if (status & BIT(EVENT_SOURCE_HANDSET))
 		*mask |= BIT(IRQ_HANDSET);
+
+	if (status & BIT(EVENT_SOURCE_RFID))
+		*mask |= BIT(IRQ_RFID);
 
 out:
 	g_debug("< %s() = %d", __func__, ret);
@@ -211,6 +215,31 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 
 	case RPC_MACRO(IRQ_SOURCE_RDP):
 		g_debug("  IRQ_SOURCE_RDP");
+		break;
+
+	case RPC_MACRO(IRQ_SOURCE_RFID):
+		g_debug("  IRQ_SOURCE_RFID");
+		event.source = EVENT_SOURCE_RFID;
+
+		err = event_manager_get_source_state(manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		switch (event.rfid.state) {
+		case EVENT_RFID_STATE_DETECTED:
+			*info = 1;
+			break;
+
+		case EVENT_RFID_STATE_LOST:
+			*info = 0;
+			break;
+
+		default:
+			ret = -ENXIO;
+			break;
+		}
 		break;
 
 	default:

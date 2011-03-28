@@ -80,17 +80,17 @@ static gpointer ccid_thread(gpointer data)
 		}
 
 		memset(&event, 0, sizeof(event));
-		event.source = EVENT_SOURCE_RFID;
+		event.source = EVENT_SOURCE_SMARTCARD;
 		changed = false;
 
 		if ((err > 0) && !ccid->present[0]) {
-			event.rfid.state = EVENT_RFID_STATE_DETECTED;
+			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
 			ccid->present[0] = TRUE;
 			changed = true;
 		}
 
 		if ((err == 0) && ccid->present[0]) {
-			event.rfid.state = EVENT_RFID_STATE_LOST;
+			event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
 			ccid->present[0] = FALSE;
 			changed = true;
 		}
@@ -106,7 +106,7 @@ static gpointer ccid_thread(gpointer data)
 		}
 
 		memset(&event, 0, sizeof(event));
-		event.source = EVENT_SOURCE_SMARTCARD;
+		event.source = EVENT_SOURCE_RFID;
 		changed = false;
 
 		ccid_lock(ccid);
@@ -116,13 +116,13 @@ static gpointer ccid_thread(gpointer data)
 		}
 
 		if ((err > 0) && !ccid->present[1]) {
-			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
+			event.rfid.state = EVENT_RFID_STATE_DETECTED;
 			ccid->present[1] = TRUE;
 			changed = true;
 		}
 
 		if ((err == 0) && ccid->present[1]) {
-			event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
+			event.rfid.state = EVENT_RFID_STATE_LOST;
 			ccid->present[1] = FALSE;
 			changed = true;
 		}

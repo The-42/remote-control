@@ -34,7 +34,8 @@ static int poll_irq_status(void *priv)
 		{ REMOTE_IRQ_SOURCE_SMARTCARD, 0 },
 		{ REMOTE_IRQ_SOURCE_VOIP,      0 },
 		{ REMOTE_IRQ_SOURCE_IO,        0 },
-		{ REMOTE_IRQ_SOURCE_RDP,       0 }
+		{ REMOTE_IRQ_SOURCE_RDP,       0 },
+		{ REMOTE_IRQ_SOURCE_RFID,      0 },
 	};
 	uint32_t mask = 0;
 	uint32_t old;
