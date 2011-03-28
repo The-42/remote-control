@@ -24,7 +24,7 @@ struct smartcard {
 	struct smartcard_i2c *i2c;
 };
 
-int smartcard_create(struct smartcard **smartcardp)
+int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server)
 {
 	struct smartcard *smartcard;
 	int err;

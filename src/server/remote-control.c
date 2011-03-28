@@ -335,13 +335,13 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
-	err = smartcard_create(&rc->smartcard);
+	err = smartcard_create(&rc->smartcard, server);
 	if (err < 0) {
 		g_error("smartcard_create(): %s", strerror(-err));
 		return err;
 	}
 
-	err = rfid_create(&rc->rfid);
+	err = rfid_create(&rc->rfid, server);
 	if (err < 0) {
 		g_error("rfid_create(): %s", strerror(-err));
 		return err;

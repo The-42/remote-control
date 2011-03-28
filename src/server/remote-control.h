@@ -152,7 +152,7 @@ int sound_manager_play(struct sound_manager *manager, const char *uri);
  */
 struct smartcard;
 
-int smartcard_create(struct smartcard **smartcardp);
+int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server);
 int smartcard_free(struct smartcard *smartcard);
 int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep);
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, size_t size);
@@ -163,7 +163,7 @@ ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *b
  */
 struct rfid;
 
-int rfid_create(struct rfid **rfidp);
+int rfid_create(struct rfid **rfidp, struct rpc_server *server);
 int rfid_free(struct rfid *rfid);
 int rfid_get_type(struct rfid *rfid, unsigned int *typep);
 ssize_t rfid_read(struct rfid *rfid, off_t offset, void *buffer, size_t size);

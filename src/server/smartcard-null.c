@@ -13,7 +13,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int smartcard_create(struct smartcard **smartcardp)
+int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server)
 {
 	return 0;
 }

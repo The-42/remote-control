@@ -13,7 +13,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int rfid_create(struct rfid **rfidp)
+int rfid_create(struct rfid **rfidp, struct rpc_server *server)
 {
 	return 0;
 }
