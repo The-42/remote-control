@@ -807,3 +807,33 @@ const struct cli_command_info cmd_voip_terminate _command_ = {
 	.options = NULL,
 	.exec = exec_voip_terminate,
 };
+
+/*
+ * "voip-dtmf" command
+ */
+static int exec_voip_dtmf(struct cli *cli, int argc, char *argv[])
+{
+	uint8_t dtmf;
+	int err;
+
+	if (argc < 2)
+		return -EINVAL;
+
+	dtmf = (uint8_t)argv[1][0];
+
+	err = remote_voip_dial(cli->client, dtmf);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_voip_dtmf _command_ = {
+	.name = "voip-dtmf",
+	.summary = "dial a dtmf tone",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_voip_dtmf,
+};
