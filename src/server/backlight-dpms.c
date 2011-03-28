@@ -52,15 +52,12 @@ int backlight_create(struct backlight **backlightp)
 
 int backlight_free(struct backlight *backlight)
 {
-	g_debug("> %s(backlight=%p)", __func__, backlight);
-
 	if (!backlight)
 		return -EINVAL;
 
 	XCloseDisplay(backlight->display);
 	free(backlight);
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
