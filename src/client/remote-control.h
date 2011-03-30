@@ -154,6 +154,21 @@ remote_public int remote_rfid_read(void *priv, off_t offset, void *buffer,
 remote_public int remote_rfid_write(void *priv, off_t offset,
 		const void *buffer, size_t size);
 
+/*
+ * Note: The interrupt status returned by remote_irq_get_mask() is a bitmask
+ *       where a set bit means a request is pending for the corresponding
+ *       interrupt. *However*, the source parameter that is passed to the
+ *       remote_irq_get_info() function does *not* correspond to the bit
+ *       position in the mask. Instead, 1 needs to be added to the bit
+ *       position in order to obtain the source parameter.
+ *
+ *       Note that I am not responsible for this blunder. This should never
+ *       have happened, but as it is we will likely have to live with it
+ *       forever because it is actively in use already.
+ *
+ *       Also not that remote_irq_get_mask() should really have been called
+ *       remote_irq_get_status().
+ */
 remote_public int remote_irq_enable(void *priv, uint8_t virtkey);
 remote_public int remote_irq_get_mask(void *priv, uint32_t *mask);
 remote_public int remote_irq_get_info(void *priv,
