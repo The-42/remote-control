@@ -29,12 +29,12 @@ struct irq_status {
 
 static int poll_irq_status(void *priv)
 {
-	static struct irq_status table[] = {
+	static struct irq_status table[REMOTE_IRQ_SOURCE_MAX] = {
 		{ REMOTE_IRQ_SOURCE_HANDSET,   0 },
 		{ REMOTE_IRQ_SOURCE_SMARTCARD, 0 },
 		{ REMOTE_IRQ_SOURCE_VOIP,      0 },
 		{ REMOTE_IRQ_SOURCE_IO,        0 },
-		{ REMOTE_IRQ_SOURCE_RDP,       0 },
+		{ REMOTE_IRQ_SOURCE_MODEM,     0 },
 		{ REMOTE_IRQ_SOURCE_RFID,      0 },
 	};
 	uint32_t mask = 0;
