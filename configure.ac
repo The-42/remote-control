@@ -109,6 +109,7 @@ AC_SUBST(COMMANDS_ALIGN)
 
 AC_OUTPUT([
 	bin/Makefile
+	bin/remote-control-browser/Makefile
 	bin/remote-control-client/Makefile
 	bin/remote-control-client/remote-control-client.lds
 	bin/remote-control-gtk/Makefile
