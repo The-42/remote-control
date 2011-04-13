@@ -129,9 +129,8 @@ static void g_uri_parse(GURI *uri, const gchar *string)
 	if ((end != ptr) && (*end == ':')) {
 		priv->scheme = g_strndup(ptr, end - ptr);
 		ptr = end + 1;
+		ptr += 2;
 	}
-
-	ptr += 2;
 
 	path = ptr + strcspn(ptr, "/?#");
 
