@@ -15,15 +15,7 @@
 #include <webkit/webkit.h>
 #include <gtk/gtk.h>
 
-#include "remote-control-scrolled-window.h"
-
-struct browser {
-	GtkAdjustment *h;
-	GtkAdjustment *v;
-	gboolean pressed;
-	gdouble x;
-	gdouble y;
-};
+#include "webkit-browser.h"
 
 static gchar *geometry = NULL;
 
@@ -34,21 +26,23 @@ static GOptionEntry entries[] = {
 	}, { NULL }
 };
 
-void on_destroy(GtkObject *object, gpointer data)
+static void on_destroy(GtkObject *object, gpointer data)
 {
 	gtk_main_quit();
+}
+
+static void on_realize(GtkWidget *widget, gpointer data)
+{
+	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	gdk_window_set_cursor(widget->window, cursor);
+	gdk_cursor_unref(cursor);
 }
 
 int main(int argc, char *argv[])
 {
 	GOptionContext *context;
-	struct browser browser;
-	WebKitWebView *webkit;
 	GError *error = NULL;
-	GtkWidget *window;
-	GtkWidget *widget;
-	GtkWidget *scroll;
-	gboolean err;
+	GtkWidget *browser;
 	gchar *uri;
 
 	context = g_option_context_new("- standalone browser");
@@ -62,34 +56,19 @@ int main(int argc, char *argv[])
 
 	g_option_context_free(context);
 
-	memset(&browser, 0, sizeof(browser));
-
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(on_destroy),
-			NULL);
-
-	scroll = remote_control_scrolled_window_new(NULL, NULL);
-
 	if (argc < 2)
 		uri = "http://www.google.com/ncr";
 	else
 		uri = argv[1];
 
-	widget = webkit_web_view_new();
-	webkit = WEBKIT_WEB_VIEW(widget);
-	webkit_web_view_load_uri(webkit, uri);
+	browser = webkit_browser_new(geometry);
+	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
+			NULL);
+	g_signal_connect(G_OBJECT(browser), "realize", G_CALLBACK(on_realize),
+			NULL);
+	webkit_browser_load_uri(WEBKIT_BROWSER(browser), uri);
+	gtk_widget_show_all(browser);
 
-	gtk_container_add(GTK_CONTAINER(scroll), widget);
-	gtk_container_add(GTK_CONTAINER(window), scroll);
-	gtk_widget_show_all(scroll);
-
-	if (geometry) {
-		err = gtk_window_parse_geometry(GTK_WINDOW(window), geometry);
-		if (!err)
-			g_print("geometry parsing failed\n");
-	}
-
-	gtk_widget_show_all(window);
 	gtk_main();
 
 	return 0;

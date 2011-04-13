@@ -142,8 +142,8 @@ static void remote_control_scrolled_window_init(RemoteControlScrolledWindow *win
 
 static void remote_control_scrolled_window_size_request(GtkWidget *widget, GtkRequisition *requisition)
 {
-	requisition->width = widget->allocation.width;
-	requisition->height = widget->allocation.height;
+	requisition->width = 0;
+	requisition->height = 0;
 }
 
 static void remote_control_scrolled_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation)
