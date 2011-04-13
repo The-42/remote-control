@@ -3,7 +3,8 @@ bin_PROGRAMS = \
 
 remote_control_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
-	-I $(top_srcdir)/src/server
+	-I$(top_srcdir)/src/common \
+	-I$(top_srcdir)/src/server
 
 remote_control_CFLAGS = \
 	@GLIB_CFLAGS@ \
@@ -13,8 +14,6 @@ remote_control_CFLAGS = \
 	@GTK_CFLAGS@
 
 remote_control_SOURCES = \
-	guri.c \
-	guri.h \
 	remote-control.c \
 	remote-control-rdp-window.c \
 	remote-control-rdp-window.h \
@@ -23,6 +22,7 @@ remote_control_SOURCES = \
 
 remote_control_LDADD = \
 	../../src/server/libremote-control.la \
+	../../src/common/libcommon.la \
 	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \
 	@WEBKIT_LIBS@ \
