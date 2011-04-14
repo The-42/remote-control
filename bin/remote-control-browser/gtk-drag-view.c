@@ -12,7 +12,7 @@
 
 #include <gtk/gtk.h>
 
-#include "remote-control-scrolled-window.h"
+#include "gtk-drag-view.h"
 
 typedef struct {
 	GtkAdjustment *hadjustment;
@@ -20,19 +20,18 @@ typedef struct {
 	gboolean pressed;
 	gdouble x;
 	gdouble y;
-} RemoteControlScrolledWindowPrivate;
+} GtkDragViewPrivate;
 
-#define REMOTE_CONTROL_SCROLLED_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), REMOTE_CONTROL_TYPE_SCROLLED_WINDOW, RemoteControlScrolledWindowPrivate))
+#define GTK_DRAG_VIEW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), GTK_TYPE_DRAG_VIEW, GtkDragViewPrivate))
 
-G_DEFINE_TYPE(RemoteControlScrolledWindow, remote_control_scrolled_window, GTK_TYPE_BIN);
+G_DEFINE_TYPE(GtkDragView, gtk_drag_view, GTK_TYPE_BIN);
 
 static gboolean on_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	RemoteControlScrolledWindowPrivate *priv;
+	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(data);
 
 	g_return_val_if_fail(event->type == GDK_BUTTON_PRESS, FALSE);
 
-	priv = REMOTE_CONTROL_SCROLLED_WINDOW_GET_PRIVATE(data);
 	priv->x = event->button.x;
 	priv->y = event->button.y;
 	priv->pressed = TRUE;
@@ -42,11 +41,10 @@ static gboolean on_button_press(GtkWidget *widget, GdkEvent *event, gpointer dat
 
 static gboolean on_button_release(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	RemoteControlScrolledWindowPrivate *priv;
+	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(data);
 
 	g_return_val_if_fail(event->type == GDK_BUTTON_RELEASE, FALSE);
 
-	priv = REMOTE_CONTROL_SCROLLED_WINDOW_GET_PRIVATE(data);
 	priv->pressed = FALSE;
 
 	return FALSE;
@@ -54,8 +52,7 @@ static gboolean on_button_release(GtkWidget *widget, GdkEvent *event, gpointer d
 
 static gboolean on_motion_notify(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	RemoteControlScrolledWindowPrivate *priv;
-	GtkWidget *scroll = data;
+	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(data);
 	gdouble lower;
 	gdouble upper;
 	gdouble value;
@@ -64,8 +61,6 @@ static gboolean on_motion_notify(GtkWidget *widget, GdkEvent *event, gpointer da
 	gdouble dy;
 
 	g_return_val_if_fail(event->type == GDK_MOTION_NOTIFY, FALSE);
-
-	priv = REMOTE_CONTROL_SCROLLED_WINDOW_GET_PRIVATE(scroll);
 
 	if (priv->pressed) {
 		dx = event->motion.x - priv->x;
@@ -92,12 +87,10 @@ static gboolean on_motion_notify(GtkWidget *widget, GdkEvent *event, gpointer da
 	return priv->pressed;
 }
 
-static void remote_control_scrolled_window_add(GtkContainer *container, GtkWidget *child)
+static void gtk_drag_view_add(GtkContainer *container, GtkWidget *child)
 {
-	RemoteControlScrolledWindowPrivate *priv;
+	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(container);
 	GtkBin *bin = GTK_BIN(container);
-
-	priv = REMOTE_CONTROL_SCROLLED_WINDOW_GET_PRIVATE(container);
 
 	gtk_widget_set_parent(child, GTK_WIDGET(container));
 	bin->child = child;
@@ -109,11 +102,11 @@ static void remote_control_scrolled_window_add(GtkContainer *container, GtkWidge
 	gtk_widget_set_scroll_adjustments(child, priv->hadjustment, priv->vadjustment);
 }
 
-static void remote_control_scrolled_window_remove(GtkContainer *container, GtkWidget *child)
+static void gtk_drag_view_remove(GtkContainer *container, GtkWidget *child)
 {
 	GtkBin *bin = GTK_BIN(container);
 
-	g_return_if_fail(REMOTE_CONTROL_IS_SCROLLED_WINDOW(container));
+	g_return_if_fail(GTK_IS_DRAG_VIEW(container));
 	g_return_if_fail(bin->child == child);
 	g_return_if_fail(child != NULL);
 
@@ -122,12 +115,12 @@ static void remote_control_scrolled_window_remove(GtkContainer *container, GtkWi
 	g_signal_handlers_disconnect_by_func(child, on_button_release, container);
 	g_signal_handlers_disconnect_by_func(child, on_button_press, container);
 
-	GTK_CONTAINER_CLASS(remote_control_scrolled_window_parent_class)->remove(container, child);
+	GTK_CONTAINER_CLASS(gtk_drag_view_parent_class)->remove(container, child);
 }
 
-static void remote_control_scrolled_window_init(RemoteControlScrolledWindow *window)
+static void gtk_drag_view_init(GtkDragView *window)
 {
-	RemoteControlScrolledWindowPrivate *priv = REMOTE_CONTROL_SCROLLED_WINDOW_GET_PRIVATE(window);
+	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(window);
 	GtkObject *adjustment;
 
 	gtk_widget_set_has_window(GTK_WIDGET(window), FALSE);
@@ -140,13 +133,13 @@ static void remote_control_scrolled_window_init(RemoteControlScrolledWindow *win
 	priv->vadjustment = GTK_ADJUSTMENT(adjustment);
 }
 
-static void remote_control_scrolled_window_size_request(GtkWidget *widget, GtkRequisition *requisition)
+static void gtk_drag_view_size_request(GtkWidget *widget, GtkRequisition *requisition)
 {
 	requisition->width = 0;
 	requisition->height = 0;
 }
 
-static void remote_control_scrolled_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation)
+static void gtk_drag_view_size_allocate(GtkWidget *widget, GtkAllocation *allocation)
 {
 	GtkBin *bin = GTK_BIN(widget);
 
@@ -156,30 +149,30 @@ static void remote_control_scrolled_window_size_allocate(GtkWidget *widget, GtkA
 	widget->allocation = *allocation;
 }
 
-static gboolean remote_control_scrolled_window_expose(GtkWidget *widget, GdkEventExpose *event)
+static gboolean gtk_drag_view_expose(GtkWidget *widget, GdkEventExpose *event)
 {
 	if (gtk_widget_is_drawable(widget))
-		GTK_WIDGET_CLASS(remote_control_scrolled_window_parent_class)->expose_event(widget, event);
+		GTK_WIDGET_CLASS(gtk_drag_view_parent_class)->expose_event(widget, event);
 
 	return FALSE;
 }
 
-static void remote_control_scrolled_window_class_init(RemoteControlScrolledWindowClass *class)
+static void gtk_drag_view_class_init(GtkDragViewClass *class)
 {
 	GtkContainerClass *container = GTK_CONTAINER_CLASS(class);
 	GtkWidgetClass *widget = GTK_WIDGET_CLASS(class);
 
-	container->add = remote_control_scrolled_window_add;
-	container->remove = remote_control_scrolled_window_remove;
+	container->add = gtk_drag_view_add;
+	container->remove = gtk_drag_view_remove;
 
-	widget->expose_event = remote_control_scrolled_window_expose;
-	widget->size_request = remote_control_scrolled_window_size_request;
-	widget->size_allocate = remote_control_scrolled_window_size_allocate;
+	widget->expose_event = gtk_drag_view_expose;
+	widget->size_request = gtk_drag_view_size_request;
+	widget->size_allocate = gtk_drag_view_size_allocate;
 
-	g_type_class_add_private(class, sizeof(RemoteControlScrolledWindowPrivate));
+	g_type_class_add_private(class, sizeof(GtkDragViewPrivate));
 }
 
-GtkWidget *remote_control_scrolled_window_new(GtkAdjustment *hadjustment, GtkAdjustment *vadjustment)
+GtkWidget *gtk_drag_view_new(GtkAdjustment *hadjustment, GtkAdjustment *vadjustment)
 {
-	return g_object_new(REMOTE_CONTROL_TYPE_SCROLLED_WINDOW, NULL);
+	return g_object_new(GTK_TYPE_DRAG_VIEW, NULL);
 }

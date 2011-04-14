@@ -7,7 +7,7 @@
 #include <webkit/webkit.h>
 #include <gtkosk.h>
 
-#include "remote-control-scrolled-window.h"
+#include "gtk-drag-view.h"
 #include "webkit-browser.h"
 #include "guri.h"
 
@@ -214,7 +214,7 @@ static void webkit_browser_init(WebKitBrowser *browser)
 			G_CALLBACK(on_exit_clicked), NULL);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 
-	view = remote_control_scrolled_window_new(NULL, NULL);
+	view = gtk_drag_view_new(NULL, NULL);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show_all(view);
 

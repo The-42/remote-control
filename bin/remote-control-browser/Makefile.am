@@ -9,8 +9,8 @@ remote_control_browser_CPPFLAGS = \
 	@GTK_CFLAGS@
 
 remote_control_browser_SOURCES = \
-	remote-control-scrolled-window.c \
-	remote-control-scrolled-window.h \
+	gtk-drag-view.c \
+	gtk-drag-view.h \
 	main.c \
 	webkit-browser.c \
 	webkit-browser.h
