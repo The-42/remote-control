@@ -2,10 +2,12 @@ noinst_LTLIBRARIES = \
 	libremote-control.la
 
 libremote_control_la_CFLAGS = \
+	-I$(top_srcdir)/src/common \
 	@GLIB_CFLAGS@ \
 	@GTK_CFLAGS@
 
 libremote_control_la_LIBADD = \
+	../common/libcommon.la \
 	@GLIB_LIBS@ \
 	@GTK_LIBS@
 

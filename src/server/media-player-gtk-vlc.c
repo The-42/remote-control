@@ -19,6 +19,7 @@
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
+#include "guri.h"
 
 #define LIBVLC_AUDIO_VOLUME_MAX 200
 
@@ -31,35 +32,6 @@ struct media_player {
 	libvlc_event_manager_t *evman;
 	libvlc_media_t *media;
 };
-
-static char *vlc_rewrite_url(const char *url)
-{
-	static const char scheme_separator[] = "://";
-	size_t len;
-	char *ptr;
-	char *vlc;
-
-	ptr = strstr(url, scheme_separator);
-	if (!ptr)
-		return NULL;
-
-	ptr += strlen(scheme_separator);
-
-	if (*ptr == '@')
-		return strdup(url);
-
-	len = strlen(url) + 2;
-
-	vlc = g_malloc0(len);
-	if (!vlc)
-		return NULL;
-
-	strncpy(vlc, url, ptr - url);
-	strcat(vlc, "@");
-	strcat(vlc, ptr);
-
-	return vlc;
-}
 
 static void on_playing(const struct libvlc_event_t *event, void *data)
 {
@@ -165,14 +137,34 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		libvlc_media_release(player->media);
 
 	if (uri) {
-		char *url = vlc_rewrite_url(uri);
-		if (!url)
-			return -EINVAL;
+		gchar *location = (gchar *)uri;
+		GURI *url = g_uri_new(uri);
+		const gchar *scheme;
+
+		scheme = g_uri_get_scheme(url);
+
+		if (g_str_equal(scheme, "udp")) {
+			const gchar *host = g_uri_get_host(url);
+			GInetAddress *address = g_inet_address_new_from_string(host);
+			if (g_inet_address_get_is_multicast(address)) {
+				/*
+				 * HACK: Set user to empty string to force the
+				 *       insertion of the @ separator.
+				 */
+				g_uri_set_user(url, "");
+			}
+
+			location = g_uri_to_string(url);
+			g_object_unref(address);
+		}
 
 		gdk_window_hide(player->window);
-		player->media = libvlc_media_new_location(player->vlc, url);
+		player->media = libvlc_media_new_location(player->vlc, location);
 
-		g_free(url);
+		if (location != uri)
+			g_free(location);
+
+		g_object_unref(url);
 	}
 
 	return 0;
