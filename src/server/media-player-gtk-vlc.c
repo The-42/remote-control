@@ -89,7 +89,6 @@ int media_player_create(struct media_player **playerp)
 
 	player->vlc = libvlc_new(0, NULL);
 	player->player = libvlc_media_player_new(player->vlc);
-	libvlc_video_set_deinterlace(player->player, "linear");
 	libvlc_audio_set_volume(player->player, LIBVLC_AUDIO_VOLUME_MAX);
 	player->evman = libvlc_media_player_event_manager(player->player);
 	libvlc_media_player_set_xwindow(player->player, xid);
@@ -163,6 +162,15 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 
 		if (location != uri)
 			g_free(location);
+
+		if (g_str_equal(scheme, "v4l2")) {
+			/* TODO: autodetect the V4L2 and ALSA devices */
+			libvlc_media_add_option(player->media, ":v4l2-dev=/dev/video0");
+			libvlc_media_add_option(player->media, ":input-slave=alsa://hw:1");
+			libvlc_video_set_deinterlace(player->player, NULL);
+		} else {
+			libvlc_video_set_deinterlace(player->player, "linear");
+		}
 
 		g_object_unref(url);
 	}
