@@ -25,6 +25,17 @@ PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.6)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
+AC_ARG_WITH(backlight_backend,
+	[AS_HELP_STRING([--with-backlight-backend=@<:@none/dpms@:>@],
+		[Use the specified backlight backend. [default=none]])
+	], [], [with_backlight_backend=none])
+
+AS_CASE([$with_backlight_backend],
+	[none], [],
+	[dpms], [enable_dpms=yes],
+	[AC_MSG_ERROR([Invalid backlight backend: must be none or dpms])]
+)
+
 AC_ARG_WITH(smartcard_backend,
 	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
 		[Use the specified SmartCard/RFID backend. [default=none]])
@@ -72,6 +83,7 @@ AS_CASE([$with_voip_backend],
 	[AC_MSG_ERROR([Invalid voip backend: must be none or linphone])]
 )
 
+AM_CONDITIONAL(ENABLE_DPMS, [test "x$enable_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
@@ -130,6 +142,7 @@ remote-control was configured with the following options:
 
 Features:
   readline support:          $use_readline
+  Backlight Backend:         $with_backlight_backend
   Video Backend:             $with_video_backend
   SmartCard/RFID Backend:    $with_smartcard_backend
   VoIP Backend:              $with_voip_backend

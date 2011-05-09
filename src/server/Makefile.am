@@ -14,7 +14,6 @@ libremote_control_la_LIBADD = \
 libremote_control_la_SOURCES = \
 	audio.c \
 	backlight.c \
-	backlight-dpms.c \
 	event-manager.c \
 	io.c \
 	irq.c \
@@ -41,6 +40,12 @@ libremote_control_la_SOURCES = \
 nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
+
+if ENABLE_DPMS
+libremote_control_la_SOURCES += backlight-dpms.c
+else
+libremote_control_la_SOURCES += backlight-null.c
+endif # ENABLE_DPMS
 
 if ENABLE_LINPHONE
 libremote_control_la_CFLAGS += \
