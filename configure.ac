@@ -26,14 +26,15 @@ RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
 AC_ARG_WITH(backlight_backend,
-	[AS_HELP_STRING([--with-backlight-backend=@<:@none/dpms@:>@],
+	[AS_HELP_STRING([--with-backlight-backend=@<:@none/dpms/medatom@:>@],
 		[Use the specified backlight backend. [default=none]])
 	], [], [with_backlight_backend=none])
 
 AS_CASE([$with_backlight_backend],
 	[none], [],
 	[dpms], [enable_dpms=yes],
-	[AC_MSG_ERROR([Invalid backlight backend: must be none or dpms])]
+	[medatom], [enable_medatom_backlight=yes],
+	[AC_MSG_ERROR([Invalid backlight backend: must be none, dpms or medatom])]
 )
 
 AC_ARG_WITH(smartcard_backend,
@@ -84,6 +85,7 @@ AS_CASE([$with_voip_backend],
 )
 
 AM_CONDITIONAL(ENABLE_DPMS, [test "x$enable_dpms" = "xyes"])
+AM_CONDITIONAL(ENABLE_MEDATOM_BACKLIGHT, [test "x$enable_medatom_backlight" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])

@@ -44,7 +44,11 @@ nodist_libremote_control_la_SOURCES = \
 if ENABLE_DPMS
 libremote_control_la_SOURCES += backlight-dpms.c
 else
+if ENABLE_MEDATOM_BACKLIGHT
+libremote_control_la_SOURCES += backlight-medatom.c
+else
 libremote_control_la_SOURCES += backlight-null.c
+endif # ENABLE_MEDATOM_BACKLIGHT
 endif # ENABLE_DPMS
 
 if ENABLE_LINPHONE
