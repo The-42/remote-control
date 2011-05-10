@@ -13,7 +13,7 @@
 #include <string.h>
 #include <gdk/gdkx.h>
 #include <webkit/webkit.h>
-#include <gtkosk.h>
+#include <gtkosk/gtkosk.h>
 
 #include "gtk-drag-view.h"
 #include "webkit-browser.h"
