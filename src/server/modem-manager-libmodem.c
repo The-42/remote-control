@@ -106,7 +106,7 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	struct modem_manager *manager;
 	int err;
 
-	g_return_val_if_fail(!managerp || !server, -EINVAL);
+	g_return_val_if_fail((managerp != NULL) && (server != NULL), -EINVAL);
 
 	manager = calloc(1, sizeof(*manager));
 	if (!manager)
@@ -137,7 +137,7 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 
 int modem_manager_free(struct modem_manager *manager)
 {
-	g_return_val_if_fail(!manager, -EINVAL);
+	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	if (manager->thread) {
 		manager->done = TRUE;
@@ -155,8 +155,8 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 {
 	int err;
 
-	g_return_val_if_fail(!manager, -EINVAL);
-	g_return_val_if_fail(!manager->modem, -ENODEV);
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
 	err = modem_call(manager->modem, number);
 	if (err < 0)
@@ -177,8 +177,8 @@ int modem_manager_accept(struct modem_manager *manager)
 {
 	int err;
 
-	g_return_val_if_fail(!manager, -EINVAL);
-	g_return_val_if_fail(!manager->modem, -ENODEV);
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
 	err = modem_accept(manager->modem);
 	if (err < 0)
@@ -199,8 +199,8 @@ int modem_manager_terminate(struct modem_manager *manager)
 {
 	int err;
 
-	g_return_val_if_fail(!manager, -EINVAL);
-	g_return_val_if_fail(!manager->modem, -ENODEV);
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
 	err = modem_terminate(manager->modem);
 	if (err < 0)
@@ -215,8 +215,8 @@ int modem_manager_terminate(struct modem_manager *manager)
 
 int modem_manager_get_state(struct modem_manager *manager, enum modem_state *statep)
 {
-	g_return_val_if_fail(!manager || !statep, -EINVAL);
-	g_return_val_if_fail(!manager->modem, -ENODEV);
+	g_return_val_if_fail((manager != NULL) && (statep != NULL), -EINVAL);
+	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
 	*statep = manager->state;
 	return 0;
