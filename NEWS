@@ -1,5 +1,9 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.4.8 (2011-05-10)
 ==========================
+- Add a small standalone browser program with built-in on-screen keyboard.
+- Add support for video playback from V4L2 devices (analog video).
+- Add Avionic Design Medatom specific backlight backend.
+- Add modem support.
 
 Release 0.4.6 (2011-03-28)
 ==========================
