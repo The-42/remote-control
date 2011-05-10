@@ -313,6 +313,13 @@ static int exec_backlight_brightness(struct cli *cli, int argc, char *argv[])
 			return -EINVAL;
 		}
 
+		if (value > 255) {
+			printf("Invalid backlight brightness %lu. Must be "
+					"less than or equal to 255.\n",
+					value);
+			return -EINVAL;
+		}
+
 		err = remote_backlight_set(cli->client, value);
 		if (err < 0) {
 			printf("%s\n", strerror(-err));
