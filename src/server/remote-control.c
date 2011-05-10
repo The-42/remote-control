@@ -40,6 +40,7 @@ struct remote_control {
 	struct sound_manager *sound;
 	struct smartcard *smartcard;
 	struct rfid *rfid;
+	struct modem_manager *modem;
 	struct voip *voip;
 	struct mixer *mixer;
 	struct net *net;
@@ -347,6 +348,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = modem_manager_create(&rc->modem, server);
+	if (err < 0) {
+		g_error("modem_manager_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = voip_create(&rc->voip, server);
 	if (err < 0) {
 		g_error("voip_create(): %s", strerror(-err));
@@ -404,6 +411,7 @@ int remote_control_free(struct remote_control *rc)
 	task_manager_free(rc->task_manager);
 	net_free(rc->net);
 	voip_free(rc->voip);
+	modem_manager_free(rc->modem);
 	rfid_free(rc->rfid);
 	smartcard_free(rc->smartcard);
 	sound_manager_free(rc->sound);
@@ -442,6 +450,11 @@ struct smartcard *remote_control_get_smartcard(struct remote_control *rc)
 struct rfid *remote_control_get_rfid(struct remote_control *rc)
 {
 	return rc ? rc->rfid : NULL;
+}
+
+struct modem_manager *remote_control_get_modem_manager(struct remote_control *rc)
+{
+	return rc ? rc->modem : NULL;
 }
 
 struct voip *remote_control_get_voip(struct remote_control *rc)

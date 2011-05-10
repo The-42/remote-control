@@ -108,6 +108,14 @@ endif # ENABLE_LIBSMARTCARD
 libremote_control_la_SOURCES += rfid-null.c
 endif # ENABLE_LIBCCID
 
+if ENABLE_LIBMODEM
+libremote_control_la_CFLAGS += @LIBMODEM_CFLAGS@
+libremote_control_la_LIBADD += @LIBMODEM_LIBS@
+libremote_control_la_SOURCES += modem-manager-libmodem.c
+else
+libremote_control_la_SOURCES += modem-manager-null.c
+endif # ENABLE_LIBMODEM
+
 remote-control-stub.c: $(srcdir)/../protocol.xml
 	$(AM_V_GEN)$(RPC_STUBGEN) --server --source -o $@ $<
 

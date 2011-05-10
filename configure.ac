@@ -84,6 +84,19 @@ AS_CASE([$with_voip_backend],
 	[AC_MSG_ERROR([Invalid voip backend: must be none or linphone])]
 )
 
+AC_ARG_WITH(modem_backend,
+	[AS_HELP_STRING([--with-modem-backend=@<:@none/libmodem@:>@],
+		[Use the specified modem backend. [default=none]])
+	], [], [with_modem_backend=none])
+
+enable_libmodem=no
+
+AS_CASE([$with_modem_backend],
+	[none], [],
+	[libmodem], [PKG_CHECK_MODULES(LIBMODEM, libmodem, [enable_libmodem=yes])],
+	[AC_MSG_ERROR([Invalid modem backend: must be none or libmodem])]
+)
+
 AM_CONDITIONAL(ENABLE_DPMS, [test "x$enable_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_MEDATOM_BACKLIGHT, [test "x$enable_medatom_backlight" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
@@ -91,6 +104,7 @@ AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBCCID, [test "x$enable_libccid" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
+AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
 
@@ -148,4 +162,5 @@ Features:
   Video Backend:             $with_video_backend
   SmartCard/RFID Backend:    $with_smartcard_backend
   VoIP Backend:              $with_voip_backend
+  Modem Backend:             $with_modem_backend
 "

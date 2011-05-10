@@ -171,6 +171,26 @@ ssize_t rfid_write(struct rfid *rfid, off_t offset, const void *buffer,
 		size_t size);
 
 /**
+ * modem manager
+ */
+enum modem_state {
+	MODEM_STATE_IDLE,
+	MODEM_STATE_INCOMING,
+	MODEM_STATE_OUTGOING,
+	MODEM_STATE_ACTIVE,
+	MODEM_STATE_MAX,
+};
+
+struct modem_manager;
+
+int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server);
+int modem_manager_free(struct modem_manager *manager);
+int modem_manager_call(struct modem_manager *manager, const char *number);
+int modem_manager_accept(struct modem_manager *manager);
+int modem_manager_terminate(struct modem_manager *manager);
+int modem_manager_get_state(struct modem_manager *manager, enum modem_state *statep);
+
+/**
  * Voice-over-IP
  */
 enum voip_state {
@@ -270,6 +290,7 @@ struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
 struct rfid *remote_control_get_rfid(struct remote_control *rc);
+struct modem_manager *remote_control_get_modem_manager(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);
 struct net *remote_control_get_net(struct remote_control *rc);

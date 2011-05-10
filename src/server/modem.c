@@ -17,56 +17,111 @@
 
 int32_t RPC_IMPL(modem_init)(void *priv)
 {
-	int32_t ret = -ENOSYS;
+	int32_t ret;
+
 	g_debug("> %s(priv=%p)", __func__, priv);
+
+	ret = 0;
+
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(modem_deinit)(void *priv)
 {
-	int32_t ret = -ENOSYS;
+	int32_t ret;
+
 	g_debug("> %s(priv=%p)", __func__, priv);
+
+	ret = 0;
+
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(modem_pick_up)(void *priv)
 {
-	int32_t ret = -ENOSYS;
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	int32_t ret;
+
 	g_debug("> %s(priv=%p)", __func__, priv);
+
+	ret = modem_manager_accept(modem);
+
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(modem_hang_up)(void *priv)
 {
-	int32_t ret = -ENOSYS;
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	int32_t ret;
+
 	g_debug("> %s(priv=%p)", __func__, priv);
+
+	ret = modem_manager_terminate(modem);
+
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(modem_dial)(void *priv, const char *number)
 {
-	int32_t ret = -ENOSYS;
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	int32_t ret;
+
 	g_debug("> %s(priv=%p, number=%s)", __func__, priv, number);
+
+	ret = modem_manager_call(modem, number);
+
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(modem_is_calling)(void *priv, bool *calling)
 {
-	int32_t ret = -ENOSYS;
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	enum modem_state state = MODEM_STATE_IDLE;
+	int32_t ret;
+
 	g_debug("> %s(priv=%p, calling=%p)", __func__, priv, calling);
+
+	ret = modem_manager_get_state(modem, &state);
+	if (ret < 0)
+		goto out;
+
+	switch (state) {
+	case MODEM_STATE_IDLE:
+	default:
+		*calling = false;
+		break;
+	}
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(modem_is_connected)(void *priv, bool *connected)
 {
-	int32_t ret = -ENOSYS;
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	enum modem_state state = MODEM_STATE_IDLE;
+	int32_t ret;
+
 	g_debug("> %s(priv=%p, connected=%p)", __func__, priv, connected);
+
+	ret = modem_manager_get_state(modem, &state);
+	if (ret < 0)
+		goto out;
+
+	switch (state) {
+	case MODEM_STATE_IDLE:
+	default:
+		*connected = false;
+		break;
+	}
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
