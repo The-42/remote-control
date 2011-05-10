@@ -1,5 +1,6 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.4.12 (2011-05-10)
 ==========================
+- Fix inverted logic during modem initialization.
 
 Release 0.4.10 (2011-05-10)
 ===========================
