@@ -73,7 +73,7 @@ AS_CASE([$with_video_backend],
 
 AC_ARG_WITH(voip_backend,
 	[AS_HELP_STRING([--with-voip-backend=@<:@none/linphone@:>@],
-		[Use the specified void packend. [default=none]])
+		[Use the specified VoIP backend. [default=none]])
 	], [], [with_voip_backend=none])
 
 enable_linphone=no
