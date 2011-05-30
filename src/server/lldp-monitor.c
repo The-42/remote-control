@@ -17,11 +17,18 @@
 #include <net/if.h>
 #include <linux/if_packet.h>
 
+#include <netlink/netlink.h>
+#include <netlink/route/link.h>
+
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a))/(sizeof((a)[0]))
 #endif
 
 #define LLDP_MAX_SIZE 1536
@@ -39,6 +46,78 @@ struct lldp_monitor {
 	void *data;
 	size_t len;
 };
+
+static int is_bad_interface_name(char *iface)
+{
+	/* This is a list of interface name prefixes which are `bad'
+	 * in the sense that they don't refer to interfaces of
+	 * external type on which we are likely to want to listen.
+	 * We also compare candidate interfaces to lo. */
+	static const char *BAD_NAMES[] = {
+		"lo:",
+		"lo",
+		"stf",     /* pseudo-device 6to4 tunnel interface */
+		"gif",     /* psuedo-device generic tunnel interface */
+		"dummy",
+		"vmnet",
+		"virbr",
+        };
+	int i;
+
+	for (i=0; i<ARRAY_SIZE(BAD_NAMES); i++)
+		if (strcmp(iface, BAD_NAMES[i]) == 0)
+			return TRUE;
+
+	return FALSE;
+}
+
+static int get_first_interface(void)
+{
+	struct nl_cache *cache = NULL;
+	struct nl_sock *sock = NULL;
+	struct nl_object *obj;
+	int ifindex = 0;
+	int ret;
+
+	sock = nl_socket_alloc();
+	if (!sock) {
+		g_error("nl_socket_alloc() failed\n");
+		goto cleanup;
+	}
+
+	ret = nl_connect(sock, NETLINK_ROUTE);
+	if (ret < 0) {
+		g_error("nl_connect(): %s\n", nl_geterror(-ret));
+		goto cleanup;
+	}
+
+	ret = rtnl_link_alloc_cache(sock, AF_INET, &cache);
+	if (ret < 0) {
+		g_error("nl_link_alloc_cache(): %s\n",
+			nl_geterror(-ret));
+		goto cleanup;
+	}
+
+	for (obj = nl_cache_get_first(cache); obj != NULL;
+	     obj = nl_cache_get_next(obj))
+	{
+		struct rtnl_link *link = (struct rtnl_link *)obj;
+		char *name = rtnl_link_get_name(link);
+		if (name == NULL || is_bad_interface_name(name))
+			continue;
+
+		ifindex = rtnl_link_get_ifindex(link);
+		break;
+	}
+
+cleanup:
+	if (cache)
+		nl_cache_free(cache);
+	if (sock)
+		nl_socket_free(sock);
+
+	return ifindex;
+}
 
 static gboolean lldp_monitor_source_prepare(GSource *source, gint *timeout)
 {
@@ -132,7 +211,7 @@ int lldp_monitor_create(struct lldp_monitor **monitorp)
 		goto free;
 	}
 
-	monitor->ifindex = if_nametoindex("eth0");
+	monitor->ifindex = get_first_interface();
 	if (monitor->ifindex == 0) {
 		err = -ENODEV;
 		goto freedata;
