@@ -20,12 +20,15 @@
 
 struct backlight {
 	Display *display;
+	int dpms;
 };
 
 int backlight_create(struct backlight **backlightp)
 {
 	struct backlight *backlight;
 	int dummy = 0;
+	int major = 0;
+	int minor = 0;
 
 	if (!backlightp)
 		return -EINVAL;
@@ -40,10 +43,23 @@ int backlight_create(struct backlight **backlightp)
 		return -ENODEV;
 	}
 
-	if (!DPMSQueryExtension(backlight->display, &dummy, &dummy)) {
+	if (!DPMSGetVersion(backlight->display, &major, &minor)) {
 		XCloseDisplay(backlight->display);
 		free(backlight);
 		return -ENOTSUP;
+	}
+
+	backlight->dpms = DPMSCapable(backlight->display);
+	if (backlight->dpms) {
+		if (!DPMSQueryExtension(backlight->display, &dummy, &dummy)) {
+			XCloseDisplay(backlight->display);
+			free(backlight);
+			return -ENOTSUP;
+		}
+	} else {
+		/* Fallback to Screensaver */
+		g_debug("   Display does not support blank,"
+			" fallback to screen saver");
 	}
 
 	*backlightp = backlight;
@@ -63,17 +79,21 @@ int backlight_free(struct backlight *backlight)
 
 int backlight_enable(struct backlight *backlight, bool enable)
 {
-	CARD16 level = enable ? DPMSModeOn : DPMSModeOff;
-
-	g_debug("> %s(backlight=%p, enable=%s)", __func__, backlight, enable ? "true" : "false");
-
 	if (!backlight)
 		return -EINVAL;
 
-	DPMSForceLevel(backlight->display, level);
-	XFlush(backlight->display);
+	if (backlight->dpms) {
+		DPMSForceLevel(backlight->display, enable ? DPMSModeOn : DPMSModeOff);
+		XFlush(backlight->display);
+	} else {
+		if (enable)
+			XResetScreenSaver(backlight->display);
+		else
+			XActivateScreenSaver(backlight->display);
 
-	g_debug("< %s()", __func__);
+		XFlush(backlight->display);
+	}
+
 	return 0;
 }
 
@@ -81,15 +101,14 @@ int backlight_set(struct backlight *backlight, unsigned int brightness)
 {
 	CARD16 level = (brightness > BACKLIGHT_MIN) ? DPMSModeOn : DPMSModeOff;
 
-	g_debug("> %s(backlight=%p, brightness=%u)", __func__, backlight, brightness);
-
 	if (!backlight)
 		return -EINVAL;
 
-	DPMSForceLevel(backlight->display, level);
-	XFlush(backlight->display);
+	if (backlight->dpms) {
+		DPMSForceLevel(backlight->display, level);
+		XFlush(backlight->display);
+	}
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
@@ -98,17 +117,16 @@ int backlight_get(struct backlight *backlight)
 	CARD16 level = DPMSModeOff;
 	BOOL state = False;
 
-	g_debug("> %s(backlight=%p)", __func__, backlight);
-
 	if (!backlight)
 		return -EINVAL;
 
-	if (!DPMSInfo(backlight->display, &level, &state))
-		return -ENOTSUP;
+	if (backlight->dpms) {
+		if (!DPMSInfo(backlight->display, &level, &state))
+			return -ENOTSUP;
+	}
 
 	if (level == DPMSModeOn)
 		return BACKLIGHT_MAX;
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
