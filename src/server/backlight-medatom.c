@@ -52,7 +52,7 @@ int backlight_create(struct backlight **backlightp)
 	/*
 	 * FIXME: It looks like the current implementation requires a probe
 	 *        of the complete I2C bus before the backlight controller
-	 *        (0x37)can be accessed.
+	 *        (0x37) can be accessed.
 	 */
 	g_debug("%s(): probing slaves...", __func__);
 
