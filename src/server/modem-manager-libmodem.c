@@ -16,6 +16,7 @@
 #include "remote-control.h"
 
 struct modem_manager {
+	struct remote_control *rc;
 	struct modem *modem;
 	struct modem_call *call;
 	enum modem_state state;
@@ -25,9 +26,14 @@ struct modem_manager {
 
 static gpointer modem_manager_thread(gpointer data)
 {
-	struct modem_manager *manager = data;
+	struct remote_control *rc = data;
+	struct modem_manager *manager;
+	struct event_manager *events;
 	char buf[16];
 	int err;
+
+	manager = remote_control_get_modem_manager(rc);
+	events = remote_control_get_event_manager(rc);
 
 	while (!manager->done) {
 		if (manager->state == MODEM_STATE_ACTIVE) {
@@ -48,8 +54,15 @@ static gpointer modem_manager_thread(gpointer data)
 			}
 
 			if (strcmp(buf, "RING") == 0) {
+				struct event event;
+
 				g_debug("%s(): incoming call...", __func__);
 				manager->state = MODEM_STATE_INCOMING;
+
+				memset(&event, 0, sizeof(event));
+				event.source = EVENT_SOURCE_MODEM;
+				event.modem.state = EVENT_MODEM_STATE_RINGING;
+				event_manager_report(events, &event);
 			}
 		}
 	}
@@ -60,13 +73,25 @@ static gpointer modem_manager_thread(gpointer data)
 static int unshield_callback(char c, void *data)
 {
 	char display = g_ascii_isprint(c) ? c : '.';
-	struct modem_manager *manager = data;
+	struct remote_control *rc = data;
+	struct modem_manager *manager;
+	struct event_manager *events;
+
+	manager = remote_control_get_modem_manager(rc);
+	events = remote_control_get_event_manager(rc);
 
 	switch (c) {
 	case 'b':
 		if (manager->state == MODEM_STATE_ACTIVE) {
+			struct event event;
+
 			g_debug("call ended, hanging up");
 			modem_manager_terminate(manager);
+
+			memset(&event, 0, sizeof(event));
+			event.source = EVENT_SOURCE_MODEM;
+			event.modem.state = EVENT_MODEM_STATE_DISCONNECTED;
+			event_manager_report(events, &event);
 		}
 
 		return -ENODATA;
@@ -112,6 +137,7 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	if (!manager)
 		return -ENOMEM;
 
+	manager->rc = rpc_server_priv(server);
 	manager->state = MODEM_STATE_IDLE;
 	manager->done = FALSE;
 
