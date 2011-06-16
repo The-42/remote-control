@@ -30,14 +30,11 @@ enum event_source {
 	EVENT_SOURCE_MAX,
 };
 
-/*
- * Note: Somebody screwed this up very seriously.
- */
 enum event_modem_state {
-	EVENT_MODEM_STATE_ERROR = -10,
-	EVENT_MODEM_STATE_CONNECTED = 3,
-	EVENT_MODEM_STATE_DISCONNECTED = 4,
-	EVENT_MODEM_STATE_RINGING = 7,
+	EVENT_MODEM_STATE_RINGING,
+	EVENT_MODEM_STATE_CONNECTED,
+	EVENT_MODEM_STATE_DISCONNECTED,
+	EVENT_MODEM_STATE_ERROR,
 };
 
 struct event_modem {
