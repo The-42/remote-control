@@ -26,14 +26,12 @@ struct modem_manager {
 
 static gpointer modem_manager_thread(gpointer data)
 {
-	struct remote_control *rc = data;
-	struct modem_manager *manager;
+	struct modem_manager *manager = data;
 	struct event_manager *events;
 	char buf[16];
 	int err;
 
-	manager = remote_control_get_modem_manager(rc);
-	events = remote_control_get_event_manager(rc);
+	events = remote_control_get_event_manager(manager->rc);
 
 	while (!manager->done) {
 		if (manager->state == MODEM_STATE_ACTIVE) {
@@ -73,12 +71,10 @@ static gpointer modem_manager_thread(gpointer data)
 static int unshield_callback(char c, void *data)
 {
 	char display = g_ascii_isprint(c) ? c : '.';
-	struct remote_control *rc = data;
-	struct modem_manager *manager;
+	struct modem_manager *manager = data;
 	struct event_manager *events;
 
-	manager = remote_control_get_modem_manager(rc);
-	events = remote_control_get_event_manager(rc);
+	events = remote_control_get_event_manager(manager->rc);
 
 	switch (c) {
 	case 'b':
