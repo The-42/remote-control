@@ -238,17 +238,17 @@ struct ccid *ccid_new(struct remote_control *rc)
 #ifdef USE_POLLING_THREAD
 	ccid->done = FALSE;
 
-	ccid->thread = g_thread_create(ccid_thread, ccid, TRUE, NULL);
-	if (!ccid->thread) {
+	ccid->mutex = g_mutex_new();
+	if (!ccid->mutex) {
 		libccid_device_unref(ccid->device);
 		libccid_unref(ccid->ccid);
 		free(ccid);
 		return NULL;
 	}
 
-	ccid->mutex = g_mutex_new();
-	if (!ccid->mutex) {
-		g_thread_join(ccid->thread);
+	ccid->thread = g_thread_create(ccid_thread, ccid, TRUE, NULL);
+	if (!ccid->thread) {
+		g_mutex_free(ccid->mutex);
 		libccid_device_unref(ccid->device);
 		libccid_unref(ccid->ccid);
 		free(ccid);
