@@ -567,6 +567,78 @@ const struct cli_command_info cmd_media_player_state _command_ = {
 };
 
 /*
+ * "modem-call" command
+ */
+static int exec_modem_call(struct cli *cli, int argc, char *argv[])
+{
+	int32_t err;
+
+	err = remote_modem_dial(cli->client, argv[1]);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_modem_call _command_ = {
+	.name = "modem-call",
+	.summary = "place a phone call",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_modem_call,
+};
+
+/*
+ * "modem-accept" command
+ */
+static int exec_modem_accept(struct cli *cli, int argc, char *argv[])
+{
+	int32_t err;
+
+	err = remote_modem_pick_up(cli->client);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_modem_accept _command_ = {
+	.name = "modem-accept",
+	.summary = "accept an incoming phone call",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_modem_accept,
+};
+
+/*
+ * "modem-terminate" command
+ */
+static int exec_modem_terminate(struct cli *cli, int argc, char *argv[])
+{
+	int32_t err;
+
+	err = remote_modem_hang_up(cli->client);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_modem_terminate _command_ = {
+	.name = "modem-terminate",
+	.summary = "terminate a phone call",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_modem_terminate,
+};
+
+/*
  * "rfid-read" command
  */
 static int exec_rfid_read(struct cli *cli, int argc, char *argv[])
