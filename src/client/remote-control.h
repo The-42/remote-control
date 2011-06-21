@@ -131,6 +131,14 @@ remote_public int remote_media_player_set_stream(void *priv, const char *url);
 remote_public int remote_media_player_set_output_window(void *priv,
 		uint16_t x, uint16_t y, uint16_t width, uint16_t height);
 
+remote_public int remote_modem_init(void *priv);
+remote_public int remote_modem_deinit(void *priv);
+remote_public int remote_modem_pick_up(void *priv);
+remote_public int remote_modem_hang_up(void *priv);
+remote_public int remote_modem_dial(void *priv, const char *number);
+remote_public int remote_modem_is_calling(void *priv, bool *status);
+remote_public int remote_modem_is_connected(void *priv, bool *status);
+
 remote_public int remote_voip_login(void *priv,
 		struct remote_voip_account *account);
 remote_public int remote_voip_logout(void *priv);
