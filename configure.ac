@@ -38,6 +38,8 @@ AS_CASE([$with_backlight_backend],
 	[AC_MSG_ERROR([Invalid backlight backend: must be none, dpms or medatom])]
 )
 
+AS_IF([test "x$enable_medatom_backlight" = "xyes"], [PKG_CHECK_MODULES(GUDEV, gudev-1.0)])
+
 AC_ARG_WITH(smartcard_backend,
 	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
 		[Use the specified SmartCard/RFID backend. [default=none]])

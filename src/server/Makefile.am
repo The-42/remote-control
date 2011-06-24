@@ -45,7 +45,9 @@ if ENABLE_DPMS
 libremote_control_la_SOURCES += backlight-dpms.c
 else
 if ENABLE_MEDATOM_BACKLIGHT
+libremote_control_la_CPPFLAGS += @GUDEV_CFLAGS@
 libremote_control_la_SOURCES += backlight-medatom.c smbus.h
+libremote_control_la_LIBADD += @GUDEV_LIBS@
 else
 libremote_control_la_SOURCES += backlight-null.c
 endif # ENABLE_MEDATOM_BACKLIGHT

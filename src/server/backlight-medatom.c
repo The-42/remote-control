@@ -16,17 +16,25 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
+#include <gudev/gudev.h>
+
 #include "remote-control-stub.h"
 #include "remote-control.h"
 #include "smbus.h"
 
 struct backlight {
+	GUdevClient *udev;
+	GUdevDevice *device;
 	int fd;
 };
 
 int backlight_create(struct backlight **backlightp)
 {
+	const char *const subsystems[] = { "i2c-dev", NULL };
 	struct backlight *backlight;
+	const char *device;
+	GList *list;
+	GList *node;
 	int err;
 	int i;
 
@@ -37,14 +45,39 @@ int backlight_create(struct backlight **backlightp)
 	if (!backlight)
 		return -ENOMEM;
 
-	/*
-	 * TODO: Autodetect this because it may not always be assigned the
-	 *       same bus number.
-	 */
-	err = open("/dev/i2c-6", O_RDWR);
+	backlight->udev = g_udev_client_new(subsystems);
+	if (!backlight->udev) {
+		err = -ENODEV;
+		goto free;
+	}
+
+	list = g_udev_client_query_by_subsystem(backlight->udev, "i2c-dev");
+	for (node = list; node; node = g_list_next(node)) {
+		GUdevDevice *device = G_UDEV_DEVICE(node->data);
+		const char *name;
+
+		name = g_udev_device_get_sysfs_attr(device, "name");
+
+		if (strcmp(name, "i915 gmbus panel") == 0) {
+			backlight->device = g_object_ref(device);
+			break;
+		}
+	}
+
+	g_list_free_full(list, g_object_unref);
+
+	if (!backlight->device) {
+		err = -ENODEV;
+		goto unref;
+	}
+
+	device = g_udev_device_get_device_file(backlight->device);
+	g_debug("backlight: using %s", device);
+
+	err = open(device, O_RDWR);
 	if (err < 0) {
 		err = -errno;
-		goto free;
+		goto unref;
 	}
 
 	backlight->fd = err;
@@ -85,6 +118,11 @@ int backlight_create(struct backlight **backlightp)
 
 close:
 	close(backlight->fd);
+unref:
+	if (backlight->device)
+		g_object_unref(backlight->device);
+
+	g_object_unref(backlight->udev);
 free:
 	free(backlight);
 	return err;
@@ -94,6 +132,12 @@ int backlight_free(struct backlight *backlight)
 {
 	if (!backlight)
 		return -EINVAL;
+
+	if (backlight->device)
+		g_object_unref(backlight->device);
+
+	if (backlight->udev)
+		g_object_unref(backlight->udev);
 
 	close(backlight->fd);
 	free(backlight);
