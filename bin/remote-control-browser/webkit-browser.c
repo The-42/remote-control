@@ -17,6 +17,7 @@
 
 #include "gtk-drag-view.h"
 #include "webkit-browser.h"
+#include "utils.h"
 #include "guri.h"
 
 G_DEFINE_TYPE(WebKitBrowser, webkit_browser, GTK_TYPE_WINDOW);
@@ -172,6 +173,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	GtkWidget *osk;
 
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	soup_session_set_proxy(webkit_get_default_session());
 
 	webkit = webkit_web_view_new();
 	priv->webkit = WEBKIT_WEB_VIEW(webkit);

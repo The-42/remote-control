@@ -13,6 +13,7 @@
 #include <sys/wait.h>
 
 #include "remote-control-webkit-window.h"
+#include "utils.h"
 #include "guri.h"
 
 G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_WINDOW);
@@ -148,6 +149,8 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	cy = gdk_screen_get_height(screen);
 
 	gtk_widget_set_size_request(GTK_WIDGET(window), cx, cy);
+
+	soup_session_set_proxy(webkit_get_default_session());
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));

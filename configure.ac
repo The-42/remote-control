@@ -146,6 +146,7 @@ AC_OUTPUT([
 	bin/remote-control-client/remote-control-client.lds
 	bin/remote-control-gtk/Makefile
 	bin/remote-control/Makefile
+	bin/utils/Makefile
 	data/de.avionic-design.RemoteControl.service
 	data/Makefile
 	Makefile

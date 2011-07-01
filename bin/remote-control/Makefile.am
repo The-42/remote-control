@@ -4,9 +4,8 @@ bin_PROGRAMS = \
 remote_control_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
-	-I$(top_srcdir)/src/server
-
-remote_control_CFLAGS = \
+	-I$(top_srcdir)/src/server \
+	-I$(top_srcdir)/bin/utils \
 	@GLIB_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@LIBNL_CFLAGS@ \
@@ -24,6 +23,7 @@ remote_control_SOURCES = \
 remote_control_LDADD = \
 	../../src/server/libremote-control.la \
 	../../src/common/libcommon.la \
+	../utils/libutils.la \
 	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \
 	@LIBNL_LIBS@ -lnl-route \

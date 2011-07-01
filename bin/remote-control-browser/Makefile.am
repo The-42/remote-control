@@ -4,6 +4,7 @@ bin_PROGRAMS = \
 	remote-control-browser
 
 remote_control_browser_CPPFLAGS = \
+	-I$(top_srcdir)/bin/utils \
 	@WEBKIT_CFLAGS@ \
 	@GTKOSK_CFLAGS@ \
 	@GTK_CFLAGS@
@@ -17,6 +18,7 @@ remote_control_browser_SOURCES = \
 
 remote_control_browser_LDADD = \
 	../../src/common/libcommon.la \
+	../utils/libutils.la \
 	@WEBKIT_LIBS@ \
 	@GTKOSK_LIBS@ \
 	@GTK_LIBS@
