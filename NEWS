@@ -1,5 +1,15 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.5.0 (2011-07-05)
 ==========================
+- Fallback to X screensaver extension if DPMS is not supported.
+- Fix a crash that would occasionally occur when starting remote-control, due
+  to a race condition in the libccid-based smartcard backend.
+- Fix a crash in the libmodem-based modem-manager implementation, caused by
+  the wrong pointer being passed to the modem manager thread and unshield
+  callback.
+- Fix modem manager implementation.
+- Autodetect the I2C bus that hosts the Medatom backlight controller.
+- Add proxy support (remote-control, remote-control-browser).
+- Improve default network interface detection.
 
 Release 0.4.12 (2011-05-10)
 ===========================
