@@ -47,78 +47,6 @@ struct lldp_monitor {
 	size_t len;
 };
 
-static int is_bad_interface_name(char *iface)
-{
-	/* This is a list of interface name prefixes which are `bad'
-	 * in the sense that they don't refer to interfaces of
-	 * external type on which we are likely to want to listen.
-	 * We also compare candidate interfaces to lo. */
-	static const char *BAD_NAMES[] = {
-		"lo:",
-		"lo",
-		"stf",     /* pseudo-device 6to4 tunnel interface */
-		"gif",     /* psuedo-device generic tunnel interface */
-		"dummy",
-		"vmnet",
-		"virbr",
-        };
-	int i;
-
-	for (i=0; i<ARRAY_SIZE(BAD_NAMES); i++)
-		if (strcmp(iface, BAD_NAMES[i]) == 0)
-			return TRUE;
-
-	return FALSE;
-}
-
-static int get_first_interface(void)
-{
-	struct nl_cache *cache = NULL;
-	struct nl_sock *sock = NULL;
-	struct nl_object *obj;
-	int ifindex = 0;
-	int ret;
-
-	sock = nl_socket_alloc();
-	if (!sock) {
-		g_error("nl_socket_alloc() failed\n");
-		goto cleanup;
-	}
-
-	ret = nl_connect(sock, NETLINK_ROUTE);
-	if (ret < 0) {
-		g_error("nl_connect(): %s\n", nl_geterror(-ret));
-		goto cleanup;
-	}
-
-	ret = rtnl_link_alloc_cache(sock, AF_INET, &cache);
-	if (ret < 0) {
-		g_error("nl_link_alloc_cache(): %s\n",
-			nl_geterror(-ret));
-		goto cleanup;
-	}
-
-	for (obj = nl_cache_get_first(cache); obj != NULL;
-	     obj = nl_cache_get_next(obj))
-	{
-		struct rtnl_link *link = (struct rtnl_link *)obj;
-		char *name = rtnl_link_get_name(link);
-		if (name == NULL || is_bad_interface_name(name))
-			continue;
-
-		ifindex = rtnl_link_get_ifindex(link);
-		break;
-	}
-
-cleanup:
-	if (cache)
-		nl_cache_free(cache);
-	if (sock)
-		nl_socket_free(sock);
-
-	return ifindex;
-}
-
 static gboolean lldp_monitor_source_prepare(GSource *source, gint *timeout)
 {
 	if (timeout)
@@ -191,6 +119,7 @@ static GSourceFuncs lldp_monitor_source_funcs = {
 int lldp_monitor_create(struct lldp_monitor **monitorp)
 {
 	struct lldp_monitor *monitor;
+	char ifname[IF_NAMESIZE];
 	struct packet_mreq req;
 	struct sockaddr_ll sa;
 	GSource *source;
@@ -211,11 +140,14 @@ int lldp_monitor_create(struct lldp_monitor **monitorp)
 		goto free;
 	}
 
-	monitor->ifindex = get_first_interface();
+	monitor->ifindex = if_lookup_default();
 	if (monitor->ifindex == 0) {
 		err = -ENODEV;
 		goto freedata;
 	}
+
+	if_indextoname(monitor->ifindex, ifname);
+	g_debug("lldp: using %s", ifname);
 
 	err = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_LLDP));
 	if (err < 0) {

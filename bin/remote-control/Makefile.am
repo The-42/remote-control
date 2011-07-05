@@ -8,7 +8,6 @@ remote_control_CPPFLAGS = \
 	-I$(top_srcdir)/bin/utils \
 	@GLIB_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
-	@LIBNL_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
 	@ALSA_CFLAGS@ \
 	@GTK_CFLAGS@
@@ -26,6 +25,5 @@ remote_control_LDADD = \
 	../utils/libutils.la \
 	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \
-	@LIBNL_LIBS@ -lnl-route \
 	@WEBKIT_LIBS@ \
 	@ALSA_LIBS@

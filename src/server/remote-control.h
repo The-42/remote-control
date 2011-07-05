@@ -320,4 +320,6 @@ gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
 		const char *prefix_str, int prefix_type, size_t rowsize,
 		const void *buffer, size_t size, bool ascii);
 
+unsigned int if_lookup_default(void);
+
 #endif /* REMOTE_CONTROL_H */

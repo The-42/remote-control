@@ -13,6 +13,11 @@
 #include <ctype.h>
 #include <stdio.h>
 
+#include <net/if.h>
+#include <netlink/route/link.h>
+#include <netlink/route/route.h>
+#include <netlink/route/rtnl.h>
+
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
@@ -102,4 +107,77 @@ gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
 
 	g_free(line);
 	return TRUE;
+}
+
+struct nexthop_lookup_result {
+	int ifindex;
+};
+
+static void nexthop_lookup_cb(struct rtnl_nexthop *nh, void *data)
+{
+	struct nexthop_lookup_result *result = data;
+	result->ifindex = rtnl_route_nh_get_ifindex(nh);
+}
+
+struct route_lookup_result {
+	struct rtnl_route *route;
+	uint32_t priority;
+	int ifindex;
+};
+
+static void route_lookup_cb(struct nl_object *obj, void *data)
+{
+	struct rtnl_route *route = (struct rtnl_route *)obj;
+	struct route_lookup_result *result = data;
+	struct nl_addr *dst;
+
+	dst = rtnl_route_get_dst(route);
+	if (!dst || (nl_addr_get_len(dst) == 0)) {
+		uint32_t priority;
+
+		priority = rtnl_route_get_priority(route);
+		if (priority < result->priority) {
+			result->priority = priority;
+			result->route = route;
+		}
+	}
+}
+
+unsigned int if_lookup_default(void)
+{
+	struct route_lookup_result rlr;
+	struct nl_cache *cache = NULL;
+	struct nl_sock *sock;
+	int ret = 0;
+	int err;
+
+	sock = nl_socket_alloc();
+	if (!sock)
+		return 0;
+
+	err = nl_connect(sock, NETLINK_ROUTE);
+	if (err < 0)
+		goto free;
+
+	err = rtnl_route_alloc_cache(sock, AF_INET, 0, &cache);
+	if (err < 0)
+		goto free;
+
+	memset(&rlr, 0, sizeof(rlr));
+	rlr.priority = -1U;
+	rlr.route = NULL;
+
+	nl_cache_foreach(cache, route_lookup_cb, &rlr);
+	if (rlr.route) {
+		struct nexthop_lookup_result nlr;
+		nlr.ifindex = 0;
+
+		rtnl_route_foreach_nexthop(rlr.route, nexthop_lookup_cb, &nlr);
+		ret = nlr.ifindex;
+	}
+
+	nl_cache_free(cache);
+free:
+	nl_socket_free(sock);
+	return ret;
 }
