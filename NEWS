@@ -1,3 +1,6 @@
+Release x.y.z (YYYY-MM-DD)
+==========================
+
 Release 0.5.0 (2011-07-05)
 ==========================
 - Fallback to X screensaver extension if DPMS is not supported.
