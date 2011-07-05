@@ -142,7 +142,7 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 
 	if (!g_spawn_async(NULL, argv, envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL,
 				NULL, &task->real_pid, &error)) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to execute "
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "failed to execute "
 				"child process: %s", error->message);
 		g_error_free(error);
 		ret = -EACCES;
