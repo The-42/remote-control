@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <X11/Xlib.h>
 #include <librpc.h>
 #include <glib.h>
 
@@ -300,6 +301,9 @@ int main(int argc, char *argv[])
 	guint owner;
 #endif
 	int err;
+
+	if (!XInitThreads())
+		g_debug("XInitThreads() failed");
 
 	if (g_thread_supported())
 		g_thread_init(NULL);
