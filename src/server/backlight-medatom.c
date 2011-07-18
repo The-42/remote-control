@@ -16,6 +16,8 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
+#include <X11/Xlib.h>
+#include <X11/extensions/dpms.h>
 #include <gudev/gudev.h>
 
 #include "remote-control-stub.h"
@@ -25,6 +27,7 @@
 struct backlight {
 	GUdevClient *udev;
 	GUdevDevice *device;
+	Display *display;
 	int fd;
 };
 
@@ -33,6 +36,9 @@ int backlight_create(struct backlight **backlightp)
 	const char *const subsystems[] = { "i2c-dev", NULL };
 	struct backlight *backlight;
 	const char *device;
+	int dummy = 0;
+	int major = 0;
+	int minor = 0;
 	GList *list;
 	GList *node;
 	int err;
@@ -45,10 +51,23 @@ int backlight_create(struct backlight **backlightp)
 	if (!backlight)
 		return -ENOMEM;
 
+	backlight->display = XOpenDisplay(NULL);
+	if (!backlight->display) {
+		err = -ENODEV;
+		goto free;
+	}
+
+	if (!DPMSGetVersion(backlight->display, &major, &minor) ||
+	    !DPMSCapable(backlight->display) ||
+	    !DPMSQueryExtension(backlight->display, &dummy, &dummy)) {
+		err = -ENOTSUP;
+		goto close_x;
+	}
+
 	backlight->udev = g_udev_client_new(subsystems);
 	if (!backlight->udev) {
 		err = -ENODEV;
-		goto free;
+		goto close_x;
 	}
 
 	list = g_udev_client_query_by_subsystem(backlight->udev, "i2c-dev");
@@ -123,6 +142,8 @@ unref:
 		g_object_unref(backlight->device);
 
 	g_object_unref(backlight->udev);
+close_x:
+	XCloseDisplay(backlight->display);
 free:
 	free(backlight);
 	return err;
@@ -140,6 +161,7 @@ int backlight_free(struct backlight *backlight)
 		g_object_unref(backlight->udev);
 
 	close(backlight->fd);
+	XCloseDisplay(backlight->display);
 	free(backlight);
 
 	return 0;
@@ -147,18 +169,13 @@ int backlight_free(struct backlight *backlight)
 
 int backlight_enable(struct backlight *backlight, bool enable)
 {
-	uint8_t command[2] = { 0xb1, 0x00 };
-	int err;
+	CARD8 mode = enable ? DPMSModeOn : DPMSModeOff;
 
 	if (!backlight)
 		return -EINVAL;
 
-	if (enable)
-		command[1] = 0xff;
-
-	err = write(backlight->fd, command, sizeof(command));
-	if (err < 0)
-		return -errno;
+	DPMSForceLevel(backlight->display, mode);
+	XFlush(backlight->display);
 
 	return 0;
 }
