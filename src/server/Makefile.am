@@ -36,6 +36,7 @@ libremote_control_la_SOURCES = \
 	system.c \
 	task-manager.c \
 	tuner.c \
+	tuner-v4l2.c \
 	utils.c \
 	voip.c
 

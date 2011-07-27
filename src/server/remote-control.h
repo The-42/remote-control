@@ -284,6 +284,15 @@ int task_manager_create(struct task_manager **managerp);
 int task_manager_free(struct task_manager *manager);
 
 /**
+ * tuner
+ */
+struct tuner;
+
+int tuner_create(struct tuner **tunerp);
+int tuner_free(struct tuner *tuner);
+int tuner_set_frequency(struct tuner *tuner, unsigned long frequency);
+
+/**
  * remote control
  */
 struct remote_control;
@@ -304,6 +313,7 @@ struct mixer *remote_control_get_mixer(struct remote_control *rc);
 struct net *remote_control_get_net(struct remote_control *rc);
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
+struct tuner *remote_control_get_tuner(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 
