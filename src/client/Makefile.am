@@ -26,6 +26,7 @@ libremote_control_la_SOURCES = \
 	remote-control.h \
 	rfid.c \
 	task-manager.c \
+	tuner.c \
 	voip.c
 
 nodist_libremote_control_la_SOURCES = \

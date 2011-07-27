@@ -185,6 +185,8 @@ remote_public int remote_irq_get_info(void *priv,
 remote_public int remote_task_manager_exec(void *priv, const char *command);
 remote_public int remote_task_manager_kill(void *priv, int pid, int sig);
 
+remote_public int remote_tuner_set_frequency(void *priv, unsigned long frequency);
+
 #ifdef __cplusplus
 };
 #endif
