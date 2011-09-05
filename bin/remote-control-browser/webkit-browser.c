@@ -31,6 +31,7 @@ enum {
 
 struct _WebKitBrowserPrivate {
 	WebKitWebView *webkit;
+	SoupCookieJar *cookie;
 	GtkEntry *entry;
 	gchar *geometry;
 };
@@ -164,6 +165,7 @@ static void webkit_browser_realize(GtkWidget *widget)
 static void webkit_browser_init(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv;
+	SoupSession *session;
 	GtkOskLayout *layout;
 	GtkWidget *toolbar;
 	GtkToolItem *item;
@@ -174,7 +176,12 @@ static void webkit_browser_init(WebKitBrowser *browser)
 
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
-	soup_session_set_proxy(webkit_get_default_session());
+	session = webkit_get_default_session();
+	soup_session_set_proxy(session);
+
+	/* enable cookies */
+	priv->cookie = soup_cookie_jar_new();
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(priv->cookie));
 
 	webkit = webkit_web_view_new();
 	priv->webkit = WEBKIT_WEB_VIEW(webkit);
