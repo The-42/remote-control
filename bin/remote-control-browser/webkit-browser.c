@@ -32,6 +32,7 @@ enum {
 struct _WebKitBrowserPrivate {
 	WebKitWebView *webkit;
 	SoupCookieJar *cookie;
+	SoupLogger *logger;
 	GtkEntry *entry;
 	gchar *geometry;
 };
@@ -182,6 +183,13 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	/* enable cookies */
 	priv->cookie = soup_cookie_jar_new();
 	soup_session_add_feature(session, SOUP_SESSION_FEATURE(priv->cookie));
+
+	/* TODO: add command-line argument to control logging */
+	if (0) {
+		priv->logger = soup_logger_new(SOUP_LOGGER_LOG_BODY, -1);
+		soup_session_add_feature(session,
+				SOUP_SESSION_FEATURE(priv->logger));
+	}
 
 	webkit = webkit_web_view_new();
 	priv->webkit = WEBKIT_WEB_VIEW(webkit);
