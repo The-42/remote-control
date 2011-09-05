@@ -14,6 +14,7 @@
 #include <gdk/gdkx.h>
 #include <webkit/webkit.h>
 #include <gtkosk/gtkosk.h>
+#include <libsoup/soup-proxy-resolver-default.h>
 
 #include "gtk-drag-view.h"
 #include "webkit-browser.h"
@@ -178,7 +179,6 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
 	session = webkit_get_default_session();
-	soup_session_set_proxy(session);
 
 	/* enable cookies */
 	priv->cookie = soup_cookie_jar_new();
@@ -190,6 +190,10 @@ static void webkit_browser_init(WebKitBrowser *browser)
 		soup_session_add_feature(session,
 				SOUP_SESSION_FEATURE(priv->logger));
 	}
+
+	/* enable proxy support */
+	soup_session_add_feature_by_type(session,
+			SOUP_TYPE_PROXY_RESOLVER_DEFAULT);
 
 	webkit = webkit_web_view_new();
 	priv->webkit = WEBKIT_WEB_VIEW(webkit);
