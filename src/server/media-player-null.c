@@ -19,7 +19,6 @@ struct media_player {
 	enum media_player_state state;
 };
 
-
 int media_player_create(struct media_player **playerp)
 {
 	struct media_player *player;

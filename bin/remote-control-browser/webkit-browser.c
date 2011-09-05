@@ -83,11 +83,13 @@ static void webkit_browser_finalize(GObject *object)
 static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowser *browser)
 {
+	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
-	if (webkit_web_view_get_load_status(webkit) == WEBKIT_LOAD_COMMITTED) {
+	if (status == WEBKIT_LOAD_COMMITTED) {
 		WebKitWebFrame *frame = webkit_web_view_get_main_frame(webkit);
 		const gchar *uri = webkit_web_frame_get_uri(frame);
+
 		if (uri)
 			gtk_entry_set_text(priv->entry, uri);
 	}
