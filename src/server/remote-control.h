@@ -25,7 +25,7 @@ enum event_source {
 	EVENT_SOURCE_IO,
 	EVENT_SOURCE_VOIP,
 	EVENT_SOURCE_SMARTCARD,
-	EVENT_SOURCE_HANDSET,
+	EVENT_SOURCE_HOOK,
 	EVENT_SOURCE_RFID,
 	EVENT_SOURCE_MAX,
 };
@@ -70,13 +70,13 @@ struct event_smartcard {
 	enum event_smartcard_state state;
 };
 
-enum event_handset_state {
-	EVENT_HANDSET_STATE_HOOK_OFF,
-	EVENT_HANDSET_STATE_HOOK_ON,
+enum event_hook_state {
+	EVENT_HOOK_STATE_OFF,
+	EVENT_HOOK_STATE_ON,
 };
 
-struct event_handset {
-	enum event_handset_state state;
+struct event_hook {
+	enum event_hook_state state;
 };
 
 enum event_rfid_state {
@@ -96,7 +96,7 @@ struct event {
 		struct event_io io;
 		struct event_voip voip;
 		struct event_smartcard smartcard;
-		struct event_handset handset;
+		struct event_hook hook;
 		struct event_rfid rfid;
 	};
 };

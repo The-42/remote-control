@@ -46,7 +46,7 @@ struct event_manager {
 
 	enum event_voip_state voip_state;
 	enum event_smartcard_state smartcard_state;
-	enum event_handset_state handset_state;
+	enum event_hook_state hook_state;
 	enum event_rfid_state rfid_state;
 	enum event_modem_state modem_state;
 };
@@ -85,13 +85,13 @@ static gboolean event_manager_source_dispatch(GSource *source, GSourceFunc callb
 
 	switch (gpio.gpio) {
 	case GPIO_HANDSET:
-		event.source = EVENT_SOURCE_HANDSET;
+		event.source = EVENT_SOURCE_HOOK;
 		if (gpio.value) {
-			g_debug("  HANDSET transitioned to HOOK_OFF state");
-			event.handset.state = EVENT_HANDSET_STATE_HOOK_OFF;
+			g_debug("  HOOK transitioned to OFF state");
+			event.hook.state = EVENT_HOOK_STATE_OFF;
 		} else {
-			g_debug("  HANDSET transitioned to HOOK_ON state");
-			event.handset.state = EVENT_HANDSET_STATE_HOOK_ON;
+			g_debug("  HOOK transitioned to ON state");
+			event.hook.state = EVENT_HOOK_STATE_ON;
 		}
 		break;
 
@@ -163,7 +163,7 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 
 	manager->voip_state = EVENT_VOIP_STATE_IDLE;
 	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
-	manager->handset_state = EVENT_HANDSET_STATE_HOOK_ON;
+	manager->hook_state = EVENT_HOOK_STATE_ON;
 	manager->rfid_state = EVENT_RFID_STATE_LOST;
 	manager->modem_state = EVENT_MODEM_STATE_DISCONNECTED;
 
@@ -236,9 +236,9 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		irq_status |= BIT(EVENT_SOURCE_SMARTCARD);
 		break;
 
-	case EVENT_SOURCE_HANDSET:
-		manager->handset_state = event->handset.state;
-		irq_status |= BIT(EVENT_SOURCE_HANDSET);
+	case EVENT_SOURCE_HOOK:
+		manager->hook_state = event->hook.state;
+		irq_status |= BIT(EVENT_SOURCE_HOOK);
 		break;
 
 	case EVENT_SOURCE_RFID:
@@ -291,9 +291,9 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 		event->smartcard.state = manager->smartcard_state;
 		break;
 
-	case EVENT_SOURCE_HANDSET:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
-		event->handset.state = manager->handset_state;
+	case EVENT_SOURCE_HOOK:
+		manager->irq_status &= ~BIT(EVENT_SOURCE_HOOK);
+		event->hook.state = manager->hook_state;
 		break;
 
 	case EVENT_SOURCE_RFID:

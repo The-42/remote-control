@@ -18,7 +18,7 @@
 #define BIT(x) (1 << (x))
 
 enum {
-	IRQ_HANDSET,
+	IRQ_HOOK,
 	IRQ_SMARTCARD,
 	IRQ_VOIP,
 	IRQ_IO,
@@ -95,7 +95,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 
 	case RPC_MACRO(IRQ_SOURCE_HOOK):
 		g_debug("  IRQ_SOURCE_HOOK");
-		event.source = EVENT_SOURCE_HANDSET;
+		event.source = EVENT_SOURCE_HOOK;
 
 		err = event_manager_get_source_state(manager, &event);
 		if (err < 0) {
@@ -103,14 +103,14 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 			break;
 		}
 
-		switch (event.handset.state) {
-		case EVENT_HANDSET_STATE_HOOK_OFF:
-			g_debug("    EVENT_HANDSET_STATE_HOOK_OFF");
+		switch (event.hook.state) {
+		case EVENT_HOOK_STATE_OFF:
+			g_debug("    EVENT_HOOK_STATE_OFF");
 			*info = 1;
 			break;
 
-		case EVENT_HANDSET_STATE_HOOK_ON:
-			g_debug("    EVENT_HANDSET_STATE_HOOK_ON");
+		case EVENT_HOOK_STATE_ON:
+			g_debug("    EVENT_HOOK_STATE_ON");
 			*info = 0;
 			break;
 
