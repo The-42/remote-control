@@ -27,6 +27,7 @@ enum event_source {
 	EVENT_SOURCE_SMARTCARD,
 	EVENT_SOURCE_HOOK,
 	EVENT_SOURCE_RFID,
+	EVENT_SOURCE_HANDSET,
 	EVENT_SOURCE_MAX,
 };
 
@@ -79,6 +80,11 @@ struct event_hook {
 	enum event_hook_state state;
 };
 
+struct event_handset {
+	unsigned int keycode;
+	bool pressed;
+};
+
 enum event_rfid_state {
 	EVENT_RFID_STATE_DETECTED,
 	EVENT_RFID_STATE_LOST,
@@ -98,6 +104,7 @@ struct event {
 		struct event_smartcard smartcard;
 		struct event_hook hook;
 		struct event_rfid rfid;
+		struct event_handset handset;
 	};
 };
 
@@ -293,6 +300,24 @@ int tuner_free(struct tuner *tuner);
 int tuner_set_frequency(struct tuner *tuner, unsigned long frequency);
 
 /**
+ * handset
+ */
+struct handset;
+
+int handset_create(struct handset **handsetp, struct rpc_server *server);
+int handset_free(struct handset *handset);
+
+int handset_display_clear(struct handset *handset);
+int handset_display_sync(struct handset *handset);
+int handset_display_set_brightness(struct handset *handset,
+		unsigned int brightness);
+int handset_keypad_set_brightness(struct handset *handset,
+		unsigned int brightness);
+int handset_icon_show(struct handset *handset, unsigned int id, bool show);
+int handset_text_show(struct handset *handset, unsigned int x, unsigned int y,
+		const char *text, bool show);
+
+/**
  * remote control
  */
 struct remote_control;
@@ -314,6 +339,7 @@ struct net *remote_control_get_net(struct remote_control *rc);
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct tuner *remote_control_get_tuner(struct remote_control *rc);
+struct handset *remote_control_get_handset(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 

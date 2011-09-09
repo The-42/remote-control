@@ -49,6 +49,7 @@ struct event_manager {
 	enum event_hook_state hook_state;
 	enum event_rfid_state rfid_state;
 	enum event_modem_state modem_state;
+	struct event_handset handset_event;
 };
 
 static gboolean event_manager_source_prepare(GSource *source, gint *timeout)
@@ -246,6 +247,12 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		irq_status |= BIT(EVENT_SOURCE_RFID);
 		break;
 
+	case EVENT_SOURCE_HANDSET:
+		memcpy(&manager->handset_event, &event->handset,
+				sizeof(event->handset));
+		irq_status |= BIT(EVENT_SOURCE_HANDSET);
+		break;
+
 	default:
 		ret = -ENXIO;
 		break;
@@ -299,6 +306,12 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 	case EVENT_SOURCE_RFID:
 		manager->irq_status &= ~BIT(EVENT_SOURCE_RFID);
 		event->rfid.state = manager->rfid_state;
+		break;
+
+	case EVENT_SOURCE_HANDSET:
+		manager->irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
+		memcpy(&event->handset, &manager->handset_event,
+				sizeof(event->handset));
 		break;
 
 	default:

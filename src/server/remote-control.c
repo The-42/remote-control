@@ -47,6 +47,7 @@ struct remote_control {
 	struct lldp_monitor *lldp;
 	struct task_manager *task_manager;
 	struct tuner *tuner;
+	struct handset *handset;
 
 	GSource *source;
 };
@@ -385,6 +386,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = handset_create(&rc->handset, server);
+	if (err < 0) {
+		g_error("handset_create(): %s", strerror(-err));
+		return err;
+	}
+
 	source = lldp_monitor_get_source(rc->lldp);
 	g_source_add_child_source(rc->source, source);
 	g_source_unref(source);
@@ -415,6 +422,7 @@ int remote_control_free(struct remote_control *rc)
 	if (!rc)
 		return -EINVAL;
 
+	handset_free(rc->handset);
 	tuner_free(rc->tuner);
 	task_manager_free(rc->task_manager);
 	net_free(rc->net);
@@ -493,6 +501,11 @@ struct task_manager *remote_control_get_task_manager(struct remote_control *rc)
 struct tuner *remote_control_get_tuner(struct remote_control *rc)
 {
 	return rc ? rc->tuner : NULL;
+}
+
+struct handset *remote_control_get_handset(struct remote_control *rc)
+{
+	return rc ? rc->handset : NULL;
 }
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request)

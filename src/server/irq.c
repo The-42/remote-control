@@ -24,6 +24,7 @@ enum {
 	IRQ_IO,
 	IRQ_MODEM,
 	IRQ_RFID,
+	IRQ_HANDSET,
 };
 
 int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
@@ -272,6 +273,23 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 			ret = -ENXIO;
 			break;
 		}
+		break;
+
+	case RPC_MACRO(IRQ_SOURCE_HANDSET):
+		g_debug("  IRQ_SOURCE_HANDSET");
+		event.source = EVENT_SOURCE_HANDSET;
+
+		err = event_manager_get_source_state(manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		*info = event.handset.keycode & 0xffff;
+
+		if (event.handset.pressed)
+			*info |= (1 << 16);
+
 		break;
 
 	default:

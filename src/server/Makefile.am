@@ -17,6 +17,7 @@ libremote_control_la_SOURCES = \
 	audio.c \
 	backlight.c \
 	event-manager.c \
+	handset.c \
 	io.c \
 	irq.c \
 	lldp.c \
@@ -120,6 +121,14 @@ libremote_control_la_SOURCES += modem-manager-libmodem.c
 else
 libremote_control_la_SOURCES += modem-manager-null.c
 endif # ENABLE_LIBMODEM
+
+if ENABLE_LIBPTIP
+libremote_control_la_CFLAGS += @LIBPTIP_CFLAGS@
+libremote_control_la_LIBADD += @LIBPTIP_LIBS@
+libremote_control_la_SOURCES += handset-ptip.c
+else
+libremote_control_la_SOURCES += handset-null.c
+endif # ENABLE_LIBPTIP
 
 remote-control-stub.c: $(srcdir)/../protocol.xml
 	$(AM_V_GEN)$(RPC_STUBGEN) --server --source -o $@ $<
