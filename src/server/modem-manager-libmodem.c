@@ -380,8 +380,8 @@ int modem_manager_free(struct modem_manager *manager)
 		g_thread_join(manager->thread);
 	}
 
+	close(manager->wakeup[0]);
 	close(manager->wakeup[1]);
-	close(manager->wakeup[2]);
 
 	modem_call_free(manager->call);
 	modem_close(manager->modem);
