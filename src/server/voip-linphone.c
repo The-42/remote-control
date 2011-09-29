@@ -44,6 +44,15 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core, LinphoneP
 	g_print("\n");
 }
 
+static int linphone_can_accept_call(LinphoneCore *core)
+{
+	const MSList* calls = linphone_core_get_calls(core);
+	if (calls && (ms_list_size(calls) > 1))
+		return FALSE;
+
+	return TRUE;
+}
+
 static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *call, LinphoneCallState state, const char *message)
 {
 	struct remote_control *rc = linphone_core_get_user_data(core);
@@ -64,6 +73,17 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 
 	switch (state) {
 	case LinphoneCallIncomingReceived:
+		/* FIXME: we can only accept one call at a time, so we need to
+		 *        reject a second call it another is already running.
+		 * In case we get two incomings there is the possibility that
+		 * we have 2times the same event state which can lead to a
+		 * blocked event manager. */
+		if (!linphone_can_accept_call(core)) {
+			g_print("LINPHONE: CALL STATE: rejecting second call\n");
+			linphone_core_terminate_call(core, call);
+			return;
+		}
+
 		event.voip.state = EVENT_VOIP_STATE_INCOMING;
 		event_manager_report(manager, &event);
 
