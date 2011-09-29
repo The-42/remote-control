@@ -290,6 +290,14 @@ int voip_free(struct voip *voip)
 	return 0;
 }
 
+static int is_valid_string(const char* str)
+{
+	if (!str)
+		return FALSE;
+
+	return strlen(str) > 0;
+}
+
 int voip_login(struct voip *voip, const char *host, uint16_t port,
 		const char *username, const char *password)
 {
@@ -309,7 +317,9 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 	if (!voip)
 		return -EINVAL;
 
-	if (!host || !port || !username || !password) {
+	if (!port || !is_valid_string(host) || !is_valid_string(username) ||
+	    !is_valid_string(password))
+	{
 		linphone_core_get_default_proxy(voip->core, &proxy);
 		if (proxy) {
 			if (!linphone_proxy_config_is_registered(proxy)) {
