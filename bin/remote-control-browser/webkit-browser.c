@@ -14,7 +14,9 @@
 #include <gdk/gdkx.h>
 #include <webkit/webkit.h>
 #include <gtkosk/gtkosk.h>
+#ifdef HAVE_LIBSOUP_PROXY_RESOLVER_H
 #include <libsoup/soup-proxy-resolver-default.h>
+#endif /*HAVE_LIBSOUP_PROXY_RESOLVER_H*/
 
 #include "gtk-drag-view.h"
 #include "webkit-browser.h"
@@ -193,9 +195,11 @@ static void webkit_browser_init(WebKitBrowser *browser)
 				SOUP_SESSION_FEATURE(priv->logger));
 	}
 
+#ifdef HAVE_LIBSOUP_PROXY_RESOLVER_H
 	/* enable proxy support */
 	soup_session_add_feature_by_type(session,
 			SOUP_TYPE_PROXY_RESOLVER_DEFAULT);
+#endif
 
 	webkit = webkit_web_view_new();
 	priv->webkit = WEBKIT_WEB_VIEW(webkit);
