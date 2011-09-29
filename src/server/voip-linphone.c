@@ -238,6 +238,13 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 	}
 
 	linphone_core_set_ring(voip->core, NULL);
+	/* FIXME: For now set playback volume to 100% so we can ajust the
+	 *        volume later using the default mixer settings.
+	 *        In the future this needs to be a configurable value */
+	linphone_core_set_playback_gain_db(voip->core, 1.0f);
+	// maybe we need this as well, but it looks like this is just the
+	// volume of the soundcard. which we can control via alsa.
+	//linphone_core_set_play_level(voip->core, 100);
 
 	voip->thread = g_thread_create(voip_thread, voip, TRUE, NULL);
 	if (!voip->thread) {
