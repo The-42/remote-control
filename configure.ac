@@ -125,10 +125,6 @@ AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
 
-AC_CHECK_HEADER([libsoup/soup-proxy-resolver-default.h],
-	[AC_DEFINE([HAVE_LIBSOUP_PROXY_RESOLVER_H], [1], [Build with proxy server support])],
-	[AC_MSG_WARN([Can not build browser with proxy support.])])
-
 AC_CHECK_HEADER([readline/readline.h])
 AC_CHECK_LIB([readline], [readline], [use_readline=yes], [use_readline=no])
 if test "x$use_readline" = "xyes"; then
