@@ -13,6 +13,7 @@
 #include <sys/wait.h>
 
 #include "remote-control-webkit-window.h"
+#include "remote-control-webkit-jscript.h"
 #include "utils.h"
 #include "guri.h"
 
@@ -78,6 +79,20 @@ static void webkit_finalize(GObject *object)
 	g_object_unref(priv->uri);
 
 	G_OBJECT_CLASS(remote_control_webkit_window_parent_class)->finalize(object);
+}
+
+static void webkit_on_notify_load_status(WebKitWebView *webkit,
+                                         GParamSpec *pspec, gpointer data)
+{
+	GtkWidget *window = GTK_WIDGET(data);
+	WebKitLoadStatus status;
+
+	status = webkit_web_view_get_load_status(webkit);
+
+	if (status == WEBKIT_LOAD_COMMITTED) {
+		g_debug("register user functions");
+		register_user_functions(webkit, GTK_WINDOW(window));
+	}
 }
 
 static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowClass *klass)
@@ -154,6 +169,12 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
+
+	/* Add signal handler for page load status. We use this to register
+	 * jscript functions, which needs to be done for each page and frame
+	 */
+	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-status",
+		G_CALLBACK(webkit_on_notify_load_status), window);
 
 	g_signal_connect(G_OBJECT(priv->webkit),
 			"navigation-policy-decision-requested",
