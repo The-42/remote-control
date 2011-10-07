@@ -17,9 +17,13 @@ remote_control_SOURCES = \
 	remote-control-rdp-window.c \
 	remote-control-rdp-window.h \
 	remote-control-webkit-window.c \
-	remote-control-webkit-window.h \
+	remote-control-webkit-window.h
+
+if ENABLE_WEBKIT_JS_API
+remote_control_SOURCES += \
 	remote-control-webkit-jscript.c \
 	remote-control-webkit-jscript.h
+endif
 
 remote_control_LDADD = \
 	../../src/server/libremote-control.la \

@@ -64,7 +64,7 @@ enable_libvlc=no
 enable_gst=no
 
 #
-# NOTE: for gstreamer we need pligins-base for header files and
+# NOTE: for gstreamer we need plugins-base for header files and
 #       interfaces for the libs. but both is in gstreamer-plugins-base
 #
 AS_CASE([$with_video_backend],
@@ -122,6 +122,16 @@ AM_CONDITIONAL(ENABLE_LIBCCID, [test "x$enable_libccid" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
+
+dnl --enable-webkit-js-api=(yes|no)
+AC_ARG_ENABLE([webkit-js-api],
+              [AC_HELP_STRING([--enable-webkit-js-api=@<:@no|yes@:>@],
+                              [Enable native functions been exported into javascript context. @<:@default=yes@:>@])
+              ],[],[enable_webkit_js_api=yes])
+AM_CONDITIONAL([ENABLE_WEBKIT_JS_API], test x"$enable_webkit_js_api" = x"yes")
+if test x"$enable_webkit_js_api" = x"yes"; then
+   AC_DEFINE([ENABLE_WEBKIT_JS_API], [], [whether debugging is enabled])
+fi
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
 
@@ -182,4 +192,7 @@ Features:
   VoIP Backend:              $with_voip_backend
   Modem Backend:             $with_modem_backend
   Handset Backend:           $with_handset_backend
+
+Options:
+  Webkit JScript API:        $enable_webkit_js_api
 "
