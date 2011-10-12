@@ -538,13 +538,13 @@ cleanup:
 
 static int player_create_manual_nvidia_pipeline(struct media_player *player, const gchar* uri)
 {
-#define PIPELINE_INPUT_UDP  "udpsrc name=source uri=%s "
+#define PIPELINE_INPUT_UDP  "udpsrc do-timestamp=1 name=source uri=%s "
 #define PIPELINE_INPUT_FILE "filesrc name=source location=%s"
 #define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s"
 #define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! glimagesink"
 
 #define PIPELINE_MANUAL \
-	" ! queue leaky=1 name=input-queue ! mpegtsdemux name=demux " \
+	" ! queue max-size-buffers=512 leaky=1 name=input-queue ! mpegtsdemux name=demux " \
 		"demux. ! queue2 name=audio-queue ! mpegaudioparse name=audio-parser ! " \
 			"nv_omx_mp2dec name=audio-decoder ! " \
 				"audioconvert ! audioresample ! volume name=volume ! " \
