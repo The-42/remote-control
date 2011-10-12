@@ -130,7 +130,7 @@ AC_ARG_ENABLE([webkit-js-api],
               ],[],[enable_webkit_js_api=yes])
 AM_CONDITIONAL([ENABLE_WEBKIT_JS_API], test x"$enable_webkit_js_api" = x"yes")
 if test x"$enable_webkit_js_api" = x"yes"; then
-   AC_DEFINE([ENABLE_WEBKIT_JS_API], [], [whether debugging is enabled])
+   AC_DEFINE([ENABLE_WEBKIT_JS_API], [1], [whether debugging is enabled])
 fi
 
 AC_CHECK_HEADERS([linux/gpiodev.h])
