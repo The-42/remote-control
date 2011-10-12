@@ -930,6 +930,8 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	/* because url can be valid, but we do not know the content, we can
 	 * not be sure that the chain can handle the new url we destroy the
 	 * old and create a new. this is the safest way */
+	g_debug("   destroy old pipeline...");
+	player_destroy_pipeline(player); /* this will also clear the uri */
 	g_debug("   creating new pipeline...");
 	if (player_create_pipeline(player, (const gchar*)uri) < 0) {
 		g_critical("  failed to create pipeline");
