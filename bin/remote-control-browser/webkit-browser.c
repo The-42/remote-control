@@ -246,7 +246,7 @@ static void webkit_browser_init(WebKitBrowser *browser)
 			G_CALLBACK(on_exit_clicked), NULL);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 
-	view = gtk_drag_view_new(NULL, NULL);
+	view = gtk_scrolled_window_new(NULL, NULL);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show_all(view);
 
@@ -257,6 +257,7 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_widget_show_all(vbox);
 
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
+
 }
 
 static void webkit_browser_class_init(WebKitBrowserClass *class)
