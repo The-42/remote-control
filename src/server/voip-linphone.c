@@ -113,6 +113,12 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 		event_manager_report(manager, &event);
 		break;
 
+	case LinphoneCallIncomingEarlyMedia:
+		break;
+
+	case LinphoneCallOutgoingEarlyMedia:
+		break;
+
 	default:
 		break;
 	}
@@ -414,15 +420,22 @@ int voip_logout(struct voip *voip)
 
 int voip_call(struct voip *voip, const char *uri)
 {
+	LinphoneCallParams *params;
 	LinphoneCall *call;
 
 	if (!voip)
 		return -EINVAL;
 
-	call = linphone_core_invite(voip->core, uri);
-	if (!call)
-		return -EIO;
+	params = linphone_core_create_default_call_parameters(voip->core);
+	linphone_call_params_enable_early_media_sending(params, TRUE);
 
+	call = linphone_core_invite_with_params(voip->core, uri, params);
+	if (!call) {
+		linphone_call_params_destroy(params);
+		return -EIO;
+	}
+
+	linphone_call_params_destroy(params);
 	return 0;
 }
 
