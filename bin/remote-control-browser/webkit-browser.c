@@ -36,6 +36,7 @@ struct _WebKitBrowserPrivate {
 	SoupLogger *logger;
 	GtkEntry *entry;
 	gchar *geometry;
+	GtkWidget *spinner;
 };
 
 static void webkit_browser_get_property(GObject *object, guint prop_id,
@@ -92,6 +93,13 @@ static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
 
 		if (uri)
 			gtk_entry_set_text(priv->entry, uri);
+		gtk_spinner_start (GTK_SPINNER(priv->spinner));
+		gtk_widget_show(priv->spinner);
+	}
+	else if ((status == WEBKIT_LOAD_FINISHED) || (status == WEBKIT_LOAD_FAILED))
+	{
+		gtk_spinner_stop (GTK_SPINNER(priv->spinner));
+		gtk_widget_hide(priv->spinner);
 	}
 }
 
@@ -230,6 +238,12 @@ static void webkit_browser_init(WebKitBrowser *browser)
 			G_CALLBACK(on_uri_activate), browser);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 
+	item = gtk_tool_item_new();
+	priv->spinner = gtk_spinner_new();
+	gtk_widget_set_size_request(priv->spinner,50, 50); /* TODO: make this dynamically */
+	gtk_container_add(GTK_CONTAINER(item), priv->spinner);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
+	
 	item = gtk_tool_button_new_from_stock(GTK_STOCK_OK);
 	g_signal_connect(G_OBJECT(item), "clicked",
 			G_CALLBACK(on_go_clicked), browser);
