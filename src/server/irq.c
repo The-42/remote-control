@@ -174,7 +174,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 
 		case EVENT_VOIP_STATE_OUTGOING:
 			g_debug("    EVENT_VOIP_STATE_OUTGOING");
-			*info = 6; /* VOIP_EVT_CALLING */
+			*info = 5; /* VOIP_EVT_TRYING */
 			break;
 
 		case EVENT_VOIP_STATE_OUTGOING_CONNECTED:

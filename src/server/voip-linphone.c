@@ -119,6 +119,11 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 	case LinphoneCallOutgoingEarlyMedia:
 		break;
 
+	case LinphoneCallOutgoingProgress:
+		event.voip.state = EVENT_VOIP_STATE_OUTGOING;
+		event_manager_report(manager, &event);
+		break;
+
 	default:
 		break;
 	}
