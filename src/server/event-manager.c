@@ -49,7 +49,7 @@ struct event_manager {
 	enum event_hook_state hook_state;
 	enum event_rfid_state rfid_state;
 	enum event_modem_state modem_state;
-	struct event_handset handset_event;
+	GQueue *handset_events;
 };
 
 static gboolean event_manager_source_prepare(GSource *source, gint *timeout)
@@ -126,6 +126,8 @@ static void event_manager_source_finalize(GSource *source)
 {
 	struct event_manager *manager = (struct event_manager *)source;
 
+	g_queue_free(manager->handset_events);
+
 	if (manager->gpiofd >= 0)
 		close(manager->gpiofd);
 }
@@ -167,6 +169,12 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 	manager->hook_state = EVENT_HOOK_STATE_ON;
 	manager->rfid_state = EVENT_RFID_STATE_LOST;
 	manager->modem_state = EVENT_MODEM_STATE_DISCONNECTED;
+
+	manager->handset_events = g_queue_new();
+	if (!manager->handset_events) {
+		err = -ENOMEM;
+		goto free;
+	}
 
 #ifdef HAVE_LINUX_GPIODEV_H
 	manager->gpiofd = open("/dev/gpio-0", O_RDWR);
@@ -215,6 +223,7 @@ GSource *event_manager_get_source(struct event_manager *manager)
 int event_manager_report(struct event_manager *manager, struct event *event)
 {
 	uint32_t irq_status = 0;
+	gpointer item;
 	int ret = 0;
 
 	switch (event->source) {
@@ -248,8 +257,14 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		break;
 
 	case EVENT_SOURCE_HANDSET:
-		memcpy(&manager->handset_event, &event->handset,
-				sizeof(event->handset));
+		item = g_new(struct event_handset, 1);
+		if (!item) {
+			ret = -ENOMEM;
+			break;
+		}
+
+		memcpy(item, &event->handset, sizeof(event->handset));
+		g_queue_push_tail(manager->handset_events, item);
 		irq_status |= BIT(EVENT_SOURCE_HANDSET);
 		break;
 
@@ -278,6 +293,7 @@ int event_manager_get_status(struct event_manager *manager, uint32_t *statusp)
 int event_manager_get_source_state(struct event_manager *manager, struct event *event)
 {
 	uint32_t irq_status;
+	gpointer item;
 	int err = 0;
 
 	if (!manager || !event)
@@ -312,9 +328,17 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 		break;
 
 	case EVENT_SOURCE_HANDSET:
-		memcpy(&event->handset, &manager->handset_event,
-				sizeof(event->handset));
-		irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
+		item = g_queue_pop_head(manager->handset_events);
+		if (item) {
+			memcpy(&event->handset, item, sizeof(event->handset));
+			g_free(item);
+		} else {
+			err = -ENODATA;
+		}
+
+		if (g_queue_is_empty(manager->handset_events))
+			irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
+
 		break;
 
 	default:
