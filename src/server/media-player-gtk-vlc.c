@@ -56,6 +56,17 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 	gdk_threads_leave();
 }
 
+static void on_vout(const struct libvlc_event_t *event, void *data)
+{
+	struct media_player *player = data;
+
+	if (event->u.media_player_vout.new_count > 0) {
+		gdk_threads_enter();
+		gdk_window_show(player->window);
+		gdk_threads_leave();
+	}
+}
+
 int media_player_create(struct media_player **playerp)
 {
 	GdkWindowAttr attributes = {
@@ -97,6 +108,8 @@ int media_player_create(struct media_player **playerp)
 			on_playing, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerStopped,
 			on_stopped, player);
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerVout,
+			on_vout, player);
 
 	*playerp = player;
 	return 0;
