@@ -49,6 +49,7 @@ struct remote_control {
 	struct tuner *tuner;
 	struct handset *handset;
 
+	GSource *events_source;
 	GSource *source;
 };
 
@@ -318,7 +319,7 @@ int remote_control_create(struct remote_control **rcp)
 
 	source = event_manager_get_source(rc->event_manager);
 	g_source_add_child_source(rc->source, source);
-	g_source_unref(source);
+	rc->events_source = source;
 
 	err = backlight_create(&rc->backlight);
 	if (err < 0) {
@@ -433,6 +434,7 @@ int remote_control_free(struct remote_control *rc)
 	sound_manager_free(rc->sound);
 	media_player_free(rc->player);
 	backlight_free(rc->backlight);
+	g_source_unref(rc->events_source);
 	rpc_server_free(server);
 
 	return 0;
