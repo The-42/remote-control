@@ -277,47 +277,55 @@ int event_manager_get_status(struct event_manager *manager, uint32_t *statusp)
 
 int event_manager_get_source_state(struct event_manager *manager, struct event *event)
 {
+	uint32_t irq_status;
 	int err = 0;
 
 	if (!manager || !event)
 		return -EINVAL;
 
+	irq_status = manager->irq_status;
+
 	switch (event->source) {
 	case EVENT_SOURCE_MODEM:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_MODEM);
 		event->modem.state = manager->modem_state;
+		irq_status &= ~BIT(EVENT_SOURCE_MODEM);
 		break;
 
 	case EVENT_SOURCE_VOIP:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_VOIP);
 		event->voip.state = manager->voip_state;
+		irq_status &= ~BIT(EVENT_SOURCE_VOIP);
 		break;
 
 	case EVENT_SOURCE_SMARTCARD:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_SMARTCARD);
 		event->smartcard.state = manager->smartcard_state;
+		irq_status &= ~BIT(EVENT_SOURCE_SMARTCARD);
 		break;
 
 	case EVENT_SOURCE_HOOK:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_HOOK);
 		event->hook.state = manager->hook_state;
+		irq_status &= ~BIT(EVENT_SOURCE_HOOK);
 		break;
 
 	case EVENT_SOURCE_RFID:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_RFID);
 		event->rfid.state = manager->rfid_state;
+		irq_status &= ~BIT(EVENT_SOURCE_RFID);
 		break;
 
 	case EVENT_SOURCE_HANDSET:
-		manager->irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
 		memcpy(&event->handset, &manager->handset_event,
 				sizeof(event->handset));
+		irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
 		break;
 
 	default:
 		err = -ENOSYS;
 		break;
 	}
+
+	if (irq_status == manager->irq_status)
+		err = RPC_STUB(irq_event)(manager->server, 0);
+	else
+		manager->irq_status = irq_status;
 
 	return err;
 }
