@@ -1109,6 +1109,8 @@ static int exec_handset_show_icon(struct cli *cli, int argc, char *argv[])
 		id = REMOTE_HANDSET_ICON_RADIO;
 	else if (strcmp(argv[1], "tv") == 0)
 		id = REMOTE_HANDSET_ICON_TV;
+	else if (strcmp(argv[1], "logo") == 0)
+		id = REMOTE_HANDSET_ICON_LOGO;
 	else
 		return -EINVAL;
 

@@ -84,6 +84,7 @@
 			<value name="HANDSET_ICON_PHONE"/>
 			<value name="HANDSET_ICON_RADIO"/>
 			<value name="HANDSET_ICON_TV"/>
+			<value name="HANDSET_ICON_LOGO"/>
 		</enum>
 	</types>
 	<functions>
