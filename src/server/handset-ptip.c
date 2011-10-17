@@ -119,8 +119,9 @@ int handset_create(struct handset **handsetp, struct rpc_server *server)
 
 	err = ptip_client_create(&handset->client, "ptip");
 	if (err < 0) {
-		g_free(handset);
-		return err;
+		g_debug("PT-IP: connection failed: %s", g_strerror(-err));
+		handset->client = NULL;
+		goto out;
 	}
 
 	g_debug("PT-IP: connection established");
@@ -136,6 +137,7 @@ int handset_create(struct handset **handsetp, struct rpc_server *server)
 		return -ENOMEM;
 	}
 
+out:
 	*handsetp = handset;
 	return 0;
 }
@@ -159,6 +161,9 @@ int handset_display_clear(struct handset *handset)
 {
 	int err;
 
+	if (!handset || !handset->client)
+		return handset ? -ENODEV : -EINVAL;
+
 	err = ptip_client_display_clear(handset->client);
 	if (err < 0)
 		return err;
@@ -169,6 +174,9 @@ int handset_display_clear(struct handset *handset)
 int handset_display_sync(struct handset *handset)
 {
 	int err;
+
+	if (!handset || !handset->client)
+		return handset ? -ENODEV : -EINVAL;
 
 	err = ptip_client_display_flush(handset->client);
 	if (err < 0)
@@ -182,6 +190,9 @@ int handset_display_set_brightness(struct handset *handset,
 {
 	int err;
 
+	if (!handset || !handset->client)
+		return handset ? -ENODEV : -EINVAL;
+
 	err = ptip_client_display_set_backlight(handset->client, brightness);
 	if (err < 0)
 		return err;
@@ -194,6 +205,9 @@ int handset_keypad_set_brightness(struct handset *handset,
 {
 	int err;
 
+	if (!handset || !handset->client)
+		return handset ? -ENODEV : -EINVAL;
+
 	err = ptip_client_keypad_set_backlight(handset->client, brightness);
 	if (err < 0)
 		return err;
@@ -204,6 +218,9 @@ int handset_keypad_set_brightness(struct handset *handset,
 int handset_icon_show(struct handset *handset, unsigned int id, bool show)
 {
 	int err;
+
+	if (!handset || !handset->client)
+		return handset ? -ENODEV : -EINVAL;
 
 	if (show)
 		err = ptip_client_icon_show(handset->client, id);
@@ -220,6 +237,9 @@ int handset_text_show(struct handset *handset, unsigned int x, unsigned int y,
 		const char *text, bool show)
 {
 	int err;
+
+	if (!handset || !handset->client)
+		return handset ? -ENODEV : -EINVAL;
 
 	if (show)
 		err = ptip_client_text_show(handset->client, x, y, text);
