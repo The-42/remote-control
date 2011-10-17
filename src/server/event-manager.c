@@ -208,7 +208,9 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 #ifdef HAVE_LINUX_GPIODEV_H
 close:
 	close(manager->gpiofd);
+#endif /* HAVE_LINUX_GPIODEV_H */
 free:
+#ifdef HAVE_LINUX_GPIODEV_H
 	g_free(source);
 #endif /* HAVE_LINUX_GPIODEV_H */
 out:
