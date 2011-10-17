@@ -9,7 +9,7 @@ libremote_control_la_CFLAGS = \
 
 libremote_control_la_LIBADD = \
 	../common/libcommon.la \
-	@LIBNL_LIBS@ -lnl-route \
+	@LIBNL_LIBS@ \
 	@GLIB_LIBS@ \
 	@GTK_LIBS@
 
