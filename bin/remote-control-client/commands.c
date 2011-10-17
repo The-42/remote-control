@@ -1184,3 +1184,90 @@ const struct cli_command_info cmd_handset_show_text _command_ = {
 	.options = NULL,
 	.exec = exec_handset_show_text,
 };
+
+/*
+ * "irq-poll" command
+ */
+static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
+{
+	static enum remote_irq_source sources[] = {
+		REMOTE_IRQ_SOURCE_HOOK,
+		REMOTE_IRQ_SOURCE_SMARTCARD,
+		REMOTE_IRQ_SOURCE_VOIP,
+		REMOTE_IRQ_SOURCE_IO,
+		REMOTE_IRQ_SOURCE_MODEM,
+		REMOTE_IRQ_SOURCE_RFID,
+		REMOTE_IRQ_SOURCE_HANDSET,
+	};
+	uint32_t mask = 0;
+	unsigned int i;
+	int err;
+
+	err = remote_irq_get_mask(cli->client, &mask);
+	if (err < 0) {
+		fprintf(stderr, "remote_irq_get_mask(): %s", strerror(-err));
+		return err;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(sources); i++) {
+		unsigned int source = sources[i];
+
+		if (mask & (1 << (source - 1))) {
+			uint32_t status = 0;
+
+			switch (source) {
+			case REMOTE_IRQ_SOURCE_UNKNOWN:
+			case REMOTE_IRQ_SOURCE_MAX:
+				fprintf(stderr, "UNKNOWN\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_HOOK:
+				fprintf(stderr, "HOOK\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_SMARTCARD:
+				fprintf(stderr, "SMARTCARD\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_VOIP:
+				fprintf(stderr, "VOIP\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_IO:
+				fprintf(stderr, "IO\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_MODEM:
+				fprintf(stderr, "MODEM\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_RFID:
+				fprintf(stderr, "RFID\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_HANDSET:
+				fprintf(stderr, "HANDSET\n");
+				break;
+			}
+
+			err = remote_irq_get_info(cli->client, source, &status);
+			if (err < 0) {
+				fprintf(stderr, "remote_irq_get_info(): %s\n",
+						strerror(-err));
+				continue;
+			}
+
+			fprintf(stderr, "  %08x\n", status);
+		}
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_irq_poll _command_ = {
+	.name = "irq-poll",
+	.summary = "poll interrupts",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_irq_poll,
+};
