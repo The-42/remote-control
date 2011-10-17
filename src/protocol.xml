@@ -263,7 +263,7 @@
 			<arg name="contact" type="char *" mode="out"/>
 		</func>
 		<func name="voip_dial" returns="int32_t" opcode="712">
-			<arg name="dtmf" type="uint8_t" mode="in"/>
+			<arg name="dtmf" type="int8_t" mode="in"/>
 		</func>
 		<!-- miscellaneous -->
 		<func name="reset" returns="int32_t" opcode="800"/>

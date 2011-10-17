@@ -208,7 +208,7 @@ out:
 	return ret;
 }
 
-int32_t RPC_IMPL(voip_dial)(void *priv, uint8_t dtmf)
+int32_t RPC_IMPL(voip_dial)(void *priv, int8_t dtmf)
 {
 	struct voip *voip = remote_control_get_voip(priv);
 	int32_t ret;
