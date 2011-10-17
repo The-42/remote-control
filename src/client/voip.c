@@ -36,12 +36,12 @@ int remote_voip_login(void *priv, struct remote_voip_account *account)
 	return ret;
 }
 #else
-struct voip_login_options {
-	char *server;
-	int auth;
-	int transport;
-	char *username;
-	char *password;
+struct RPC_TYPE(voip_login_options) {
+	uint32_t server_ptr;
+	uint32_t auth;
+	uint32_t transport;
+	uint32_t username_ptr;
+	uint32_t password_ptr;
 	char server2[256];
 	char username2[128];
 	char password2[128];
@@ -51,7 +51,7 @@ remote_public
 int remote_voip_login(void *priv, struct remote_voip_account *account)
 {
 	struct rpc_client *rpc = rpc_client_from_priv(priv);
-	struct voip_login_options options;
+	struct RPC_TYPE(voip_login_options) options;
 	struct rpc_buffer buffer;
 	int32_t ret = 0;
 	int err = 0;

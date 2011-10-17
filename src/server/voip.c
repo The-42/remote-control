@@ -61,11 +61,11 @@ int32_t RPC_IMPL(voip_login)(void *priv, struct RPC_TYPE(voip_account) *account)
 }
 #else
 struct RPC_TYPE(voip_login_options) {
-	char *server;
-	int auth;
-	int transport;
-	char *username;
-	char *password;
+	uint32_t server_ptr;
+	uint32_t auth;
+	uint32_t transport;
+	uint32_t username_ptr;
+	uint32_t password_ptr;
 	char server2[256];
 	char username2[128];
 	char password2[128];
