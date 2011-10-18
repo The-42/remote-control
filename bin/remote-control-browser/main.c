@@ -23,7 +23,16 @@ static GOptionEntry entries[] = {
 	{
 		"geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry,
 		"Window geometry", NULL
-	}, { NULL }
+	},
+	{
+		"noosk", 'o', 0, G_OPTION_ARG_NONE, &noosk,
+		"No on screen keyboard", NULL
+	},
+	{
+		"kiosk", 'k', 0, G_OPTION_ARG_NONE, &kiosk,
+		"Run in kiosk mode", NULL
+	},
+	{ NULL }
 };
 
 static void on_destroy(GtkObject *object, gpointer data)
@@ -33,9 +42,11 @@ static void on_destroy(GtkObject *object, gpointer data)
 
 static void on_realize(GtkWidget *widget, gpointer data)
 {
-	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-	gdk_window_set_cursor(widget->window, cursor);
-	gdk_cursor_unref(cursor);
+//TODO: just uncommented to have a mouse cursor during testing on pc 
+//      reenable these lines to hide cursor on Medcom terminal
+//	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+//	gdk_window_set_cursor(widget->window, cursor);
+//	gdk_cursor_unref(cursor);
 }
 
 int main(int argc, char *argv[])
@@ -43,7 +54,8 @@ int main(int argc, char *argv[])
 	GOptionContext *context;
 	GError *error = NULL;
 	GtkWidget *browser;
-	gchar *uri;
+	gchar *uri = NULL;
+//	int i = 0;
 
 	context = g_option_context_new("- standalone browser");
 	g_option_context_add_main_entries(context, entries, NULL);
@@ -55,7 +67,25 @@ int main(int argc, char *argv[])
 	}
 
 	g_option_context_free(context);
-
+#if 0
+	printf("argc=%d\n", argc);
+	for(i = 1; i < argc; i++)
+	{
+		printf("argv[i]=%s\n", argv[i]);
+		if(strncmp(argv[i], "noosk", 5) == 0)
+		{
+			printf("noosk\n");
+			noosk = TRUE;
+		}
+		else if(strncmp(argv[i], "kiosk", 5) == 0)
+		{
+			printf("kiosk\n");
+			kiosk = TRUE;
+		}
+		else
+			uri = argv[i];
+	}
+#endif	
 	if (argc < 2)
 		uri = "http://www.google.com/ncr";
 	else

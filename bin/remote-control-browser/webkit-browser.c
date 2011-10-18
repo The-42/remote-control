@@ -39,6 +39,9 @@ struct _WebKitBrowserPrivate {
 	GtkWidget *spinner;
 };
 
+gboolean noosk = FALSE;
+gboolean kiosk = FALSE;
+
 static void webkit_browser_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
 {
@@ -249,13 +252,15 @@ static void webkit_browser_init(WebKitBrowser *browser)
 			G_CALLBACK(on_go_clicked), browser);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 
-	item = gtk_toggle_tool_button_new();
-	gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(item), TRUE);
-	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "input-keyboard");
-	g_signal_connect(G_OBJECT(item), "clicked",
-			G_CALLBACK(on_keyboard_clicked), osk);
-	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
-
+	if(!noosk && !kiosk){
+		item = gtk_toggle_tool_button_new();
+		gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(item), TRUE);
+		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "input-keyboard");
+		g_signal_connect(G_OBJECT(item), "clicked",
+				G_CALLBACK(on_keyboard_clicked), osk);
+		gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
+	}
+	
 	item = gtk_tool_button_new_from_stock(GTK_STOCK_QUIT);
 	g_signal_connect(G_OBJECT(item), "clicked",
 			G_CALLBACK(on_exit_clicked), NULL);
@@ -265,10 +270,14 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show_all(view);
 
+	
 	vbox = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, FALSE, 0);
+	if(!kiosk)
+		gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), view, TRUE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), osk, FALSE, FALSE, 0);
+	if(!noosk && !kiosk)
+		gtk_box_pack_start(GTK_BOX(vbox), osk, FALSE, FALSE, 0);
+	
 	gtk_widget_show_all(vbox);
 
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
