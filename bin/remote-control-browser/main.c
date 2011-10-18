@@ -42,11 +42,9 @@ static void on_destroy(GtkObject *object, gpointer data)
 
 static void on_realize(GtkWidget *widget, gpointer data)
 {
-//TODO: just uncommented to have a mouse cursor during testing on pc 
-//      reenable these lines to hide cursor on Medcom terminal
-//	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-//	gdk_window_set_cursor(widget->window, cursor);
-//	gdk_cursor_unref(cursor);
+	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	gdk_window_set_cursor(widget->window, cursor);
+	gdk_cursor_unref(cursor);
 }
 
 int main(int argc, char *argv[])
