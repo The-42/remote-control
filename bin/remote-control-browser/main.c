@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
 	GError *error = NULL;
 	GtkWidget *browser;
 	gchar *uri = NULL;
-//	int i = 0;
 
 	context = g_option_context_new("- standalone browser");
 	g_option_context_add_main_entries(context, entries, NULL);
@@ -65,25 +64,7 @@ int main(int argc, char *argv[])
 	}
 
 	g_option_context_free(context);
-#if 0
-	printf("argc=%d\n", argc);
-	for(i = 1; i < argc; i++)
-	{
-		printf("argv[i]=%s\n", argv[i]);
-		if(strncmp(argv[i], "noosk", 5) == 0)
-		{
-			printf("noosk\n");
-			noosk = TRUE;
-		}
-		else if(strncmp(argv[i], "kiosk", 5) == 0)
-		{
-			printf("kiosk\n");
-			kiosk = TRUE;
-		}
-		else
-			uri = argv[i];
-	}
-#endif	
+
 	if (argc < 2)
 		uri = "http://www.google.com/ncr";
 	else
