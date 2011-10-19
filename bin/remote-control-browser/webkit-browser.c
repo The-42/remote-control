@@ -247,7 +247,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(item), priv->spinner);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 	
-	item = gtk_tool_button_new_from_stock(GTK_STOCK_OK);
+	item = gtk_tool_button_new(NULL, NULL);
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "go-jump");
 	g_signal_connect(G_OBJECT(item), "clicked",
 			G_CALLBACK(on_go_clicked), browser);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
@@ -261,7 +262,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 		gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
 	}
 	
-	item = gtk_tool_button_new_from_stock(GTK_STOCK_QUIT);
+	item = gtk_tool_button_new(NULL, NULL);
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "exit");
 	g_signal_connect(G_OBJECT(item), "clicked",
 			G_CALLBACK(on_exit_clicked), NULL);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
