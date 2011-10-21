@@ -121,12 +121,11 @@ static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
 
 		if (uri)
 			gtk_entry_set_text(priv->entry, uri);
-		gtk_spinner_start (GTK_SPINNER(priv->spinner));
+
+		gtk_spinner_start(GTK_SPINNER(priv->spinner));
 		gtk_widget_show(priv->spinner);
-	}
-	else if ((status == WEBKIT_LOAD_FINISHED) || (status == WEBKIT_LOAD_FAILED))
-	{
-		gtk_spinner_stop (GTK_SPINNER(priv->spinner));
+	} else if ((status == WEBKIT_LOAD_FINISHED) || (status == WEBKIT_LOAD_FAILED)) {
+		gtk_spinner_stop(GTK_SPINNER(priv->spinner));
 		gtk_widget_hide(priv->spinner);
 	}
 }
@@ -274,7 +273,7 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_widget_set_size_request(priv->spinner, width, height);
 	gtk_container_add(GTK_CONTAINER(item), priv->spinner);
 	gtk_toolbar_insert(GTK_TOOLBAR(priv->toolbar), item, -1);
-	
+
 	item = gtk_tool_button_new(NULL, NULL);
 	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "go-jump");
 	g_signal_connect(G_OBJECT(item), "clicked",
