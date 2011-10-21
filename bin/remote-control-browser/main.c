@@ -18,6 +18,8 @@
 #include "webkit-browser.h"
 
 static gchar *geometry = NULL;
+static gboolean noosk = FALSE;
+static gboolean kiosk = FALSE;
 
 static GOptionEntry entries[] = {
 	{
@@ -71,12 +73,16 @@ int main(int argc, char *argv[])
 		uri = argv[1];
 
 	browser = webkit_browser_new(geometry);
+	g_object_set(browser, "keyboard", !noosk, NULL);
+	g_object_set(browser, "controls", !kiosk, NULL);
+
 	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
 			NULL);
 	g_signal_connect(G_OBJECT(browser), "realize", G_CALLBACK(on_realize),
 			NULL);
 	webkit_browser_load_uri(WEBKIT_BROWSER(browser), uri);
-	gtk_widget_show_all(browser);
+
+	gtk_widget_show(browser);
 
 	gtk_main();
 

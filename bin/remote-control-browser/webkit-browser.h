@@ -28,9 +28,6 @@ struct _WebKitBrowserClass {
 	GtkWindowClass parent_class;
 };
 
-extern gboolean noosk;
-extern gboolean kiosk;
-
 GType webkit_browser_get_type(void) G_GNUC_CONST;
 
 GtkWidget *webkit_browser_new(const gchar *geometry);
