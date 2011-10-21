@@ -209,6 +209,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	GtkWidget *webkit;
 	GtkWidget *view;
 	GtkWidget *vbox;
+	gint width = 48;
+	gint height = 48;
 
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
@@ -268,7 +270,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 
 	item = gtk_tool_item_new();
 	priv->spinner = gtk_spinner_new();
-	gtk_widget_set_size_request(priv->spinner,50, 50); /* TODO: make this dynamically */
+	gtk_icon_size_lookup(GTK_ICON_SIZE_DIALOG, &width, &height);
+	gtk_widget_set_size_request(priv->spinner, width, height);
 	gtk_container_add(GTK_CONTAINER(item), priv->spinner);
 	gtk_toolbar_insert(GTK_TOOLBAR(priv->toolbar), item, -1);
 	
