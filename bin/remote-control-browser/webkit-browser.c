@@ -309,7 +309,6 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_widget_show(vbox);
 
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
-	gtk_widget_show(GTK_WIDGET(browser));
 }
 
 static void webkit_browser_class_init(WebKitBrowserClass *class)
