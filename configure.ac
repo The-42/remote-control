@@ -27,7 +27,7 @@ RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
 AC_ARG_WITH(backlight_backend,
-	[AS_HELP_STRING([--with-backlight-backend=@<:@none/dpms/medatom@:>@],
+	[AS_HELP_STRING([--with-backlight-backend=@<:@none/dpms/medatom/sysfs@:>@],
 		[Use the specified backlight backend. [default=none]])
 	], [], [with_backlight_backend=none])
 
@@ -35,10 +35,12 @@ AS_CASE([$with_backlight_backend],
 	[none], [],
 	[dpms], [enable_dpms=yes],
 	[medatom], [enable_medatom_backlight=yes],
-	[AC_MSG_ERROR([Invalid backlight backend: must be none, dpms or medatom])]
+	[sysfs], [enable_backlight_sysfs=yes],
+	[AC_MSG_ERROR([Invalid backlight backend: must be none, dpms, medatom or sysfs])]
 )
 
 AS_IF([test "x$enable_medatom_backlight" = "xyes"], [PKG_CHECK_MODULES(GUDEV, gudev-1.0)])
+AS_IF([test "x$enable_backlight_sysfs" = "xyes"], [PKG_CHECK_MODULES(SYSFS, libsysfs)])
 
 AC_ARG_WITH(smartcard_backend,
 	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
@@ -115,6 +117,7 @@ AS_CASE([$with_handset_backend],
 
 AM_CONDITIONAL(ENABLE_DPMS, [test "x$enable_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_MEDATOM_BACKLIGHT, [test "x$enable_medatom_backlight" = "xyes"])
+AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
