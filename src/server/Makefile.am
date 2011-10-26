@@ -45,10 +45,10 @@ nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
 
-if ENABLE_DPMS
+if ENABLE_BACKLIGHT_DPMS
 libremote_control_la_SOURCES += backlight-dpms.c
 else
-if ENABLE_MEDATOM_BACKLIGHT
+if ENABLE_BACKLIGHT_MEDATOM
 libremote_control_la_CFLAGS += @GUDEV_CFLAGS@
 libremote_control_la_SOURCES += backlight-medatom.c smbus.h
 libremote_control_la_LIBADD += @GUDEV_LIBS@
@@ -60,8 +60,8 @@ libremote_control_la_LIBADD += @SYSFS_LIBS@
 else
 libremote_control_la_SOURCES += backlight-null.c
 endif # ENABLE_BACKLIGHT_SYSFS
-endif # ENABLE_MEDATOM_BACKLIGHT
-endif # ENABLE_DPMS
+endif # ENABLE_BACKLIGHT_MEDATOM
+endif # ENABLE_BACKLIGHT_DPMS
 
 if ENABLE_LINPHONE
 libremote_control_la_CFLAGS += \
