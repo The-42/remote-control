@@ -28,6 +28,7 @@ struct modem_manager {
 	gchar *number;
 	gboolean done;
 	int wakeup[2];
+	unsigned long flags;
 };
 
 static int modem_manager_wakeup(struct modem_manager *manager)
@@ -127,10 +128,12 @@ static int modem_manager_process_incoming(struct modem_manager *manager)
 	if (err < 0)
 		return err;
 
-	err = modem_manager_setup_call(manager);
-	if (err < 0) {
-		modem_terminate(manager->modem);
-		return err;
+	if ((manager->flags & MODEM_FLAGS_DIRECT) == 0) {
+		err = modem_manager_setup_call(manager);
+		if (err < 0) {
+			modem_terminate(manager->modem);
+			return err;
+		}
 	}
 
 	modem_manager_change_state(manager, MODEM_STATE_ACTIVE, FALSE);
@@ -150,10 +153,12 @@ static int modem_manager_process_outgoing(struct modem_manager *manager)
 	if (err < 0)
 		return err;
 
-	err = modem_manager_setup_call(manager);
-	if (err < 0) {
-		modem_terminate(manager->modem);
-		return err;
+	if ((manager->flags & MODEM_FLAGS_DIRECT) == 0) {
+		err = modem_manager_setup_call(manager);
+		if (err < 0) {
+			modem_terminate(manager->modem);
+			return err;
+		}
 	}
 
 	modem_manager_change_state(manager, MODEM_STATE_ACTIVE, FALSE);
@@ -168,17 +173,15 @@ static int modem_manager_process_terminate(struct modem_manager *manager)
 	g_debug("> %s(manager=%p)", __func__, manager);
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
-	if (manager->call) {
-		err = modem_terminate(manager->modem);
-		if (err < 0) {
-			g_debug("%s(): modem_terminate(): %s", __func__,
-					g_strerror(-err));
-			return err;
-		}
-
-		modem_call_free(manager->call);
-		manager->call = NULL;
+	err = modem_terminate(manager->modem);
+	if (err < 0) {
+		g_debug("%s(): modem_terminate(): %s", __func__,
+				g_strerror(-err));
+		return err;
 	}
+
+	modem_call_free(manager->call);
+	manager->call = NULL;
 
 	modem_manager_change_state(manager, MODEM_STATE_IDLE, FALSE);
 
@@ -225,10 +228,12 @@ static int handle_modem(struct modem_manager *manager)
 
 	switch (manager->state) {
 	case MODEM_STATE_ACTIVE:
-		err = modem_call_process(manager->call);
-		if (err < 0) {
-			g_warning("modem_call_process(): %s",
-					g_strerror(-err));
+		if ((manager->flags & MODEM_FLAGS_DIRECT) == 0) {
+			err = modem_call_process(manager->call);
+			if (err < 0) {
+				g_warning("modem_call_process(): %s",
+						g_strerror(-err));
+			}
 		}
 		break;
 
@@ -331,6 +336,53 @@ static gpointer modem_manager_thread(gpointer data)
 	return NULL;
 }
 
+static int modem_manager_open(struct modem_manager *manager)
+{
+	static const struct modem_desc {
+		const char *device;
+		unsigned long flags;
+		unsigned int vls;
+	} modem_table[] = {
+		{ "/dev/ttyACM0", 0, 1 },
+		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13 },
+	};
+	int ret = -ENODEV;
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS(modem_table); i++) {
+		const struct modem_desc *desc = &modem_table[i];
+		struct modem_params params;
+		int err;
+
+		err = modem_open(&manager->modem, desc->device);
+		if (err == -ENOENT)
+			continue;
+
+		g_debug("modem: using device %s", desc->device);
+
+		memset(&params, 0, sizeof(params));
+
+		err = modem_get_params(manager->modem, &params);
+		if (err < 0) {
+			modem_close(manager->modem);
+			return err;
+		}
+
+		params.flags |= desc->flags;
+		params.vls = desc->vls;
+
+		err = modem_set_params(manager->modem, &params);
+		if (err < 0)
+			modem_close(manager->modem);
+
+		manager->flags = desc->flags;
+		ret = err;
+		break;
+	}
+
+	return ret;
+}
+
 int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server)
 {
 	struct modem_manager *manager;
@@ -350,7 +402,7 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	manager->state = MODEM_STATE_IDLE;
 	manager->done = FALSE;
 
-	err = modem_open(&manager->modem, "/dev/ttyACM0");
+	err = modem_manager_open(manager);
 	if (err < 0) {
 		if (err != -ENOENT) {
 			free(manager);
