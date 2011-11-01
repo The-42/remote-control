@@ -267,9 +267,13 @@ int mixer_loopback_is_enabled(struct mixer *mixer, bool *enabled);
  */
 struct net;
 
-int net_create(struct net **netp);
+int net_create(struct net **netp, struct rpc_server *server);
 int net_free(struct net *net);
+int net_configure(struct net *net, const char *hostname, uint16_t port,
+		unsigned long timeout, unsigned int repeat);
+ssize_t net_send_async(struct net *net, const void *buffer, size_t size);
 ssize_t net_send_sync(struct net *net, const void *buffer, size_t size);
+ssize_t net_recv_async(struct net *net, void *buffer, size_t size);
 ssize_t net_recv_sync(struct net *net, void *buffer, size_t size);
 
 /**

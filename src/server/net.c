@@ -68,11 +68,16 @@ static ssize_t gethwaddr(char *hwaddr, size_t len)
 
 int32_t RPC_IMPL(net_config)(void *priv, uint32_t port, uint32_t timeout, uint32_t repeat, const char *host)
 {
-	int ret = -ENOSYS;
+	struct net *net = remote_control_get_net(priv);
+	int err;
+
 	g_debug("> %s(priv=%p, port=%u, timeout=%u, repeat=%u, host=%s)",
 			__func__, priv, port, timeout, repeat, host);
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+
+	err = net_configure(net, host, port, timeout, repeat);
+
+	g_debug("< %s() = %d", __func__, err);
+	return err;
 }
 
 int32_t RPC_IMPL(net_read)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
@@ -85,7 +90,7 @@ int32_t RPC_IMPL(net_read)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 
 	switch (mode) {
 	case NET_READ_MODE_UDP_NONBLOCK:
-		g_debug("  not implemented: NET_READ_MODE_UDP_NONBOLCK");
+		ret = net_recv_async(net, buffer->tx_buf, buffer->tx_num);
 		break;
 
 	case NET_READ_MODE_UDP:
@@ -118,7 +123,7 @@ int32_t RPC_IMPL(net_write)(void *priv, uint32_t mode, struct rpc_buffer *buffer
 
 	switch (mode) {
 	case NET_WRITE_MODE_UDP_NONBLOCK:
-		g_debug("  not implemented: NET_WRITE_MODE_UDP_NONBLOCK");
+		ret = net_send_async(net, buffer->rx_buf, buffer->rx_num);
 		break;
 
 	case NET_WRITE_MODE_UDP:

@@ -363,7 +363,7 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
-	err = net_create(&rc->net);
+	err = net_create(&rc->net, server);
 	if (err < 0) {
 		g_error("net_create(): %s", strerror(-err));
 		return err;
