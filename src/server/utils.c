@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include <net/if.h>
+#include <net/if_arp.h>
 #include <netlink/route/link.h>
 #include <netlink/route/route.h>
 #include <netlink/route/rtnl.h>
@@ -143,40 +144,88 @@ static void route_lookup_cb(struct nl_object *obj, void *data)
 	}
 }
 
+struct link_lookup_result {
+	unsigned int index;
+};
+
+static void link_lookup_cb(struct nl_object *obj, void *data)
+{
+	struct rtnl_link *link = (struct rtnl_link *)obj;
+	struct link_lookup_result *result = data;
+
+	if ((!result->index) && (rtnl_link_get_arptype(link) == ARPHRD_ETHER))
+		result->index = rtnl_link_get_ifindex(link);
+}
+
 unsigned int if_lookup_default(void)
 {
 	struct route_lookup_result rlr;
 	struct nl_cache *cache = NULL;
+	unsigned int retries = 32;
+	unsigned int index = 0;
 	struct nl_sock *sock;
-	int ret = 0;
+	unsigned int ret = 0;
 	int err;
 
 	sock = nl_socket_alloc();
 	if (!sock)
 		return 0;
 
-	err = nl_connect(sock, NETLINK_ROUTE);
-	if (err < 0)
-		goto free;
+	while (retries--) {
+		err = nl_connect(sock, NETLINK_ROUTE);
+		if (err < 0) {
+			if (err == -NLE_EXIST) {
+				g_debug("netlink: reconnecting to ROUTE, %u "
+						"retries left", retries);
+				nl_socket_set_local_port(sock, 0);
+				continue;
+			}
 
-	err = rtnl_route_alloc_cache(sock, AF_INET, 0, &cache);
-	if (err < 0)
-		goto free;
+			g_debug("netlink: failed to connect to ROUTE: %s",
+					nl_geterror(err));
+			goto free;
+		}
 
-	memset(&rlr, 0, sizeof(rlr));
-	rlr.priority = -1U;
-	rlr.route = NULL;
-
-	nl_cache_foreach(cache, route_lookup_cb, &rlr);
-	if (rlr.route) {
-		struct nexthop_lookup_result nlr;
-		nlr.ifindex = 0;
-
-		rtnl_route_foreach_nexthop(rlr.route, nexthop_lookup_cb, &nlr);
-		ret = nlr.ifindex;
+		break;
 	}
 
-	nl_cache_free(cache);
+	err = rtnl_route_alloc_cache(sock, AF_INET, 0, &cache);
+	if (err == 0) {
+		memset(&rlr, 0, sizeof(rlr));
+		rlr.priority = -1U;
+		rlr.route = NULL;
+
+		nl_cache_foreach(cache, route_lookup_cb, &rlr);
+		if (rlr.route) {
+			struct nexthop_lookup_result nlr;
+
+			memset(&nlr, 0, sizeof(nlr));
+			nlr.ifindex = 0;
+
+			rtnl_route_foreach_nexthop(rlr.route,
+					nexthop_lookup_cb, &nlr);
+			index = nlr.ifindex;
+		}
+
+		nl_cache_free(cache);
+	}
+
+	if (index == 0) {
+		struct link_lookup_result result;
+
+		memset(&result, 0, sizeof(result));
+
+		err = rtnl_link_alloc_cache(sock, AF_INET, &cache);
+		if (err < 0)
+			goto free;
+
+		nl_cache_foreach(cache, link_lookup_cb, &result);
+		index = result.index;
+		nl_cache_free(cache);
+	}
+
+	ret = index;
+
 free:
 	nl_socket_free(sock);
 	return ret;
