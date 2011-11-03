@@ -138,6 +138,22 @@ AS_CASE([$with_handset_backend],
 )
 
 #
+# GPIO backend
+#
+enable_gpio_gpiodev=no
+
+AC_ARG_WITH(gpio_backend,
+	[AS_HELP_STRING([--with-gpio-backend=@<:@none/gpiodev@:>@],
+		[Use the specified GPIO backend. [default=none]])
+	], [], [with_gpio_backend=none])
+
+AS_CASE([$with_gpio_backend],
+	[none], [],
+	[gpiodev], [enable_gpio_gpiodev=yes],
+	[AC_MSG_ERROR([Invalid GPIO backend: must be none or gpiodev])]
+)
+
+#
 # define automake conditionals according to select backends
 #
 AM_CONDITIONAL(ENABLE_BACKLIGHT_DPMS, [test "x$enable_backlight_dpms" = "xyes"])
@@ -150,6 +166,7 @@ AM_CONDITIONAL(ENABLE_LIBCCID, [test "x$enable_libccid" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
+AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 
 dnl --enable-webkit-js-api=(yes|no)
 AC_ARG_ENABLE([webkit-js-api],
@@ -164,7 +181,10 @@ fi
 #
 # check for required files and packages
 #
-AC_CHECK_HEADERS([linux/gpiodev.h])
+AS_IF([test "x$enable_gpio_gpiodev" = "xyes"],
+	[AC_CHECK_HEADERS([linux/gpiodev.h], [],
+		[AC_MSG_ERROR([linux/gpiodev.h is required for gpiodev backend])]
+	)])
 
 AC_CHECK_HEADER([readline/readline.h])
 AC_CHECK_LIB([readline], [readline], [use_readline=yes], [use_readline=no])
@@ -226,6 +246,7 @@ Features:
   VoIP Backend:              $with_voip_backend
   Modem Backend:             $with_modem_backend
   Handset Backend:           $with_handset_backend
+  GPIO Backend:              $with_gpio_backend
 
 Options:
   Webkit JScript API:        $enable_webkit_js_api

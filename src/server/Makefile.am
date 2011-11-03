@@ -136,6 +136,12 @@ else
 libremote_control_la_SOURCES += handset-null.c
 endif # ENABLE_LIBPTIP
 
+if ENABLE_GPIO_GPIODEV
+libremote_control_la_SOURCES += gpio-gpiodev.c
+else
+libremote_control_la_SOURCES += gpio-null.c
+endif # ENABLE_GPIO_GPIODEV
+
 remote-control-stub.c: $(srcdir)/../protocol.xml
 	$(AM_V_GEN)$(RPC_STUBGEN) --server --source -o $@ $<
 

@@ -322,6 +322,17 @@ int handset_text_show(struct handset *handset, unsigned int x, unsigned int y,
 		const char *text, bool show);
 
 /**
+ * GPIO
+ */
+enum gpio {
+	GPIO_UNKNOWN,
+	GPIO_HANDSET,
+	GPIO_SMARTCARD,
+};
+
+GSource *gpio_source_new(struct event_manager *events);
+
+/**
  * remote control
  */
 struct remote_control;
