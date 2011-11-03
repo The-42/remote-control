@@ -26,6 +26,13 @@ PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.6)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
+#
+# backlight backend
+#
+enable_backlight_dpms=no
+enable_backlight_medatom=no
+enable_backlight_sysfs=no
+
 AC_ARG_WITH(backlight_backend,
 	[AS_HELP_STRING([--with-backlight-backend=@<:@none/dpms/medatom/sysfs@:>@],
 		[Use the specified backlight backend. [default=none]])
@@ -42,13 +49,16 @@ AS_CASE([$with_backlight_backend],
 AS_IF([test "x$enable_backlight_medatom" = "xyes"], [PKG_CHECK_MODULES(GUDEV, gudev-1.0)])
 AS_IF([test "x$enable_backlight_sysfs" = "xyes"], [PKG_CHECK_MODULES(SYSFS, libsysfs)])
 
+#
+# SmartCard backend
+#
+enable_libsmartcard=no
+enable_libccid=no
+
 AC_ARG_WITH(smartcard_backend,
 	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
 		[Use the specified SmartCard/RFID backend. [default=none]])
 	], [], [with_smartcard_backend=none])
-
-enable_libsmartcard=no
-enable_libccid=no
 
 AS_CASE([$with_smartcard_backend],
 	[none], [],
@@ -57,13 +67,16 @@ AS_CASE([$with_smartcard_backend],
 	[AC_MSG_ERROR([Invalid SmartCard/RFID backend: must be none, libsmartcard or libccid])]
 )
 
+#
+# Video backend
+#
+enable_libvlc=no
+enable_gst=no
+
 AC_ARG_WITH(video_backend,
 	[AS_HELP_STRING([--with-video-backend=@<:@none/libvlc/gst@:>@],
 		[Use the specified video backend. [default=none]])
 	], [], [with_video_backend=none])
-
-enable_libvlc=no
-enable_gst=no
 
 #
 # NOTE: for gstreamer we need plugins-base for header files and
@@ -76,12 +89,15 @@ AS_CASE([$with_video_backend],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 
+#
+# VoIP backend
+#
+enable_linphone=no
+
 AC_ARG_WITH(voip_backend,
 	[AS_HELP_STRING([--with-voip-backend=@<:@none/linphone@:>@],
 		[Use the specified VoIP backend. [default=none]])
 	], [], [with_voip_backend=none])
-
-enable_linphone=no
 
 AS_CASE([$with_voip_backend],
 	[none], [],
@@ -89,12 +105,15 @@ AS_CASE([$with_voip_backend],
 	[AC_MSG_ERROR([Invalid voip backend: must be none or linphone])]
 )
 
+#
+# Modem backend
+#
+enable_libmodem=no
+
 AC_ARG_WITH(modem_backend,
 	[AS_HELP_STRING([--with-modem-backend=@<:@none/libmodem@:>@],
 		[Use the specified modem backend. [default=none]])
 	], [], [with_modem_backend=none])
-
-enable_libmodem=no
 
 AS_CASE([$with_modem_backend],
 	[none], [],
@@ -102,12 +121,15 @@ AS_CASE([$with_modem_backend],
 	[AC_MSG_ERROR([Invalid modem backend: must be none or libmodem])]
 )
 
+#
+# Handset backend
+#
+enable_libptip=no
+
 AC_ARG_WITH(handset_backend,
 	[AS_HELP_STRING([--with-handset-backend=@<:@none/ptip@:>@],
 		[Use the specified handset backend. [default=none]])
 	], [], [with_handset_backend=none])
-
-enable_libptip=no
 
 AS_CASE([$with_handset_backend],
 	[none], [],
@@ -115,6 +137,9 @@ AS_CASE([$with_handset_backend],
 	[AC_MSG_ERROR([Invalid handset backend: must be none or ptip])]
 )
 
+#
+# define automake conditionals according to select backends
+#
 AM_CONDITIONAL(ENABLE_BACKLIGHT_DPMS, [test "x$enable_backlight_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
@@ -136,6 +161,9 @@ if test x"$enable_webkit_js_api" = x"yes"; then
    AC_DEFINE([ENABLE_WEBKIT_JS_API], [1], [whether debugging is enabled])
 fi
 
+#
+# check for required files and packages
+#
 AC_CHECK_HEADERS([linux/gpiodev.h])
 
 AC_CHECK_HEADER([readline/readline.h])
@@ -147,6 +175,9 @@ fi
 AC_SUBST(READLINE_CFLAGS)
 AC_SUBST(READLINE_LIBS)
 
+#
+# add compiler and linker flags
+#
 AX_CFLAGS_GCC_OPTION(-fvisibility=hidden, VISIBILITY_CFLAGS)
 AC_SUBST(VISIBILITY_CFLAGS)
 
