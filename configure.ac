@@ -22,7 +22,7 @@ PKG_CHECK_MODULES(GTKOSK, gtkosk)
 PKG_CHECK_MODULES(ALSA, alsa)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 
-PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.6)
+PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
@@ -141,16 +141,18 @@ AS_CASE([$with_handset_backend],
 # GPIO backend
 #
 enable_gpio_gpiodev=no
+enable_gpio_sysfs=no
 
 AC_ARG_WITH(gpio_backend,
-	[AS_HELP_STRING([--with-gpio-backend=@<:@none/gpiodev@:>@],
+	[AS_HELP_STRING([--with-gpio-backend=@<:@none/gpiodev/sysfs@:>@],
 		[Use the specified GPIO backend. [default=none]])
 	], [], [with_gpio_backend=none])
 
 AS_CASE([$with_gpio_backend],
 	[none], [],
 	[gpiodev], [enable_gpio_gpiodev=yes],
-	[AC_MSG_ERROR([Invalid GPIO backend: must be none or gpiodev])]
+	[sysfs], [enable_gpio_sysfs=yes],
+	[AC_MSG_ERROR([Invalid GPIO backend: must be none, gpiodev or sysfs])]
 )
 
 #
@@ -167,6 +169,7 @@ AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
+AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
 
 dnl --enable-webkit-js-api=(yes|no)
 AC_ARG_ENABLE([webkit-js-api],

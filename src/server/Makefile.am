@@ -139,7 +139,11 @@ endif # ENABLE_LIBPTIP
 if ENABLE_GPIO_GPIODEV
 libremote_control_la_SOURCES += gpio-gpiodev.c
 else
+if ENABLE_GPIO_SYSFS
+libremote_control_la_SOURCES += gpio-sysfs.c
+else
 libremote_control_la_SOURCES += gpio-null.c
+endif # ENABLE_GPIO_SYSFS
 endif # ENABLE_GPIO_GPIODEV
 
 remote-control-stub.c: $(srcdir)/../protocol.xml
