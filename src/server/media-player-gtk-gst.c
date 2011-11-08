@@ -78,6 +78,7 @@ struct media_player {
 	gchar *uri;         /* the last used uri */
 	int scale;          /* the scaler mode we have chosen */
 	int displaytype;
+	int have_nv_omx;
 };
 
 static void player_dump(struct media_player *player)
@@ -93,6 +94,7 @@ static void player_dump(struct media_player *player)
 	g_printf("   uri:................. [%s]\n", player->uri);
 	g_printf("   scale:............... %d\n", player->scale);
 	g_printf("   displaytype:......... %d\n", player->displaytype);
+	g_printf("   have_nv_omx:......... %d\n", player->have_nv_omx);
 }
 
 static enum media_player_state player_gst_state_2_media_state(GstState state)
@@ -170,7 +172,7 @@ static void player_set_x_overlay(struct media_player *player)
 	GstElement *video_sink;
 
 	g_debug(" > %s()", __func__);
-	video_sink = gst_bin_get_by_name(GST_BIN(player->pipeline), "gl-sink");
+	video_sink = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
 	if (!video_sink) {
 		g_warning("< %s(): not found", __func__);
 		return;
@@ -226,16 +228,14 @@ static void player_element_message_sync(GstBus *bus, GstMessage *msg, struct med
 	g_debug("    name: %s", name);
 
 	if (g_strcmp0(name, "prepare-xwindow-id") == 0) {
+		g_debug("    prepare-xwindow-id");
 		player_set_x_overlay(player);
-		g_debug("< %s(): prepare-xwindow-id", __func__);
-		return;
-	}
-
-	if (g_strcmp0(name, "have-xwindow-id") == 0) {
+	} else if (g_strcmp0(name, "have-xwindow-id") == 0) {
+		g_debug("    have-xwindow-id");
 		player_set_x_window_id(player,
 			gst_structure_get_value(msg->structure, "have-xwindow-id"));
-		g_debug("< %s(): have-xwindow-id", __func__);
-		return;
+	} else {
+		g_debug("   unable to handle");
 	}
 
 	g_debug("< %s()", __func__);
@@ -390,20 +390,21 @@ static int player_window_move(struct media_player *player,
 	g_debug("  > %s(player=%p, x=%d, y=%d, width=%d, height=%d)",
 		 __func__, player, x, y, width, height);
 
-	video = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
-	if (!video) {
-		g_warning("   no element video-out found");
-		g_debug("  < %s(): no data", __func__);
-		return -ENODATA;
+	if (player->have_nv_omx) {
+		video = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
+		if (!video) {
+			g_warning("   no element video-out found");
+			g_debug("  < %s(): no data", __func__);
+			return -ENODATA;
+		}
+
+		/* the height must be the last parameter we set, this is
+		 * because the plugin only updates x,y,w when h is set */
+		g_object_set(G_OBJECT(video), "output-pos-x", x,
+		             "output-pos-y", y, "output-size-width", width,
+		             "output-size-height", height, NULL);
+		gst_object_unref(video);
 	}
-
-	/* the height must be the last parameter we set, this is because the
-	 * plugin only updates x,y,w when h is set */
-	g_object_set(G_OBJECT(video), "output-pos-x", x, "output-pos-y", y,
-		"output-size-width", width, "output-size-height", height,
-		NULL);
-	gst_object_unref(video);
-
 	g_debug("  < %s()", __func__);
 	return 0;
 }
@@ -543,12 +544,12 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 {
 #if !HAVE_SOFTWARE_DECODER
 #define PIPELINE_INPUT_UDP  "udpsrc do-timestamp=1 name=source uri=%s "
-#define PIPELINE_INPUT_FILE "filesrc name=source location=%s"
-#define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s"
+#define PIPELINE_INPUT_FILE "filesrc name=source location=%s "
+#define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s "
 #define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! fakesink"
 
-#define PIPELINE_MANUAL \
-	" ! queue max-size-buffers=512 leaky=1 name=input-queue ! mpegtsdemux name=demux " \
+#define PIPELINE_MANUAL_NV_DEC \
+	"! queue max-size-buffers=512 leaky=1 name=input-queue ! mpegtsdemux name=demux " \
 		"demux. ! queue2 name=audio-queue ! mpegaudioparse name=audio-parser ! " \
 			"nv_omx_mp2dec name=audio-decoder ! " \
 				"audioconvert ! audioresample ! volume name=volume ! " \
@@ -557,6 +558,15 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 			"nv_omx_mpeg2dec name=video-decoder ! " \
 				"nv_gl_videosink name=video-out deint=3 " \
 					"rendertarget=%d displaytype=%d "
+
+#define PIPELINE_MANUAL_SW_DEC \
+	"! mpegtsdemux name=demux " \
+		" demux. ! queue name=audio-queue ! " \
+			"{ mpegaudioparse name=audio-parser ! ffdec_mp3 name=audio-decoder ! queue } " \
+			"! alsasink name=audio-out device=hw:%d,0 " \
+		" demux. ! queue name=video-queue ! " \
+			"{ ffdec_mpeg2video max-threads=0 name=video-decoder ! ffmpegcolorspace ! queue } " \
+			"! glimagesink name=video-out "
 
 	GError *error = NULL;
 	GstBus *bus;
@@ -573,13 +583,26 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 
 	if (uri == NULL) {
 		pipe = g_strdup(PIPELINE_INPUT_DUMMY);
-	} else if (g_str_has_prefix(uri, "udp://")) {
-		pipe = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL, uri, ad, rt, dt);
-	} else if (g_str_has_prefix(uri, "http://")) {
-		pipe = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL, uri, ad, rt, dt);
-	} else if (g_str_has_prefix(uri, "file://")) {
-		pipe = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL, uri, ad, rt, dt);
-	} else {
+	}
+	else if (g_str_has_prefix(uri, "udp://")) {
+		if (player->have_nv_omx)
+			pipe = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL_NV_DEC, uri, ad, rt, dt);
+		else
+			pipe = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL_SW_DEC, uri, ad);
+	}
+	else if (g_str_has_prefix(uri, "http://")) {
+		if (player->have_nv_omx)
+			pipe = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL_NV_DEC, uri, ad, rt, dt);
+		else
+			pipe = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL_SW_DEC, uri, ad);
+	}
+	else if (g_str_has_prefix(uri, "file://")) {
+		if (player->have_nv_omx)
+			pipe = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL_NV_DEC, uri, ad, rt, dt);
+		else
+			pipe = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL_SW_DEC, uri, ad);
+	}
+	else {
 		pipe = g_strdup(PIPELINE_INPUT_DUMMY);
 	}
 
@@ -723,6 +746,7 @@ static int player_create_pipeline(struct media_player *player, const gchar* uri)
 
 static int player_init_gstreamer(struct media_player *player)
 {
+	GstPluginFeature *feature;
 	GError *err = NULL;
 	/* FIXME: we need the real arguments, otherwise we can not pass things
 	 *        like GST_DEBUG=2 ??? */
@@ -740,6 +764,12 @@ static int player_init_gstreamer(struct media_player *player)
 	}
 
 	g_debug(" < %s()", __func__);
+	feature = gst_registry_lookup_feature(gst_registry_get_default(), "nv_gl_videosink");
+	if (feature) {
+		gst_object_unref(feature);
+		player->have_nv_omx = 1;
+	}
+
 	return 0;
 }
 
@@ -868,7 +898,7 @@ int media_player_create(struct media_player **playerp)
 	}
 
 	g_debug("   setting up gstreamer...");
-	ret = player_init_gstreamer(NULL);
+	ret = player_init_gstreamer(player);
 	if (ret < 0) {
 		g_warning("failed to initialize gstreamer %d", ret);
 		goto err;
@@ -967,7 +997,6 @@ int media_player_set_output_window(struct media_player *player,
                                    unsigned int height)
 {
 	GdkScreen *screen;
-	int scale;
 
 	if (!player)
 		return -EINVAL;
@@ -980,46 +1009,48 @@ int media_player_set_output_window(struct media_player *player,
 	 * gstreamer plugin we need to do this seperatly */
 	if (player->window) {
 		gdk_window_move_resize(player->window, x, y, width, height);
-//		gdk_window_clear(player->window);
+		gdk_window_clear(player->window);
 	}
 
-	scale = player->scale;
+	if (player->have_nv_omx) {
+		int scale = player->scale;
 
-	screen = gdk_screen_get_default();
-	if ((width >= gdk_screen_get_width(screen)) &&
-	    (height >= gdk_screen_get_height(screen)))
-		player->scale = SCALE_FULLSCREEN;
-	else
-		player->scale = SCALE_PREVIEW;
+		screen = gdk_screen_get_default();
+		if ((width >= gdk_screen_get_width(screen)) &&
+		    (height >= gdk_screen_get_height(screen)))
+			player->scale = SCALE_FULLSCREEN;
+		else
+			player->scale = SCALE_PREVIEW;
 
-	/* if the scale has changed we need to destroy the pipeline in order
-	 * to change the videosink we use.
-	 * we do this to get better scaling quality for fullscreen */
-	if (scale != player->scale && player->pipeline) {
-		GstState state = MEDIA_PLAYER_STOPPED;
-		gchar *uri;
-		int ret;
+		/* if the scale has changed we need to destroy the pipeline in
+		 * order to change the videosink we use.
+		 * we do this to get better scaling quality for fullscreen */
+		if (scale != player->scale && player->pipeline) {
+			GstState state = MEDIA_PLAYER_STOPPED;
+			gchar *uri;
+			int ret;
 
-		player_dump(player);
-		g_debug("   scale has changed! %s", player->uri);
+			player_dump(player);
+			g_debug("   scale has changed! %s", player->uri);
 
-		ret = gst_element_get_state(player->pipeline, &state, NULL, GST_SECOND);
-		if (ret != GST_STATE_CHANGE_SUCCESS) {
-			g_warning("unable to get state");
-			state = MEDIA_PLAYER_PAUSED;
+			ret = gst_element_get_state(player->pipeline, &state, NULL, GST_SECOND);
+			if (ret != GST_STATE_CHANGE_SUCCESS) {
+				g_warning("unable to get state");
+				state = MEDIA_PLAYER_PAUSED;
+			}
+
+			uri = g_strdup(player->uri);
+			ret = player_create_pipeline(player, uri);
+			ret = player_change_state(player, state);
+			g_free(uri);
 		}
 
-		uri = g_strdup(player->uri);
-		ret = player_create_pipeline(player, uri);
-		ret = player_change_state(player, state);
-		g_free(uri);
+		/* inform the gstreamer output window about the change. this
+		 * step will be removed as soon as the  have-x-window-handle
+ 		 * or prepare-x-window-handle notification is working */
+		if (player->scale != SCALE_FULLSCREEN && player->pipeline)
+			player_window_move(player, x, y, width, height);
 	}
-
-	/* inform the gstreamer output window about the change. this step will
-	 * be removed as soon as the  have-x-window-handle or
-	 * prepare-x-window-handle notification is working */
-	if (player->scale != SCALE_FULLSCREEN && player->pipeline)
-		player_window_move(player, x, y, width, height);
 
 	g_debug("< %s()", __func__);
 	return 0;
@@ -1031,12 +1062,12 @@ int media_player_play(struct media_player *player)
 	if (ret < 0)
 		return ret;
 
-#if HAVE_SOFTWARE_DECODER
-	gdk_threads_enter();
-	if (!gdk_window_is_visible(player->window))
-		gdk_window_show(player->window);
-	gdk_threads_leave();
-#endif
+	if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
+		gdk_threads_enter();
+		if (!gdk_window_is_visible(player->window))
+			gdk_window_show(player->window);
+		gdk_threads_leave();
+	}
 
 	/* update window pos */
 	player_window_update(player);
@@ -1045,22 +1076,23 @@ int media_player_play(struct media_player *player)
 
 int media_player_stop(struct media_player *player)
 {
-	int ret;
+	int ret = 0;
 	if (!player)
 		return -EINVAL;
 
-#if HAVE_SOFTWARE_DECODER
-	ret = player_change_state(player, GST_STATE_PAUSED);
+	if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
+		ret = player_change_state(player, GST_STATE_PAUSED);
 
-	gdk_threads_enter();
-	gdk_window_hide(player->window);
-	gdk_threads_leave();
-#else
-	gchar *uri = g_strdup(player->uri);
-	g_debug(" uri=%s", uri);
-	ret = player_destroy_pipeline(player);
-	player->uri = uri;
-#endif
+		gdk_threads_enter();
+		gdk_window_hide(player->window);
+		gdk_threads_leave();
+	} else {
+		gchar *uri = g_strdup(player->uri);
+		g_debug(" uri=%s", uri);
+		ret = player_destroy_pipeline(player);
+		player->uri = uri;
+	}
+
 	return ret;
 }
 
