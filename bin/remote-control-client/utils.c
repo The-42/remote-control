@@ -69,7 +69,7 @@ enum remote_mixer_control parse_mixer_control(const char *control)
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(mixer_control_map); i++) {
-		if (strcasecmp(mixer_control_map[i].name, "master") == 0) {
+		if (strcasecmp(control, mixer_control_map[i].name) == 0) {
 			ret = mixer_control_map[i].id;
 			break;
 		}
