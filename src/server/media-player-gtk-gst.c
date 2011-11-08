@@ -25,8 +25,11 @@
 
 #include <X11/extensions/Xrandr.h>
 
-#undef HAVE_SOFTWARE_DECODER
+#ifdef __x86_64__
+#define HAVE_SOFTWARE_DECODER 1
+#else
 #define HAVE_SOFTWARE_DECODER 0
+#endif
 
 //#include <gst/playback/gstplay-enum.h> // not public
 typedef enum {
@@ -196,10 +199,11 @@ static void player_set_x_window_id(struct media_player *player, const GValue *va
 
 	g_printf("    GValue=%p Type=%s", value, G_VALUE_TYPE_NAME(value));
 
+#ifndef __x86_64__
 	if (G_VALUE_HOLDS_POINTER(value)) {
 		player->xid = (XID)(*((guintptr)g_value_get_pointer(value)));
 	}
-
+#endif
 	if (G_VALUE_HOLDS_ULONG(value)) {
 		player->xid = (XID)g_value_get_ulong(value);
 	}
@@ -470,7 +474,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 #define PIPELINE_INPUT_UDP  "udpsrc name=source uri=%s "
 #define PIPELINE_INPUT_FILE "filesrc name=source location=%s"
 #define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s"
-#define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! glimagesink"
+#define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! fakesink"
 
 #define PIPELINE_AUTO \
 	" ! decodebin2 flags=0x57 "\
@@ -484,9 +488,8 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 		"demux. ! queue ! mpegaudioparse ! ffdec_mp3 ! " \
 			"autoaudiosink name=audio-out "
 
-#define PIPELINE PIPELINE_FFMPEG
+#define PIPELINE PIPELINE_AUTO
 
-	GstElement *out = NULL;
 	GError *error = NULL;
 	GstBus *bus;
 	gchar *pipe;
@@ -538,10 +541,11 @@ cleanup:
 
 static int player_create_manual_nvidia_pipeline(struct media_player *player, const gchar* uri)
 {
+#if !HAVE_SOFTWARE_DECODER
 #define PIPELINE_INPUT_UDP  "udpsrc do-timestamp=1 name=source uri=%s "
 #define PIPELINE_INPUT_FILE "filesrc name=source location=%s"
 #define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s"
-#define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! glimagesink"
+#define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! fakesink"
 
 #define PIPELINE_MANUAL \
 	" ! queue max-size-buffers=512 leaky=1 name=input-queue ! mpegtsdemux name=demux " \
@@ -602,6 +606,9 @@ cleanup:
 		g_error_free(error);
 	g_free(pipe);
 	return ret;
+#else
+	return -ENOSYS;
+#endif
 }
 
 static int player_create_automatic_nvidia_pipeline(struct media_player *player, const gchar* uri)
