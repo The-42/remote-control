@@ -66,7 +66,7 @@ int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep)
 	if (!smartcard || !typep)
 		return -EINVAL;
 
-	*typep = CARD_TYPE_I2C;
+	*typep = RPC_MACRO(CARD_TYPE_I2C);
 	return 0;
 }
 
