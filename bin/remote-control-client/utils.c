@@ -22,6 +22,13 @@ const char *true_values[] = { "true", "on", "yes", "enable" };
 const char *false_values[] = { "false", "off", "no", "disable" };
 
 static const struct {
+	enum remote_audio_state id;
+	const char* name;
+} audio_state_map[] = {
+	{ REMOTE_AUDIO_STATE_UNKNOWN, "unknown" },
+};
+
+static const struct {
 	enum remote_mixer_control id;
 	const char *name;
 } mixer_control_map[] = {
@@ -61,6 +68,42 @@ int parse_bool(const char *string, bool *res)
 	}
 
 	return -EILSEQ;
+}
+
+enum remote_audio_state parse_audio_state(const char *state)
+{
+	enum remote_audio_state ret = REMOTE_AUDIO_STATE_UNKNOWN;
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(audio_state_map); i++) {
+		if (strcasecmp(audio_state_map[i].name, state) == 0) {
+			ret = audio_state_map[i].id;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+int audio_state_name(enum remote_audio_state state, char *buffer, size_t size)
+{
+	unsigned int i;
+	int ret = 0;
+
+	for (i = 0; i < ARRAY_SIZE(audio_state_map); i++) {
+		if (audio_state_map[i].id == state) {
+			ret = snprintf(buffer, size, audio_state_map[i].name);
+			break;
+		}
+	}
+
+	if (ret == 0)
+		ret = snprintf(buffer, size, "unknown");
+
+	if (ret < 0)
+		ret = -errno;
+
+	return ret;
 }
 
 enum remote_mixer_control parse_mixer_control(const char *control)

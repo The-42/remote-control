@@ -61,6 +61,8 @@ enum remote_mixer_control parse_mixer_control(const char *control);
 int mixer_input_source_name(enum remote_mixer_input_source source,
 		char *buffer, size_t size);
 enum remote_mixer_input_source parse_mixer_input_source(const char *source);
+enum remote_audio_state parse_audio_state(const char *state);
+int audio_state_name(enum remote_audio_state state, char* buffer, size_t size);
 
 void print_hex_dump(FILE *fp, const char *prefix, int prefix_type,
 		int rowsize, int groupsize, const void *buf, size_t len,

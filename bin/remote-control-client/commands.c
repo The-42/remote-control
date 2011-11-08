@@ -65,6 +65,59 @@ const struct cli_command_info cmd_help _command_ = {
 };
 
 /*
+ * "audio-state" command
+ */
+static int exec_audio_state(struct cli *cli, int argc, char *argv[])
+{
+	enum remote_audio_state state = REMOTE_AUDIO_STATE_UNKNOWN;
+	char name[32];
+	int err;
+	int i;
+
+	switch (argc) {
+	case 1:
+		err = remote_audio_get_state(cli->client, &state);
+		if (err < 0) {
+			printf("%s\n", strerror(-err));
+			return err;
+		}
+		err = audio_state_name(state, name, sizeof(name));
+		if (err < 0)
+			printf("current state: unknown (id=%d)\n", state);
+		else
+			printf("current state: %s\n", name);
+		break;
+	case 2:
+		state = parse_audio_state(argv[1]);
+		err = remote_audio_set_state(cli->client, state, true);
+		if (err < 0) {
+			printf("%s\n", strerror(-err));
+			return err;
+		}
+		break;
+	default:
+		printf("ERROR: Invalid argument, valid states are:\n");
+		for (i = 0; i < REMOTE_AUDIO_STATE_MAX; i++) {
+			err = audio_state_name(state, name, sizeof(name));
+			if (err < 0)
+				break;
+			printf("   %s\n", name);
+		}
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_audio_state _command_ = {
+	.name = "audio-state",
+	.summary = "get or set the current audio state",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_audio_state
+};
+
+/*
  * "mixer-volume" command
  */
 static int exec_mixer_volume(struct cli *cli, int argc, char *argv[])
