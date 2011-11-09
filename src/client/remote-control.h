@@ -25,6 +25,11 @@
 #  endif
 #endif
 
+enum remote_audio_state {
+	REMOTE_AUDIO_STATE_UNKNOWN,
+	REMOTE_AUDIO_STATE_MAX
+};
+
 enum remote_mixer_control {
 	REMOTE_MIXER_CONTROL_UNKNOWN,
 	REMOTE_MIXER_CONTROL_PLAYBACK_MASTER,
@@ -110,6 +115,11 @@ remote_public int remote_register_event_handler(struct remote_client *client,
 		void *data);
 remote_public int remote_unregister_event_handler(struct remote_client *client,
 		enum remote_event queue, remote_event_handler_t handler);
+
+remote_public int remote_audio_set_state(void *priv,
+		enum remote_audio_state state, bool force);
+remote_public int remote_audio_get_state(void *priv,
+		enum remote_audio_state *statep);
 
 remote_public int remote_mixer_set_volume(void *priv,
 		enum remote_mixer_control control, uint8_t volume);

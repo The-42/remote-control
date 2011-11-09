@@ -14,6 +14,7 @@ libremote_control_la_CPPFLAGS = \
 	@GLIB_CFLAGS@
 
 libremote_control_la_SOURCES = \
+	audio.c \
 	backlight.c \
 	card.c \
 	events.c \
