@@ -78,7 +78,8 @@ struct media_player {
 	gchar *uri;         /* the last used uri */
 	int scale;          /* the scaler mode we have chosen */
 	int displaytype;
-	int have_nv_omx;
+	bool have_nv_omx;
+	bool radio;
 };
 
 static void player_dump(struct media_player *player)
@@ -95,6 +96,7 @@ static void player_dump(struct media_player *player)
 	g_printf("   scale:............... %d\n", player->scale);
 	g_printf("   displaytype:......... %d\n", player->displaytype);
 	g_printf("   have_nv_omx:......... %d\n", player->have_nv_omx);
+	g_printf("   radio:............... %d\n", player->radio);
 }
 
 static enum media_player_state player_gst_state_2_media_state(GstState state)
@@ -356,11 +358,11 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 	case GST_MESSAGE_ERROR:
 		ret = handle_message_error(player, message);
 	case GST_MESSAGE_EOS:
-#if HAVE_SOFTWARE_DECODER
-		gdk_threads_enter();
-		gdk_window_hide(player->window);
-		gdk_threads_leave();
-#endif
+		if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
+			gdk_threads_enter();
+			gdk_window_hide(player->window);
+			gdk_threads_leave();
+		}
 		g_debug("**  hiding window %s", ret == GST_BUS_PASS ? "" : "due error");
 		break;
 
@@ -548,22 +550,26 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 #define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s "
 #define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! fakesink"
 
-#define PIPELINE_MANUAL_NV_DEC \
+
+#define PIPELINE_MANUAL_NV_DEC_BASE \
 	"! queue max-size-buffers=512 leaky=1 name=input-queue ! mpegtsdemux name=demux " \
 		"demux. ! queue2 name=audio-queue ! mpegaudioparse name=audio-parser ! " \
 			"nv_omx_mp2dec name=audio-decoder ! " \
 				"audioconvert ! audioresample ! volume name=volume ! " \
-				"alsasink name=audio-out device=hw:%d,0 " \
+				"alsasink name=audio-out device=hw:%d,0 "
+
+#define PIPELINE_MANUAL_NV_DEC_VIDEO \
 		"demux. ! queue2 name=video-queue ! mpegvideoparse name=video-parser ! " \
 			"nv_omx_mpeg2dec name=video-decoder ! " \
 				"nv_gl_videosink name=video-out deint=3 " \
 					"rendertarget=%d displaytype=%d "
-
-#define PIPELINE_MANUAL_SW_DEC \
+#define PIPELINE_MANUAL_SW_DEC_BASE \
 	"! mpegtsdemux name=demux " \
 		" demux. ! queue name=audio-queue ! " \
 			"{ mpegaudioparse name=audio-parser ! ffdec_mp3 name=audio-decoder ! queue } " \
-			"! alsasink name=audio-out device=hw:%d,0 " \
+			"! alsasink name=audio-out device=hw:%d,0 "
+
+#define PIPELINE_MANUAL_SW_DEC_VIDEO \
 		" demux. ! queue name=video-queue ! " \
 			"{ ffdec_mpeg2video max-threads=0 name=video-decoder ! ffmpegcolorspace ! queue } " \
 			"! glimagesink name=video-out "
@@ -583,24 +589,69 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 
 	if (uri == NULL) {
 		pipe = g_strdup(PIPELINE_INPUT_DUMMY);
+		goto build_pipe;
 	}
-	else if (g_str_has_prefix(uri, "udp://")) {
-		if (player->have_nv_omx)
-			pipe = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL_NV_DEC, uri, ad, rt, dt);
-		else
-			pipe = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL_SW_DEC, uri, ad);
+
+	/* check for radio channels */
+	player->radio = (g_strrstr(uri, "-radio") != NULL);
+
+	if (g_str_has_prefix(uri, "udp://")) {
+		gchar *video = NULL;
+		gchar *base = NULL;
+
+		if (player->have_nv_omx) {
+			base = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL_NV_DEC_BASE, uri, ad);
+			if (!player->radio)
+				video = g_strdup_printf(PIPELINE_MANUAL_NV_DEC_VIDEO, rt, dt);
+		} else {
+			base = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE_MANUAL_SW_DEC_BASE, uri, ad);
+			if (!player->radio)
+				video = g_strdup(PIPELINE_MANUAL_SW_DEC_VIDEO);
+		}
+
+		pipe = g_strconcat(base, video, NULL);
+
+		g_free(video);
+		g_free(base);
 	}
 	else if (g_str_has_prefix(uri, "http://")) {
-		if (player->have_nv_omx)
-			pipe = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL_NV_DEC, uri, ad, rt, dt);
-		else
-			pipe = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL_SW_DEC, uri, ad);
+		gchar *video = NULL;
+		gchar *base = NULL;
+
+		if (player->have_nv_omx) {
+			base = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL_NV_DEC_BASE, uri, ad);
+			if (!player->radio)
+				video = g_strdup_printf(PIPELINE_MANUAL_NV_DEC_VIDEO, rt, dt);
+		} else {
+			base = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE_MANUAL_SW_DEC_BASE, uri, ad);
+			if (!player->radio)
+				video = g_strdup(PIPELINE_MANUAL_SW_DEC_VIDEO);
+		}
+
+		pipe = g_strconcat(base, video, NULL);
+
+		g_free(video);
+		g_free(base);
 	}
 	else if (g_str_has_prefix(uri, "file://")) {
-		if (player->have_nv_omx)
-			pipe = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL_NV_DEC, uri, ad, rt, dt);
-		else
-			pipe = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL_SW_DEC, uri, ad);
+		const gchar *trunc_uri = uri + 7;
+		gchar *video = NULL;
+		gchar *base = NULL;
+
+		if (player->have_nv_omx) {
+			base = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL_NV_DEC_BASE, trunc_uri, ad);
+			if (!player->radio)
+				video = g_strdup_printf(PIPELINE_MANUAL_NV_DEC_VIDEO, rt, dt);
+		} else {
+			base = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE_MANUAL_SW_DEC_BASE, trunc_uri, ad);
+			if (!player->radio)
+				video = g_strdup(PIPELINE_MANUAL_SW_DEC_VIDEO);
+		}
+
+		pipe = g_strconcat(base, video, NULL);
+
+		g_free(video);
+		g_free(base);
 	}
 	else {
 		pipe = g_strdup(PIPELINE_INPUT_DUMMY);
@@ -608,6 +659,7 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 
 	g_debug(pipe);
 
+build_pipe:
 	player->pipeline = gst_parse_launch_full(pipe, NULL, GST_PARSE_FLAG_FATAL_ERRORS, &error);
 	if (!player->pipeline) {
 		g_warning("no pipe: %s\n", error->message);
@@ -1009,7 +1061,7 @@ int media_player_set_output_window(struct media_player *player,
 	 * gstreamer plugin we need to do this seperatly */
 	if (player->window) {
 		gdk_window_move_resize(player->window, x, y, width, height);
-		gdk_window_clear(player->window);
+		//gdk_window_clear(player->window);
 	}
 
 	if (player->have_nv_omx) {
@@ -1064,8 +1116,10 @@ int media_player_play(struct media_player *player)
 
 	if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
 		gdk_threads_enter();
-		if (!gdk_window_is_visible(player->window))
+		if (!gdk_window_is_visible(player->window) && !player->radio)
 			gdk_window_show(player->window);
+		else
+			gdk_window_hide(player->window);
 		gdk_threads_leave();
 	}
 
