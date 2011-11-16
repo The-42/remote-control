@@ -149,8 +149,16 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		libvlc_media_release(player->media);
 
 	if (uri) {
-		gchar *location = (gchar *)uri;
-		GURI *url = g_uri_new(uri);
+		/*
+		 * URI is of format:
+		 * URI option_1 option_x option_n
+		 * split it at " " delimiter, to set options
+		 */
+		gchar **split_uri = g_strsplit(uri, " ", 0);
+		gchar *location = split_uri[0];
+		gchar **option = &split_uri[0];
+
+		GURI *url = g_uri_new(location);
 		const gchar *scheme;
 
 		scheme = g_uri_get_scheme(url);
@@ -173,8 +181,14 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		gdk_window_hide(player->window);
 		player->media = libvlc_media_new_location(player->vlc, location);
 
-		if (location != uri)
+		if (location != split_uri[0])
 			g_free(location);
+
+		/*
+		 * set media options, passed by the uri
+		 */
+		while (++option && *option)
+			libvlc_media_add_option(player->media, *option);
 
 		if (g_str_equal(scheme, "v4l2")) {
 			/* TODO: autodetect the V4L2 and ALSA devices */
@@ -185,6 +199,7 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 			libvlc_video_set_deinterlace(player->player, "linear");
 		}
 
+		g_strfreev(split_uri);
 		g_object_unref(url);
 	}
 
