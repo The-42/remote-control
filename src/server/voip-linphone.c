@@ -250,6 +250,7 @@ static gpointer voip_thread(gpointer data)
 
 int voip_create(struct voip **voipp, struct rpc_server *server)
 {
+	const char *factory_config = SYSCONF_DIR "/linphone.conf";
 	struct remote_control *rc = rpc_server_priv(server);
 	struct voip *voip;
 
@@ -262,7 +263,7 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 
 	memset(voip, 0, sizeof(*voip));
 
-	voip->core = linphone_core_new(&vtable, NULL, NULL, rc);
+	voip->core = linphone_core_new(&vtable, NULL, factory_config, rc);
 	if (!voip->core) {
 		free(voip);
 		return -ENOMEM;

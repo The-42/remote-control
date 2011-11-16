@@ -2,6 +2,7 @@ noinst_LTLIBRARIES = \
 	libremote-control.la
 
 libremote_control_la_CFLAGS = \
+	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
 	@LIBNL_CFLAGS@ \
 	@GLIB_CFLAGS@ \
