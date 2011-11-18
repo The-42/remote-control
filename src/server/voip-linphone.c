@@ -17,11 +17,9 @@
 #include "remote-control.h"
 
 struct voip {
+	GSource *timeout;
 	LinphoneCore *core;
 	gchar *contact;
-
-	GThread *thread;
-	bool done;
 };
 
 static void linphone_global_state_changed_cb(LinphoneCore *core, LinphoneGlobalState state, const char *message)
@@ -236,16 +234,13 @@ static const LinphoneCoreVTable vtable = {
 	.show = linphone_show_cb,
 };
 
-static gpointer voip_thread(gpointer data)
+static gboolean voip_timeout(gpointer user_data)
 {
-	struct voip *voip = data;
+	struct voip *voip = user_data;
 
-	while (!voip->done) {
-		linphone_core_iterate(voip->core);
-		g_usleep(50000);
-	}
+	linphone_core_iterate(voip->core);
 
-	return NULL;
+	return TRUE;
 }
 
 int voip_create(struct voip **voipp, struct rpc_server *server)
@@ -257,17 +252,26 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 	if (!voipp)
 		return -EINVAL;
 
-	voip = malloc(sizeof(*voip));
+	voip = g_new0(struct voip, 1);
 	if (!voip)
 		return -ENOMEM;
 
-	memset(voip, 0, sizeof(*voip));
+	voip->timeout = g_timeout_source_new(50);
+	if (!voip->timeout) {
+		g_free(voip);
+		return -ENOMEM;
+	}
+
+	g_source_set_callback(voip->timeout, voip_timeout, voip, NULL);
 
 	voip->core = linphone_core_new(&vtable, NULL, factory_config, rc);
 	if (!voip->core) {
-		free(voip);
+		g_source_unref(voip->timeout);
+		g_free(voip);
 		return -ENOMEM;
 	}
+
+	voip->contact = NULL;
 
 	linphone_core_set_ring(voip->core, NULL);
 	/* FIXME: For now set playback volume to 100% so we can ajust the
@@ -278,12 +282,6 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 	// volume of the soundcard. which we can control via alsa.
 	//linphone_core_set_play_level(voip->core, 100);
 
-	voip->thread = g_thread_create(voip_thread, voip, TRUE, NULL);
-	if (!voip->thread) {
-		g_error("failed to create thread");
-		return -ENOMEM;
-	}
-
 	*voipp = voip;
 	return 0;
 }
@@ -293,19 +291,17 @@ int voip_free(struct voip *voip)
 	if (!voip)
 		return -EINVAL;
 
-	voip->done = true;
-	g_thread_join(voip->thread);
-
-	g_free(voip->contact);
 	linphone_core_terminate_all_calls(voip->core);
 	linphone_core_destroy(voip->core);
-	free(voip);
+	g_free(voip->contact);
+	g_free(voip);
+
 	return 0;
 }
 
 GSource *voip_get_source(struct voip *voip)
 {
-	return NULL;
+	return voip ? voip->timeout : NULL;
 }
 
 static int is_valid_string(const char* str)
