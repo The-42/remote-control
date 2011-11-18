@@ -217,6 +217,7 @@ struct voip;
 
 int voip_create(struct voip **voipp, struct rpc_server *server);
 int voip_free(struct voip *voip);
+GSource *voip_get_source(struct voip *voip);
 int voip_login(struct voip *voip, const char *server, uint16_t port,
 		const char *username, const char *password);
 int voip_logout(struct voip *voip);

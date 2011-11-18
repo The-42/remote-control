@@ -23,6 +23,11 @@ int voip_free(struct voip *voip)
 	return 0;
 }
 
+GSource *voip_get_source(struct voip *voip)
+{
+	return NULL;
+}
+
 int voip_login(struct voip *voip, const char *host, uint16_t port,
 		const char *username, const char *password)
 {

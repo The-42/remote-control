@@ -363,6 +363,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	source = voip_get_source(rc->voip);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
+
 	err = net_create(&rc->net, server);
 	if (err < 0) {
 		g_error("net_create(): %s", strerror(-err));

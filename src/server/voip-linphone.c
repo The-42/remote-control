@@ -303,6 +303,11 @@ int voip_free(struct voip *voip)
 	return 0;
 }
 
+GSource *voip_get_source(struct voip *voip)
+{
+	return NULL;
+}
+
 static int is_valid_string(const char* str)
 {
 	if (!str)
