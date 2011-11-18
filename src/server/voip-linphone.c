@@ -297,6 +297,7 @@ int voip_free(struct voip *voip)
 	g_thread_join(voip->thread);
 
 	g_free(voip->contact);
+	linphone_core_terminate_all_calls(voip->core);
 	linphone_core_destroy(voip->core);
 	free(voip);
 	return 0;
