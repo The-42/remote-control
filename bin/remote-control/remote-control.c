@@ -12,7 +12,6 @@
 
 #include <errno.h>
 #include <libgen.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,12 +19,11 @@
 #include <X11/Xlib.h>
 #include <librpc.h>
 #include <glib.h>
+#include <glib-unix.h>
 
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
-
-static GMainLoop *g_loop = NULL;
 
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
@@ -141,27 +139,76 @@ static void g_dbus_name_lost(GDBusConnection *connection, const gchar *name,
 }
 #endif /* ENABLE_DBUS */
 
-static void handle_signal(int signum)
+struct signal_context {
+	GMainLoop *loop;
+	gint signum;
+};
+
+static struct signal_context *signal_context_new(gint signum, GMainLoop *loop)
 {
-	g_debug("signal: %d", signum);
-	g_main_loop_quit(g_loop);
+	struct signal_context *context;
+
+	context = g_new(struct signal_context, 1);
+	if (!context)
+		return NULL;
+
+	context->signum = signum;
+	context->loop = loop;
+
+	return context;
 }
 
-gboolean setup_signal_handler(void)
+static void signal_context_free(gpointer data)
 {
-	struct sigaction sa;
+	struct signal_context *context = data;
 
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = handle_signal;
+	g_free(context);
+}
 
-	if (sigaction(SIGHUP, &sa, NULL) < 0)
+static gboolean handle_signal(gpointer user_data)
+{
+	struct signal_context *ctx = user_data;
+
+	g_debug("interrupted by signal %d, terminating", ctx->signum);
+	g_main_loop_quit(ctx->loop);
+
+	return TRUE;
+}
+
+static gboolean setup_signal_handler(gint signum, GMainLoop *loop)
+{
+	struct signal_context *signal;
+	GMainContext *context;
+	GSource *source;
+
+	source = g_unix_signal_source_new(signum);
+	if (!source)
 		return FALSE;
 
-	if (sigaction(SIGINT, &sa, NULL) < 0)
+	signal = signal_context_new(signum, loop);
+	if (!signal) {
+		g_source_unref(source);
 		return FALSE;
+	}
 
-	if (sigaction(SIGTERM, &sa, NULL) < 0)
-		return FALSE;
+	g_source_set_callback(source, handle_signal, signal,
+			signal_context_free);
+	context = g_main_loop_get_context(loop);
+	g_source_attach(source, context);
+	g_source_unref(source);
+
+	return TRUE;
+}
+
+static gboolean setup_signal_handlers(GMainLoop *loop)
+{
+	static const gint signals[] = { SIGHUP, SIGINT, SIGTERM };
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS(signals); i++) {
+		if (!setup_signal_handler(signals[i], loop))
+			return FALSE;
+	}
 
 	return TRUE;
 }
@@ -289,9 +336,9 @@ int main(int argc, char *argv[])
 			"Print version information and exit", NULL },
 		{ NULL, 0, 0, 0, NULL, NULL, NULL }
 	};
+	GMainContext *context = NULL;
 	struct remote_control *rc;
 	GOptionContext *options;
-	GMainContext *context;
 	GError *error = NULL;
 	GtkWidget *window;
 	GMainLoop *loop;
@@ -328,8 +375,14 @@ int main(int argc, char *argv[])
 		return EXIT_SUCCESS;
 	}
 
-	if (!setup_signal_handler()) {
-		g_print("failed to setup signal handler\n");
+	loop = g_main_loop_new(NULL, FALSE);
+	g_assert(loop != NULL);
+
+	context = g_main_loop_get_context(loop);
+	g_assert(context != NULL);
+
+	if (!setup_signal_handlers(loop)) {
+		g_print("failed to setup signal handlers\n");
 		return EXIT_FAILURE;
 	}
 
@@ -344,12 +397,6 @@ int main(int argc, char *argv[])
 
 	if (!g_key_file_load_from_file(conf, config_file, G_KEY_FILE_NONE, NULL))
 		g_warning("failed to load configuration file %s", config_file);
-
-	loop = g_loop = g_main_loop_new(NULL, FALSE);
-	g_assert(loop != NULL);
-
-	context = g_main_loop_get_context(loop);
-	g_assert(context != NULL);
 
 #ifdef ENABLE_DBUS
 	owner = g_bus_own_name(G_BUS_TYPE_SESSION, REMOTE_CONTROL_BUS_NAME,
