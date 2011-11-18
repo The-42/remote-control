@@ -18,7 +18,7 @@
 
 struct voip {
 	LinphoneCore *core;
-	char *contact;
+	gchar *contact;
 
 	GThread *thread;
 	bool done;
@@ -88,7 +88,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 		event_manager_report(manager, &event);
 
 		if (voip->contact) {
-			ms_free(voip->contact);
+			g_free(voip->contact);
 			voip->contact = NULL;
 		}
 
@@ -99,7 +99,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 				name = linphone_address_get_username(address);
 
 			if (name)
-				voip->contact = strdup(name);
+				voip->contact = g_strdup(name);
 		}
 		break;
 
@@ -296,7 +296,7 @@ int voip_free(struct voip *voip)
 	voip->done = true;
 	g_thread_join(voip->thread);
 
-	ms_free(voip->contact);
+	g_free(voip->contact);
 	linphone_core_destroy(voip->core);
 	free(voip);
 	return 0;
@@ -457,7 +457,7 @@ int voip_accept(struct voip *voip, char **caller)
 		return err;
 
 	if (caller && voip->contact)
-		*caller = strdup(voip->contact);
+		*caller = g_strdup(voip->contact);
 
 	return 0;
 }
