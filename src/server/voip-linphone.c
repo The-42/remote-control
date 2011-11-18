@@ -324,9 +324,6 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 	char *identity;
 	int len;
 
-	g_debug("> %s(voip=%p, host=%s, port=%u, username=%s, password=%s)",
-			__func__, voip, host, port, username, password);
-
 	if (!voip)
 		return -EINVAL;
 
