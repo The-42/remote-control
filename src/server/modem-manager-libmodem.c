@@ -471,7 +471,7 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 
 	err = modem_manager_open(manager);
 	if (err < 0) {
-		if (err != -ENOENT)
+		if (err != -ENODEV)
 			goto close_pipe;
 	} else {
 		manager->thread = g_thread_create(modem_manager_thread,
