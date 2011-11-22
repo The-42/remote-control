@@ -406,7 +406,7 @@ static int modem_manager_open(struct modem_manager *manager)
 		int err;
 
 		err = modem_open(&manager->modem, desc->device);
-		if (err == -ENOENT)
+		if (err < 0)
 			continue;
 
 		g_debug("modem: using device %s", desc->device);
