@@ -526,7 +526,9 @@ int modem_manager_free(struct modem_manager *manager)
 int modem_manager_call(struct modem_manager *manager, const char *number)
 {
 	g_return_val_if_fail(manager != NULL, -EINVAL);
-	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
+
+	if (!manager->modem)
+		return -ENODEV;
 
 	g_free(manager->number);
 	manager->number = g_strdup(number);
@@ -539,7 +541,9 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 int modem_manager_accept(struct modem_manager *manager)
 {
 	g_return_val_if_fail(manager != NULL, -EINVAL);
-	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
+
+	if (!manager->modem)
+		return -ENODEV;
 
 	modem_manager_change_state(manager, MODEM_STATE_INCOMING, TRUE);
 
@@ -549,7 +553,9 @@ int modem_manager_accept(struct modem_manager *manager)
 int modem_manager_terminate(struct modem_manager *manager)
 {
 	g_return_val_if_fail(manager != NULL, -EINVAL);
-	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
+
+	if (!manager->modem)
+		return -ENODEV;
 
 	if (manager->state == MODEM_STATE_IDLE) {
 		g_debug("modem-manager-libmodem: no call to terminate");
@@ -564,7 +570,9 @@ int modem_manager_terminate(struct modem_manager *manager)
 int modem_manager_get_state(struct modem_manager *manager, enum modem_state *statep)
 {
 	g_return_val_if_fail((manager != NULL) && (statep != NULL), -EINVAL);
-	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
+
+	if (!manager->modem)
+		return -ENODEV;
 
 	*statep = manager->state;
 	return 0;
