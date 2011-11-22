@@ -403,9 +403,10 @@ static int modem_manager_open(struct modem_manager *manager)
 		const char *device;
 		unsigned long flags;
 		unsigned int vls;
+		unsigned int atl;
 	} modem_table[] = {
-		{ "/dev/ttyACM0", 0, 1 },
-		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13 },
+		{ "/dev/ttyACM0", 0, 1, 0 },
+		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13, 3 },
 	};
 	int ret = -ENODEV;
 	guint i;
@@ -431,6 +432,7 @@ static int modem_manager_open(struct modem_manager *manager)
 
 		params.flags |= desc->flags;
 		params.vls = desc->vls;
+		params.atl = desc->atl;
 
 		err = modem_set_params(manager->modem, &params);
 		if (err < 0)
