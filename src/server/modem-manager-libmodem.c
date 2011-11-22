@@ -551,6 +551,11 @@ int modem_manager_terminate(struct modem_manager *manager)
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
+	if (manager->state == MODEM_STATE_IDLE) {
+		g_debug("modem-manager-libmodem: no call to terminate");
+		return -ENOTCONN;
+	}
+
 	modem_manager_change_state(manager, MODEM_STATE_TERMINATE, TRUE);
 
 	return 0;
