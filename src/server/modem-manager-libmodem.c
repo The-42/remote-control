@@ -23,10 +23,14 @@ struct modem_manager {
 	struct remote_control *rc;
 	struct modem *modem;
 	struct modem_call *call;
+	enum modem_state next_state;
 	enum modem_state state;
+	GMutex *lock;
+	GCond *cond;
 	GThread *thread;
 	gchar *number;
 	gboolean done;
+	gboolean ack;
 	int wakeup[2];
 	unsigned long flags;
 };
@@ -51,12 +55,32 @@ static int modem_manager_change_state(struct modem_manager *manager,
 {
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
-	manager->state = state;
+	if (state == manager->state) {
+		g_debug("modem-manager-libmodem: already in state %d",
+				state);
+		return 0;
+	}
+
+	manager->next_state = state;
 
 	if (wakeup) {
 		int err = modem_manager_wakeup(manager);
-		if (err < 0)
+		if (err < 0) {
 			g_debug("wakeup(): %s", g_strerror(-err));
+			return err;
+		}
+
+		g_mutex_lock(manager->lock);
+
+		while (manager->state != state)
+			g_cond_wait(manager->cond, manager->lock);
+
+		manager->ack = TRUE;
+		g_cond_signal(manager->cond);
+		g_mutex_unlock(manager->lock);
+	} else {
+		/* nothing to do, transition immediately */
+		manager->state = state;
 	}
 
 	return 0;
@@ -116,7 +140,8 @@ static int modem_manager_setup_call(struct modem_manager *manager)
 	return 0;
 }
 
-static int modem_manager_process_incoming(struct modem_manager *manager)
+static int modem_manager_process_incoming(struct modem_manager *manager,
+		enum modem_state *next_state)
 {
 	int err;
 
@@ -136,12 +161,15 @@ static int modem_manager_process_incoming(struct modem_manager *manager)
 		}
 	}
 
-	modem_manager_change_state(manager, MODEM_STATE_ACTIVE, FALSE);
+	if (next_state)
+		*next_state = MODEM_STATE_ACTIVE;
+
 	g_debug("< %s()", __func__);
 	return 0;
 }
 
-static int modem_manager_process_outgoing(struct modem_manager *manager)
+static int modem_manager_process_outgoing(struct modem_manager *manager,
+		enum modem_state *next_state)
 {
 	int err;
 
@@ -161,12 +189,15 @@ static int modem_manager_process_outgoing(struct modem_manager *manager)
 		}
 	}
 
-	modem_manager_change_state(manager, MODEM_STATE_ACTIVE, FALSE);
+	if (next_state)
+		*next_state = MODEM_STATE_ACTIVE;
+
 	g_debug("< %s()", __func__);
 	return 0;
 }
 
-static int modem_manager_process_terminate(struct modem_manager *manager)
+static int modem_manager_process_terminate(struct modem_manager *manager,
+		enum modem_state *next_state)
 {
 	int err;
 
@@ -183,7 +214,8 @@ static int modem_manager_process_terminate(struct modem_manager *manager)
 	modem_call_free(manager->call);
 	manager->call = NULL;
 
-	modem_manager_change_state(manager, MODEM_STATE_IDLE, FALSE);
+	if (next_state)
+		*next_state = MODEM_STATE_IDLE;
 
 	g_debug("< %s()", __func__);
 	return 0;
@@ -255,6 +287,7 @@ static int handle_modem(struct modem_manager *manager)
 
 static int handle_wakeup(struct modem_manager *manager)
 {
+	enum modem_state next = manager->next_state;
 	char data = 0;
 	int err;
 
@@ -262,9 +295,9 @@ static int handle_wakeup(struct modem_manager *manager)
 	if (err < 0)
 		g_debug("%s(): read(): %s", __func__, g_strerror(errno));
 
-	switch (manager->state) {
+	switch (manager->next_state) {
 	case MODEM_STATE_INCOMING:
-		err = modem_manager_process_incoming(manager);
+		err = modem_manager_process_incoming(manager, &next);
 		if (err < 0) {
 			g_warning("modem_manager_process_incoming(): %s",
 					g_strerror(-err));
@@ -272,7 +305,7 @@ static int handle_wakeup(struct modem_manager *manager)
 		break;
 
 	case MODEM_STATE_OUTGOING:
-		err = modem_manager_process_outgoing(manager);
+		err = modem_manager_process_outgoing(manager, &next);
 		if (err < 0) {
 			g_warning("modem_manager_process_outgoing(): %s",
 					g_strerror(-err));
@@ -280,7 +313,7 @@ static int handle_wakeup(struct modem_manager *manager)
 		break;
 
 	case MODEM_STATE_TERMINATE:
-		err = modem_manager_process_terminate(manager);
+		err = modem_manager_process_terminate(manager, &next);
 		if (err < 0) {
 			g_warning("modem_manager_process_terminate(): %s",
 					g_strerror(-err));
@@ -292,9 +325,34 @@ static int handle_wakeup(struct modem_manager *manager)
 		break;
 	}
 
+	g_mutex_lock(manager->lock);
+	manager->state = manager->next_state;
+	manager->ack = FALSE;
+	g_cond_signal(manager->cond);
+	g_mutex_unlock(manager->lock);
+
+	g_thread_yield();
+
+	g_mutex_lock(manager->lock);
+
+	while (!manager->ack)
+		g_cond_wait(manager->cond, manager->lock);
+
+	g_mutex_unlock(manager->lock);
+
+	if (next != manager->state) {
+		g_mutex_lock(manager->lock);
+		modem_manager_change_state(manager, next, FALSE);
+		g_mutex_unlock(manager->lock);
+	}
+
 	return 0;
 }
 
+/*
+ * TODO: Get rid of the modem_manager_thread() by moving the code out into
+ *       a GSource that can be integrated with the GLib main loop.
+ */
 static gpointer modem_manager_thread(gpointer data)
 {
 	struct modem_manager *manager = data;
@@ -317,6 +375,9 @@ static gpointer modem_manager_thread(gpointer data)
 					g_strerror(errno));
 			break;
 		}
+
+		if (manager->done)
+			break;
 
 		/* handle input from the modem */
 		if (fds[0].revents & G_IO_IN) {
@@ -394,32 +455,57 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	if (!manager)
 		return -ENOMEM;
 
+	manager->lock = g_mutex_new();
+	if (!manager->lock) {
+		err = -ENOMEM;
+		goto free;
+	}
+
+	manager->cond = g_cond_new();
+	if (!manager->cond) {
+		err = -ENOMEM;
+		goto free_lock;
+	}
+
 	err = pipe2(manager->wakeup, O_NONBLOCK | O_CLOEXEC);
-	if (err < 0)
-		return -errno;
+	if (err < 0) {
+		err = -errno;
+		goto free_cond;
+	}
 
 	manager->rc = rpc_server_priv(server);
 	manager->state = MODEM_STATE_IDLE;
 	manager->done = FALSE;
+	manager->ack = FALSE;
 
 	err = modem_manager_open(manager);
 	if (err < 0) {
-		if (err != -ENOENT) {
-			free(manager);
-			return err;
-		}
+		if (err != -ENOENT)
+			goto close_pipe;
 	} else {
 		manager->thread = g_thread_create(modem_manager_thread,
 				manager, TRUE, NULL);
 		if (!manager->thread) {
-			modem_close(manager->modem);
-			free(manager);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto close;
 		}
 	}
 
 	*managerp = manager;
 	return 0;
+
+close:
+	modem_close(manager->modem);
+close_pipe:
+	close(manager->wakeup[0]);
+	close(manager->wakeup[1]);
+free_cond:
+	g_cond_free(manager->cond);
+free_lock:
+	g_mutex_free(manager->lock);
+free:
+	free(manager);
+	return err;
 }
 
 int modem_manager_free(struct modem_manager *manager)
@@ -434,6 +520,9 @@ int modem_manager_free(struct modem_manager *manager)
 
 	close(manager->wakeup[0]);
 	close(manager->wakeup[1]);
+
+	g_cond_free(manager->cond);
+	g_mutex_free(manager->lock);
 
 	modem_call_free(manager->call);
 	modem_close(manager->modem);
