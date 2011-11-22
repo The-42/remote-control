@@ -145,8 +145,6 @@ static int modem_manager_process_incoming(struct modem_manager *manager,
 {
 	int err;
 
-	g_debug("> %s(manager=%p)", __func__, manager);
-
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	err = modem_accept(manager->modem);
@@ -164,7 +162,6 @@ static int modem_manager_process_incoming(struct modem_manager *manager,
 	if (next_state)
 		*next_state = MODEM_STATE_ACTIVE;
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
@@ -172,8 +169,6 @@ static int modem_manager_process_outgoing(struct modem_manager *manager,
 		enum modem_state *next_state)
 {
 	int err;
-
-	g_debug("> %s(manager=%p)", __func__, manager);
 
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
@@ -192,7 +187,6 @@ static int modem_manager_process_outgoing(struct modem_manager *manager,
 	if (next_state)
 		*next_state = MODEM_STATE_ACTIVE;
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
@@ -201,7 +195,6 @@ static int modem_manager_process_terminate(struct modem_manager *manager,
 {
 	int err;
 
-	g_debug("> %s(manager=%p)", __func__, manager);
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	err = modem_terminate(manager->modem);
@@ -217,7 +210,6 @@ static int modem_manager_process_terminate(struct modem_manager *manager,
 	if (next_state)
 		*next_state = MODEM_STATE_IDLE;
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
@@ -225,8 +217,6 @@ static int modem_manager_process_idle(struct modem_manager *manager)
 {
 	char buf[16];
 	int err;
-
-	g_debug("> %s(manager=%p)", __func__, manager);
 
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
@@ -250,7 +240,6 @@ static int modem_manager_process_idle(struct modem_manager *manager)
 		event_manager_report(events, &event);
 	}
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
@@ -536,8 +525,6 @@ int modem_manager_free(struct modem_manager *manager)
 
 int modem_manager_call(struct modem_manager *manager, const char *number)
 {
-	g_debug("> %s(manager=%p, number=%s)", __func__, manager, number);
-
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
@@ -546,33 +533,26 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 
 	modem_manager_change_state(manager, MODEM_STATE_OUTGOING, TRUE);
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
 int modem_manager_accept(struct modem_manager *manager)
 {
-	g_debug("> %s(manager=%p)", __func__, manager);
-
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
 	modem_manager_change_state(manager, MODEM_STATE_INCOMING, TRUE);
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
 int modem_manager_terminate(struct modem_manager *manager)
 {
-	g_debug("> %s(manager=%p)", __func__, manager);
-
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 	g_return_val_if_fail(manager->modem != NULL, -ENODEV);
 
 	modem_manager_change_state(manager, MODEM_STATE_TERMINATE, TRUE);
 
-	g_debug("< %s()", __func__);
 	return 0;
 }
 
