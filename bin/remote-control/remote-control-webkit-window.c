@@ -5,8 +5,9 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-#if HAVE_CONFIG_H
-#include "config.h"
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
 #endif
 
 #include <errno.h>
@@ -16,11 +17,12 @@
 #include <sys/wait.h>
 
 #include "remote-control-webkit-window.h"
-#ifdef ENABLE_WEBKIT_JS_API
-#include "remote-control-webkit-jscript.h"
-#endif
 #include "utils.h"
 #include "guri.h"
+
+#ifdef ENABLE_WEBKIT_JS_API
+#  include "remote-control-webkit-jscript.h"
+#endif
 
 G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_WINDOW);
 
