@@ -26,6 +26,8 @@ G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_
 
 #define REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), REMOTE_CONTROL_TYPE_WEBKIT_WINDOW, RemoteControlWebkitWindowPrivate))
 
+#define WEBKIT_RELOAD_TIMEOUT 3
+
 struct _RemoteControlWebkitWindowPrivate {
 	WebKitWebView *webkit;
 	GMainContext *context;
@@ -153,6 +155,39 @@ static gboolean navigation_policy(WebKitWebView *webkit,
 	return TRUE;
 }
 
+static gboolean remote_control_webkit_reload(gpointer user_data)
+{
+	webkit_web_frame_reload(WEBKIT_WEB_FRAME(user_data));
+	return FALSE;
+}
+
+static gboolean webkit_handle_load_error(WebKitWebView *webkit,
+		WebKitWebFrame *frame, const gchar *uri, GError *error,
+		gpointer user_data)
+{
+	gboolean need_reload = FALSE;
+
+	g_debug("%s(): %s: %d: %s (%s)", __func__,
+			g_quark_to_string(error->domain),
+			error->code, error->message, uri);
+
+	if (error->domain == WEBKIT_POLICY_ERROR) {
+		if (error->code == WEBKIT_POLICY_ERROR_CANNOT_SHOW_URL)
+			need_reload = TRUE;
+	}
+
+	if (error->domain == SOUP_HTTP_ERROR)
+		need_reload = TRUE;
+
+	if (need_reload) {
+		g_debug("%s(): scheduling reload of %s...", __func__, uri);
+		g_timeout_add_seconds(WEBKIT_RELOAD_TIMEOUT,
+				remote_control_webkit_reload, frame);
+	}
+
+	return FALSE;
+}
+
 static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 {
 	RemoteControlWebkitWindowPrivate *priv;
@@ -186,6 +221,8 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	g_signal_connect(G_OBJECT(priv->webkit),
 			"navigation-policy-decision-requested",
 			G_CALLBACK(navigation_policy), self);
+	g_signal_connect(G_OBJECT(priv->webkit), "load-error",
+			G_CALLBACK(webkit_handle_load_error), self);
 }
 
 GtkWidget *remote_control_webkit_window_new(GMainContext *context)
