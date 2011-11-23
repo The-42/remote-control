@@ -323,7 +323,7 @@ gchar *g_uri_to_string(const GURI *uri)
 
 gboolean g_uri_same_origin(const GURI *a, const GURI *b)
 {
-	return g_str_equal(g_uri_get_scheme(a), g_uri_get_scheme(b)) &&
-	       g_str_equal(g_uri_get_host(a), g_uri_get_host(b)) &&
+	return (g_strcmp0(g_uri_get_scheme(a), g_uri_get_scheme(b)) == 0) &&
+	       (g_strcmp0(g_uri_get_host(a), g_uri_get_host(b)) == 0) &&
 	       (g_uri_get_port(a) == g_uri_get_port(b));
 }
