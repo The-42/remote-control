@@ -181,12 +181,13 @@ static void player_set_x_overlay(struct media_player *player)
 	}
 
 	if (GDK_IS_WINDOW(player->window)) {
-		g_debug("   gst_x_overlay_set_xwindow_id()....");
-		gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(video_sink),
-		                             GDK_WINDOW_XWINDOW(player->window));
+		g_debug("   gst_x_overlay_set_window_handle()....");
+		gst_x_overlay_set_window_handle(GST_X_OVERLAY(video_sink),
+				GDK_WINDOW_XWINDOW(player->window));
 	} else {
 		g_debug("   window not ready");
-		gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(video_sink), player->xid);
+		gst_x_overlay_set_window_handle(GST_X_OVERLAY(video_sink),
+				player->xid);
 	}
 
 	/* force redraw */
