@@ -313,7 +313,6 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 
 	switch (type) {
 	case GST_MESSAGE_ELEMENT:
-#if HAVE_SOFTWARE_DECODER
 		/*
 		 * TODO: find another way to get the window id
 		 */
@@ -344,7 +343,6 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 
 		gst_message_unref(message);
 		ret = GST_BUS_DROP;
-#endif
 		break;
 
 	case GST_MESSAGE_BUFFERING:
