@@ -89,7 +89,7 @@ AS_CASE([$with_video_backend],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 dnl FIXME: This is not the way to go, try to do this in AC_CASE[gst]
-if test "x$enable_gst" == "xyes"; then
+if test "x$enable_gst" = "xyes"; then
 	PKG_CHECK_MODULES(XRANDR, xrandr >= 1.3 xrender x11 xproto >= 7.0.17)
 fi
 
