@@ -53,3 +53,31 @@ int remote_audio_set_state(void *priv, enum remote_audio_state state, bool force
 
 	return ret;
 }
+
+remote_public
+int remote_audio_get_volume(void *priv, uint8_t *volume)
+{
+	struct rpc_client *client = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int err;
+
+	err = RPC_STUB(audio_get_volume)(client, &ret, volume);
+	if (err < 0)
+		return err;
+
+	return ret;
+}
+
+remote_public
+int remote_audio_set_volume(void *priv, uint8_t volume)
+{
+	struct rpc_client *client = rpc_client_from_priv(priv);
+	int32_t ret = 0;
+	int err;
+
+	err = RPC_STUB(audio_set_volume)(client, &ret, volume);
+	if (err < 0)
+		return err;
+
+	return ret;
+}

@@ -47,6 +47,8 @@ static int exec_help(struct cli *cli, int argc, char *argv[])
 
 				if (cmd->help)
 					printf("%s\n\n", cmd->help);
+				else if (cmd->helpcmd)
+					cmd->helpcmd();
 
 				break;
 			}
@@ -62,6 +64,46 @@ const struct cli_command_info cmd_help _command_ = {
 	.help = NULL,
 	.options = NULL,
 	.exec = exec_help,
+};
+
+/*
+ * "audio-volume" command
+ */
+static int exec_audio_volume(struct cli *cli, int argc, char *argv[])
+{
+	int err;
+
+	if (argc == 1) {
+		uint8_t volume = 0;
+
+		err = remote_audio_get_volume(cli->client, &volume);
+		if (err < 0) {
+			printf("Current volume: Unknown\n");
+		} else {
+			printf("Current volume: %d\n", volume);
+		}
+	}
+	else if (argc == 2) {
+		uint32_t volume;
+
+		volume = atol(argv[1]);
+		if (volume < 0 || volume > 255)
+			return -EINVAL;
+		err = remote_audio_set_volume(cli->client, (uint8_t)volume);
+	} else {
+		printf("Invalid argument count, try help\n");
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
+const struct cli_command_info cmd_audio_volume _command_ = {
+	.name = "audio-volume",
+	.summary = "get or set the current audio volume",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_audio_volume
 };
 
 /*
@@ -109,12 +151,19 @@ static int exec_audio_state(struct cli *cli, int argc, char *argv[])
 	return 0;
 }
 
+static void help_audio_state()
+{
+	printf("Possible audio-states are:\n");
+	audio_state_print_names();
+}
+
 const struct cli_command_info cmd_audio_state _command_ = {
 	.name = "audio-state",
 	.summary = "get or set the current audio state",
 	.help = NULL,
 	.options = NULL,
-	.exec = exec_audio_state
+	.exec = exec_audio_state,
+	.helpcmd = help_audio_state
 };
 
 /*

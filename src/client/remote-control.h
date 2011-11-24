@@ -26,7 +26,16 @@
 #endif
 
 enum remote_audio_state {
-	REMOTE_AUDIO_STATE_UNKNOWN,
+	REMOTE_AUDIO_STATE_UNKNOWN = -1,
+	REMOTE_AUDIO_STATE_INACTIVE = 0,
+	REMOTE_AUDIO_STATE_HIFI_PLAYBACK_SPEAKER = 10,
+	REMOTE_AUDIO_STATE_HIFI_PLAYBACK_HEADSET,
+	REMOTE_AUDIO_STATE_VOICECALL_HANDSET = 20,
+	REMOTE_AUDIO_STATE_VOICECALL_HEADSET,
+	REMOTE_AUDIO_STATE_VOICECALL_SPEAKER,
+	REMOTE_AUDIO_STATE_VOICECALL_IP_HANDSET = 30,
+	REMOTE_AUDIO_STATE_VOICECALL_IP_HEADSET,
+	REMOTE_AUDIO_STATE_VOICECALL_IP_SPEAKER,
 	REMOTE_AUDIO_STATE_MAX
 };
 
@@ -120,6 +129,8 @@ remote_public int remote_audio_set_state(void *priv,
 		enum remote_audio_state state, bool force);
 remote_public int remote_audio_get_state(void *priv,
 		enum remote_audio_state *statep);
+remote_public int remote_audio_get_volume(void *priv, uint8_t *volume);
+remote_public int remote_audio_set_volume(void *priv, uint8_t volume);
 
 remote_public int remote_mixer_set_volume(void *priv,
 		enum remote_mixer_control control, uint8_t volume);

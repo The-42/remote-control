@@ -25,7 +25,16 @@ static const struct {
 	enum remote_audio_state id;
 	const char* name;
 } audio_state_map[] = {
-	{ REMOTE_AUDIO_STATE_UNKNOWN, "unknown" },
+	{ REMOTE_AUDIO_STATE_UNKNOWN, "Unknown" },
+	{ REMOTE_AUDIO_STATE_INACTIVE, "Inactive" },
+	{ REMOTE_AUDIO_STATE_HIFI_PLAYBACK_SPEAKER, "Hifi-Playback-Speaker" },
+	{ REMOTE_AUDIO_STATE_HIFI_PLAYBACK_HEADSET, "Hifi-Playback-Headset" },
+	{ REMOTE_AUDIO_STATE_VOICECALL_HANDSET, "VoiceCall-Handset" },
+	{ REMOTE_AUDIO_STATE_VOICECALL_HEADSET, "VoiceCall-Headset" },
+	{ REMOTE_AUDIO_STATE_VOICECALL_SPEAKER, "VoiceCall-Speaker" },
+	{ REMOTE_AUDIO_STATE_VOICECALL_IP_HANDSET, "VoiceCallIP-Handset" },
+	{ REMOTE_AUDIO_STATE_VOICECALL_IP_HEADSET, "VoiceCallIP-Headset" },
+	{ REMOTE_AUDIO_STATE_VOICECALL_IP_SPEAKER, "VoiceCallIP-Speaker" },
 };
 
 static const struct {
@@ -104,6 +113,15 @@ int audio_state_name(enum remote_audio_state state, char *buffer, size_t size)
 		ret = -errno;
 
 	return ret;
+}
+
+void audio_state_print_names()
+{
+	unsigned int i;
+
+	for (i = 1; i < ARRAY_SIZE(audio_state_map); i++) {
+		printf("   %s\n", audio_state_map[i].name);
+	}
 }
 
 enum remote_mixer_control parse_mixer_control(const char *control)
