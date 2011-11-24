@@ -3,7 +3,17 @@
 	<types>
 		<!-- audio -->
 		<enum name="audio_state" mnemonic="u32">
-			<value name="AUDIO_STATE_UNKNOWN" value="0"/>
+			<value name="AUDIO_STATE_UNKNOWN" value="-1"/>
+			<value name="AUDIO_STATE_INACTIVE" value="0"/>
+			<value name="AUDIO_STATE_HIFI_PLAYBACK_SPEAKER" value="10"/>
+			<value name="AUDIO_STATE_HIFI_PLAYBACK_HEADSET"/>
+			<value name="AUDIO_STATE_VOICECALL_HANDSET" value="20"/>
+			<value name="AUDIO_STATE_VOICECALL_HEADSET"/>
+			<value name="AUDIO_STATE_VOICECALL_SPEAKER"/>
+			<value name="AUDIO_STATE_VOICECALL_IP_HANDSET" value="30"/>
+			<value name="AUDIO_STATE_VOICECALL_IP_HEADSET"/>
+			<value name="AUDIO_STATE_VOICECALL_IP_SPEAKER"/>
+			<value name="AUDIO_STATE_MAX"/>
 		</enum>
 		<enum name="mixer_control" mnemonic="u32">
 			<description short="audio control"/>
