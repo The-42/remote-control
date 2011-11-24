@@ -528,9 +528,9 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 					"rendertarget=%d displaytype=%d "
 #define PIPELINE_MANUAL_SW_DEC_BASE \
 	"! mpegtsdemux name=demux " \
-		" demux. ! queue name=audio-queue ! " \
-			"{ mpegaudioparse name=audio-parser ! ffdec_mp3 name=audio-decoder ! queue } " \
-			"! alsasink name=audio-out device=hw:%d,0 "
+		" demux. ! audio/mpeg,mpegversion=1 ! { queue2 name=audio-queue ! " \
+			"mpegaudioparse name=audio-parser ! audio/mpeg,mpegaudioversion=1,layer=2,channels=2,rate=48000 ! ffdec_mp2float name=audio-decoder } ! " \
+			"{ queue2 ! audioconvert ! alsasink name=audio-out device=hw:%d,0 }"
 
 #define PIPELINE_MANUAL_SW_DEC_VIDEO \
 		" demux. ! queue name=video-queue ! " \
