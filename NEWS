@@ -1,5 +1,44 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.6.0 (2011-11-24)
 ==========================
+- Use DPMS to enable/disable the backlight with the Medatom backend.
+- Fix potential deadlocks by initializing Xlib thread support.
+- Implement a V4L2-based backend for the tuner. This can probably be removed
+  because it is already obsolete.
+- Enable cookies in the standalone browser.
+- Implement logging support (currently disabled because there is currently no
+  possibility to enable/disable it).
+- Use a proxy resolver in the browser instead of statically using the
+  http_proxy environment variable.
+- Add a handset subsystem with a PT-IP backend.
+- Reject incoming VoIP calls when another call is in progress.
+- Fix a potential crash in the remote-control service when invalid arguments
+  are passed during VoIP login.
+- Initial implementation of a JavaScript API.
+- Improvements to the gstreamer media-player backend.
+- Fix VoIP DTMF signalling.
+- Fix VoIP login options for 64-bit platforms.
+- Implement rudimentary IRQ handling in the command-line client.
+- Allow interrupts to be reraise when they are not cleared.
+- Properly report VoIP outgoing call events.
+- Fix an issue with RTSP streams where no video window would be displayed.
+- Fix a potential crash on shutdown of the remote-control service.
+- Some usability improvements to the standalone browser.
+- Always use SVG buttons in the UI.
+- Add sysfs-based backlight backend.
+- Implement the "primary network channel" typically used to communicate with
+  authentication servers.
+- Add support for analog modems.
+- Fix primary interface lookup required for the LLDP monitor.
+- Add sysfs-based GPIO backend.
+- Rudimentary implementation of the audio state API.
+- Allow options to be passed to the VLC media-player backend via the URI.
+- If a linphone configuration exists, use it as factory default in the
+  linphone VoIP backend.
+- On remote-control service shutdown, terminate all calls in the linphone
+  VoIP backend.
+- Make more extensive use of the GLib main loop instead of moving backends
+  into their own threads.
+- Reload pages automatically on network errors.
 
 Release 0.5.0 (2011-07-05)
 ==========================
