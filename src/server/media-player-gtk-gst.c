@@ -82,6 +82,7 @@ struct media_player {
 	bool radio;
 };
 
+#if 0
 static void player_dump(struct media_player *player)
 {
 	g_printf(" struct media_player:... %p\n", player);
@@ -98,6 +99,7 @@ static void player_dump(struct media_player *player)
 	g_printf("   have_nv_omx:......... %d\n", player->have_nv_omx);
 	g_printf("   radio:............... %d\n", player->radio);
 }
+#endif
 
 static enum media_player_state player_gst_state_2_media_state(GstState state)
 {
@@ -221,15 +223,10 @@ static void player_element_message_sync(GstBus *bus, GstMessage *msg, struct med
 {
 	const gchar* name;
 
-	g_debug("> %s()", __func__);
-	if (!msg->structure) {
-		g_debug("< %s(): no structure", __func__);
+	if (!msg->structure)
 		return;
-	}
 
 	name = gst_structure_get_name(msg->structure);
-	g_debug("    name: %s", name);
-
 	if (g_strcmp0(name, "prepare-xwindow-id") == 0) {
 		g_debug("    prepare-xwindow-id");
 		player_set_x_overlay(player);
@@ -237,11 +234,7 @@ static void player_element_message_sync(GstBus *bus, GstMessage *msg, struct med
 		g_debug("    have-xwindow-id");
 		player_set_x_window_id(player,
 			gst_structure_get_value(msg->structure, "have-xwindow-id"));
-	} else {
-		g_debug("   unable to handle");
 	}
-
-	g_debug("< %s()", __func__);
 }
 
 static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data)
@@ -329,29 +322,18 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 		/*
 		 * TODO: find another way to get the window id
 		 */
-		g_debug("** element: %s", gst_structure_get_name(message->structure));
 		if (!gst_structure_has_name(message->structure, "prepare-xwindow-id") &&
 		    !gst_structure_has_name(message->structure, "have-xwindow-id")) {
-			g_debug("** no xwindow found");
 			break;
 		}
-		g_debug("**  showing window...");
 		gdk_threads_enter();
-		g_debug("    looked");
 		gdk_window_show(player->window);
-		g_debug("    show");
 		gdk_threads_leave();
-		g_debug("    unlooked");
 
-		g_debug("**  try to get XID...");
 		if (player && player->xid != 0) {
 			GstXOverlay *overlay = GST_X_OVERLAY(GST_MESSAGE_SRC(message));
-//			g_object_set(overlay, "force-aspect-ratio", TRUE, NULL);
 			player->xid = gdk_x11_drawable_get_xid(player->window);
-			g_debug("**  XID is: %lu", player->xid);
 			gst_x_overlay_set_window_handle(overlay, player->xid);
-		} else {
-			g_debug("**  %p:%lu: no window XID yet!", player, player->xid);
 		}
 
 		gst_message_unref(message);
@@ -392,14 +374,10 @@ static int player_window_move(struct media_player *player,
 {
 	GstElement *video;
 
-	g_debug("  > %s(player=%p, x=%d, y=%d, width=%d, height=%d)",
-		 __func__, player, x, y, width, height);
-
 	if (player->have_nv_omx) {
 		video = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
 		if (!video) {
 			g_warning("   no element video-out found");
-			g_debug("  < %s(): no data", __func__);
 			return -ENODATA;
 		}
 
@@ -410,29 +388,20 @@ static int player_window_move(struct media_player *player,
 		             "output-size-height", height, NULL);
 		gst_object_unref(video);
 	}
-	g_debug("  < %s()", __func__);
 	return 0;
 }
 
 static int player_window_update(struct media_player *player)
 {
 	gint x, y, width, height;
-	int ret;
 
-	g_debug("  > %s()", __func__);
-
-	if (!player || !player->window) {
-		g_debug("  < %s(): inval", __func__);
+	if (!player || !player->window)
 		return -EINVAL;
-	}
 
 	gdk_window_get_position(GDK_WINDOW(player->window), &x, &y);
 	gdk_drawable_get_size(GDK_DRAWABLE(player->window), &width, &height);
 
-	ret = player_window_move(player, x, y, width, height);
-
-	g_debug("  < %s(): %d", __func__, ret);
-	return ret;
+	return player_window_move(player, x, y, width, height);
 }
 
 static int player_window_init(struct media_player *player)
@@ -791,10 +760,10 @@ static int player_create_pipeline(struct media_player *player, const gchar* uri)
 			player->uri = NULL;
 		}
 	}
+
 	if (!player->uri)
 		player->uri = g_strdup(uri);
-	g_debug("   dumping player");
-	player_dump(player);
+
 	g_debug(" < %s(): %d", __func__, ret);
 	return ret;
 }
@@ -808,8 +777,6 @@ static int player_init_gstreamer(struct media_player *player)
 	char *argv[] = { "remote-control", NULL };
 	int argc = 1;
 
-	g_debug(" > %s(player=%p)", __func__, player);
-
 	/* we need to fake the args, because we have no access from here */
 	g_debug("   initialize gstreamer...");
 	if (!gst_init_check(&argc, (char***)&argv, &err)) {
@@ -818,7 +785,6 @@ static int player_init_gstreamer(struct media_player *player)
 		return -ENOSYS;
 	}
 
-	g_debug(" < %s()", __func__);
 	feature = gst_registry_lookup_feature(gst_registry_get_default(), "nv_gl_videosink");
 	if (feature) {
 		gst_object_unref(feature);
@@ -828,7 +794,7 @@ static int player_init_gstreamer(struct media_player *player)
 	return 0;
 }
 
-	/* only valid for tegra */
+	/* only valid for vibrante */
 static int tegra_display_name_to_type(const gchar *name)
 {
 	struct connection_map {
@@ -1011,14 +977,15 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	    !g_str_has_prefix(uri, "file://") &&
 	    !g_str_has_prefix(uri, "http://"))
 	{
-		g_warning("  unsupported uri");
+		g_warning("   unsupported uri");
 		err = -EINVAL;
 		goto out;
 	}
 
 	err = media_player_get_state(player, &state);
 	if (err < 0)
-		g_warning("  unable to get state");
+		g_warning("   unable to get state");
+
 	/* because url can be valid, but we do not know the content, we can
 	 * not be sure that the chain can handle the new url we destroy the
 	 * old and create a new. this is the safest way */
@@ -1085,9 +1052,7 @@ int media_player_set_output_window(struct media_player *player,
 			gchar *uri;
 			int ret;
 
-			player_dump(player);
 			g_debug("   scale has changed! %s", player->uri);
-
 			ret = gst_element_get_state(player->pipeline, &state, NULL, GST_SECOND);
 			if (ret != GST_STATE_CHANGE_SUCCESS) {
 				g_warning("unable to get state");
