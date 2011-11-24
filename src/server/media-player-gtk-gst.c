@@ -249,9 +249,11 @@ static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data
 	struct media_player *player = data;
 
 	switch (GST_MESSAGE_TYPE(msg)) {
-	case GST_MESSAGE_EOS:
+	case GST_MESSAGE_UNKNOWN:
 		g_debug("End of stream");
 		player->state = MEDIA_PLAYER_STOPPED;
+		break;
+	case GST_MESSAGE_EOS:
 		break;
 	case GST_MESSAGE_ERROR:
 		handle_message_error(player, msg);
@@ -262,22 +264,15 @@ static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data
 	case GST_MESSAGE_INFO:
 		handle_message_info(player, msg);
 		break;
+	case GST_MESSAGE_TAG:
+		break;
+	case GST_MESSAGE_BUFFERING:
+		break;
 	case GST_MESSAGE_STATE_CHANGED:
 		handle_message_state_change(player, msg);
 		break;
 	case GST_MESSAGE_STATE_DIRTY:
 		g_warning("Stream is dirty\n");
-		break;
-	case GST_MESSAGE_BUFFERING:
-		break;
-	case GST_MESSAGE_TAG:
-		break;
-	case GST_MESSAGE_ELEMENT:
-		player_element_message_sync(bus, msg, player);
-		break;
-	case GST_MESSAGE_APPLICATION:
-		break;
-	case GST_MESSAGE_DURATION:
 		break;
 	case GST_MESSAGE_STEP_DONE:
 		break;
@@ -291,13 +286,30 @@ static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data
 		break;
 	case GST_MESSAGE_STREAM_STATUS:
 		break;
+	case GST_MESSAGE_APPLICATION:
+		break;
+	case GST_MESSAGE_ELEMENT:
+		player_element_message_sync(bus, msg, player);
+		break;
 	case GST_MESSAGE_SEGMENT_START:
+		break;
+	case GST_MESSAGE_SEGMENT_DONE:
+		break;
+	case GST_MESSAGE_DURATION:
 		break;
 	case GST_MESSAGE_LATENCY:
 		break;
 	case GST_MESSAGE_ASYNC_START:
 		break;
 	case GST_MESSAGE_ASYNC_DONE:
+		break;
+	case GST_MESSAGE_REQUEST_STATE:
+		break;
+	case GST_MESSAGE_STEP_START:
+		break;
+	case GST_MESSAGE_QOS:
+		break;
+	case GST_MESSAGE_PROGRESS:
 		break;
 	default:
 		break;
@@ -346,14 +358,6 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 		ret = GST_BUS_DROP;
 		break;
 
-	case GST_MESSAGE_BUFFERING:
-		/* silently ignore */
-		break;
-
-	case GST_MESSAGE_WARNING:
-		/* silently ignore */
-		break;
-
 	case GST_MESSAGE_ERROR:
 		ret = handle_message_error(player, message);
 	case GST_MESSAGE_EOS:
@@ -366,12 +370,12 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 		break;
 
 	case GST_MESSAGE_STREAM_STATUS:
-		break;
-
 	case GST_MESSAGE_STATE_CHANGED:
-		break;
-
 	case GST_MESSAGE_TAG:
+	case GST_MESSAGE_QOS:
+	case GST_MESSAGE_BUFFERING:
+	case GST_MESSAGE_WARNING:
+		/* silently ignore */
 		break;
 
 	default:
