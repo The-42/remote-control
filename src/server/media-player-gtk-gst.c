@@ -451,19 +451,10 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 #define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s"
 #define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! fakesink"
 
-#define PIPELINE_AUTO \
+#define PIPELINE \
 	" ! decodebin2 flags=0x57 "\
 		"video-sink=\"autovideosink name=video-out\" " \
 		"audio-sink=\"autoaudiosink name=audio-out\" "
-
-#define PIPELINE_FFMPEG \
-	" ! queue ! mpegtsdemux name=demux " \
-		"demux. ! queue ! mpegvideoparse ! ffdec_mpeg2video max-threads=2 ! " \
-			"ffdeinterlace ! autovideosink name=video-out " \
-		"demux. ! queue ! mpegaudioparse ! ffdec_mp3 ! " \
-			"autoaudiosink name=audio-out "
-
-#define PIPELINE PIPELINE_AUTO
 
 	GError *error = NULL;
 	GstBus *bus;
@@ -791,6 +782,7 @@ static int player_init_gstreamer(struct media_player *player)
 		player->have_nv_omx = 1;
 	}
 
+	g_debug("   omx plugin %sfound", player->have_nv_omx ? "" : "not ");
 	return 0;
 }
 
@@ -911,18 +903,21 @@ int media_player_create(struct media_player **playerp)
 		return -ENOMEM;
 	}
 
-	g_debug("   getting display type...");
-	ret = player_find_display_type(player);
-	if (ret < 0) {
-		g_warning("unable to query display type %d", ret);
-		player->displaytype = NV_DISPLAY_TYPE_DEFAULT;
-	}
-
 	g_debug("   setting up gstreamer...");
 	ret = player_init_gstreamer(player);
 	if (ret < 0) {
 		g_warning("failed to initialize gstreamer %d", ret);
 		goto err;
+	}
+	/* Since the display type is only needed by nvidia's omx plugin we
+	 * only need to query the display type when we have the plugin. */
+	if (player->have_nv_omx) {
+		g_debug("   getting display type...");
+		ret = player_find_display_type(player);
+		if (ret < 0) {
+			g_warning("unable to query display type %d", ret);
+			player->displaytype = NV_DISPLAY_TYPE_DEFAULT;
+		}
 	}
 
 	g_debug("   creating pipeline...");
@@ -1018,14 +1013,11 @@ int media_player_set_output_window(struct media_player *player,
                                    unsigned int width,
                                    unsigned int height)
 {
-	GdkScreen *screen;
-
-	if (!player)
-		return -EINVAL;
-
 	g_debug("> %s(player=%p, x=%d, y=%d, width=%d, height=%d)",
 		__func__, player, x, y, width, height);
 
+	if (!player)
+		return -EINVAL;
 	/* assign the new parameters to our window, in the future this should
 	 * should be sufficient, but since we can not assign our window to the
 	 * gstreamer plugin we need to do this seperatly */
@@ -1036,6 +1028,7 @@ int media_player_set_output_window(struct media_player *player,
 
 	if (player->have_nv_omx) {
 		int scale = player->scale;
+		GdkScreen *screen;
 
 		screen = gdk_screen_get_default();
 		if ((width >= gdk_screen_get_width(screen)) &&
