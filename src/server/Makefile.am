@@ -92,10 +92,12 @@ libremote_control_la_SOURCES += \
 else
 if ENABLE_GST
 libremote_control_la_CFLAGS += \
-	@GST_CFLAGS@
+	@GST_CFLAGS@ \
+	@XRANDR_CFLAGS@
 
 libremote_control_la_LIBADD += \
-	@GST_LIBS@
+	@GST_LIBS@ \
+	@XRANDR_LIBS@
 
 libremote_control_la_SOURCES += \
 	media-player-gtk-gst.c \

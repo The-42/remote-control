@@ -88,6 +88,10 @@ AS_CASE([$with_video_backend],
 	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-plugins-base-0.10 gstreamer-interfaces-0.10, [enable_gst=yes])],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
+dnl FIXME: This is not the way to go, try to do this in AC_CASE[gst]
+if test "x$enable_gst" == "xyes"; then
+	PKG_CHECK_MODULES(XRANDR, xrandr >= 1.3 xrender x11 xproto >= 7.0.17)
+fi
 
 #
 # VoIP backend
