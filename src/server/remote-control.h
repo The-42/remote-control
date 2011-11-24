@@ -117,6 +117,14 @@ int event_manager_get_status(struct event_manager *manager, uint32_t *statusp);
 int event_manager_get_source_state(struct event_manager *manager, struct event *event);
 
 /**
+ * audio state
+ */
+struct audio;
+
+int audio_create(struct audio **audiop);
+int audio_free(struct audio *audio);
+
+/**
  * backlight
  */
 #define BACKLIGHT_MIN 0x00
@@ -343,6 +351,7 @@ GSource *remote_control_get_source(struct remote_control *rc);
 int remote_control_free(struct remote_control *rc);
 
 struct event_manager *remote_control_get_event_manager(struct remote_control *rc);
+struct audio* remote_control_get_audio(struct remote_control *rc);
 struct backlight *remote_control_get_backlight(struct remote_control *rc);
 struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);

@@ -35,6 +35,7 @@ struct rpc_source {
 
 struct remote_control {
 	struct event_manager *event_manager;
+	struct audio *audio;
 	struct backlight *backlight;
 	struct media_player *player;
 	struct sound_manager *sound;
@@ -333,6 +334,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	err = audio_create(&rc->audio);
+	if (err < 0) {
+		g_error("audio_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = sound_manager_create(&rc->sound);
 	if (err < 0) {
 		g_error("sound_manager_create(): %s", strerror(-err));
@@ -440,6 +447,7 @@ int remote_control_free(struct remote_control *rc)
 	sound_manager_free(rc->sound);
 	media_player_free(rc->player);
 	backlight_free(rc->backlight);
+	audio_free(rc->audio);
 	g_source_unref(rc->events_source);
 	rpc_server_free(server);
 
@@ -449,6 +457,11 @@ int remote_control_free(struct remote_control *rc)
 struct event_manager *remote_control_get_event_manager(struct remote_control *rc)
 {
 	return rc ? rc->event_manager : NULL;
+}
+
+struct audio *remote_control_get_audio(struct remote_control *rc)
+{
+	return rc ? rc->audio : NULL;
 }
 
 struct backlight *remote_control_get_backlight(struct remote_control *rc)

@@ -16,6 +16,7 @@ libremote_control_la_LIBADD = \
 
 libremote_control_la_SOURCES = \
 	audio.c \
+	audio-alsa.c \
 	backlight.c \
 	event-manager.c \
 	handset.c \
