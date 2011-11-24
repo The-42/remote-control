@@ -117,15 +117,15 @@ static enum media_player_state player_gst_state_2_media_state(GstState state)
 static void handle_message_state_change(struct media_player *player, GstMessage *message)
 {
 	GstState pending = GST_STATE_VOID_PENDING;
-	GstState old = GST_STATE_VOID_PENDING;
-	GstState new = GST_STATE_VOID_PENDING;
+	GstState old_state = GST_STATE_VOID_PENDING;
+	GstState new_state = GST_STATE_VOID_PENDING;
 
-	gst_message_parse_state_changed(message, &old, &new, &pending);
+	gst_message_parse_state_changed(message, &old_state, &new_state, &pending);
 	if (GST_MESSAGE_SRC(message) == GST_OBJECT(player->pipeline)) {
 		g_printf("   Element %s changed state from %s to %s (pending=%s)\n",
 			GST_OBJECT_NAME(message->src),
-			gst_element_state_get_name(old),
-			gst_element_state_get_name(new),
+			gst_element_state_get_name(old_state),
+			gst_element_state_get_name(new_state),
 			gst_element_state_get_name(pending));
 	}
 }
