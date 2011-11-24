@@ -533,9 +533,9 @@ static int player_create_manual_nvidia_pipeline(struct media_player *player, con
 			"{ queue2 ! audioconvert ! alsasink name=audio-out device=hw:%d,0 }"
 
 #define PIPELINE_MANUAL_SW_DEC_VIDEO \
-		" demux. ! queue name=video-queue ! " \
-			"{ ffdec_mpeg2video max-threads=0 name=video-decoder ! ffmpegcolorspace ! queue } " \
-			"! glimagesink name=video-out "
+		" demux. ! queue2 name=video-queue ! " \
+			"{ ffdec_mpeg2video max-threads=0 name=video-decoder ! queue2 } ! " \
+			"{ glupload ! gldeinterlace ! glimagesink name=video-out force-aspect-ratio=true }"
 
 	GError *error = NULL;
 	GstBus *bus;
