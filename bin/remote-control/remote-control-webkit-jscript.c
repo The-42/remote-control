@@ -11,21 +11,33 @@
 #include <string.h>
 #include <errno.h>
 
+#include <gdk/gdk.h>
+
 #include <JavaScriptCore/JavaScript.h>
 #include <webkit/webkit.h>
 
 #include "remote-control-webkit-jscript.h"
+#include "remote-control-irkey.h"
 
 struct context {
 	GdkWindow *window;
+	struct irkey *irk;
 };
 
 static struct context* avionic_get_context()
 {
 	static struct context *ctx = NULL;
 	if (ctx == NULL) {
-		ctx = malloc(sizeof(struct context));
+		ctx = g_new(struct context, 1);
 		memset(ctx, 0, sizeof(*ctx));
+
+		ctx->irk = irk_new();
+		if (ctx->irk) {
+			int err = irk_setup_thread(ctx->irk);
+			if (err < 0)
+				g_critical("%s: failed to setup irkey thread: %d",
+					__func__, err);
+		}
 	}
 	return ctx;
 }
@@ -161,8 +173,6 @@ static gint avionic_cursor_set(struct context *ctx, gint x, gint y)
 	GdkDisplay *display = NULL;
 	GdkScreen *screen = NULL;
 
-	g_debug("> %s(x=%d, y=%d)", __func__, x, y);
-
 	display = gdk_display_get_default();
 	if (!display)
 		return FALSE;
@@ -177,7 +187,6 @@ static gint avionic_cursor_set(struct context *ctx, gint x, gint y)
 	/* set the new cursor pos */
 	gdk_display_warp_pointer(display, screen, x, y);
 
-	g_debug("< %s()", __func__);
 	return TRUE;
 }
 
@@ -191,46 +200,32 @@ static JSValueRef avionic_cursor_set_wrapper(JSContextRef context,
 	struct context *user_context = NULL;
 	bool ret;
 
-	g_debug("> %s(context=%p, func=%p, self=%p, argc=%zu, argv=%p, exception=%p)",
-		__func__, context, func, self, argc, argv, exception);
-
-	if (avionic_get_user_context(context, &user_context) < 0 || !user_context) {
-		g_warning("< %s() unable to get user context: false", __func__);
-		return JSValueMakeBoolean(context, false);
-	}
+	if (avionic_get_user_context(context, &user_context) < 0 || !user_context)
+		return JSValueMakeBoolean(context, FALSE);
 
 	/* check argument count, this function requires 1 parameter */
 	if (argc != 2) {
-		g_warning("< %s() invalid argument count %zu: false", __func__, argc);
 		if (exception) {
 			JSStringRef text = JSStringCreateWithUTF8CString("invalid argument count");
 			*exception = JSValueMakeString(context, text);
 			JSStringRelease(text);
 		}
-		return JSValueMakeBoolean(context, false);
+		return JSValueMakeBoolean(context, FALSE);
 	}
 	/* check if type is as expected */
-	if (!JSValueIsNumber(context, argv[0])) {
-		g_warning("< %s() invalid argument[0] type %d: false",
-			__func__, JSValueGetType(context, argv[0]));
-		return JSValueMakeBoolean(context, false);
-	}
-	if (!JSValueIsNumber(context, argv[1])) {
-		g_warning("< %s() invalid argument[1] type %d: false",
-			__func__, JSValueGetType(context, argv[1]));
-		return JSValueMakeBoolean(context, false);
-	}
+	if (!JSValueIsNumber(context, argv[0]))
+		return JSValueMakeBoolean(context, FALSE);
+	if (!JSValueIsNumber(context, argv[1]))
+		return JSValueMakeBoolean(context, FALSE);
+
 	/* call the function */
 	ret = avionic_cursor_set(user_context,
 	          (gint)JSValueToNumber(context, argv[0], exception),
 	          (gint)JSValueToNumber(context, argv[1], exception));
-	if (!ret) {
-		g_warning("< %s() call failed: false", __func__);
-		return JSValueMakeBoolean(context, false);
-	}
+	if (!ret)
+		return JSValueMakeBoolean(context, FALSE);
 
-	g_debug("< %s() = true", __func__);
-	return JSValueMakeBoolean(context, true);
+	return JSValueMakeBoolean(context, TRUE);
 }
 
 static gint avionic_cursor_enable(struct context *ctx, gboolean enable)
@@ -263,34 +258,124 @@ static JSValueRef avionic_cursor_enable_wrapper(JSContextRef context,
 {
 	struct context *user_context = NULL;
 
-	g_debug("> %s(context=%p, func=%p, self=%p, argc=%zu, argv=%p, exception=%p)",
-		__func__, context, func, self, argc, argv, exception);
-
-	if (avionic_get_user_context(context, &user_context) < 0 || !user_context) {
-		g_warning("< %s() unable to get user context: false", __func__);
-		return JSValueMakeBoolean(context, false);
-	}
+	if (avionic_get_user_context(context, &user_context) < 0 || !user_context)
+		return JSValueMakeBoolean(context, FALSE);
 
 	/* check argument count, this function requires 1 parameter */
-	if (argc != 1) {
-		g_warning("< %s() invalid argument count %zu: false",
-			__func__, argc);
-		return JSValueMakeBoolean(context, false);
+	if (argc != 1)
+		return JSValueMakeBoolean(context, FALSE);
+
+	/* check if type is as expected */
+	if (!JSValueIsBoolean(context, argv[0]))
+		return JSValueMakeBoolean(context, FALSE);
+
+	/* call the function */
+	if (!avionic_cursor_enable(user_context, JSValueToBoolean(context, argv[0])))
+		return JSValueMakeBoolean(context, FALSE);
+
+	return JSValueMakeBoolean(context, TRUE);
+}
+
+static gint avionic_cursor_click(struct context *ctx, gint x, gint y)
+{
+	gdk_test_simulate_button(ctx->window, x, y, 1, GDK_BUTTON1_MASK, GDK_BUTTON_PRESS);
+	gdk_test_simulate_button(ctx->window, x, y, 1, GDK_BUTTON1_MASK, GDK_BUTTON_RELEASE);
+
+	return 0;
+}
+
+static JSValueRef avionic_cursor_click_wrapper(JSContextRef context,
+                                               JSObjectRef func,
+                                               JSObjectRef self,
+                                               size_t argc,
+                                               const JSValueRef argv[],
+                                               JSValueRef *exception)
+{
+	struct context *user_context = NULL;
+	gint ret;
+
+	if (avionic_get_user_context(context, &user_context) < 0 || !user_context)
+		return JSValueMakeBoolean(context, FALSE);
+
+	/* check argument count, this function requires 1 parameter */
+	if (argc != 2) {
+		if (exception) {
+			JSStringRef text = JSStringCreateWithUTF8CString("invalid argument count");
+			*exception = JSValueMakeString(context, text);
+			JSStringRelease(text);
+		}
+		return JSValueMakeBoolean(context, FALSE);
 	}
 	/* check if type is as expected */
-	if (!JSValueIsBoolean(context, argv[0])) {
-		g_warning("< %s() invalid argument[0] type %d: false",
-			__func__, JSValueGetType(context, argv[0]));
-		return JSValueMakeBoolean(context, false);
-	}
+	if (!JSValueIsNumber(context, argv[0]))
+		return JSValueMakeBoolean(context, FALSE);
+	if (!JSValueIsNumber(context, argv[1]))
+		return JSValueMakeBoolean(context, FALSE);
+
 	/* call the function */
-	if (!avionic_cursor_enable(user_context, JSValueToBoolean(context, argv[0]))) {
-		g_warning("< %s() call failed: false", __func__);
-		return JSValueMakeBoolean(context, false);
+	ret = avionic_cursor_click(user_context,
+	          (gint)JSValueToNumber(context, argv[0], exception),
+	          (gint)JSValueToNumber(context, argv[1], exception));
+	if (!ret)
+		return JSValueMakeBoolean(context, FALSE);
+
+	return JSValueMakeBoolean(context, TRUE);
+}
+
+static gint avionic_ir_get_message(struct context *ctx, JSStringRef *str)
+{
+	struct ir_message *msg = NULL;
+	gchar text[24];
+	int err;
+
+	if (!ctx || !str)
+		return -EINVAL;
+
+	err = irk_peek_message(ctx->irk, &msg);
+	if (err < 0 || msg == NULL) {
+		if (msg)
+			g_free(msg);
+		return -ENODATA;
 	}
 
-	g_debug("< %s() = true", __func__);
-	return JSValueMakeBoolean(context, true);
+	g_snprintf(text, G_N_ELEMENTS(text), "%02x %02x %02x %02x %02x %02x %02x %02x",
+		msg->header, msg->reserved, msg->d0, msg->d1, msg->d2,
+		msg->d3, msg->d4, msg->d5);
+	g_free(msg);
+
+	g_debug("   got: [%s]", text);
+	*str = JSStringCreateWithUTF8CString(text);
+	return 0;
+}
+
+static JSValueRef avionic_ir_get_msg_wrapper(JSContextRef context,
+                                             JSObjectRef func,
+                                             JSObjectRef self,
+                                             size_t argc,
+                                             const JSValueRef argv[],
+                                             JSValueRef *exception)
+{
+	struct context *user_context = NULL;
+	JSStringRef str = NULL;
+	JSValueRef val = NULL;
+	gint ret;
+
+	/* check argument count, this function requires 1 parameter */
+	if (argc != 0)
+		return JSValueMakeNull(context);
+
+	/* get and verify the user context */
+	if (avionic_get_user_context(context, &user_context) < 0 || !user_context)
+		return JSValueMakeNull(context);
+
+	ret = avionic_ir_get_message(user_context, &str);
+	if (ret < 0)
+		return JSValueMakeNull(context);
+
+	val = JSValueMakeString(context, str);
+	JSStringRelease(str);
+
+	return val;
 }
 
 static int register_user_context(JSGlobalContextRef ctx, gpointer data)
@@ -349,8 +434,10 @@ static int register_user_function(JSGlobalContextRef ctx,
 int register_user_functions(WebKitWebView *webkit, GtkWindow *window)
 {
 	static const struct js_user_func_def functions[] = {
-		{ "avionic_cursor_set",    avionic_cursor_set_wrapper    },
-		{ "avionic_cursor_enable", avionic_cursor_enable_wrapper },
+		{ "avionic_cursor_set",     avionic_cursor_set_wrapper    },
+		{ "avionic_cursor_enable",  avionic_cursor_enable_wrapper },
+		{ "avionic_cursor_click",   avionic_cursor_click_wrapper  },
+		{ "avionic_ir_get_message", avionic_ir_get_msg_wrapper    },
 //		{ "avionic_event_register_callback", avionic_event_register_callback_wrapper }
 	};
 
@@ -361,20 +448,22 @@ int register_user_functions(WebKitWebView *webkit, GtkWindow *window)
 
 	frame = webkit_web_view_get_main_frame(webkit);
 	if (!frame) {
-		g_warning("webkit_web_view_get_main_frame failed");
+		g_warning("%s: webkit_web_view_get_main_frame failed", __func__);
 		return -ENOSYS;
 	}
 
 	context = webkit_web_frame_get_global_context(frame);
 	if (!context) {
-		g_warning("webkit_web_frame_get_global_context failed");
+		g_warning("%s: webkit_web_frame_get_global_context failed", __func__);
 		return -ENOSYS;
 	}
 
 	for (i=0; i<G_N_ELEMENTS(functions); i++) {
 		err = register_user_function(context, &functions[i]);
-		if (err < 0)
-			g_warning("failed to register: %s", functions[i].name);
+		if (err < 0) {
+			g_warning("%s: failed to register: %s",
+				__func__, functions[i].name);
+		}
 	}
 
 	register_user_context(context, GTK_WIDGET(window));

@@ -22,7 +22,9 @@ remote_control_SOURCES = \
 if ENABLE_WEBKIT_JS_API
 remote_control_SOURCES += \
 	remote-control-webkit-jscript.c \
-	remote-control-webkit-jscript.h
+	remote-control-webkit-jscript.h \
+	remote-control-irkey.c \
+	remote-control-irkey.h
 endif
 
 remote_control_LDADD = \
