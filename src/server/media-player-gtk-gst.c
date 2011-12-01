@@ -171,7 +171,7 @@ static void handle_message_info(struct media_player *player, GstMessage *message
 	g_free(debug);
 }
 
-static void player_set_x_overlay(struct media_player *player)
+static gboolean player_set_x_overlay(struct media_player *player)
 {
 	GstElement *video_sink;
 
@@ -179,7 +179,7 @@ static void player_set_x_overlay(struct media_player *player)
 	video_sink = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
 	if (!video_sink) {
 		g_warning("< %s(): not found", __func__);
-		return;
+		return FALSE;
 	}
 
 	if (GDK_IS_WINDOW(player->window)) {
@@ -197,12 +197,16 @@ static void player_set_x_overlay(struct media_player *player)
 
 	gst_object_unref(video_sink);
 	g_debug(" < %s()", __func__);
+	return TRUE;
 }
 
-static void player_set_x_window_id(struct media_player *player, const GValue *value)
+static gboolean player_set_x_window_id(struct media_player *player,
+                                       const GValue *value)
 {
 #if HAVE_SOFTWARE_DECODER
 	g_debug(" > %s()", __func__);
+	if (!value)
+		return FALSE;
 
 	g_printf("    GValue=%p Type=%s", value, G_VALUE_TYPE_NAME(value));
 
@@ -217,24 +221,31 @@ static void player_set_x_window_id(struct media_player *player, const GValue *va
 
 	g_printf(" < %s()", __func__);
 #endif
+	return player->xid != 0;
 }
 
 static void player_element_message_sync(GstBus *bus, GstMessage *msg, struct media_player *player)
 {
+static gboolean player_element_message_sync(GstBus *bus, GstMessage *msg,
+                                            struct media_player *player)
+{
+	gboolean ret = FALSE;
 	const gchar* name;
 
 	if (!msg->structure)
-		return;
+		return FALSE;
 
 	name = gst_structure_get_name(msg->structure);
 	if (g_strcmp0(name, "prepare-xwindow-id") == 0) {
 		g_debug("    prepare-xwindow-id");
-		player_set_x_overlay(player);
-	} else if (g_strcmp0(name, "have-xwindow-id") == 0) {
-		g_debug("    have-xwindow-id");
-		player_set_x_window_id(player,
-			gst_structure_get_value(msg->structure, "have-xwindow-id"));
+		ret = player_set_x_overlay(player);
 	}
+	else if (g_strcmp0(name, "have-xwindow-id") == 0) {
+		g_debug("    have-xwindow-id");
+		ret = player_set_x_window_id(player,
+			gst_structure_get_value(msg->structure, "xwindow-id"));
+	}
+	return ret;
 }
 
 static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data)
