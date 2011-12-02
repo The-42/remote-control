@@ -203,7 +203,6 @@ static gboolean player_set_x_overlay(struct media_player *player)
 static gboolean player_set_x_window_id(struct media_player *player,
                                        const GValue *value)
 {
-#if HAVE_SOFTWARE_DECODER
 	g_debug(" > %s()", __func__);
 	if (!value)
 		return FALSE;
@@ -220,12 +219,72 @@ static gboolean player_set_x_window_id(struct media_player *player,
 	}
 
 	g_printf(" < %s()", __func__);
-#endif
 	return player->xid != 0;
 }
 
-static void player_element_message_sync(GstBus *bus, GstMessage *msg, struct media_player *player)
+static void player_show_output(struct media_player *player, gboolean show)
 {
+	if (!player->have_nv_omx && !player->xid && player->window != NULL) {
+		gdk_threads_enter();
+		if (show && !player->radio)
+			gdk_window_show(player->window);
+		else
+			gdk_window_hide(player->window);
+		gdk_threads_leave();
+	} else {
+		if (!show && gdk_window_is_visible(player->window)) {
+			gdk_threads_enter();
+			gdk_window_hide(player->window);
+			gdk_threads_leave();
+		}
+	}
+}
+
+static int tegra_omx_window_move(struct media_player *player,
+                              int x, int y, int width, int height)
+{
+	GstElement *video;
+	video = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
+	if (!video) {
+		g_warning("   no element video-out found");
+		return -ENODATA;
+	}
+
+	/* the height must be the last parameter we set, this is
+	 * because the plugin only updates x,y,w when h is set */
+	g_object_set(G_OBJECT(video), "output-pos-x", x,
+	             "output-pos-y", y, "output-size-width", width,
+	             "output-size-height", height, NULL);
+	gst_object_unref(video);
+	return 0;
+}
+
+static int player_window_update(struct media_player *player)
+{
+	gint x, y, width, height;
+
+	if (!player || !player->window)
+		return -EINVAL;
+
+	gdk_window_get_position(GDK_WINDOW(player->window), &x, &y);
+	gdk_drawable_get_size(GDK_DRAWABLE(player->window), &width, &height);
+
+	if (player->have_nv_omx)
+		return tegra_omx_window_move(player, x, y, width, height);
+
+	g_debug("      going to resize.");
+	if (player->xid) {
+		GdkDisplay *display = gdk_display_get_default();
+		Display *xdisplay =  gdk_x11_display_get_xdisplay(display);
+		int err;
+		g_debug("      move to %dx%d and resize to %dx%d",
+			x, y, width, height);
+		err = XMoveResizeWindow(xdisplay, player->xid, x, y, width, height);
+		g_debug("      window moved: %d", err);
+	}
+	return 0;
+}
+
 static gboolean player_element_message_sync(GstBus *bus, GstMessage *msg,
                                             struct media_player *player)
 {
@@ -321,8 +380,9 @@ static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data
 	return TRUE;
 }
 
-static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *message,
-                gpointer user_data)
+static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus,
+                                                   GstMessage *message,
+                                                   gpointer user_data)
 {
 	struct media_player *player = user_data;
 	GstMessageType type = GST_MESSAGE_TYPE(message);
@@ -330,36 +390,22 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 
 	switch (type) {
 	case GST_MESSAGE_ELEMENT:
-		/*
-		 * TODO: find another way to get the window id
-		 */
-		if (!gst_structure_has_name(message->structure, "prepare-xwindow-id") &&
-		    !gst_structure_has_name(message->structure, "have-xwindow-id")) {
-			break;
+		if (player_element_message_sync(bus, message, player)) {
+			g_debug("** showing window");
+			player_show_output(player, TRUE);
+			g_debug("** updating window");
+			player_window_update(player);
+			gst_message_unref(message);
+			ret = GST_BUS_DROP;
 		}
-		gdk_threads_enter();
-		gdk_window_show(player->window);
-		gdk_threads_leave();
-
-		if (player && player->xid != 0) {
-			GstXOverlay *overlay = GST_X_OVERLAY(GST_MESSAGE_SRC(message));
-			player->xid = gdk_x11_drawable_get_xid(player->window);
-			gst_x_overlay_set_window_handle(overlay, player->xid);
-		}
-
-		gst_message_unref(message);
-		ret = GST_BUS_DROP;
 		break;
 
 	case GST_MESSAGE_ERROR:
 		ret = handle_message_error(player, message);
 	case GST_MESSAGE_EOS:
-		if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
-			gdk_threads_enter();
-			gdk_window_hide(player->window);
-			gdk_threads_leave();
-		}
-		g_debug("**  hiding window %s", ret == GST_BUS_PASS ? "" : "due error");
+		player_show_output(player, FALSE);
+		g_debug("**  hiding window %s",
+			ret == GST_BUS_PASS ? "" : "due error");
 		break;
 
 	case GST_MESSAGE_STREAM_STATUS:
@@ -378,41 +424,6 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus, GstMessage *mess
 	}
 
 	return ret;
-}
-
-static int player_window_move(struct media_player *player,
-                              int x, int y, int width, int height)
-{
-	GstElement *video;
-
-	if (player->have_nv_omx) {
-		video = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
-		if (!video) {
-			g_warning("   no element video-out found");
-			return -ENODATA;
-		}
-
-		/* the height must be the last parameter we set, this is
-		 * because the plugin only updates x,y,w when h is set */
-		g_object_set(G_OBJECT(video), "output-pos-x", x,
-		             "output-pos-y", y, "output-size-width", width,
-		             "output-size-height", height, NULL);
-		gst_object_unref(video);
-	}
-	return 0;
-}
-
-static int player_window_update(struct media_player *player)
-{
-	gint x, y, width, height;
-
-	if (!player || !player->window)
-		return -EINVAL;
-
-	gdk_window_get_position(GDK_WINDOW(player->window), &x, &y);
-	gdk_drawable_get_size(GDK_DRAWABLE(player->window), &width, &height);
-
-	return player_window_move(player, x, y, width, height);
 }
 
 static int player_window_init(struct media_player *player)
@@ -1069,7 +1080,8 @@ int media_player_set_output_window(struct media_player *player,
 			int ret;
 
 			g_debug("   scale has changed! %s", player->uri);
-			ret = gst_element_get_state(player->pipeline, &state, NULL, GST_SECOND);
+			ret = gst_element_get_state(player->pipeline,
+			                            &state, NULL, GST_SECOND);
 			if (ret != GST_STATE_CHANGE_SUCCESS) {
 				g_warning("unable to get state");
 				state = MEDIA_PLAYER_PAUSED;
@@ -1085,7 +1097,7 @@ int media_player_set_output_window(struct media_player *player,
 		 * step will be removed as soon as the  have-x-window-handle
  		 * or prepare-x-window-handle notification is working */
 		if (player->scale != SCALE_FULLSCREEN && player->pipeline)
-			player_window_move(player, x, y, width, height);
+			tegra_omx_window_move(player, x, y, width, height);
 	}
 
 	g_debug("< %s()", __func__);
@@ -1095,41 +1107,37 @@ int media_player_set_output_window(struct media_player *player,
 int media_player_play(struct media_player *player)
 {
 	int ret = player_change_state(player, GST_STATE_PLAYING);
-	if (ret < 0)
-		return ret;
-
-	if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
-		gdk_threads_enter();
-		if (!gdk_window_is_visible(player->window) && !player->radio)
-			gdk_window_show(player->window);
-		else
-			gdk_window_hide(player->window);
-		gdk_threads_leave();
+	if (ret < 0) {
+		gchar *uri = g_strdup(player->uri);
+		ret = media_player_set_uri(player, player->uri);
+		g_free(uri);
+		if (ret < 0)
+			return ret;
 	}
-
-	/* update window pos */
+	g_debug("   making visible");
+	player_show_output(player, TRUE);
+	g_debug("   setting position");
 	player_window_update(player);
+	g_debug("   done");
 	return ret;
 }
 
 int media_player_stop(struct media_player *player)
 {
-	int ret = 0;
+	gchar *uri;
+	int ret;
+
 	if (!player)
 		return -EINVAL;
 
-	if (!player->have_nv_omx || HAVE_SOFTWARE_DECODER) {
-		ret = player_change_state(player, GST_STATE_PAUSED);
-
-		gdk_threads_enter();
-		gdk_window_hide(player->window);
-		gdk_threads_leave();
-	} else {
-		gchar *uri = g_strdup(player->uri);
-		g_debug(" uri=%s", uri);
-		ret = player_destroy_pipeline(player);
-		player->uri = uri;
-	}
+	g_debug("   saving old uri");
+	uri = g_strdup(player->uri);
+	g_debug("   uri=[%s]", uri);
+	g_debug("   hiding window");
+	player_show_output(player, FALSE);
+	g_debug("   destroying pipeline");
+	ret = player_destroy_pipeline(player);
+	player->uri = uri;
 
 	return ret;
 }
