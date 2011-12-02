@@ -212,7 +212,7 @@ static gboolean player_set_x_window_id(struct media_player *player,
 
 #ifndef __x86_64__
 	if (G_VALUE_HOLDS_POINTER(value)) {
-		player->xid = (XID)(*((guintptr)g_value_get_pointer(value)));
+		player->xid = (XID)((guintptr)g_value_get_pointer(value));
 	}
 #endif
 	if (G_VALUE_HOLDS_ULONG(value)) {
@@ -436,7 +436,9 @@ static int player_window_init(struct media_player *player)
 	gdk_window_input_shape_combine_region(player->window, region, 0, 0);
 	gdk_region_destroy(region);
 
-	player->xid = gdk_x11_drawable_get_xid(player->window);
+	gdk_threads_enter();
+	gdk_window_hide(player->window);
+	gdk_threads_leave();
 	return 0;
 }
 
@@ -450,6 +452,10 @@ static int player_destroy_pipeline(struct media_player *player)
 		gst_element_set_state(player->pipeline, GST_STATE_NULL);
 		gst_object_unref(player->pipeline);
 		player->pipeline = NULL;
+	}
+	if (player->xid) {
+		g_debug("         clear xid");
+		player->xid = 0;
 	}
 	return 0;
 }
@@ -1029,9 +1035,15 @@ int media_player_set_output_window(struct media_player *player,
 
 	if (!player)
 		return -EINVAL;
-	/* assign the new parameters to our window, in the future this should
-	 * should be sufficient, but since we can not assign our window to the
-	 * gstreamer plugin we need to do this seperatly */
+	if (player->xid) {
+		GdkDisplay *display = gdk_display_get_default();
+		Display *xdisplay =  gdk_x11_display_get_xdisplay(display);
+		g_debug("   move to %dx%d and resize to: %dx%d", x, y, width, height);
+		XMoveResizeWindow(xdisplay, player->xid, x, y, width, height);
+	}
+	/* assign the new parameters to our window, in the future this
+	 * should be sufficient, but since we can not assign our window
+	 * to the gstreamer plugin we need to do this seperatly */
 	if (player->window) {
 		gdk_window_move_resize(player->window, x, y, width, height);
 		//gdk_window_clear(player->window);
