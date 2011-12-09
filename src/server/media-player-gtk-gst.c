@@ -937,15 +937,12 @@ int media_player_create(struct media_player **playerp)
 		g_warning("failed to initialize gstreamer %d", ret);
 		goto err;
 	}
-	/* Since the display type is only needed by nvidia's omx plugin we
-	 * only need to query the display type when we have the plugin. */
-	if (player->have_nv_omx) {
-		g_debug("   getting display type...");
-		ret = player_find_display_type(player);
-		if (ret < 0) {
-			g_warning("unable to query display type %d", ret);
-			player->displaytype = NV_DISPLAY_TYPE_DEFAULT;
-		}
+
+	g_debug("   getting display type...");
+	ret = player_find_display_type(player);
+	if (ret < 0) {
+		g_warning("unable to query display type %d", ret);
+		player->displaytype = NV_DISPLAY_TYPE_DEFAULT;
 	}
 
 	g_debug("   creating pipeline...");
