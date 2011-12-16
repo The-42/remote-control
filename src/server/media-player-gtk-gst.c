@@ -25,11 +25,7 @@
 
 #include <X11/extensions/Xrandr.h>
 
-#ifdef __x86_64__
 #define HAVE_SOFTWARE_DECODER 1
-#else
-#define HAVE_SOFTWARE_DECODER 0
-#endif
 
 //#include <gst/playback/gstplay-enum.h> // not public
 typedef enum {
