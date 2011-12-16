@@ -479,7 +479,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 		"video-sink=\"glesplugin name=video-out\" " \
 		"audio-sink=\"alsasink name=audio-out device=hw:%d,0\" " \
 		"connection-speed=100000 buffer-duration=1800000000 " \
-		"flags=0x00000103 uri=%s"
+		"flags=0x00000163 uri=%s"
 
 	GError *error = NULL;
 	GstBus *bus;
