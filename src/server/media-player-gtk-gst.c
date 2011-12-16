@@ -474,38 +474,24 @@ static int player_destroy_pipeline(struct media_player *player)
 static int player_create_software_pipeline(struct media_player *player, const gchar* uri)
 {
 #if HAVE_SOFTWARE_DECODER
-#define PIPELINE_INPUT_UDP  "udpsrc name=source uri=%s "
-#define PIPELINE_INPUT_FILE "filesrc name=source location=%s"
-#define PIPELINE_INPUT_HTTP "souphttpsrc name=source location=%s"
-#define PIPELINE_INPUT_DUMMY "videotestsrc name=source ! videoscale ! fakesink"
-
 #define PIPELINE \
-	" ! decodebin2 flags=0x57 "\
-		"video-sink=\"autovideosink name=video-out\" " \
-		"audio-sink=\"autoaudiosink name=audio-out\" "
+        "playbin2 " \
+            "video-sink=\"glesplugin name=video-out\" " \
+            "audio-sink=\"autoaudiosink name=audio-out\" "\
+            "connection-speed=100000 " \
+            "buffer-duration=1800000000 " \
+            "flags=0x00000103 " \
+            "uri=%s"
 
 	GError *error = NULL;
 	GstBus *bus;
-	gchar *pipe;
-	int type = 0;
+        gchar *pipe;
 	int ret = -EINVAL;
 
 	if (player->pipeline)
 		player_destroy_pipeline(player);
 
-	if (g_str_has_prefix(uri, "udp://")) {
-		pipe = g_strdup_printf(PIPELINE_INPUT_UDP PIPELINE, uri);
-		type = 0;
-	} else if (g_str_has_prefix(uri, "http://")) {
-		pipe = g_strdup_printf(PIPELINE_INPUT_HTTP PIPELINE, uri);
-		type = 1;
-	} else if (g_str_has_prefix(uri, "file://")) {
-		pipe = g_strdup_printf(PIPELINE_INPUT_FILE PIPELINE, uri);
-		type = 2;
-	} else /* create dummy */ {
-		pipe = g_strdup(PIPELINE_INPUT_DUMMY);
-		type = 3;
-	}
+    pipe = g_strdup_printf(PIPELINE, uri);
 
 	player->pipeline = gst_parse_launch_full(pipe, NULL, GST_PARSE_FLAG_FATAL_ERRORS, &error);
 	if (!player->pipeline) {
