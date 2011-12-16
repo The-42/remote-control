@@ -475,23 +475,23 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 {
 #if HAVE_SOFTWARE_DECODER
 #define PIPELINE \
-        "playbin2 " \
-            "video-sink=\"glesplugin name=video-out\" " \
-            "audio-sink=\"autoaudiosink name=audio-out\" "\
-            "connection-speed=100000 " \
-            "buffer-duration=1800000000 " \
-            "flags=0x00000103 " \
-            "uri=%s"
+	"playbin2 " \
+		"video-sink=\"glesplugin name=video-out\" " \
+		"audio-sink=\"alsasink name=audio-out device=hw:%d,0\" " \
+		"connection-speed=100000 buffer-duration=1800000000 " \
+		"flags=0x00000103 uri=%s"
 
 	GError *error = NULL;
 	GstBus *bus;
-        gchar *pipe;
-	int ret = -EINVAL;
+	gchar *pipe;
+	int ad, ret = -EINVAL;
 
 	if (player->pipeline)
 		player_destroy_pipeline(player);
 
-    pipe = g_strdup_printf(PIPELINE, uri);
+	/* for HDMI we need to select the correct audio device */
+	ad = player->displaytype == NV_DISPLAY_TYPE_HDMI ? 1 : 0;
+	pipe = g_strdup_printf(PIPELINE, ad, uri);
 
 	player->pipeline = gst_parse_launch_full(pipe, NULL, GST_PARSE_FLAG_FATAL_ERRORS, &error);
 	if (!player->pipeline) {
