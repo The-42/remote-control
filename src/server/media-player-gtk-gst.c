@@ -182,6 +182,7 @@ static gboolean player_set_x_overlay(struct media_player *player)
 		g_debug("   gst_x_overlay_set_window_handle()....");
 		gst_x_overlay_set_window_handle(GST_X_OVERLAY(video_sink),
 				GDK_WINDOW_XWINDOW(player->window));
+		gdk_window_freeze_updates (player->window);
 	} else {
 		g_debug("   window not ready");
 		gst_x_overlay_set_window_handle(GST_X_OVERLAY(video_sink),
@@ -224,8 +225,11 @@ static void player_show_output(struct media_player *player, gboolean show)
 		gdk_threads_enter();
 		if (show && !player->radio)
 			gdk_window_show(player->window);
-		else
+		else {
 			gdk_window_hide(player->window);
+			gdk_window_thaw_updates (player->window);
+			gdk_window_clear(player->window);
+		}
 		gdk_threads_leave();
 	} else {
 		if (!show && gdk_window_is_visible(player->window)) {
@@ -1036,7 +1040,7 @@ int media_player_set_output_window(struct media_player *player,
 	 * to the gstreamer plugin we need to do this seperatly */
 	if (player->window) {
 		gdk_window_move_resize(player->window, x, y, width, height);
-		//gdk_window_clear(player->window);
+		gdk_window_clear(player->window);
 	}
 
 	if (player->have_nv_omx) {
