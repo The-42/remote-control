@@ -475,11 +475,12 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 {
 #if HAVE_SOFTWARE_DECODER
 #define PIPELINE \
-	"playbin2 " \
+	"playbin " \
 		"video-sink=\"glesplugin name=video-out\" " \
 		"audio-sink=\"alsasink name=audio-out device=hw:%d,0\" " \
-		"connection-speed=100000 buffer-duration=1800000000 " \
-		"flags=0x00000163 uri=%s"
+		"delay=600000000 connection-speed=100000 " \
+		"buffer-duration=1800000000 flags=0x00000143 " \
+		"uri=%s"
 
 	GError *error = NULL;
 	GstBus *bus;
