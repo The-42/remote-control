@@ -10,8 +10,8 @@
 #  include "config.h"
 #endif
 
-#include <asoundlib.h>
-#include <use-case.h>
+#include <alsa/asoundlib.h>
+#include <alsa/use-case.h>
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
