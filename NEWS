@@ -1,5 +1,11 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.6.2 (2011-12-21)
 ==========================
+- Extend javascript interfaces with ir-code support.
+- Various changes in gstreamer video backend to work on plutux and medcom.
+- Add check for xrandr-support when using gstreamer backend.
+- Add client side implementation for audio-states.
+- Add alsa ucm based audio-state implementation.
+- Cleanup sysfs-based backlight backend.
 
 Release 0.6.0 (2011-11-24)
 ==========================
