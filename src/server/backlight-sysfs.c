@@ -15,14 +15,11 @@
 #include <string.h>
 #include <errno.h>
 
+#include <linux/fb.h>
 #include <sysfs/libsysfs.h>
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
-
-/* NOTE: the logic is inverted, 1 means off and 0 means on */
-#define BACKLIGHT_ENABLE_VALUE "0"
-#define BACKLIGHT_DISABLE_VALUE "1"
 
 struct backlight {
 	struct sysfs_device *device;
@@ -34,11 +31,11 @@ static int backlight_initialize(struct backlight *backlight)
 	struct sysfs_class_device *dev;
 	struct sysfs_class *cls;
 	struct dlist *devlist;
-	int ret = -ENOENT;
+	int ret = -ENODEV;
 
 	cls = sysfs_open_class("backlight");
 	if (!cls)
-		return -ENODEV;
+		return ret;
 
 	devlist = sysfs_get_class_devices(cls);
 	if (!devlist)
@@ -60,18 +57,29 @@ static int backlight_initialize(struct backlight *backlight)
 		struct sysfs_attribute *attrib;
 
 		attrib = sysfs_get_device_attr(backlight->device, "max_brightness");
-		if (attrib && sysfs_read_attribute(attrib) && attrib->len > 0) {
+		if (attrib) {
+			ret = sysfs_read_attribute(attrib);
+			if ((ret < 0) || (attrib->len == 0)) {
+				if (attrib->len == 0)
+					ret = -ENODATA;
+				else
+					ret = -errno;
+
+				sysfs_close_attribute(attrib);
+				goto out;
+			}
+
 			backlight->max_brightness = atoi(attrib->value);
 			sysfs_close_attribute(attrib);
-		} else
+		} else {
 			backlight->max_brightness = 255;
+		}
 
-		g_debug("   using backlight: %s (%s)",
+		g_debug("backlight-sysfs: using device: %s (%s)",
 			backlight->device->name, backlight->device->path);
 	}
 
 out:
-	/*sysfs_close_list(devlist);*/ /* sysfs_close_class does this too */
 	sysfs_close_class(cls);
 	return ret;
 }
@@ -99,32 +107,44 @@ int backlight_create(struct backlight **backlightp)
 
 int backlight_free(struct backlight *backlight)
 {
-	if (backlight) {
-		sysfs_close_device_tree(backlight->device);
-		backlight->device = NULL;
-		free(backlight);
-		backlight = NULL;
-	}
+	if (!backlight)
+		return -EINVAL;
+
+	sysfs_close_device_tree(backlight->device);
+	free(backlight);
+
 	return 0;
 }
 
 int backlight_enable(struct backlight *backlight, bool enable)
 {
 	struct sysfs_attribute *attrib;
-	const char *value;
+	char buf[2];
 	int err;
 
 	if (!backlight)
 		return -EINVAL;
+
 	if (!backlight->device)
 		return -ENODEV;
 
 	attrib = sysfs_get_device_attr(backlight->device, "bl_power");
 	if (!attrib)
-		return -ENOPROTOOPT/*or EIDRM ?*/;
+		return -ENOENT;
 
-	value = enable ? BACKLIGHT_ENABLE_VALUE : BACKLIGHT_DISABLE_VALUE;
-	err = sysfs_write_attribute(attrib, value, strlen(value));
+	if (enable)
+		err = snprintf(buf, sizeof(buf), "%u", FB_BLANK_UNBLANK);
+	else
+		err = snprintf(buf, sizeof(buf), "%u", FB_BLANK_POWERDOWN);
+
+	if (err < 0)
+		return -EINVAL;
+
+	buf[err] = '\0';
+
+	err = sysfs_write_attribute(attrib, buf, strlen(buf));
+	if (err < 0)
+		err = -errno;
 
 	sysfs_close_attribute(attrib);
 	return err;
@@ -138,17 +158,20 @@ int backlight_set(struct backlight *backlight, unsigned int brightness)
 
 	if (!backlight || brightness > backlight->max_brightness)
 		return -EINVAL;
+
 	if (!backlight->device)
 		return -ENODEV;
 
 	/* value should not be larger the 4byte since the range is 0...255 */
-	snprintf(value, sizeof(value), "%d", brightness);
+	snprintf(value, sizeof(value), "%u", brightness);
 
 	attrib = sysfs_get_device_attr(backlight->device, "brightness");
 	if (!attrib)
-		return -ENOPROTOOPT/*or EIDRM ?*/;
+		return -ENOENT;
 
 	err = sysfs_write_attribute(attrib, value, strlen(value));
+	if (err < 0)
+		err = -errno;
 
 	sysfs_close_attribute(attrib);
 	return err;
@@ -161,16 +184,24 @@ int backlight_get(struct backlight *backlight)
 
 	if (!backlight)
 		return -EINVAL;
+
 	if (!backlight->device)
 		return -ENODEV;
 
 	attrib = sysfs_get_device_attr(backlight->device, "actual_brightness");
 	if (!attrib)
-		return -ENOPROTOOPT/*or EIDRM ?*/;
+		return -ENOENT;
 
 	ret = sysfs_read_attribute(attrib);
-	if (ret == 0 && attrib->len > 0)
+	if (ret < 0) {
+		sysfs_close_attribute(attrib);
+		return -errno;
+	}
+
+	if (attrib->len > 0)
 		ret = atoi(attrib->value);
+	else
+		ret = -ENODATA;
 
 	sysfs_close_attribute(attrib);
 	return ret;
