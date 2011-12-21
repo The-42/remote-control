@@ -27,6 +27,24 @@ RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
 #
+# audio (UCM) backend
+#
+enable_audio_alsa=no
+
+AC_ARG_WITH(audio_backend,
+	[AS_HELP_STRING([--with-audio-backend=@<:@none/alsa@:>@],
+		[Use the specified audio (UCM) backend. [default=none]])
+	], [], [with_audio_backend=none])
+
+AS_CASE([$with_audio_backend],
+	[none], [],
+	[alsa], [enable_audio_alsa=yes],
+	[AC_MSG_ERROR([Invalid audio backend: must be none or alsa])]
+)
+
+AS_IF([test "x$enable_audio_alsa" = "xyes"], [PKG_CHECK_MODULES(ALSA, alsa)])
+
+#
 # backlight backend
 #
 enable_backlight_dpms=no
@@ -162,6 +180,7 @@ AS_CASE([$with_gpio_backend],
 #
 # define automake conditionals according to select backends
 #
+AM_CONDITIONAL(ENABLE_AUDIO_ALSA, [test "x$enable_audio_alsa" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_DPMS, [test "x$enable_backlight_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
@@ -247,6 +266,7 @@ remote-control was configured with the following options:
 
 Features:
   readline support:          $use_readline
+  Audio (UCM) Backend:       $with_audio_backend
   Backlight Backend:         $with_backlight_backend
   Video Backend:             $with_video_backend
   SmartCard/RFID Backend:    $with_smartcard_backend

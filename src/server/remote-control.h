@@ -119,10 +119,28 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 /**
  * audio state
  */
+enum audio_state {
+	AUDIO_STATE_INACTIVE,
+	AUDIO_STATE_HIFI_PLAYBACK_SPEAKER,
+	AUDIO_STATE_HIFI_PLAYBACK_HEADSET,
+	AUDIO_STATE_VOICECALL_HANDSET,
+	AUDIO_STATE_VOICECALL_HEADSET,
+	AUDIO_STATE_VOICECALL_SPEAKER,
+	AUDIO_STATE_VOICECALL_IP_HANDSET,
+	AUDIO_STATE_VOICECALL_IP_HEADSET,
+	AUDIO_STATE_VOICECALL_IP_SPEAKER,
+};
+
 struct audio;
 
 int audio_create(struct audio **audiop);
 int audio_free(struct audio *audio);
+int audio_set_state(struct audio *audio, enum audio_state state);
+int audio_get_state(struct audio *audio, enum audio_state *statep);
+int audio_set_volume(struct audio *audio, uint8_t volume);
+int audio_get_volume(struct audio *audio, uint8_t *volumep);
+int audio_set_speakers_enable(struct audio *audio, bool enable);
+int audio_get_speakers_enable(struct audio *audio, bool *enablep);
 
 /**
  * backlight

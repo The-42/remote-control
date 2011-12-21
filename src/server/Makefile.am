@@ -16,7 +16,6 @@ libremote_control_la_LIBADD = \
 
 libremote_control_la_SOURCES = \
 	audio.c \
-	audio-alsa.c \
 	backlight.c \
 	event-manager.c \
 	handset.c \
@@ -46,6 +45,14 @@ libremote_control_la_SOURCES = \
 nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
+
+if ENABLE_AUDIO_ALSA
+libremote_control_la_CFLAGS += @ALSA_CFLAGS@
+libremote_control_la_SOURCES += audio-alsa.c
+libremote_control_la_LIBADD += @ALSA_LIBS@
+else
+libremote_control_la_SOURCES += audio-null.c
+endif
 
 if ENABLE_BACKLIGHT_DPMS
 libremote_control_la_SOURCES += backlight-dpms.c
