@@ -186,6 +186,7 @@ static gint avionic_cursor_set(struct context *ctx, gint x, gint y)
 
 	/* set the new cursor pos */
 	gdk_display_warp_pointer(display, screen, x, y);
+	gdk_display_flush(display);
 
 	return TRUE;
 }
