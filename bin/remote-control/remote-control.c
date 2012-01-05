@@ -355,6 +355,8 @@ int main(int argc, char *argv[])
 	if (g_thread_supported())
 		g_thread_init(NULL);
 
+	g_log_set_default_handler(remote_control_log_handler, NULL);
+
 	gtk_init(&argc, &argv);
 
 	options = g_option_context_new("- remote control service");

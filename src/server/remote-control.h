@@ -401,4 +401,8 @@ gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
 
 unsigned int if_lookup_default(void);
 
+void remote_control_log_handler(const gchar *log_domain,
+		GLogLevelFlags log_level, const gchar *message,
+		gpointer unused_data);
+
 #endif /* REMOTE_CONTROL_H */

@@ -230,3 +230,69 @@ free:
 	nl_socket_free(sock);
 	return ret;
 }
+
+void remote_control_log_handler(const gchar *log_domain,
+		GLogLevelFlags log_level, const gchar *message,
+		gpointer unused_data)
+{
+	void (*print)(const gchar *format, ...);
+	const gchar *level_prefix = "LOG";
+	const gchar *program;
+	gchar buffer[16];
+	struct tm *tmp;
+	time_t now;
+
+	switch (log_level & G_LOG_LEVEL_MASK) {
+	case G_LOG_LEVEL_ERROR:
+		level_prefix = "ERROR";
+		print = g_printerr;
+		break;
+
+	case G_LOG_LEVEL_CRITICAL:
+		level_prefix = "CRITICAL";
+		print = g_printerr;
+		break;
+
+	case G_LOG_LEVEL_WARNING:
+		level_prefix = "WARNING";
+		print = g_printerr;
+		break;
+
+	case G_LOG_LEVEL_MESSAGE:
+		level_prefix = "MESSAGE";
+		print = g_printerr;
+		break;
+
+	case G_LOG_LEVEL_INFO:
+		level_prefix = "INFO";
+		print = g_print;
+		break;
+
+	case G_LOG_LEVEL_DEBUG:
+		level_prefix = "DEBUG";
+		print = g_print;
+		break;
+
+	default:
+		print = g_print;
+		break;
+	}
+
+	now = time(NULL);
+	tmp = localtime(&now);
+	strftime(buffer, sizeof(buffer), "%b %e %H:%M:%S", tmp);
+	print("%s ", buffer);
+
+	if (log_domain)
+		print("%s - ", log_domain);
+	else
+		print("** ");
+
+	program = g_get_prgname();
+	if (program)
+		print("(%s:%lu): ", program, getpid());
+	else
+		print("(process:%lu): ", getpid());
+
+	print("%s: %s\n", level_prefix, message ?: "(NULL) message");
+}
