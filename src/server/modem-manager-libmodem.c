@@ -99,7 +99,7 @@ static int unshield_callback(char c, void *data)
 		if (manager->state == MODEM_STATE_ACTIVE) {
 			struct event event;
 
-			g_debug("call ended, hanging up");
+			g_debug("modem-libmodem: call ended");
 			modem_manager_change_state(manager, MODEM_STATE_TERMINATE, TRUE);
 
 			memset(&event, 0, sizeof(event));
@@ -114,7 +114,7 @@ static int unshield_callback(char c, void *data)
 		break;
 
 	default:
-		g_debug("DLE: %02x, %c", (unsigned char)c, display);
+		g_debug("modem-libmodem: DLE: %02x, %c", (unsigned char)c, display);
 		break;
 	}
 
@@ -232,7 +232,7 @@ static int modem_manager_process_idle(struct modem_manager *manager)
 
 		events = remote_control_get_event_manager(manager->rc);
 
-		g_debug("%s(): incoming call...", __func__);
+		g_debug("modem-libmodem: incoming call...");
 
 		memset(&event, 0, sizeof(event));
 		event.source = EVENT_SOURCE_MODEM;
@@ -409,7 +409,7 @@ static int modem_manager_open(struct modem_manager *manager)
 		if (err < 0)
 			continue;
 
-		g_debug("modem: using device %s", desc->device);
+		g_debug("modem-libmodem: using device %s", desc->device);
 
 		memset(&params, 0, sizeof(params));
 
@@ -433,6 +433,20 @@ static int modem_manager_open(struct modem_manager *manager)
 	}
 
 	return ret;
+}
+
+static int modem_manager_logv(enum modem_log_level level, const char *fmt,
+			      va_list ap)
+{
+	gchar *message = g_strdup_vprintf(fmt, ap);
+	int len = strlen(message);
+
+	if (message[len] == '\n')
+		message[len] = '\0';
+
+	g_debug("modem-libmodem: %s", message);
+	g_free(message);
+	return 0;
 }
 
 int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server)
@@ -468,6 +482,8 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	manager->state = MODEM_STATE_IDLE;
 	manager->done = FALSE;
 	manager->ack = FALSE;
+
+	modem_set_logv_func(modem_manager_logv);
 
 	err = modem_manager_open(manager);
 	if (err < 0) {
@@ -558,7 +574,7 @@ int modem_manager_terminate(struct modem_manager *manager)
 		return -ENODEV;
 
 	if (manager->state == MODEM_STATE_IDLE) {
-		g_debug("modem-manager-libmodem: no call to terminate");
+		g_debug("modem-libmodem: no call to terminate");
 		return -ENOTCONN;
 	}
 
