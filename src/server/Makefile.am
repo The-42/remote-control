@@ -64,8 +64,6 @@ libremote_control_la_LIBADD += @GUDEV_LIBS@
 else
 if ENABLE_BACKLIGHT_SYSFS
 libremote_control_la_SOURCES += backlight-sysfs.c
-libremote_control_la_CFLAGS += @SYSFS_CFLAGS@
-libremote_control_la_LIBADD += @SYSFS_LIBS@
 else
 libremote_control_la_SOURCES += backlight-null.c
 endif # ENABLE_BACKLIGHT_SYSFS
