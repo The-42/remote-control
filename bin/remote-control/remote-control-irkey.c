@@ -30,7 +30,11 @@
 struct irkey {
 	int tty;
 	GQueue *fifo;
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	GMutex lock;
+#else
 	GMutex *lock;
+#endif
 	GThread *thread;
 	gboolean running;
 };
@@ -92,12 +96,20 @@ static void flush_queue(GQueue *queue)
 
 static void irk_lock_queue(struct irkey *ctx)
 {
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	g_mutex_lock(&ctx->lock);
+#else
 	g_mutex_lock(ctx->lock);
+#endif
 }
 
 static void irk_unlock_queue(struct irkey *ctx)
 {
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	g_mutex_unlock(&ctx->lock);
+#else
 	g_mutex_unlock(ctx->lock);
+#endif
 }
 
 /**
@@ -145,10 +157,12 @@ void irk_free(struct irkey *ctx)
 		g_queue_free(ctx->fifo);
 		ctx->fifo = NULL;
 	}
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	if (ctx->lock) {
 		g_mutex_free(ctx->lock);
 		ctx->lock = NULL;
 	}
+#endif
 	if (ctx->tty) {
 		close(ctx->tty);
 		ctx->tty = 0;
@@ -173,14 +187,16 @@ struct irkey* irk_new()
 		g_free(irk);
 		return NULL;
 	}
-
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	g_mutex_init(&irk->lock);
+#else
 	irk->lock = g_mutex_new();
 	if (!irk->lock) {
 		g_queue_free(irk->fifo);
 		g_free(irk);
 		return NULL;
 	}
-
+#endif
 	return irk;
 }
 
@@ -339,6 +355,13 @@ cleanup:
 
 int irk_setup_thread(struct irkey *ctx)
 {
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	ctx->running = TRUE;
+	ctx->thread = g_thread_new("irk_thread", irk_thread_proc, ctx);
+	if (!ctx->thread) {
+		g_warning("%s: failed to create thread", __func__);
+	}
+#else
 	GError *error = NULL;
 
 	ctx->running = TRUE;
@@ -348,7 +371,7 @@ int irk_setup_thread(struct irkey *ctx)
 			__func__, error->message);
 		g_error_free(error);
 	}
-
+#endif
 	return 0;
 }
 
