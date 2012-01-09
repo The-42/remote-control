@@ -449,9 +449,6 @@ static int player_window_init(struct media_player *player)
 	gdk_window_input_shape_combine_region(player->window, region, 0, 0);
 	gdk_region_destroy(region);
 
-	gdk_threads_enter();
-	gdk_window_hide(player->window);
-	gdk_threads_leave();
 	return 0;
 }
 
