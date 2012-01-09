@@ -949,14 +949,20 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	 * not be sure that the chain can handle the new url we destroy the
 	 * old and create a new. this is the safest way */
 	g_debug("   destroy old pipeline...");
-	player_destroy_pipeline(player); /* this will also clear the uri */
-	g_debug("   creating new pipeline...");
-	if (player_create_pipeline(player, (const gchar*)uri) < 0) {
-		g_critical("  failed to create pipeline");
-		err = -ENOSYS;
-	} else {
+	if (player->pipeline) {
+		g_warning("reuse old pipeline");
+		gst_element_set_state(player->pipeline, GST_STATE_READY);
+		g_object_set(player->pipeline, "uri", (const gchar*)uri, NULL);
 		err = player_change_state(player, state == MEDIA_PLAYER_STOPPED
-			? GST_STATE_PAUSED : GST_STATE_PLAYING);
+								  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
+	} else {
+		if (player_create_pipeline(player, (const gchar*)uri) < 0) {
+			g_critical("  failed to create pipeline");
+			err = -ENOSYS;
+		} else {
+			err = player_change_state(player, state == MEDIA_PLAYER_STOPPED
+									  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
+		}
 	}
 out:
 	g_debug("< %s()", __func__);
