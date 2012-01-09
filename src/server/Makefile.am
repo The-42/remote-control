@@ -108,7 +108,7 @@ libremote_control_la_LIBADD += \
 
 libremote_control_la_SOURCES += \
 	media-player-gtk-gst.c \
-	sound-manager-null.c
+	sound-manager-gst.c
 else
 libremote_control_la_SOURCES += \
 	media-player-null.c \

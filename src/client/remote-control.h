@@ -232,6 +232,8 @@ remote_public int remote_task_manager_kill(void *priv, int pid, int sig);
 
 remote_public int remote_tuner_set_frequency(void *priv, unsigned long frequency);
 
+remote_public int remote_sound_play(void *priv, const char *url);
+
 #ifdef __cplusplus
 };
 #endif
