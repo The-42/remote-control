@@ -49,10 +49,10 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
 
-	gdk_threads_enter();
+	GDK_THREADS_ENTER();
 	player->state = MEDIA_PLAYER_STOPPED;
 	gdk_window_hide(player->window);
-	gdk_threads_leave();
+	GDK_THREADS_LEAVE();
 }
 
 static void on_vout(const struct libvlc_event_t *event, void *data)
@@ -60,9 +60,9 @@ static void on_vout(const struct libvlc_event_t *event, void *data)
 	struct media_player *player = data;
 
 	if (event->u.media_player_vout.new_count > 0) {
-		gdk_threads_enter();
+		GDK_THREADS_ENTER();
 		gdk_window_show(player->window);
-		gdk_threads_leave();
+		GDK_THREADS_LEAVE();
 	}
 }
 
