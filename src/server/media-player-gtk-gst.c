@@ -664,7 +664,9 @@ static int tegra_display_name_to_type(const gchar *name)
 	static const struct connection_map MAP[] = {
 		{ "CRT",    NV_DISPLAY_TYPE_CRT  },
 		{ "HDMI",   NV_DISPLAY_TYPE_HDMI },
-		{ "TFTLCD", NV_DISPLAY_TYPE_LVDS }
+		{ "HDMI-1", NV_DISPLAY_TYPE_HDMI },
+		{ "TFTLCD", NV_DISPLAY_TYPE_LVDS },
+		{ "LVDS-1", NV_DISPLAY_TYPE_LVDS }
 	};
 	int index;
 
