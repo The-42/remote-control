@@ -248,9 +248,9 @@ CFLAGS="$CFLAGS -Wall"
 
 AC_ARG_ENABLE([werror],
 	[AS_HELP_STRING([--enable-werror],
-		[Treat warnings as errors (default: enabled)])],
+		[Treat warnings as errors (default: disabled)])],
 		[enable_werror="$enableval"],
-		[enable_werror=yes])
+		[enable_werror=no])
 if test "x$enable_werror" = "xyes"; then
 	CFLAGS="$CFLAGS -Werror"
 fi
@@ -294,6 +294,7 @@ Features:
   GPIO Backend:              $with_gpio_backend
 
 Options:
+  Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
   Webkit JScript API:        $enable_webkit_js_api
 "
