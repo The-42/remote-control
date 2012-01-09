@@ -298,14 +298,18 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 		return err;
 	}
 
-	err = snd_use_case_set(audio->ucm, "_enadev", s->device);
-	if (err < 0) {
-		g_warning("audio-alsa-ucm: failed to enable device: %s",
-				snd_strerror(err));
-		return err;
+	if (strcmp(s->device, SND_USE_CASE_DEV_NONE)) {
+		err = snd_use_case_set(audio->ucm, "_enadev", s->device);
+
+		if (err < 0) {
+			g_warning("audio-alsa-ucm: failed to enable device %s: %s",
+					s->device, snd_strerror(err));
+			return err;
+		}
 	}
 
 	audio->state = state;
+
 	return 0;
 }
 
