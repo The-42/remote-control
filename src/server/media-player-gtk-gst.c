@@ -63,6 +63,10 @@ typedef enum {
 #define SCALE_PREVIEW    0
 #define SCALE_FULLSCREEN 1
 
+//#define ENABLE_FIXED_FULLSCREEN
+#define FULLSCREEN_WIDTH 1280
+#define FULLSCREEN_HEIGHT 720
+
 struct media_player {
 	GstElement *pipeline;
 	GdkWindow *window;   /* the window to use for output */
@@ -748,6 +752,104 @@ static int player_change_state(struct media_player *player, GstState state)
 	return 0;
 }
 
+#ifdef ENABLE_FIXED_FULLSCREEN
+static int player_xrandr_configure_screen(struct media_player *player,
+								   int width, int height, int rate)
+{
+	XRRScreenConfiguration *conf;
+	XRRScreenResources *screen_res;
+	XRRScreenSize *available_sizes;
+	Rotation original_rotation;
+	short *available_rates;
+	SizeID current_size_id;
+	short current_rate;
+	int event_base = 0;
+	int error_base = 0;
+	Display *display;
+	XID rootwindow;
+	int gst_ret;
+	Status ret;
+	int nsizes;
+	int nrates;
+	int i;
+
+	display = GDK_WINDOW_XDISPLAY (player->window);
+
+	if (!XRRQueryExtension(display, &event_base, &error_base)) {
+		g_warning("randr not available: %d %d", event_base, error_base);
+		return -ENOSYS;
+	}
+
+	rootwindow = gdk_x11_drawable_get_xid(GDK_DRAWABLE (player->window));
+	conf = XRRGetScreenInfo (display, rootwindow);
+	screen_res = XRRGetScreenResources (display, rootwindow);
+	if (!screen_res) {
+		g_warning("no screen resource");
+		return -ENOMEM;
+	}
+
+	/* try to find a screen size matching the desired size */
+	available_sizes = XRRSizes (display, 0, &nsizes);
+	current_size_id = XRRConfigCurrentConfiguration (conf, &original_rotation);
+
+	if (width == -1 && height == -1) {
+		current_size_id = 0;
+	} else if (available_sizes[current_size_id].width != width ||
+			   available_sizes[current_size_id].height != height) {
+		for (i = 0; i < nsizes; i++, available_sizes++) {
+			if (available_sizes->width == width &&
+					available_sizes->height == height) {
+				current_size_id = i;
+				break;
+			}
+		}
+	}
+
+	/* try to find a matching rate */
+	available_rates = XRRRates (display, 0, current_size_id, &nrates);
+	current_rate = *available_rates;
+	for (i = 0; i < nrates; i++, available_rates++) {
+		if (*available_rates == rate) {
+			current_rate = rate;
+			break;
+		}
+	}
+
+	g_print ("xrandr: switch to %dx%d/%dHz\n", available_sizes->width,
+			 available_sizes->height, current_rate);
+
+	/* pause gstreamer, to avoid flow errors */
+	gst_ret = player_change_state(player, GST_STATE_READY);
+	if (gst_ret < 0)
+		g_warning ("Failed to pause playback before mode-switch");
+	else {
+		GstState state;
+		if (gst_element_get_state (player->pipeline, &state, NULL,
+								   10*GST_SECOND) !=
+				GST_STATE_CHANGE_SUCCESS) {
+			g_warning ("Timeout while waiting for playback to pause.");
+		}
+	}
+
+	ret = XRRSetScreenConfigAndRate (display, conf, rootwindow,
+									 current_size_id, original_rotation,
+									 current_rate, CurrentTime);
+	if (ret != Success) {
+		g_warning ("xrandr: could not change display settings: %d", ret);
+	}
+
+	XRRFreeScreenConfigInfo (conf);
+	XRRFreeScreenResources (screen_res);
+
+	/* resume gstreamer playback */
+	gst_ret = player_change_state(player, GST_STATE_PLAYING);
+	if (gst_ret < 0)
+		g_warning ("Failed to resume playback after mode-switch");
+
+	return 0;
+}
+#endif
+
 /**
  * HERE comes the part for remote-control
  */
@@ -873,11 +975,32 @@ int media_player_set_output_window(struct media_player *player,
                                    unsigned int width,
                                    unsigned int height)
 {
+	GdkScreen *screen;
+
 	g_debug("> %s(player=%p, x=%d, y=%d, width=%d, height=%d)",
 		__func__, player, x, y, width, height);
 
 	if (!player)
 		return -EINVAL;
+
+	screen = gdk_screen_get_default();
+#ifdef ENABLE_FIXED_FULLSCREEN
+	if ((width >= gdk_screen_get_width(screen)) &&
+		(height >= gdk_screen_get_height(screen))) {
+		if (player->scale != SCALE_FULLSCREEN) {
+			width = FULLSCREEN_WIDTH;
+			height = FULLSCREEN_HEIGHT;
+
+			player_xrandr_configure_screen (player, width, height, 50);
+			player->scale = SCALE_FULLSCREEN;
+		}
+	} else if (player->scale != SCALE_PREVIEW) {
+		/* switch back to default rasolution */
+		player_xrandr_configure_screen (player, -1, -1, 50);
+		player->scale = SCALE_PREVIEW;
+	}
+#endif
+
 	if (player->xid) {
 		GdkDisplay *display = gdk_display_get_default();
 		Display *xdisplay =  gdk_x11_display_get_xdisplay(display);
@@ -894,9 +1017,7 @@ int media_player_set_output_window(struct media_player *player,
 
 	if (player->have_nv_omx) {
 		int scale = player->scale;
-		GdkScreen *screen;
 
-		screen = gdk_screen_get_default();
 		if ((width >= gdk_screen_get_width(screen)) &&
 		    (height >= gdk_screen_get_height(screen)))
 			player->scale = SCALE_FULLSCREEN;
