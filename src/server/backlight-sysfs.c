@@ -10,77 +10,46 @@
 #  include "config.h"
 #endif
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 
 #include <linux/fb.h>
-#include <sysfs/libsysfs.h>
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#define SYSFS_PATH "/sys"
+
 struct backlight {
-	struct sysfs_device *device;
 	int max_brightness;
 };
 
 static int backlight_initialize(struct backlight *backlight)
 {
-	struct sysfs_class_device *dev;
-	struct sysfs_class *cls;
-	struct dlist *devlist;
 	int ret = -ENODEV;
+	int err;
+	FILE *fd;
 
-	cls = sysfs_open_class("backlight");
-	if (!cls)
-		return ret;
+	if (!backlight)
+		return -EINVAL;
 
-	devlist = sysfs_get_class_devices(cls);
-	if (!devlist)
+	fd = fopen(SYSFS_PATH "/class/backlight/pwm-backlight/max_brightness",
+			   "r");
+	if (fd < 0)
+		return -errno;
+
+	err = fscanf (fd, "%d", &backlight->max_brightness);
+	if ((err < 0) && (errno != -EBUSY)) {
+		ret = -errno;
 		goto out;
-
-	/* search all backlight devices and take the first one */
-	dlist_for_each_data(devlist, dev, struct sysfs_class_device) {
-		if (!dev)
-			continue;
-
-		backlight->device = sysfs_open_device_tree(dev->path);
-		if (backlight->device) {
-			ret = 0;
-			break;
-		}
 	}
 
-	if (backlight->device) {
-		struct sysfs_attribute *attrib;
-
-		attrib = sysfs_get_device_attr(backlight->device, "max_brightness");
-		if (attrib) {
-			ret = sysfs_read_attribute(attrib);
-			if ((ret < 0) || (attrib->len == 0)) {
-				if (attrib->len == 0)
-					ret = -ENODATA;
-				else
-					ret = -errno;
-
-				sysfs_close_attribute(attrib);
-				goto out;
-			}
-
-			backlight->max_brightness = atoi(attrib->value);
-			sysfs_close_attribute(attrib);
-		} else {
-			backlight->max_brightness = 255;
-		}
-
-		g_debug("backlight-sysfs: using device: %s (%s)",
-			backlight->device->name, backlight->device->path);
-	}
+	ret = 0;
 
 out:
-	sysfs_close_class(cls);
+	fclose(fd);
 	return ret;
 }
 
@@ -110,7 +79,6 @@ int backlight_free(struct backlight *backlight)
 	if (!backlight)
 		return -EINVAL;
 
-	sysfs_close_device_tree(backlight->device);
 	free(backlight);
 
 	return 0;
@@ -118,91 +86,77 @@ int backlight_free(struct backlight *backlight)
 
 int backlight_enable(struct backlight *backlight, bool enable)
 {
-	struct sysfs_attribute *attrib;
-	char buf[2];
 	int err;
+	int fd;
 
 	if (!backlight)
 		return -EINVAL;
 
-	if (!backlight->device)
-		return -ENODEV;
+	fd = open(SYSFS_PATH "/class/backlight/pwm-backlight/bl_power",
+			  O_WRONLY);
+	if (fd < 0)
+		return -errno;
 
-	attrib = sysfs_get_device_attr(backlight->device, "bl_power");
-	if (!attrib)
-		return -ENOENT;
-
-	if (enable)
-		err = snprintf(buf, sizeof(buf), "%u", FB_BLANK_UNBLANK);
-	else
-		err = snprintf(buf, sizeof(buf), "%u", FB_BLANK_POWERDOWN);
-
-	if (err < 0)
-		return -EINVAL;
-
-	buf[err] = '\0';
-
-	err = sysfs_write_attribute(attrib, buf, strlen(buf));
-	if (err < 0)
+	err = dprintf(fd, "%u", enable ? FB_BLANK_UNBLANK : FB_BLANK_POWERDOWN);
+	if ((err < 0) && (errno != -EBUSY)) {
 		err = -errno;
+		goto out;
+	}
 
-	sysfs_close_attribute(attrib);
+	err = 0;
+
+out:
+	close (fd);
 	return err;
 }
 
 int backlight_set(struct backlight *backlight, unsigned int brightness)
 {
-	struct sysfs_attribute *attrib;
-	char value[4];
 	int err;
+	int fd;
 
 	if (!backlight || brightness > backlight->max_brightness)
 		return -EINVAL;
 
-	if (!backlight->device)
-		return -ENODEV;
+	fd = open(SYSFS_PATH "/class/backlight/pwm-backlight/brightness",
+			  O_WRONLY);
+	if (fd < 0)
+		return -errno;
 
-	/* value should not be larger the 4byte since the range is 0...255 */
-	snprintf(value, sizeof(value), "%u", brightness);
-
-	attrib = sysfs_get_device_attr(backlight->device, "brightness");
-	if (!attrib)
-		return -ENOENT;
-
-	err = sysfs_write_attribute(attrib, value, strlen(value));
-	if (err < 0)
+	err = dprintf(fd, "%u", brightness);
+	if ((err < 0) && (errno != -EBUSY)) {
 		err = -errno;
+		goto out;
+	}
 
-	sysfs_close_attribute(attrib);
+	err = 0;
+
+out:
+	close (fd);
 	return err;
 }
 
 int backlight_get(struct backlight *backlight)
 {
-	struct sysfs_attribute *attrib;
 	int ret;
+	int err;
+	FILE *fd;
 
 	if (!backlight)
 		return -EINVAL;
 
-	if (!backlight->device)
-		return -ENODEV;
-
-	attrib = sysfs_get_device_attr(backlight->device, "actual_brightness");
-	if (!attrib)
-		return -ENOENT;
-
-	ret = sysfs_read_attribute(attrib);
-	if (ret < 0) {
-		sysfs_close_attribute(attrib);
+	fd = fopen(SYSFS_PATH "/class/backlight/pwm-backlight/brightness",
+			  O_RDONLY);
+	if (fd < 0)
 		return -errno;
+
+	err = fscanf (fd, "%d", &ret);
+	if ((err < 0) && (errno != -EBUSY)) {
+		ret = -errno;
+		goto out;
 	}
 
-	if (attrib->len > 0)
-		ret = atoi(attrib->value);
-	else
-		ret = -ENODATA;
-
-	sysfs_close_attribute(attrib);
+out:
+	fclose (fd);
 	return ret;
 }

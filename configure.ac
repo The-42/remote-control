@@ -65,7 +65,6 @@ AS_CASE([$with_backlight_backend],
 )
 
 AS_IF([test "x$enable_backlight_medatom" = "xyes"], [PKG_CHECK_MODULES(GUDEV, gudev-1.0)])
-AS_IF([test "x$enable_backlight_sysfs" = "xyes"], [PKG_CHECK_MODULES(SYSFS, libsysfs)])
 
 #
 # SmartCard backend
