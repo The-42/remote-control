@@ -279,11 +279,11 @@ static int gpio_handle_irq(struct gpio_desc *gpio,
 		name = "SMARTCARD";
 
 		if (value) {
-			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
-			state = "INSERTED";
-		} else {
 			event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
 			state = "REMOVED";
+		} else {
+			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
+			state = "INSERTED";
 		}
 		break;
 
