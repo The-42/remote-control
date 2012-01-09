@@ -669,6 +669,31 @@ const struct cli_command_info cmd_media_player_state _command_ = {
 };
 
 /*
+ * "sound-play" command
+ */
+static int exec_sound_play(struct cli *cli, int argc, char *argv[])
+{
+	int err;
+
+	if (argc < 2)
+		return -EINVAL;
+
+	err = remote_sound_play(cli->client, argv[1]);
+	if (err < 0)
+		printf("%s\n", strerror(-err));
+
+	return err;
+}
+
+const struct cli_command_info cmd_sound_play _command_ = {
+	.name = "sound-play",
+	.summary = "play sound file",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_sound_play,
+};
+
+/*
  * "modem-call" command
  */
 static int exec_modem_call(struct cli *cli, int argc, char *argv[])
