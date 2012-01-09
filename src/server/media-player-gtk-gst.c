@@ -884,17 +884,17 @@ int media_player_create(struct media_player **playerp)
 		player->displaytype = NV_DISPLAY_TYPE_DEFAULT;
 	}
 
-	g_debug("   creating pipeline...");
-	ret = player_create_pipeline(player, "none");
-	if (ret < 0 || player->pipeline == NULL) {
-		g_warning("failed to setup pipeline");
-		goto err;
-	}
-
 	g_debug("   preparing window...");
 	ret = player_window_init(player);
 	if (ret < 0) {
 		g_warning("failed to create window %d", ret);
+		goto err;
+	}
+
+	g_debug("   creating pipeline...");
+	ret = player_create_pipeline(player, "none");
+	if (ret < 0 || player->pipeline == NULL) {
+		g_warning("failed to setup pipeline");
 		goto err;
 	}
 
