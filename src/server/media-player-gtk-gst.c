@@ -1069,11 +1069,6 @@ int media_player_play(struct media_player *player)
 		if (ret < 0)
 			return ret;
 	}
-	g_debug("   making visible");
-	player_show_output(player, TRUE);
-	g_debug("   setting position");
-	player_window_update(player);
-	g_debug("   done");
 	return ret;
 }
 
