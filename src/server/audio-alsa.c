@@ -23,6 +23,8 @@ struct audio {
 	enum audio_state state;
 };
 
+int audio_get_state(struct audio *audio, enum audio_state *statep);
+
 static void alsa_ucm_dump_verb_devices(struct audio *audio, const char *verb)
 {
 	char identifier[64];
@@ -255,6 +257,7 @@ int audio_free(struct audio *audio)
 int audio_set_state(struct audio *audio, enum audio_state state)
 {
 	const struct ucm_state *s;
+	enum audio_state prev_state;
 	int err;
 
 	if (!audio || (state < 0) || (state >= G_N_ELEMENTS(ucm_states)))
@@ -262,6 +265,19 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 
 	s = &ucm_states[state];
 
+	g_debug("ucm: set state to %d", state);
+
+	/* FIXME: we want to change this in favor of a more generic API
+	 * that would allow the frontend to enable and disable devices
+	 * explicitly. */
+	/* first disable the previous state */
+	if(audio_get_state (audio, &prev_state) == 0 &&
+			strcmp(ucm_states[prev_state].device, SND_USE_CASE_DEV_NONE)) {
+		g_debug("ucm: disable current device: %s", ucm_states[prev_state].device);
+		snd_use_case_set(audio->ucm, "_disdev", ucm_states[prev_state].device);
+	}
+
+	g_debug("ucm: set verb %s", s->verb);
 	err = snd_use_case_set(audio->ucm, "_verb", s->verb);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to set use-case: %s",
