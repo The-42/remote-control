@@ -134,7 +134,7 @@ enum audio_state {
 
 struct audio;
 
-int audio_create(struct audio **audiop);
+int audio_create(struct audio **audiop, struct rpc_server *server);
 int audio_free(struct audio *audio);
 int audio_set_state(struct audio *audio, enum audio_state state);
 int audio_get_state(struct audio *audio, enum audio_state *statep);

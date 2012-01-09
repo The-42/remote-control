@@ -100,8 +100,11 @@ int sound_manager_free(struct sound_manager *manager)
 
 int sound_manager_play(struct sound_manager *manager, const char *uri)
 {
-	if (!manager || !uri)
+	if (!manager || !uri) {
+		g_warning("%s(%p, %p): manager or uri invalid", __func__, manager,
+				  uri);
 		return -EINVAL;
+	}
 
 	gst_element_set_state (manager->play, GST_STATE_NULL);
 	g_object_set (G_OBJECT (manager->play), "uri", uri, NULL);
