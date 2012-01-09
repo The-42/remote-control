@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+	<head>
+		<title>AJAX dead-lock</title>
+		<script type="text/javascript">
+			function get(url)
+			{
+				request = new XMLHttpRequest();
+				if (!request)
+					return false;
+
+				request.open("GET", url, true);
+				request.send();
+
+				return request.responseText;
+			}
+		</script>
+	</head>
+	<body>
+		<quote>
+			<script type="text/javascript">
+				response = get("http://www.google.com/ncr");
+				document.write(response);
+			</script>
+		</quote>
+	</body>
+</html>

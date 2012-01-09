@@ -276,6 +276,7 @@ AC_OUTPUT([
 	src/common/Makefile
 	src/Makefile
 	src/server/Makefile
+	tests/Makefile
 ])
 
 echo "
