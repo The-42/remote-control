@@ -21,7 +21,7 @@
 #define SYSFS_PATH "/sys"
 
 /* FIXME: don't hard-code this */
-#define GPIO_START 248
+#define GPIO_START 448
 
 #define IRQ_TYPE_EDGE_NONE    0
 #define IRQ_TYPE_EDGE_RISING  (1 << 0)
