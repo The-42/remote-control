@@ -36,12 +36,6 @@ static void on_playing(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
 
-	if (libvlc_video_get_track(player->player) != -1) {
-		gdk_threads_enter();
-		gdk_window_show(player->window);
-		gdk_threads_leave();
-	}
-
 	player->state = MEDIA_PLAYER_PLAYING;
 }
 
