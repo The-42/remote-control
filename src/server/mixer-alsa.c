@@ -838,7 +838,11 @@ int mixer_loopback_enable(struct mixer *mixer, bool enable)
 
 		mixer->loop = TRUE;
 
+#if GLIB_CHECK_VERSION(2, 31, 0)
+		mixer->thread = g_thread_new("mixer-alsa", loopback_thread, mixer);
+#else
 		mixer->thread = g_thread_create(loopback_thread, mixer, TRUE, NULL);
+#endif
 		if (!mixer->thread)
 			return -ENOMEM;
 	} else {

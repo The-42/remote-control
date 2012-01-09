@@ -352,8 +352,10 @@ int main(int argc, char *argv[])
 	if (!XInitThreads())
 		g_debug("XInitThreads() failed");
 
-	if (g_thread_supported())
+#if !GLIB_CHECK_VERSION(2, 31, 0)
+	if (!g_thread_supported())
 		g_thread_init(NULL);
+#endif
 
 	g_log_set_default_handler(remote_control_log_handler, NULL);
 

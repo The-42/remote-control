@@ -25,8 +25,13 @@ struct modem_manager {
 	struct modem_call *call;
 	enum modem_state next_state;
 	enum modem_state state;
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	GMutex *lock;
 	GCond *cond;
+#else
+	GMutex lock;
+	GCond cond;
+#endif
 	GThread *thread;
 	gchar *number;
 	gboolean done;
@@ -70,14 +75,27 @@ static int modem_manager_change_state(struct modem_manager *manager,
 			return err;
 		}
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		g_mutex_lock(manager->lock);
+#else
+		g_mutex_lock(&manager->lock);
+#endif
 
 		while (manager->state != state)
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 			g_cond_wait(manager->cond, manager->lock);
+#else
+			g_cond_wait(&manager->cond, &manager->lock);
+#endif
 
 		manager->ack = TRUE;
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		g_cond_signal(manager->cond);
 		g_mutex_unlock(manager->lock);
+#else
+		g_cond_signal(&manager->cond);
+		g_mutex_unlock(&manager->lock);
+#endif
 	} else {
 		/* nothing to do, transition immediately */
 		manager->state = state;
@@ -314,25 +332,54 @@ static int handle_wakeup(struct modem_manager *manager)
 		break;
 	}
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_mutex_lock(manager->lock);
+#else
+	g_mutex_lock(&manager->lock);
+#endif
 	manager->state = manager->next_state;
 	manager->ack = FALSE;
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_cond_signal(manager->cond);
 	g_mutex_unlock(manager->lock);
+#else
+	g_cond_signal(&manager->cond);
+	g_mutex_unlock(&manager->lock);
+#endif
 
 	g_thread_yield();
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_mutex_lock(manager->lock);
+#else
+	g_mutex_lock(&manager->lock);
+#endif
 
 	while (!manager->ack)
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		g_cond_wait(manager->cond, manager->lock);
+#else
+		g_cond_wait(&manager->cond, &manager->lock);
+#endif
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_mutex_unlock(manager->lock);
+#else
+	g_mutex_unlock(&manager->lock);
+#endif
 
 	if (next != manager->state) {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		g_mutex_lock(manager->lock);
+#else
+		g_mutex_unlock(&manager->lock);
+#endif
 		modem_manager_change_state(manager, next, FALSE);
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		g_mutex_unlock(manager->lock);
+#else
+		g_mutex_unlock(&manager->lock);
+#endif
 	}
 
 	return 0;
@@ -460,17 +507,25 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	if (!manager)
 		return -ENOMEM;
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	manager->lock = g_mutex_new();
 	if (!manager->lock) {
 		err = -ENOMEM;
 		goto free;
 	}
+#else
+	g_mutex_init(&manager->lock);
+#endif
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	manager->cond = g_cond_new();
 	if (!manager->cond) {
 		err = -ENOMEM;
 		goto free_lock;
 	}
+#else
+	g_cond_init(&manager->cond);
+#endif
 
 	err = pipe2(manager->wakeup, O_NONBLOCK | O_CLOEXEC);
 	if (err < 0) {
@@ -490,8 +545,13 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 		if (err != -ENODEV)
 			goto close_pipe;
 	} else {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		manager->thread = g_thread_create(modem_manager_thread,
 				manager, TRUE, NULL);
+#else
+		manager->thread = g_thread_new("modem-libmodem",
+				modem_manager_thread, manager);
+#endif
 		if (!manager->thread) {
 			err = -ENOMEM;
 			goto close;
@@ -507,11 +567,17 @@ close_pipe:
 	close(manager->wakeup[0]);
 	close(manager->wakeup[1]);
 free_cond:
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_cond_free(manager->cond);
+#else
+	g_cond_clear(&manager->cond);
+#endif
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 free_lock:
 	g_mutex_free(manager->lock);
 free:
 	free(manager);
+#endif
 	return err;
 }
 
@@ -528,8 +594,13 @@ int modem_manager_free(struct modem_manager *manager)
 	close(manager->wakeup[0]);
 	close(manager->wakeup[1]);
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_cond_free(manager->cond);
 	g_mutex_free(manager->lock);
+#else
+	g_cond_clear(&manager->cond);
+	g_mutex_clear(&manager->lock);
+#endif
 
 	modem_call_free(manager->call);
 	modem_close(manager->modem);

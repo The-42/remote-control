@@ -35,7 +35,11 @@ struct ccid {
 	gboolean present[2];
 	GThread *thread;
 	/* FIXME: move locking into libccid? */
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	GMutex *mutex;
+#else
+	GMutex mutex;
+#endif
 	gboolean done;
 #endif
 };
@@ -43,12 +47,20 @@ struct ccid {
 #ifdef USE_POLLING_THREAD
 static inline void ccid_lock(struct ccid *ccid)
 {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_mutex_lock(ccid->mutex);
+#else
+	g_mutex_lock(&ccid->mutex);
+#endif
 }
 
 static inline void ccid_unlock(struct ccid *ccid)
 {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_mutex_unlock(ccid->mutex);
+#else
+	g_mutex_unlock(&ccid->mutex);
+#endif
 }
 #else
 static inline void ccid_lock(struct ccid *ccid)
@@ -166,7 +178,11 @@ void ccid_unref(struct ccid *ccid)
 #ifdef USE_POLLING_THREAD
 	ccid->done = TRUE;
 	g_thread_join(ccid->thread);
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	g_mutex_free(ccid->mutex);
+#else
+	g_mutex_clear(&ccid->mutex);
+#endif
 #endif
 	libccid_unref(ccid->ccid);
 	free(ccid);
@@ -238,6 +254,7 @@ struct ccid *ccid_new(struct remote_control *rc)
 #ifdef USE_POLLING_THREAD
 	ccid->done = FALSE;
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	ccid->mutex = g_mutex_new();
 	if (!ccid->mutex) {
 		libccid_device_unref(ccid->device);
@@ -245,10 +262,21 @@ struct ccid *ccid_new(struct remote_control *rc)
 		free(ccid);
 		return NULL;
 	}
+#else
+	g_mutex_init(&ccid->mutex);
+#endif
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	ccid->thread = g_thread_create(ccid_thread, ccid, TRUE, NULL);
+#else
+	ccid->thread = g_thread_new("libccid", ccid_thread, ccid);
+#endif
 	if (!ccid->thread) {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		g_mutex_free(ccid->mutex);
+#else
+		g_mutex_clear(&ccid->mutex);
+#endif
 		libccid_device_unref(ccid->device);
 		libccid_unref(ccid->ccid);
 		free(ccid);

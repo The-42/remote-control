@@ -370,7 +370,11 @@ int net_configure(struct net *net, const char *hostname, uint16_t port,
 
 	net->primary = channel;
 
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	channel->thread = g_thread_new("net-unix", primary_thread, net);
+#else
 	channel->thread = g_thread_create(primary_thread, net, TRUE, NULL);
+#endif
 	if (!channel->thread) {
 		net_channel_free(channel);
 		return -ENOMEM;

@@ -62,7 +62,9 @@ gpointer card_thread(gpointer data)
 void on_card_event(uint32_t type, void *data)
 {
 	struct card_context *context;
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	GError *error;
+#endif
 
 	context = malloc(sizeof(*context));
 	if (!context)
@@ -71,7 +73,11 @@ void on_card_event(uint32_t type, void *data)
 	context->type = type;
 	context->cp = data;
 
+#if GLIB_CHECK_VERSION(2, 31, 0)
+	g_thread_new("card-event", card_thread, context);
+#else
 	g_thread_create(card_thread, context, TRUE, &error);
+#endif
 }
 
 void on_refresh_clicked(GtkWidget *widget, gpointer data)
@@ -169,8 +175,10 @@ static int card_panel_create(struct panel *panel, GtkWidget **widget)
 		return -EINVAL;
 
 	if (!panel->priv) {
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 		if (!g_thread_supported())
 			g_thread_init(NULL);
+#endif
 
 		cp = malloc(sizeof(*cp));
 		if (!cp)

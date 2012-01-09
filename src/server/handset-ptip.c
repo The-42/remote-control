@@ -129,8 +129,13 @@ int handset_create(struct handset **handsetp, struct rpc_server *server)
 	handset->rc = rpc_server_priv(server);
 	handset->done = FALSE;
 
+#if !GLIB_CHECK_VERSION(2, 31, 0)
 	handset->thread = g_thread_create(handset_thread, handset, TRUE,
 			NULL);
+#else
+	handset->thread = g_thread_new("handset-ptip", handset_thread,
+			handset);
+#endif
 	if (!handset->thread) {
 		ptip_client_free(handset->client);
 		g_free(handset);
