@@ -86,11 +86,10 @@ int media_player_create(struct media_player **playerp)
 	if (!playerp)
 		return -EINVAL;
 
-	player = malloc(sizeof(*player));
+	player = g_new0(struct media_player, 1);
 	if (!player)
 		return -ENOMEM;
 
-	memset(player, 0, sizeof(*player));
 	player->state = MEDIA_PLAYER_STOPPED;
 
 	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
@@ -141,7 +140,7 @@ int media_player_free(struct media_player *player)
 
 	gdk_window_destroy(player->window);
 
-	free(player);
+	g_free(player);
 	return 0;
 }
 
