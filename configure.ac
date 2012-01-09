@@ -15,8 +15,6 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5)
-PKG_CHECK_MODULES(WEBKIT, webkit-1.0)
-PKG_CHECK_MODULES(GTK, gtk+-x11-2.0 x11 xext)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
 PKG_CHECK_MODULES(GTKOSK, gtkosk)
 PKG_CHECK_MODULES(ALSA, alsa)
@@ -25,6 +23,26 @@ PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
+
+#
+# Gtk+ version
+#
+AC_ARG_WITH([gtk],
+	[AS_HELP_STRING([--with-gtk=@<:@2.0|3.0@:>@],
+			[The Gtk+ version to use (default: 2.0)])
+	], [], [with_gtk=2.0])
+
+AS_CASE([$with_gtk],
+	[2.0], [REQUIRED_WEBKIT=-1.0],
+	[3.0], [REQUIRED_WEBKIT=gtk-3.0],
+	[AC_MSG_ERROR([Invalid Gtk+ version specified: must be 2.0 or 3.0])])
+
+if test "x$with_gtk" = "x3.0"; then
+	AC_DEFINE([HAVE_GTKX_H], [1], [If Gtk+ 3.0 is used])
+fi
+
+PKG_CHECK_MODULES(GTK, gtk+-x11-$with_gtk x11 xext)
+PKG_CHECK_MODULES(WEBKIT, webkit$REQUIRED_WEBKIT)
 
 #
 # audio (UCM) backend
@@ -275,5 +293,6 @@ Features:
   GPIO Backend:              $with_gpio_backend
 
 Options:
+  Gtk+ Version:              $with_gtk
   Webkit JScript API:        $enable_webkit_js_api
 "

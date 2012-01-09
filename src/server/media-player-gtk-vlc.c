@@ -12,8 +12,7 @@
 
 #include <errno.h>
 
-#include <gdk/gdkscreen.h>
-#include <gdk/gdkwindow.h>
+#include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <vlc/vlc.h>
 
@@ -77,7 +76,11 @@ int media_player_create(struct media_player **playerp)
 		.override_redirect = TRUE,
 	};
 	struct media_player *player;
+#if GTK_CHECK_VERSION(2, 90, 5)
+	cairo_region_t *region;
+#else
 	GdkRegion *region;
+#endif
 	XID xid;
 
 	if (!playerp)
@@ -91,12 +94,24 @@ int media_player_create(struct media_player **playerp)
 	player->state = MEDIA_PLAYER_STOPPED;
 
 	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
-	xid = gdk_x11_drawable_get_xid(player->window);
 	gdk_window_set_decorations(player->window, 0);
+#if GTK_CHECK_VERSION(2, 91, 6)
+	xid = gdk_x11_window_get_xid(player->window);
+#else
+	xid = gdk_x11_drawable_get_xid(player->window);
+#endif
 
+#if GTK_CHECK_VERSION(2, 90, 5)
+	region = cairo_region_create();
+#else
 	region = gdk_region_new();
+#endif
 	gdk_window_input_shape_combine_region(player->window, region, 0, 0);
+#if GTK_CHECK_VERSION(2, 90, 5)
+	cairo_region_destroy(region);
+#else
 	gdk_region_destroy(region);
+#endif
 
 	player->vlc = libvlc_new(0, NULL);
 	player->player = libvlc_media_player_new(player->vlc);

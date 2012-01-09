@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#include <gtk/gtk.h>
 #include <glib.h>
 
 #define stringify1(x) #x
@@ -400,6 +401,10 @@ gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
 		const void *buffer, size_t size, bool ascii);
 
 unsigned int if_lookup_default(void);
+
+#if GTK_CHECK_VERSION(2, 91, 0)
+void gdk_window_clear(GdkWindow *window);
+#endif
 
 void remote_control_log_handler(const gchar *log_domain,
 		GLogLevelFlags log_level, const gchar *message,

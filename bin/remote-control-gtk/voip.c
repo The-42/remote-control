@@ -60,7 +60,10 @@ int voip_panel_append(GtkWidget *widget, const gchar* to_append)
 		return -EINVAL;
 	}
 
+	/* TODO: what's the Gtk+ 3.0+ way for this? */
+#if !GTK_CHECK_VERSION(2, 90, 0)
 	gtk_entry_append_text(entry, to_append);
+#endif
 	return 0;
 }
 

@@ -37,7 +37,7 @@ static GOptionEntry entries[] = {
 	{ NULL }
 };
 
-static void on_destroy(GtkObject *object, gpointer data)
+static void on_destroy(GtkWidget *widget, gpointer data)
 {
 	gtk_main_quit();
 }
@@ -45,8 +45,14 @@ static void on_destroy(GtkObject *object, gpointer data)
 static void on_realize(GtkWidget *widget, gpointer data)
 {
 	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-	gdk_window_set_cursor(widget->window, cursor);
+	GdkWindow *window = gtk_widget_get_window(widget);
+
+	gdk_window_set_cursor(window, cursor);
+#if GTK_CHECK_VERSION(2, 91, 1)
+	g_object_unref(cursor);
+#else
 	gdk_cursor_unref(cursor);
+#endif
 }
 
 int main(int argc, char *argv[])

@@ -302,7 +302,11 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show_all(view);
 
+#if GTK_CHECK_VERSION(3, 1, 6)
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
 	vbox = gtk_vbox_new(FALSE, 0);
+#endif
 	gtk_box_pack_start(GTK_BOX(vbox), priv->toolbar, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), view, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), priv->osk, FALSE, FALSE, 0);

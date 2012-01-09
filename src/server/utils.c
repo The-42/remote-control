@@ -231,6 +231,22 @@ free:
 	return ret;
 }
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+void gdk_window_clear(GdkWindow *window)
+{
+	cairo_pattern_t *pattern;
+	cairo_t *cr;
+
+	pattern = gdk_window_get_background_pattern(window);
+	if (pattern) {
+		cr = gdk_cairo_create(window);
+		cairo_set_source(cr, pattern);
+		cairo_paint(cr);
+		cairo_destroy(cr);
+	}
+}
+#endif
+
 void remote_control_log_handler(const gchar *log_domain,
 		GLogLevelFlags log_level, const gchar *message,
 		gpointer unused_data)

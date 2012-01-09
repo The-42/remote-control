@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#ifdef HAVE_GTKX_H
+#include <gtk/gtkx.h>
+#endif
 #include <gdk/gdkx.h>
 
 #include "remote-control-rdp-window.h"
@@ -107,8 +110,14 @@ static void remote_control_rdp_window_class_init(RemoteControlRdpWindowClass *kl
 static void on_realize(GtkWidget *widget, gpointer user_data)
 {
 	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-	gdk_window_set_cursor(widget->window, cursor);
+	GdkWindow *window = gtk_widget_get_window(widget);
+
+	gdk_window_set_cursor(window, cursor);
+#if GTK_CHECK_VERSION(2, 91, 7)
+	g_object_unref(cursor);
+#else
 	gdk_cursor_unref(cursor);
+#endif
 }
 
 static gboolean plug_removed(GtkSocket *sock, gpointer data)

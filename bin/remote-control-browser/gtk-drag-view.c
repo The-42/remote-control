@@ -10,6 +10,8 @@
 #  include "config.h"
 #endif
 
+#include <string.h>
+
 #include <gtk/gtk.h>
 
 #include "gtk-drag-view.h"
@@ -90,27 +92,61 @@ static gboolean on_motion_notify(GtkWidget *widget, GdkEvent *event, gpointer da
 static void gtk_drag_view_add(GtkContainer *container, GtkWidget *child)
 {
 	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(container);
-	GtkBin *bin = GTK_BIN(container);
 
-	gtk_widget_set_parent(child, GTK_WIDGET(container));
-	bin->child = child;
+	GTK_CONTAINER_CLASS(gtk_drag_view_parent_class)->add(container, child);
 
 	g_signal_connect(G_OBJECT(child), "button-press-event", G_CALLBACK(on_button_press), container);
 	g_signal_connect(G_OBJECT(child), "button-release-event", G_CALLBACK(on_button_release), container);
 	g_signal_connect(G_OBJECT(child), "motion-notify-event", G_CALLBACK(on_motion_notify), container);
 
+#if GTK_CHECK_VERSION(2, 91, 2)
+	if (GTK_IS_SCROLLABLE(child))
+		gtk_scrollable_set_hadjustment(GTK_SCROLLABLE(child), priv->hadjustment);
+
+	if (GTK_IS_SCROLLABLE(child))
+		gtk_scrollable_set_vadjustment(GTK_SCROLLABLE(child), priv->vadjustment);
+#else
 	gtk_widget_set_scroll_adjustments(child, priv->hadjustment, priv->vadjustment);
+#endif
+}
+
+struct gtk_drag_view_result {
+	GtkWidget *child;
+	gboolean found;
+};
+
+static void gtk_drag_view_has_child(GtkWidget *widget, gpointer data)
+{
+	struct gtk_drag_view_result *result = data;
+
+	if (widget == result->child)
+		result->found = TRUE;
 }
 
 static void gtk_drag_view_remove(GtkContainer *container, GtkWidget *child)
 {
-	GtkBin *bin = GTK_BIN(container);
+	struct gtk_drag_view_result result;
 
 	g_return_if_fail(GTK_IS_DRAG_VIEW(container));
-	g_return_if_fail(bin->child == child);
 	g_return_if_fail(child != NULL);
 
+	memset(&result, 0, sizeof(result));
+	result.child = child;
+	result.found = FALSE;
+
+	gtk_container_foreach(container, gtk_drag_view_has_child, &result);
+	g_return_if_fail(result.found == TRUE);
+
+#if GTK_CHECK_VERSION(2, 91, 2)
+	if (GTK_IS_SCROLLABLE(child))
+		gtk_scrollable_set_vadjustment(GTK_SCROLLABLE(child), NULL);
+
+	if (GTK_IS_SCROLLABLE(child))
+		gtk_scrollable_set_hadjustment(GTK_SCROLLABLE(child), NULL);
+#else
 	gtk_widget_set_scroll_adjustments(child, NULL, NULL);
+#endif
+
 	g_signal_handlers_disconnect_by_func(child, on_motion_notify, container);
 	g_signal_handlers_disconnect_by_func(child, on_button_release, container);
 	g_signal_handlers_disconnect_by_func(child, on_button_press, container);
@@ -121,34 +157,56 @@ static void gtk_drag_view_remove(GtkContainer *container, GtkWidget *child)
 static void gtk_drag_view_init(GtkDragView *window)
 {
 	GtkDragViewPrivate *priv = GTK_DRAG_VIEW_GET_PRIVATE(window);
+#if !GTK_CHECK_VERSION(2, 91, 0)
 	GtkObject *adjustment;
+#endif
 
 	gtk_widget_set_has_window(GTK_WIDGET(window), FALSE);
 	gtk_widget_set_can_focus(GTK_WIDGET(window), TRUE);
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+	priv->hadjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+	priv->vadjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+#else
 	adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 	priv->hadjustment = GTK_ADJUSTMENT(adjustment);
 
 	adjustment = gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 	priv->vadjustment = GTK_ADJUSTMENT(adjustment);
+#endif
 }
 
+#if !GTK_CHECK_VERSION(2, 91, 5)
 static void gtk_drag_view_size_request(GtkWidget *widget, GtkRequisition *requisition)
 {
 	requisition->width = 0;
 	requisition->height = 0;
 }
+#endif
+
+static void children_allocate(GtkWidget *widget, gpointer data)
+{
+	GtkAllocation *allocation = data;
+
+	if (gtk_widget_get_visible(widget))
+		gtk_widget_size_allocate(widget, allocation);
+}
 
 static void gtk_drag_view_size_allocate(GtkWidget *widget, GtkAllocation *allocation)
 {
-	GtkBin *bin = GTK_BIN(widget);
-
-	if (bin->child && gtk_widget_get_visible(bin->child))
-		gtk_widget_size_allocate(bin->child, allocation);
-
-	widget->allocation = *allocation;
+	gtk_container_foreach(GTK_CONTAINER(widget), children_allocate, allocation);
+	gtk_widget_set_allocation(widget, allocation);
 }
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+static gboolean gtk_drag_view_draw(GtkWidget *widget, cairo_t *cr)
+{
+	if (gtk_widget_is_drawable(widget))
+		GTK_WIDGET_CLASS(gtk_drag_view_parent_class)->draw(widget, cr);
+
+	return FALSE;
+}
+#else
 static gboolean gtk_drag_view_expose(GtkWidget *widget, GdkEventExpose *event)
 {
 	if (gtk_widget_is_drawable(widget))
@@ -156,6 +214,7 @@ static gboolean gtk_drag_view_expose(GtkWidget *widget, GdkEventExpose *event)
 
 	return FALSE;
 }
+#endif
 
 static void gtk_drag_view_class_init(GtkDragViewClass *class)
 {
@@ -165,8 +224,14 @@ static void gtk_drag_view_class_init(GtkDragViewClass *class)
 	container->add = gtk_drag_view_add;
 	container->remove = gtk_drag_view_remove;
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+	widget->draw = gtk_drag_view_draw;
+#else
 	widget->expose_event = gtk_drag_view_expose;
+#endif
+#if !GTK_CHECK_VERSION(2, 91, 5)
 	widget->size_request = gtk_drag_view_size_request;
+#endif
 	widget->size_allocate = gtk_drag_view_size_allocate;
 
 	g_type_class_add_private(class, sizeof(GtkDragViewPrivate));
