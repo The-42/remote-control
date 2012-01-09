@@ -359,6 +359,8 @@ int main(int argc, char *argv[])
 
 	g_log_set_default_handler(remote_control_log_handler, NULL);
 
+	gdk_threads_init();
+	GDK_THREADS_ENTER();
 	gtk_init(&argc, &argv);
 
 	options = g_option_context_new("- remote control service");
@@ -379,7 +381,7 @@ int main(int argc, char *argv[])
 		return EXIT_SUCCESS;
 	}
 
-	loop = g_main_loop_new(NULL, FALSE);
+	loop = g_main_loop_new(NULL, TRUE);
 	g_assert(loop != NULL);
 
 	context = g_main_loop_get_context(loop);
@@ -426,7 +428,12 @@ int main(int argc, char *argv[])
 	g_source_attach(source, context);
 	g_source_unref(source);
 
-	g_main_loop_run(loop);
+	if (g_main_loop_is_running(loop)) {
+		GDK_THREADS_LEAVE();
+		g_main_loop_run(loop);
+		GDK_THREADS_ENTER();
+		gdk_flush();
+	}
 
 	g_source_destroy(source);
 #ifdef ENABLE_DBUS
@@ -435,5 +442,6 @@ int main(int argc, char *argv[])
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
 	g_free(config_file);
+	GDK_THREADS_LEAVE();
 	return EXIT_SUCCESS;
 }
