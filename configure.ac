@@ -214,11 +214,11 @@ AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
 dnl --enable-webkit-js-api=(yes|no)
 AC_ARG_ENABLE([webkit-js-api],
               [AC_HELP_STRING([--enable-webkit-js-api=@<:@no|yes@:>@],
-                              [Enable native functions been exported into javascript context. @<:@default=yes@:>@])
-              ],[],[enable_webkit_js_api=yes])
+                              [Enable JavaScript API @<:@default=yes@:>@])
+              ], [], [enable_webkit_js_api=yes])
 AM_CONDITIONAL([ENABLE_WEBKIT_JS_API], test x"$enable_webkit_js_api" = x"yes")
 if test x"$enable_webkit_js_api" = x"yes"; then
-   AC_DEFINE([ENABLE_WEBKIT_JS_API], [1], [whether debugging is enabled])
+	AC_DEFINE([ENABLE_WEBKIT_JS_API], [1], [whether JavaScript API is enabled])
 fi
 
 #
@@ -296,5 +296,5 @@ Features:
 Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
-  Webkit JScript API:        $enable_webkit_js_api
+  WebKit JavaScript API:     $enable_webkit_js_api
 "
