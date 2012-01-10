@@ -118,7 +118,6 @@ static int unshield_callback(char c, void *data)
 			struct event event;
 
 			g_debug("modem-libmodem: call ended");
-			modem_manager_change_state(manager, MODEM_STATE_TERMINATE, TRUE);
 
 			memset(&event, 0, sizeof(event));
 			event.source = EVENT_SOURCE_MODEM;
