@@ -13,7 +13,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int audio_create(struct audio **audiop)
+int audio_create(struct audio **audiop, struct rpc_server *server)
 {
 	return 0;
 }
