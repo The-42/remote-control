@@ -168,12 +168,10 @@ static int modem_manager_process_incoming(struct modem_manager *manager,
 	if (err < 0)
 		return err;
 
-	if ((manager->flags & MODEM_FLAGS_DIRECT) == 0) {
-		err = modem_manager_setup_call(manager);
-		if (err < 0) {
-			modem_terminate(manager->modem);
-			return err;
-		}
+	err = modem_manager_setup_call(manager);
+	if (err < 0) {
+		modem_terminate(manager->modem);
+		return err;
 	}
 
 	if (next_state)
@@ -193,12 +191,10 @@ static int modem_manager_process_outgoing(struct modem_manager *manager,
 	if (err < 0)
 		return err;
 
-	if ((manager->flags & MODEM_FLAGS_DIRECT) == 0) {
-		err = modem_manager_setup_call(manager);
-		if (err < 0) {
-			modem_terminate(manager->modem);
-			return err;
-		}
+	err = modem_manager_setup_call(manager);
+	if (err < 0) {
+		modem_terminate(manager->modem);
+		return err;
 	}
 
 	if (next_state)
@@ -266,12 +262,10 @@ static int handle_modem(struct modem_manager *manager)
 
 	switch (manager->state) {
 	case MODEM_STATE_ACTIVE:
-		if ((manager->flags & MODEM_FLAGS_DIRECT) == 0) {
-			err = modem_call_process(manager->call);
-			if (err < 0) {
-				g_warning("modem_call_process(): %s",
-						g_strerror(-err));
-			}
+		err = modem_call_process(manager->call);
+		if (err < 0) {
+			g_warning("modem_call_process(): %s",
+					g_strerror(-err));
 		}
 		break;
 
