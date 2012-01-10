@@ -170,6 +170,11 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		const gchar *scheme;
 
 		scheme = g_uri_get_scheme(url);
+		if (!scheme) {
+			g_strfreev(split_uri);
+			g_object_unref(url);
+			return -EINVAL;
+		}
 
 		if (g_str_equal(scheme, "udp")) {
 			const gchar *host = g_uri_get_host(url);
