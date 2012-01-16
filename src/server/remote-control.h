@@ -220,7 +220,6 @@ enum modem_state {
 	MODEM_STATE_INCOMING,
 	MODEM_STATE_OUTGOING,
 	MODEM_STATE_ACTIVE,
-	MODEM_STATE_TERMINATE,
 };
 
 struct modem_manager;
