@@ -10,420 +10,138 @@
 #  include "config.h"
 #endif
 
-#define _GNU_SOURCE 1
-
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#include <ctype.h>
 #include <fcntl.h>
 #include <modem.h>
 #include <unistd.h>
 
 struct modem_manager {
+	GSource source;
+	GPollFD poll;
 	struct remote_control *rc;
 	struct modem *modem;
 	struct modem_call *call;
-	enum modem_state next_state;
 	enum modem_state state;
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	GMutex *lock;
-	GCond *cond;
-#else
-	GMutex lock;
-	GCond cond;
-#endif
-	GThread *thread;
-	gchar *number;
-	gboolean done;
-	gboolean ack;
-	int wakeup[2];
 	unsigned long flags;
+	gchar *number;
 };
 
-static int modem_manager_wakeup(struct modem_manager *manager)
+static int modem_ring(struct modem *modem, void *data)
 {
-	const char data = 'W';
-	int err;
-
-	if (!manager)
-		return -EINVAL;
-
-	err = write(manager->wakeup[1], &data, sizeof(data));
-	if (err < 0)
-		return -errno;
-
-	return 0;
-}
-
-static int modem_manager_change_state(struct modem_manager *manager,
-		enum modem_state state, gboolean wakeup)
-{
-	g_return_val_if_fail(manager != NULL, -EINVAL);
-
-	if (state == manager->state) {
-		g_debug("modem-manager-libmodem: already in state %d",
-				state);
-		return 0;
-	}
-
-	manager->next_state = state;
-
-	if (wakeup) {
-		int err = modem_manager_wakeup(manager);
-		if (err < 0) {
-			g_debug("wakeup(): %s", g_strerror(-err));
-			return err;
-		}
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-		g_mutex_lock(manager->lock);
-#else
-		g_mutex_lock(&manager->lock);
-#endif
-
-		while (manager->state != state)
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-			g_cond_wait(manager->cond, manager->lock);
-#else
-			g_cond_wait(&manager->cond, &manager->lock);
-#endif
-
-		manager->ack = TRUE;
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-		g_cond_signal(manager->cond);
-		g_mutex_unlock(manager->lock);
-#else
-		g_cond_signal(&manager->cond);
-		g_mutex_unlock(&manager->lock);
-#endif
-	} else {
-		/* nothing to do, transition immediately */
-		manager->state = state;
-	}
-
-	return 0;
-}
-
-static int unshield_callback(char c, void *data)
-{
-	char display = g_ascii_isprint(c) ? c : '.';
 	struct modem_manager *manager = data;
 	struct event_manager *events;
+	struct event event;
+	int err = 0;
+
+	if ((manager->state != MODEM_STATE_INCOMING) &&
+	    (manager->state != MODEM_STATE_IDLE)) {
+		g_debug("modem-libmodem: not in incoming or idle state");
+		return -EBUSY;
+	}
+
+	g_debug("modem-libmodem: incoming call...");
+	manager->state = MODEM_STATE_INCOMING;
 
 	events = remote_control_get_event_manager(manager->rc);
+	if (!events)
+		return -EINVAL;
 
-	switch (c) {
-	case 'b':
-		if (manager->state == MODEM_STATE_ACTIVE) {
-			struct event event;
+	memset(&event, 0, sizeof(event));
+	event.source = EVENT_SOURCE_MODEM;
+	event.modem.state = EVENT_MODEM_STATE_RINGING;
 
-			g_debug("modem-libmodem: call ended");
-
-			memset(&event, 0, sizeof(event));
-			event.source = EVENT_SOURCE_MODEM;
-			event.modem.state = EVENT_MODEM_STATE_DISCONNECTED;
-			event_manager_report(events, &event);
-		}
-
-		return -ENODATA;
-
-	case 'u':
-		break;
-
-	default:
-		g_debug("modem-libmodem: DLE: %02x, %c", (unsigned char)c, display);
-		break;
-	}
-
-	return 0;
-}
-
-static int modem_manager_setup_call(struct modem_manager *manager)
-{
-	int err;
-
-	err = modem_call_create(&manager->call, manager->modem);
+	err = event_manager_report(events, &event);
 	if (err < 0)
-		return err;
+		g_debug("modem-libmodem: failed to report event: %s",
+				strerror(-err));
 
-	err = modem_call_set_unshield_callback(manager->call,
-			unshield_callback, manager);
-	if (err < 0) {
-		modem_call_free(manager->call);
-		manager->call = NULL;
-		return err;
-	}
+	return err;
+}
 
+static int modem_dle(struct modem *modem, char dle, void *data)
+{
+	g_debug("modem-libmodem: DLE: %02x, '%c'", (unsigned char)dle,
+			isprint(dle) ? dle : '?');
 	return 0;
 }
 
-static int modem_manager_process_incoming(struct modem_manager *manager,
-		enum modem_state *next_state)
+static const struct modem_callbacks callbacks = {
+	.ring = modem_ring,
+	.dle = modem_dle,
+};
+
+static gboolean modem_source_prepare(GSource *source, gint *timeout)
 {
-	int err;
+	if (timeout)
+		*timeout = -1;
 
-	g_return_val_if_fail(manager != NULL, -EINVAL);
-
-	err = modem_accept(manager->modem);
-	if (err < 0)
-		return err;
-
-	err = modem_manager_setup_call(manager);
-	if (err < 0) {
-		modem_terminate(manager->modem);
-		return err;
-	}
-
-	if (next_state)
-		*next_state = MODEM_STATE_ACTIVE;
-
-	return 0;
+	return FALSE;
 }
 
-static int modem_manager_process_outgoing(struct modem_manager *manager,
-		enum modem_state *next_state)
+static gboolean modem_source_check(GSource *source)
 {
-	int err;
+	struct modem_manager *manager = (struct modem_manager *)source;
 
-	g_return_val_if_fail(manager != NULL, -EINVAL);
+	if (manager->poll.revents & G_IO_IN)
+		return TRUE;
 
-	err = modem_call(manager->modem, manager->number);
-	if (err < 0)
-		return err;
-
-	err = modem_manager_setup_call(manager);
-	if (err < 0) {
-		modem_terminate(manager->modem);
-		return err;
-	}
-
-	if (next_state)
-		*next_state = MODEM_STATE_ACTIVE;
-
-	return 0;
+	return FALSE;
 }
 
-static int modem_manager_process_terminate(struct modem_manager *manager,
-		enum modem_state *next_state)
+static gboolean modem_source_dispatch(GSource *source, GSourceFunc callback,
+		gpointer user_data)
 {
+	struct modem_manager *manager = (struct modem_manager *)source;
+	gboolean ret = TRUE;
+	char buffer[256];
 	int err;
 
-	g_return_val_if_fail(manager != NULL, -EINVAL);
-
-	err = modem_terminate(manager->modem);
+	err = modem_process(manager->modem, buffer, sizeof(buffer), 0);
 	if (err < 0) {
-		g_debug("%s(): modem_terminate(): %s", __func__,
-				g_strerror(-err));
-		return err;
+		if (err != -ETIMEDOUT)
+			g_debug("modem-libmodem: modem_process(): %s",
+					strerror(-err));
+
+		return TRUE;
 	}
+
+	if (callback)
+		ret = callback(user_data);
+
+	return ret;
+}
+
+static void modem_source_finalize(GSource *source)
+{
+	struct modem_manager *manager = (struct modem_manager *)source;
 
 	modem_call_free(manager->call);
-	manager->call = NULL;
-
-	if (next_state)
-		*next_state = MODEM_STATE_IDLE;
-
-	return 0;
+	modem_close(manager->modem);
+	g_free(manager->number);
 }
 
-static int modem_manager_process_idle(struct modem_manager *manager)
+static GSourceFuncs modem_source_funcs = {
+	.prepare = modem_source_prepare,
+	.check = modem_source_check,
+	.dispatch = modem_source_dispatch,
+	.finalize = modem_source_finalize,
+};
+
+static int modem_manager_logv(enum modem_log_level level, const char *fmt,
+			      va_list ap)
 {
-	char buf[16];
-	int err;
+	gchar *message = g_strdup_vprintf(fmt, ap);
+	int len = strlen(message);
 
-	g_return_val_if_fail(manager != NULL, -EINVAL);
+	if (message[len] == '\n')
+		message[len] = '\0';
 
-	err = modem_recv(manager->modem, buf, sizeof(buf), 500);
-	if (err < 0) {
-		g_debug("%s(): modem_recv(): %s", __func__, g_strerror(-err));
-		return err;
-	}
-
-	if (strcmp(buf, "RING") == 0) {
-		struct event_manager *events;
-		struct event event;
-
-		events = remote_control_get_event_manager(manager->rc);
-
-		g_debug("modem-libmodem: incoming call...");
-
-		memset(&event, 0, sizeof(event));
-		event.source = EVENT_SOURCE_MODEM;
-		event.modem.state = EVENT_MODEM_STATE_RINGING;
-		event_manager_report(events, &event);
-	}
-
+	g_debug("modem-libmodem: %s", message);
+	g_free(message);
 	return 0;
-}
-
-static int handle_modem(struct modem_manager *manager)
-{
-	int err;
-
-	switch (manager->state) {
-	case MODEM_STATE_ACTIVE:
-		err = modem_call_process(manager->call);
-		if (err < 0) {
-			g_warning("modem_call_process(): %s",
-					g_strerror(-err));
-		}
-		break;
-
-	case MODEM_STATE_IDLE:
-		err = modem_manager_process_idle(manager);
-		if (err < 0) {
-			g_warning("modem_manager_process_idle(): %s",
-					g_strerror(-err));
-		}
-		break;
-
-	default:
-		/* nothing to do, this should not happen */
-		break;
-	}
-
-	return 0;
-}
-
-static int handle_wakeup(struct modem_manager *manager)
-{
-	enum modem_state next = manager->next_state;
-	char data = 0;
-	int err;
-
-	err = read(manager->wakeup[0], &data, sizeof(data));
-	if (err < 0)
-		g_debug("%s(): read(): %s", __func__, g_strerror(errno));
-
-	switch (manager->next_state) {
-	case MODEM_STATE_INCOMING:
-		err = modem_manager_process_incoming(manager, &next);
-		if (err < 0) {
-			g_warning("modem_manager_process_incoming(): %s",
-					g_strerror(-err));
-		}
-		break;
-
-	case MODEM_STATE_OUTGOING:
-		err = modem_manager_process_outgoing(manager, &next);
-		if (err < 0) {
-			g_warning("modem_manager_process_outgoing(): %s",
-					g_strerror(-err));
-		}
-		break;
-
-	case MODEM_STATE_TERMINATE:
-		err = modem_manager_process_terminate(manager, &next);
-		if (err < 0) {
-			g_warning("modem_manager_process_terminate(): %s",
-					g_strerror(-err));
-		}
-		break;
-
-	default:
-		/* nothing to do, this should not happen */
-		break;
-	}
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	g_mutex_lock(manager->lock);
-#else
-	g_mutex_lock(&manager->lock);
-#endif
-	manager->state = manager->next_state;
-	manager->ack = FALSE;
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	g_cond_signal(manager->cond);
-	g_mutex_unlock(manager->lock);
-#else
-	g_cond_signal(&manager->cond);
-	g_mutex_unlock(&manager->lock);
-#endif
-
-	g_thread_yield();
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	g_mutex_lock(manager->lock);
-#else
-	g_mutex_lock(&manager->lock);
-#endif
-
-	while (!manager->ack)
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-		g_cond_wait(manager->cond, manager->lock);
-#else
-		g_cond_wait(&manager->cond, &manager->lock);
-#endif
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	g_mutex_unlock(manager->lock);
-#else
-	g_mutex_unlock(&manager->lock);
-#endif
-
-	if (next != manager->state) {
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-		g_mutex_lock(manager->lock);
-#else
-		g_mutex_unlock(&manager->lock);
-#endif
-		modem_manager_change_state(manager, next, FALSE);
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-		g_mutex_unlock(manager->lock);
-#else
-		g_mutex_unlock(&manager->lock);
-#endif
-	}
-
-	return 0;
-}
-
-/*
- * TODO: Get rid of the modem_manager_thread() by moving the code out into
- *       a GSource that can be integrated with the GLib main loop.
- */
-static gpointer modem_manager_thread(gpointer data)
-{
-	struct modem_manager *manager = data;
-	gint err;
-
-	while (!manager->done) {
-		GPollFD fds[2];
-
-		fds[0].fd = modem_get_fd(manager->modem);
-		fds[0].events = G_IO_IN;
-		fds[1].fd = manager->wakeup[0];
-		fds[1].events = G_IO_IN;
-
-		err = g_poll(fds, G_N_ELEMENTS(fds), -1);
-		if (err <= 0) {
-			if ((err == 0) || (errno == EINTR))
-				continue;
-
-			g_warning("%s(): g_poll(): %s", __func__,
-					g_strerror(errno));
-			break;
-		}
-
-		if (manager->done)
-			break;
-
-		/* handle input from the modem */
-		if (fds[0].revents & G_IO_IN) {
-			err = handle_modem(manager);
-			if (err < 0) {
-			}
-		}
-
-		/* handle wakeup events */
-		if (fds[1].revents & G_IO_IN) {
-			err = handle_wakeup(manager);
-			if (err < 0) {
-			}
-		}
-	}
-
-	return NULL;
 }
 
 static int modem_manager_open(struct modem_manager *manager)
@@ -475,132 +193,48 @@ static int modem_manager_open(struct modem_manager *manager)
 	return ret;
 }
 
-static int modem_manager_logv(enum modem_log_level level, const char *fmt,
-			      va_list ap)
-{
-	gchar *message = g_strdup_vprintf(fmt, ap);
-	int len = strlen(message);
-
-	if (message[len] == '\n')
-		message[len] = '\0';
-
-	g_debug("modem-libmodem: %s", message);
-	g_free(message);
-	return 0;
-}
-
 int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server)
 {
 	struct modem_manager *manager;
+	GSource *source;
 	int err;
 
-	g_return_val_if_fail((managerp != NULL) && (server != NULL), -EINVAL);
-
-	manager = calloc(1, sizeof(*manager));
-	if (!manager)
-		return -ENOMEM;
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	manager->lock = g_mutex_new();
-	if (!manager->lock) {
-		err = -ENOMEM;
-		goto free;
-	}
-#else
-	g_mutex_init(&manager->lock);
-#endif
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	manager->cond = g_cond_new();
-	if (!manager->cond) {
-		err = -ENOMEM;
-		goto free_lock;
-	}
-#else
-	g_cond_init(&manager->cond);
-#endif
-
-	err = pipe2(manager->wakeup, O_NONBLOCK | O_CLOEXEC);
-	if (err < 0) {
-		err = -errno;
-		goto free_cond;
-	}
-
-	manager->rc = rpc_server_priv(server);
-	manager->state = MODEM_STATE_IDLE;
-	manager->done = FALSE;
-	manager->ack = FALSE;
+	g_return_val_if_fail(managerp != NULL, -EINVAL);
+	g_return_val_if_fail(server != NULL, -EINVAL);
 
 	modem_set_logv_func(modem_manager_logv);
 
+	source = g_source_new(&modem_source_funcs, sizeof(*manager));
+	if (!source)
+		return -ENOMEM;
+
+	manager = (struct modem_manager *)source;
+	manager->rc = rpc_server_priv(server);
+	manager->state = MODEM_STATE_IDLE;
+
 	err = modem_manager_open(manager);
-	if (err < 0) {
-		if (err != -ENODEV)
-			goto close_pipe;
-	} else {
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-		manager->thread = g_thread_create(modem_manager_thread,
-				manager, TRUE, NULL);
-#else
-		manager->thread = g_thread_new("modem-libmodem",
-				modem_manager_thread, manager);
-#endif
-		if (!manager->thread) {
-			err = -ENOMEM;
-			goto close;
-		}
-	}
+	if ((err < 0) && (err != -ENODEV))
+		goto free;
+
+	err = modem_set_callbacks(manager->modem, &callbacks, manager);
+	if (err < 0)
+		goto free;
+
+	manager->poll.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+	manager->poll.fd = modem_get_fd(manager->modem);
+	g_source_add_poll(source, &manager->poll);
 
 	*managerp = manager;
 	return 0;
 
-close:
-	modem_close(manager->modem);
-close_pipe:
-	close(manager->wakeup[0]);
-	close(manager->wakeup[1]);
-free_cond:
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	g_cond_free(manager->cond);
-#else
-	g_cond_clear(&manager->cond);
-#endif
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-free_lock:
-	g_mutex_free(manager->lock);
 free:
-	free(manager);
-#endif
+	g_source_unref(source);
 	return err;
 }
 
-int modem_manager_free(struct modem_manager *manager)
+GSource *modem_manager_get_source(struct modem_manager *manager)
 {
-	g_return_val_if_fail(manager != NULL, -EINVAL);
-
-	if (manager->thread) {
-		manager->done = TRUE;
-		modem_manager_wakeup(manager);
-		g_thread_join(manager->thread);
-	}
-
-	close(manager->wakeup[0]);
-	close(manager->wakeup[1]);
-
-#if !GLIB_CHECK_VERSION(2, 31, 0)
-	g_cond_free(manager->cond);
-	g_mutex_free(manager->lock);
-#else
-	g_cond_clear(&manager->cond);
-	g_mutex_clear(&manager->lock);
-#endif
-
-	modem_call_free(manager->call);
-	modem_close(manager->modem);
-	g_free(manager->number);
-	free(manager);
-
-	return 0;
+	return manager ? &manager->source : NULL;
 }
 
 int modem_manager_initialize(struct modem_manager *manager)
@@ -653,33 +287,66 @@ int modem_manager_shutdown(struct modem_manager *manager)
 
 int modem_manager_call(struct modem_manager *manager, const char *number)
 {
+	int err;
+
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	if (!manager->modem)
 		return -ENODEV;
 
+	if (manager->state != MODEM_STATE_IDLE) {
+		g_debug("modem-libmodem: not in idle state");
+		return -EBUSY;
+	}
+
+	manager->state = MODEM_STATE_OUTGOING;
+
 	g_free(manager->number);
 	manager->number = g_strdup(number);
 
-	modem_manager_change_state(manager, MODEM_STATE_OUTGOING, TRUE);
+	err = modem_call(manager->modem, number);
+	if (err < 0) {
+		manager->state = MODEM_STATE_IDLE;
+		return err;
+	}
 
+	manager->state = MODEM_STATE_ACTIVE;
 	return 0;
 }
 
 int modem_manager_accept(struct modem_manager *manager)
 {
+	int err;
+
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	if (!manager->modem)
 		return -ENODEV;
 
-	modem_manager_change_state(manager, MODEM_STATE_INCOMING, TRUE);
+	if (manager->state != MODEM_STATE_INCOMING) {
+		if (manager->state == MODEM_STATE_IDLE) {
+			g_debug("modem-libmodem: no incoming call");
+			return -EBADF;
+		}
 
+		g_debug("modem-libmodem: call in progress");
+		return -EBUSY;
+	}
+
+	err = modem_accept(manager->modem, NULL, 0);
+	if (err < 0) {
+		manager->state = MODEM_STATE_IDLE;
+		return err;
+	}
+
+	manager->state = MODEM_STATE_ACTIVE;
 	return 0;
 }
 
 int modem_manager_terminate(struct modem_manager *manager)
 {
+	int err = 0;
+
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	if (!manager->modem)
@@ -687,12 +354,24 @@ int modem_manager_terminate(struct modem_manager *manager)
 
 	if (manager->state == MODEM_STATE_IDLE) {
 		g_debug("modem-libmodem: no call to terminate");
-		return -ENOTCONN;
+		return -EBADF;
 	}
 
-	modem_manager_change_state(manager, MODEM_STATE_TERMINATE, TRUE);
+	if (manager->state == MODEM_STATE_INCOMING) {
+		g_debug("modem-libmodem: refusing incoming call");
+		err = modem_reject(manager->modem);
+	} else {
+		g_debug("modem-libmodem: terminating call");
+		err = modem_terminate(manager->modem);
+	}
 
-	return 0;
+	if (err < 0) {
+		g_debug("modem-libmodem: recovering, resetting modem");
+		err = modem_command(manager->modem, 5000, "ATZ");
+	}
+
+	manager->state = MODEM_STATE_IDLE;
+	return err;
 }
 
 int modem_manager_get_state(struct modem_manager *manager, enum modem_state *statep)

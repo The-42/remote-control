@@ -226,7 +226,7 @@ enum modem_state {
 struct modem_manager;
 
 int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server);
-int modem_manager_free(struct modem_manager *manager);
+GSource *modem_manager_get_source(struct modem_manager *manager);
 int modem_manager_initialize(struct modem_manager *manager);
 int modem_manager_shutdown(struct modem_manager *manager);
 int modem_manager_call(struct modem_manager *manager, const char *number);

@@ -156,7 +156,7 @@ AC_ARG_WITH(modem_backend,
 
 AS_CASE([$with_modem_backend],
 	[none], [],
-	[libmodem], [PKG_CHECK_MODULES(LIBMODEM, libmodem >= 0.1.8, [enable_libmodem=yes])],
+	[libmodem], [PKG_CHECK_MODULES(LIBMODEM, libmodem >= 0.2.1, [enable_libmodem=yes])],
 	[AC_MSG_ERROR([Invalid modem backend: must be none or libmodem])]
 )
 

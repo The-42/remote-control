@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -364,6 +364,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	source = modem_manager_get_source(rc->modem);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
+
 	err = voip_create(&rc->voip, server);
 	if (err < 0) {
 		g_error("voip_create(): %s", strerror(-err));
@@ -441,7 +447,6 @@ int remote_control_free(struct remote_control *rc)
 	task_manager_free(rc->task_manager);
 	net_free(rc->net);
 	voip_free(rc->voip);
-	modem_manager_free(rc->modem);
 	rfid_free(rc->rfid);
 	smartcard_free(rc->smartcard);
 	sound_manager_free(rc->sound);

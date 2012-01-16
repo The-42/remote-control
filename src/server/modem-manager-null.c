@@ -18,9 +18,9 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	return 0;
 }
 
-int modem_manager_free(struct modem_manager *manager)
+GSource *modem_manager_get_source(struct modem_manager *manager)
 {
-	return 0;
+	return NULL;
 }
 
 int modem_manager_initialize(struct modem_manager *manager)
