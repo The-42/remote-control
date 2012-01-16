@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,62 +22,59 @@ struct voip {
 	gchar *contact;
 };
 
-static void linphone_global_state_changed_cb(LinphoneCore *core, LinphoneGlobalState state, const char *message)
+static void linphone_global_state_changed_cb(LinphoneCore *core,
+		LinphoneGlobalState state, const char *message)
 {
-	g_print("LINPHONE: GLOBAL STATE: %s", linphone_global_state_to_string(state));
+	const char *name = linphone_global_state_to_string(state);
 
 	if (message)
-		g_print(" (%s)", message);
-
-	g_print("\n");
+		g_debug("voip-linphone: global state changed to %s: %s",
+				name, message);
+	else
+		g_debug("voip-linphone: global state changed to %s", name);
 }
 
-static void linphone_registration_state_changed_cb(LinphoneCore *core, LinphoneProxyConfig *proxy, LinphoneRegistrationState state, const char *message)
+static void linphone_registration_state_changed_cb(LinphoneCore *core,
+		LinphoneProxyConfig *proxy, LinphoneRegistrationState state,
+		const char *message)
 {
-	g_print("LINPHONE: REGISTRATION STATE: %p: %s", proxy, linphone_registration_state_to_string(state));
+	const char *name = linphone_registration_state_to_string(state);
 
 	if (message)
-		g_print(" (%s)", message);
-
-	g_print("\n");
+		g_debug("voip-linphone: registration state on proxy %p "
+				"changed to %s: %s", proxy, name, message);
+	else
+		g_debug("voip-linphone: registration state on proxy %p "
+				"changed to %s", proxy, name);
 }
 
-static int linphone_can_accept_call(LinphoneCore *core)
-{
-	const MSList* calls = linphone_core_get_calls(core);
-	if (calls && (ms_list_size(calls) > 1))
-		return FALSE;
-
-	return TRUE;
-}
-
-static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *call, LinphoneCallState state, const char *message)
+static void linphone_call_state_changed_cb(LinphoneCore *core,
+		LinphoneCall *call, LinphoneCallState state,
+		const char *message)
 {
 	struct remote_control *rc = linphone_core_get_user_data(core);
 	struct event_manager *manager = remote_control_get_event_manager(rc);
 	struct voip *voip = remote_control_get_voip(rc);
 	const LinphoneAddress *address;
 	struct event event;
+	const char *name;
 
-	g_print("LINPHONE: CALL STATE: %p: %s", call, linphone_call_state_to_string(state));
+	name = linphone_call_state_to_string(state);
 
 	if (message)
-		g_print(" (%s)", message);
-
-	g_print("\n");
+		g_debug("voip-linphone: call state changed to %s: %s", name,
+				message);
+	else
+		g_debug("voip-linphone: call state changed to %s", name);
 
 	memset(&event, 0, sizeof(event));
 	event.source = EVENT_SOURCE_VOIP;
 
 	switch (state) {
 	case LinphoneCallIncomingReceived:
-		/* FIXME: we can only accept one call at a time, so we need to
-		 *        reject a second call it another is already running.
-		 * In case we get two incomings there is the possibility that
-		 * we have 2times the same event state which can lead to a
-		 * blocked event manager. */
-		if (!linphone_can_accept_call(core)) {
-			g_print("LINPHONE: CALL STATE: rejecting second call\n");
+		/* reject incoming calls if a call is already active */
+		if (!linphone_core_in_call(core)) {
+			g_debug("voip-linphone: busy, rejecting call\n");
 			linphone_core_terminate_call(core, call);
 			return;
 		}
@@ -92,8 +89,10 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 
 		address = linphone_call_get_remote_address(call);
 		if (address) {
-			const char *name = linphone_address_get_display_name(address);
-			if (name == NULL)
+			const char *name;
+
+			name = linphone_address_get_display_name(address);
+			if (!name)
 				name = linphone_address_get_username(address);
 
 			if (name)
@@ -132,91 +131,93 @@ static void linphone_call_state_changed_cb(LinphoneCore *core, LinphoneCall *cal
 	}
 }
 
-static void linphone_notify_presence_recv_cb(LinphoneCore *core, LinphoneFriend *friend)
+static void linphone_notify_presence_recv_cb(LinphoneCore *core,
+		LinphoneFriend *friend)
 {
-	g_debug("> %s(core=%p, friend=%p)", __func__, core, friend);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: presence notification for %p", friend);
 }
 
 static void linphone_new_subscription_request_cb(LinphoneCore *core,
 		LinphoneFriend *friend, const char *url)
 {
-	g_debug("> %s(core=%p, friend=%p, url=%p[%s])", __func__, core, friend, url, url);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: subscription request from %p: %s", friend,
+			url);
 }
 
 static void linphone_auth_info_requested_cb(LinphoneCore *core,
 		const char *realm, const char *username)
 {
-	g_debug("> %s(core=%p, realm=%p[%s], username=%p[%s])", __func__, core,
-			realm, realm, username, username);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: authorization info requested for %s@%s",
+			username, realm);
 }
 
-static void linphone_call_log_updated_cb(LinphoneCore *core, LinphoneCallLog *log)
+static void linphone_call_log_updated_cb(LinphoneCore *core,
+		LinphoneCallLog *log)
 {
-	g_debug("> %s(core=%p, log=%p)", __func__, core, log);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: call log update: %p", log);
 }
 
-static void linphone_text_received_cb(LinphoneCore *core, LinphoneChatRoom *room, const LinphoneAddress *from, const char *message)
+static void linphone_text_received_cb(LinphoneCore *core,
+		LinphoneChatRoom *room, const LinphoneAddress *from,
+		const char *message)
 {
-	g_debug("> %s(core=%p, room=%p, from=%p, message=%p[%s])", __func__, core, room, from, message, message);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: text received from %p/%p: %s", room, from,
+			message);
 }
 
-static void linphone_dtmf_received_cb(LinphoneCore *core, LinphoneCall *call, int dtmf)
+static void linphone_dtmf_received_cb(LinphoneCore *core, LinphoneCall *call,
+		int dtmf)
 {
-	g_debug("> %s(core=%p, call=%p, dtmf=%d)", __func__, core, call, dtmf);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: dtmf received: %02x, '%c'", dtmf,
+			isprint(dtmf) ? dtmf : '?');
 }
 
-static void linphone_refer_received_cb(LinphoneCore *core, const char *refer_to)
+static void linphone_refer_received_cb(LinphoneCore *core,
+		const char *refer_to)
 {
-	g_debug("> %s(core=%p, refer_to=%p[%s])", __func__, core, refer_to, refer_to);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: referring call to %s", refer_to);
 }
 
-static void linphone_buddy_info_updated_cb(LinphoneCore *core, LinphoneFriend *friend)
+static void linphone_buddy_info_updated_cb(LinphoneCore *core,
+		LinphoneFriend *friend)
 {
-	g_debug("> %s(core=%p, friend=%p)", __func__, core, friend);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: buddy info updated for %p", friend);
 }
 
-static void linphone_notify_recv_cb(LinphoneCore *core, LinphoneCall *call, const char *from, const char *event)
+static void linphone_notify_recv_cb(LinphoneCore *core, LinphoneCall *call,
+		const char *from, const char *event)
 {
-	g_debug("> %s(core=%p, call=%p, from=%p[%s], event=%p[%s])", __func__, core, call, from, from, event, event);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: notification received from %s: %s", from,
+			event);
 }
 
-static void linphone_display_status_cb(LinphoneCore *core, const char *message)
+static void linphone_display_status_cb(LinphoneCore *core,
+		const char *message)
 {
-	g_debug("LINPHONE: STATUS: %s", message);
+	g_debug("voip-linphone: status: %s", message);
 }
 
-static void linphone_display_message_cb(LinphoneCore *core, const char *message)
+static void linphone_display_message_cb(LinphoneCore *core,
+		const char *message)
 {
-	g_debug("LINPHONE: MESSAGE: %s", message);
+	g_debug("voip-linphone: message: %s", message);
 }
 
-static void linphone_display_warning_cb(LinphoneCore *core, const char *message)
+static void linphone_display_warning_cb(LinphoneCore *core,
+		const char *message)
 {
-	g_debug("> %s(core=%p, message=%p[%s])", __func__, core, message, message);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: warning: %s", message);
 }
 
 static void linphone_display_url_cb(LinphoneCore *core, const char *message,
 		const char *url)
 {
-	g_debug("> %s(core=%p, message=%p[%s], url=%p[%s])", __func__, core,
-			message, message, url, url);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: url: %s: %s", message, url);
 }
 
 static void linphone_show_cb(LinphoneCore *core)
 {
-	g_debug("> %s(core=%p)", __func__, core);
-	g_debug("< %s()", __func__);
+	g_debug("voip-linphone: show notification received");
 }
 
 static const LinphoneCoreVTable vtable = {
@@ -278,14 +279,15 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 
 	voip->contact = NULL;
 
-	linphone_core_set_ring(voip->core, NULL);
-	/* FIXME: For now set playback volume to 100% so we can ajust the
-	 *        volume later using the default mixer settings.
-	 *        In the future this needs to be a configurable value */
+	/*
+	 * FIXME: This code was initially meant to set the output volume to
+	 * 100% but it doesn't. It actually sets the output volume gain,
+	 * meaning that the volume is really amplified by about 26%. Alas,
+	 * some devices have already shipped with this code, so we'll
+	 * probably have to stick with it forever.
+	 */
 	linphone_core_set_playback_gain_db(voip->core, 1.0f);
-	// maybe we need this as well, but it looks like this is just the
-	// volume of the soundcard. which we can control via alsa.
-	//linphone_core_set_play_level(voip->core, 100);
+	linphone_core_set_ring(voip->core, NULL);
 
 	*voipp = voip;
 	return 0;
@@ -340,7 +342,8 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 		if (proxy) {
 			if (!linphone_proxy_config_is_registered(proxy)) {
 				linphone_proxy_config_edit(proxy);
-				linphone_proxy_config_enable_register(proxy, TRUE);
+				linphone_proxy_config_enable_register(proxy,
+						TRUE);
 				linphone_proxy_config_done(proxy);
 			}
 		} else {
@@ -399,7 +402,9 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 		linphone_core_add_proxy_config(voip->core, proxy);
 		linphone_core_set_default_proxy(voip->core, proxy);
 	} else {
-		linphone_proxy_config_done(proxy);
+		int err = linphone_proxy_config_done(proxy);
+		if (err < 0)
+			g_debug("voip-linphone: proxy configuration failed");
 	}
 
 	ms_free(identity);
@@ -419,10 +424,13 @@ int voip_logout(struct voip *voip)
 	linphone_core_get_default_proxy(voip->core, &proxy);
 	if (proxy && linphone_proxy_config_is_registered(proxy)) {
 		int err;
+
 		linphone_proxy_config_edit(proxy);
 		linphone_proxy_config_enable_register(proxy, FALSE);
+
 		err = linphone_proxy_config_done(proxy);
-		g_debug("linphone_proxy_config_done(): %d", err);
+		if (err < 0)
+			g_debug("voip-linphone: proxy configuration failed");
 	}
 
 	return 0;
@@ -512,7 +520,7 @@ int voip_dial(struct voip *voip, uint8_t dtmf)
 
 	/* we can only send dtmf tone on running calls */
 	if (!linphone_core_in_call(voip->core))
-		return -ENOSYS;
+		return -ENOTCONN;
 
 	linphone_core_send_dtmf(voip->core, (char)dtmf);
 	return 0;
