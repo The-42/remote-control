@@ -50,7 +50,6 @@ struct remote_control {
 	struct tuner *tuner;
 	struct handset *handset;
 
-	GSource *events_source;
 	GSource *source;
 };
 
@@ -319,8 +318,10 @@ int remote_control_create(struct remote_control **rcp)
 	}
 
 	source = event_manager_get_source(rc->event_manager);
-	g_source_add_child_source(rc->source, source);
-	rc->events_source = source;
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
 
 	err = backlight_create(&rc->backlight);
 	if (err < 0) {
@@ -394,6 +395,12 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
+	source = lldp_monitor_get_source(rc->lldp);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
+
 	err = task_manager_create(&rc->task_manager);
 	if (err < 0) {
 		g_error("task_manager_create(): %s", strerror(-err));
@@ -412,10 +419,6 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
-	source = lldp_monitor_get_source(rc->lldp);
-	g_source_add_child_source(rc->source, source);
-	g_source_unref(source);
-
 	err = mixer_create(&rc->mixer);
 	if (err < 0) {
 		g_error("mixer_create(): %s", strerror(-err));
@@ -423,8 +426,10 @@ int remote_control_create(struct remote_control **rcp)
 	}
 
 	source = mixer_get_source(rc->mixer);
-	g_source_add_child_source(rc->source, source);
-	g_source_unref(source);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
 
 	*rcp = rc;
 	return 0;
@@ -453,7 +458,6 @@ int remote_control_free(struct remote_control *rc)
 	media_player_free(rc->player);
 	backlight_free(rc->backlight);
 	audio_free(rc->audio);
-	g_source_unref(rc->events_source);
 	rpc_server_free(server);
 
 	return 0;
