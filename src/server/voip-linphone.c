@@ -10,6 +10,7 @@
 #  include "config.h"
 #endif
 
+#include <ctype.h>
 #include <linphonecore.h>
 #include <glib.h>
 
