@@ -17,11 +17,12 @@
 
 int32_t RPC_IMPL(modem_init)(void *priv)
 {
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
 
-	ret = 0;
+	ret = modem_manager_initialize(modem);
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
@@ -29,11 +30,12 @@ int32_t RPC_IMPL(modem_init)(void *priv)
 
 int32_t RPC_IMPL(modem_deinit)(void *priv)
 {
+	struct modem_manager *modem = remote_control_get_modem_manager(priv);
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
 
-	ret = 0;
+	ret = modem_manager_shutdown(modem);
 
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;

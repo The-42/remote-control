@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Avionic Design GmbH
+ * Copyright (C) 2011-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -599,6 +599,54 @@ int modem_manager_free(struct modem_manager *manager)
 	modem_close(manager->modem);
 	g_free(manager->number);
 	free(manager);
+
+	return 0;
+}
+
+int modem_manager_initialize(struct modem_manager *manager)
+{
+	int err;
+
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+
+	if (!manager->modem)
+		return -ENODEV;
+
+	g_free(manager->number);
+	manager->number = NULL;
+
+	err = modem_command(manager->modem, 5000, "ATZ");
+	if (err < 0) {
+		g_debug("modem-libmodem: failed to reset modem: %s",
+				strerror(-err));
+		return err;
+	}
+
+	manager->state = MODEM_STATE_IDLE;
+
+	return 0;
+}
+
+int modem_manager_shutdown(struct modem_manager *manager)
+{
+	int err;
+
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+
+	if (!manager->modem)
+		return -ENODEV;
+
+	g_free(manager->number);
+	manager->number = NULL;
+
+	err = modem_command(manager->modem, 5000, "ATZ");
+	if (err < 0) {
+		g_debug("modem-libmodem: failed to reset modem: %s",
+				strerror(-err));
+		return err;
+	}
+
+	manager->state = MODEM_STATE_IDLE;
 
 	return 0;
 }
