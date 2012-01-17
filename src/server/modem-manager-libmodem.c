@@ -290,6 +290,7 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 	int err;
 
 	g_return_val_if_fail(manager != NULL, -EINVAL);
+	g_return_val_if_fail(number != NULL, -EINVAL);
 
 	if (!manager->modem)
 		return -ENODEV;
@@ -368,6 +369,11 @@ int modem_manager_terminate(struct modem_manager *manager)
 		err = modem_terminate(manager->modem);
 	}
 
+	/*
+	 * Sometimes it happens that a call cannot be terminated properly,
+	 * in which case there is nothing else we can do but to reset the
+	 * modem.
+	 */
 	if (err < 0) {
 		g_debug("modem-libmodem: recovering, resetting modem");
 		err = modem_command(manager->modem, 5000, "ATZ");
@@ -379,7 +385,8 @@ int modem_manager_terminate(struct modem_manager *manager)
 
 int modem_manager_get_state(struct modem_manager *manager, enum modem_state *statep)
 {
-	g_return_val_if_fail((manager != NULL) && (statep != NULL), -EINVAL);
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+	g_return_val_if_fail(statep != NULL, -EINVAL);
 
 	if (!manager->modem)
 		return -ENODEV;
