@@ -217,6 +217,7 @@ ssize_t rfid_write(struct rfid *rfid, off_t offset, const void *buffer,
  */
 enum modem_state {
 	MODEM_STATE_IDLE,
+	MODEM_STATE_RINGING,
 	MODEM_STATE_INCOMING,
 	MODEM_STATE_OUTGOING,
 	MODEM_STATE_ACTIVE,

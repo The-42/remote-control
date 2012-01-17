@@ -36,14 +36,14 @@ static int modem_ring(struct modem *modem, void *data)
 	struct event event;
 	int err = 0;
 
-	if ((manager->state != MODEM_STATE_INCOMING) &&
+	if ((manager->state != MODEM_STATE_RINGING) &&
 	    (manager->state != MODEM_STATE_IDLE)) {
-		g_debug("modem-libmodem: not in incoming or idle state");
+		g_debug("modem-libmodem: not in ringing or idle state");
 		return -EBUSY;
 	}
 
 	g_debug("modem-libmodem: incoming call...");
-	manager->state = MODEM_STATE_INCOMING;
+	manager->state = MODEM_STATE_RINGING;
 
 	events = remote_control_get_event_manager(manager->rc);
 	if (!events)
@@ -294,8 +294,9 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 	if (!manager->modem)
 		return -ENODEV;
 
-	if (manager->state != MODEM_STATE_IDLE) {
-		g_debug("modem-libmodem: not in idle state");
+	if ((manager->state != MODEM_STATE_RINGING) &&
+	    (manager->state != MODEM_STATE_IDLE)) {
+		g_debug("modem-libmodem: not in ringing or idle state");
 		return -EBUSY;
 	}
 
@@ -323,7 +324,7 @@ int modem_manager_accept(struct modem_manager *manager)
 	if (!manager->modem)
 		return -ENODEV;
 
-	if (manager->state != MODEM_STATE_INCOMING) {
+	if (manager->state != MODEM_STATE_RINGING) {
 		if (manager->state == MODEM_STATE_IDLE) {
 			g_debug("modem-libmodem: no incoming call");
 			return -EBADF;
@@ -332,6 +333,8 @@ int modem_manager_accept(struct modem_manager *manager)
 		g_debug("modem-libmodem: call in progress");
 		return -EBUSY;
 	}
+
+	manager->state = MODEM_STATE_INCOMING;
 
 	err = modem_accept(manager->modem, NULL, 0);
 	if (err < 0) {
@@ -357,7 +360,7 @@ int modem_manager_terminate(struct modem_manager *manager)
 		return -EBADF;
 	}
 
-	if (manager->state == MODEM_STATE_INCOMING) {
+	if (manager->state == MODEM_STATE_RINGING) {
 		g_debug("modem-libmodem: refusing incoming call");
 		err = modem_reject(manager->modem);
 	} else {
