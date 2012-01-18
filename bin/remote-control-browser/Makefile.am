@@ -14,7 +14,9 @@ remote_control_browser_SOURCES = \
 	gtk-drag-view.h \
 	main.c \
 	webkit-browser.c \
-	webkit-browser.h
+	webkit-browser.h \
+	webkit-browser-tab-label.c \
+	webkit-browser-tab-label.h
 
 remote_control_browser_LDADD = \
 	../../src/common/libcommon.la \
