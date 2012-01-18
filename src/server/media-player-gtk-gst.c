@@ -475,7 +475,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 #define PIPELINE \
 	"playbin " \
 		"video-sink=\"glessink name=video-out\" " \
-		"audio-sink=\"alsasink name=audio-out device=hw:%d,0\" " \
+		"audio-sink=\"alsasink name=audio-out device=%s\" " \
 		"delay=600000000 connection-speed=100000 " \
 		"buffer-duration=1800000000 flags=0x00000143 " \
 		"uri=%s"
@@ -483,13 +483,14 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	GError *error = NULL;
 	GstBus *bus;
 	gchar *pipe;
-	int ad, ret = -EINVAL;
+	const gchar *ad;
+	int ret = -EINVAL;
 
 	if (player->pipeline)
 		player_destroy_pipeline(player);
 
 	/* for HDMI we need to select the correct audio device */
-	ad = player->displaytype == NV_DISPLAY_TYPE_HDMI ? 1 : 0;
+	ad = player->displaytype == NV_DISPLAY_TYPE_HDMI ? "hdmi" : "default";
 	pipe = g_strdup_printf(PIPELINE, ad, uri);
 
 	player->pipeline = gst_parse_launch_full(pipe, NULL, GST_PARSE_FLAG_FATAL_ERRORS, &error);
@@ -546,7 +547,7 @@ static int player_create_nvidia_pipeline(struct media_player *player, const gcha
 	}
 	/* FIXME: the audio-device must be configurable and/or auto detected */
 	if (player->displaytype == NV_DISPLAY_TYPE_HDMI)
-		g_object_set(G_OBJECT(audiosink), "device", "hw:1,0", NULL);
+		g_object_set(G_OBJECT(audiosink), "device", "hdmi", NULL);
 	g_object_set(G_OBJECT(pipeline), "audio-sink", audiosink, NULL);
 	/* make sure we use hartware accellerated output */
 	g_debug("   create nv_gl_videosink...");
