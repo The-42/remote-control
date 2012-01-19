@@ -241,6 +241,82 @@ int media_player_stop(struct media_player *player)
 	return 0;
 }
 
+int media_player_pause(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	if (!libvlc_media_player_can_pause(player->player))
+		return -ENOTSUP;
+
+	libvlc_media_player_set_pause(player->player, TRUE);
+
+	return 0;
+}
+
+int media_player_resume(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	if (!libvlc_media_player_can_pause(player->player))
+		return -ENOTSUP;
+
+	libvlc_media_player_set_pause(player->player, FALSE);
+
+	return 0;
+}
+
+int media_player_get_duration(struct media_player *player,
+		unsigned long *duration)
+{
+	libvlc_time_t time;
+
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	time = libvlc_media_player_get_length(player->player);
+	if (time < 0)
+		return -ENODATA;
+
+	/* time is in milliseconds */
+	if (duration)
+		*duration = time / 1000;
+
+	return 0;
+}
+
+int media_player_get_position(struct media_player *player,
+		unsigned long *position)
+{
+	libvlc_time_t time;
+
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	time = libvlc_media_player_get_time(player->player);
+	if (time < 0)
+		return -ENODATA;
+
+	/* time is in milliseconds */
+	if (position)
+		*position = time / 1000;
+
+	return 0;
+}
+
+int media_player_set_position(struct media_player *player,
+		unsigned long position)
+{
+	/* time is in milliseconds */
+	libvlc_time_t time = position * 1000;
+
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	if (!libvlc_media_player_is_seekable(player->player))
+		return -ENOTSUP;
+
+	libvlc_media_player_set_time(player->player, time);
+
+	return 0;
+}
+
 int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep)
 {

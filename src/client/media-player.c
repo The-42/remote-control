@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -95,6 +95,84 @@ int remote_media_player_set_output_window(void *priv, uint16_t x, uint16_t y,
 
 	err = RPC_STUB(media_player_set_output_window)(rpc, &ret, x, y, width,
 			height);
+	if (err < 0)
+		return err;
+
+	return ret;
+}
+
+remote_public
+int remote_media_player_pause(void *priv)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(media_player_pause)(rpc, &ret);
+	if (err < 0)
+		return err;
+
+	return ret;
+}
+
+remote_public
+int remote_media_player_resume(void *priv)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(media_player_resume)(rpc, &ret);
+	if (err < 0)
+		return err;
+
+	return ret;
+}
+
+remote_public
+int remote_media_player_get_duration(void *priv, unsigned long *duration)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	uint32_t time;
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(media_player_get_duration)(rpc, &ret, &time);
+	if (err < 0)
+		return err;
+
+	if (duration)
+		*duration = time;
+
+	return ret;
+}
+
+remote_public
+int remote_media_player_get_position(void *priv, unsigned long *position)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	uint32_t time;
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(media_player_get_position)(rpc, &ret, &time);
+	if (err < 0)
+		return err;
+
+	if (position)
+		*position = time;
+
+	return ret;
+}
+
+remote_public
+int remote_media_player_set_position(void *priv, unsigned long position)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(media_player_set_position)(rpc, &ret, position);
 	if (err < 0)
 		return err;
 

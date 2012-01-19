@@ -104,3 +104,76 @@ int32_t RPC_IMPL(media_player_set_output_window)(void *priv, uint16_t x, uint16_
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
+
+int32_t RPC_IMPL(media_player_pause)(void *priv)
+{
+	struct media_player *player = remote_control_get_media_player(priv);
+	int32_t ret;
+
+	g_debug("> %s(priv=%p)", __func__, priv);
+
+	ret = media_player_pause(player);
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
+int32_t RPC_IMPL(media_player_resume)(void *priv)
+{
+	struct media_player *player = remote_control_get_media_player(priv);
+	int32_t ret;
+
+	g_debug("> %s(priv=%p)", __func__, priv);
+
+	ret = media_player_resume(player);
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
+int32_t RPC_IMPL(media_player_get_duration)(void *priv, uint32_t *duration)
+{
+	struct media_player *player = remote_control_get_media_player(priv);
+	unsigned long time = 0;
+	int32_t ret;
+
+	g_debug("> %s(priv=%p, duration=%p)", __func__, priv, duration);
+
+	ret = media_player_get_duration(player, &time);
+
+	if ((ret >= 0) && duration)
+		*duration = time;
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
+int32_t RPC_IMPL(media_player_get_position)(void *priv, uint32_t *position)
+{
+	struct media_player *player = remote_control_get_media_player(priv);
+	unsigned long time = 0;
+	int32_t ret;
+
+	g_debug("> %s(priv=%p, position=%p)", __func__, priv, position);
+
+	ret = media_player_get_position(player, &time);
+
+	if ((ret >= 0) && position)
+		*position = time;
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
+int32_t RPC_IMPL(media_player_set_position)(void *priv, uint32_t position)
+{
+	struct media_player *player = remote_control_get_media_player(priv);
+	int32_t ret;
+
+	g_debug("> %s(priv=%p, position=%u)", __func__, priv, position);
+
+	ret = media_player_set_position(player, position);
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}

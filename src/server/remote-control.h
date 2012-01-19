@@ -177,6 +177,14 @@ int media_player_set_uri(struct media_player *player, const char *uri);
 int media_player_get_uri(struct media_player *player, char **urip);
 int media_player_play(struct media_player *player);
 int media_player_stop(struct media_player *player);
+int media_player_pause(struct media_player *player);
+int media_player_resume(struct media_player *player);
+int media_player_get_duration(struct media_player *player,
+		unsigned long *duration);
+int media_player_get_position(struct media_player *player,
+		unsigned long *position);
+int media_player_set_position(struct media_player *player,
+		unsigned long position);
 int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep);
 

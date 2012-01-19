@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -84,6 +84,44 @@ int media_player_stop(struct media_player *player)
 {
 	if (!player)
 		return -EINVAL;
+
+	return -ENOSYS;
+}
+
+int media_player_pause(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_resume(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_get_duration(struct media_player *player,
+		unsigned long *duration)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_get_position(struct media_player *player,
+		unsigned long *position)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_set_position(struct media_player *player,
+		unsigned long position)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
 
 	return -ENOSYS;
 }

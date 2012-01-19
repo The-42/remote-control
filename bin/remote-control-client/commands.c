@@ -637,6 +637,126 @@ const struct cli_command_info cmd_media_player_stop _command_ = {
 };
 
 /*
+ * "media-player-pause" command
+ */
+static int exec_media_player_pause(struct cli *cli, int argc, char *argv[])
+{
+	int err;
+
+	err = remote_media_player_pause(cli->client);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_media_player_pause _command_ = {
+	.name = "media-player-pause",
+	.summary = "pause media stream",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_media_player_pause,
+};
+
+/*
+ * "media-player-resume" command
+ */
+static int exec_media_player_resume(struct cli *cli, int argc, char *argv[])
+{
+	int err;
+
+	err = remote_media_player_resume(cli->client);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_media_player_resume _command_ = {
+	.name = "media-player-resume",
+	.summary = "resume media stream",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_media_player_resume,
+};
+
+
+/*
+ * "media-player-duration" command
+ */
+static int exec_media_player_duration(struct cli *cli, int argc, char *argv[])
+{
+	unsigned long duration;
+	int err;
+
+	err = remote_media_player_get_duration(cli->client, &duration);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	printf("Duration: %lu\n", duration);
+
+	return 0;
+}
+
+const struct cli_command_info cmd_media_player_duration _command_ = {
+	.name = "media-player-duration",
+	.summary = "obtain media stream duration",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_media_player_duration,
+};
+
+
+/*
+ * "media-player-position" command
+ */
+static int exec_media_player_position(struct cli *cli, int argc, char *argv[])
+{
+	unsigned long position;
+	int err;
+
+	if (argc > 1) {
+		char *end = NULL;
+
+		position = strtoul(argv[1], &end, 10);
+		if (end == argv[1]) {
+			printf("invalid position: %s\n", argv[1]);
+			return -EINVAL;
+		}
+
+		err = remote_media_player_set_position(cli->client, position);
+		if (err < 0) {
+			printf("%s\n", strerror(-err));
+			return err;
+		}
+	} else {
+		err = remote_media_player_get_position(cli->client, &position);
+		if (err < 0) {
+			printf("%s\n", strerror(-err));
+			return err;
+		}
+
+		printf("Position: %lu\n", position);
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_media_player_position _command_ = {
+	.name = "media-player-position",
+	.summary = "access media stream position",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_media_player_position,
+};
+
+/*
  * "media-player-state" command
  */
 static int exec_media_player_state(struct cli *cli, int argc, char *argv[])

@@ -216,6 +216,17 @@
 			<arg name="width" type="uint16_t" mode="in"/>
 			<arg name="height" type="uint16_t" mode="in"/>
 		</func>
+		<func name="media_player_pause" returns="int32_t" opcode="506"/>
+		<func name="media_player_resume" returns="int32_t" opcode="507"/>
+		<func name="media_player_get_duration" returns="int32_t" opcode="508">
+			<arg name="duration" type="uint32_t" mode="out"/>
+		</func>
+		<func name="media_player_get_position" returns="int32_t" opcode="509">
+			<arg name="position" type="uint32_t" mode="out"/>
+		</func>
+		<func name="media_player_set_position" returns="int32_t" opcode="510">
+			<arg name="position" type="uint32_t" mode="in"/>
+		</func>
 		<!-- Tuner -->
 		<func name="tuner_set_output_window" returns="int32_t" opcode="600">
 			<arg name="x" type="uint16_t" mode="in"/>

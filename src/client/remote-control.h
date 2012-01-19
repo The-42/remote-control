@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -160,6 +160,14 @@ remote_public int remote_media_player_get_stream(void *priv, char **url);
 remote_public int remote_media_player_set_stream(void *priv, const char *url);
 remote_public int remote_media_player_set_output_window(void *priv,
 		uint16_t x, uint16_t y, uint16_t width, uint16_t height);
+remote_public int remote_media_player_pause(void *priv);
+remote_public int remote_media_player_resume(void *priv);
+remote_public int remote_media_player_get_duration(void *priv,
+		unsigned long *duration);
+remote_public int remote_media_player_get_position(void *priv,
+		unsigned long *position);
+remote_public int remote_media_player_set_position(void *priv,
+		unsigned long position);
 
 remote_public int remote_modem_init(void *priv);
 remote_public int remote_modem_deinit(void *priv);

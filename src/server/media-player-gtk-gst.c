@@ -1096,6 +1096,44 @@ int media_player_stop(struct media_player *player)
 	return ret;
 }
 
+int media_player_pause(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_resume(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_get_duration(struct media_player *player,
+		unsigned long *duration)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_get_position(struct media_player *player,
+		unsigned long *position)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
+int media_player_set_position(struct media_player *player,
+		unsigned long position)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return -ENOSYS;
+}
+
 int media_player_get_state(struct media_player *player,
                            enum media_player_state *statep)
 {
