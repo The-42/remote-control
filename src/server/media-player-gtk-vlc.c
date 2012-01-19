@@ -125,8 +125,7 @@ int media_player_create(struct media_player **playerp)
 
 int media_player_free(struct media_player *player)
 {
-	if (!player)
-		return -EINVAL;
+	g_return_val_if_fail(player != NULL, -EINVAL);
 
 	libvlc_media_player_release(player->player);
 	libvlc_media_release(player->media);
@@ -142,8 +141,7 @@ int media_player_set_output_window(struct media_player *player,
 		unsigned int x, unsigned int y, unsigned int width,
 		unsigned int height)
 {
-	if (!player)
-		return -EINVAL;
+	g_return_val_if_fail(player != NULL, -EINVAL);
 
 	gdk_window_move_resize(player->window, x, y, width, height);
 	gdk_window_clear(player->window);
@@ -153,6 +151,8 @@ int media_player_set_output_window(struct media_player *player,
 
 int media_player_set_uri(struct media_player *player, const char *uri)
 {
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
 	if (player->media)
 		libvlc_media_release(player->media);
 
@@ -221,15 +221,19 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 
 int media_player_get_uri(struct media_player *player, char **urip)
 {
-	if (!player || !player->media || !urip)
-		return -EINVAL;
+	g_return_val_if_fail(player != NULL, -EINVAL);
+	g_return_val_if_fail(player->media != NULL, -EINVAL);
 
-	*urip = libvlc_media_get_mrl(player->media);
+	if (urip)
+		*urip = libvlc_media_get_mrl(player->media);
+
 	return 0;
 }
 
 int media_player_play(struct media_player *player)
 {
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
 	libvlc_media_player_set_media(player->player, player->media);
 	libvlc_media_player_play(player->player);
 	return 0;
@@ -237,6 +241,8 @@ int media_player_play(struct media_player *player)
 
 int media_player_stop(struct media_player *player)
 {
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
 	libvlc_media_player_stop(player->player);
 	return 0;
 }
@@ -320,9 +326,10 @@ int media_player_set_position(struct media_player *player,
 int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep)
 {
-	if (!player || !statep)
-		return -EINVAL;
+	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	*statep = player->state;
+	if (statep)
+		*statep = player->state;
+
 	return 0;
 }
