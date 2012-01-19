@@ -19,6 +19,7 @@
 #include "gtk-drag-view.h"
 #include "webkit-browser.h"
 #include "webkit-browser-tab-label.h"
+#include "gtk-pdf-view.h"
 #include "utils.h"
 #include "guri.h"
 
@@ -46,6 +47,9 @@ struct _WebKitBrowserPrivate {
 	GtkToolbar *toolbar;
 	GtkEntry *entry;
 	GtkWidget *spinner;
+	GtkToolItem *back;
+	GtkToolItem *forward;
+	GtkToolItem *reload;
 	GtkToggleToolButton *toggle;
 	GtkWidget *osk;
 	gchar *geometry;
@@ -239,11 +243,109 @@ static void webkit_browser_realize(GtkWidget *widget)
 	GTK_WIDGET_CLASS(webkit_browser_parent_class)->realize(widget);
 }
 
-static void on_notify_title(WebKitWebView *webkit, GParamSpec *pspec,
+static void on_notify_title(GObject *object, GParamSpec *pspec,
 		WebKitBrowserTabLabel *label)
 {
-	const gchar *title = webkit_web_view_get_title(webkit);
+	gchar *title = NULL;
+
+	g_object_get(object, "title", &title, NULL);
 	webkit_browser_tab_label_set_title(label, title);
+
+	g_free(title);
+}
+
+static void on_notify_loading(GObject *object, GParamSpec *pspec,
+		WebKitBrowserTabLabel *label)
+{
+	gboolean loading;
+
+	g_object_get(object, "loading", &loading, NULL);
+
+	webkit_browser_tab_label_set_loading(label, loading);
+}
+
+static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title);
+static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDownload *download);
+
+static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpointer data)
+{
+	WebKitDownloadStatus status = webkit_download_get_status(download);
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	WebKitBrowser *browser = data;
+	GtkWidget *widget;
+	GtkWidget *label;
+	gint page;
+
+	switch (status) {
+	case WEBKIT_DOWNLOAD_STATUS_ERROR:
+		g_debug("download failed");
+		break;
+
+	case WEBKIT_DOWNLOAD_STATUS_CREATED:
+		g_debug("download created");
+		break;
+
+	case WEBKIT_DOWNLOAD_STATUS_STARTED:
+		g_debug("download started");
+		page = webkit_browser_append_page_with_pdf(browser, download);
+		gtk_notebook_set_current_page(priv->notebook, page);
+		break;
+
+	case WEBKIT_DOWNLOAD_STATUS_CANCELLED:
+		g_debug("download cancelled");
+		page = gtk_notebook_get_current_page(priv->notebook);
+		widget = gtk_notebook_get_nth_page(priv->notebook, page);
+		label = gtk_notebook_get_tab_label(priv->notebook, widget);
+		webkit_browser_tab_label_set_loading(WEBKIT_BROWSER_TAB_LABEL(label), FALSE);
+		break;
+
+	case WEBKIT_DOWNLOAD_STATUS_FINISHED:
+		g_debug("download finished");
+		page = gtk_notebook_get_current_page(priv->notebook);
+		widget = gtk_notebook_get_nth_page(priv->notebook, page);
+		label = gtk_notebook_get_tab_label(priv->notebook, widget);
+		webkit_browser_tab_label_set_loading(WEBKIT_BROWSER_TAB_LABEL(label), FALSE);
+		break;
+	}
+}
+
+static gboolean on_download_requested(WebKitWebView *webkit, WebKitDownload *download, gpointer data)
+{
+	const gchar *template = "download-XXXXXX";
+	gchar *filename = NULL;
+	GError *error = NULL;
+	gchar *uri;
+	gint fd;
+
+	fd = g_file_open_tmp(template, &filename, &error);
+	if (fd < 0) {
+		g_debug("g_file_open_tmp(): %s", error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	close(fd);
+
+	uri = g_strdup_printf("file://%s", filename);
+	g_debug("downloading to %s", filename);
+
+	webkit_download_set_destination_uri(download, uri);
+	g_signal_connect(download, "notify::status", G_CALLBACK(on_download_status), data);
+
+	unlink(filename);
+	g_free(filename);
+	g_free(uri);
+	return TRUE;
+}
+
+static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *frame,
+		WebKitNetworkRequest *request, const gchar *mimetype,
+		WebKitWebPolicyDecision *decision, gpointer data)
+{
+	if (g_str_equal(mimetype, "application/pdf"))
+		webkit_web_policy_decision_download(decision);
+
+	return TRUE;
 }
 
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title)
@@ -268,12 +370,42 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 
 	page = gtk_notebook_append_page(priv->notebook, view, label);
 
+	g_signal_connect(G_OBJECT(webkit), "mime-type-policy-decision-requested",
+			G_CALLBACK(on_mime_type_requested), NULL);
+	g_signal_connect(G_OBJECT(webkit), "download-requested",
+			G_CALLBACK(on_download_requested), browser);
+
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::title",
 			G_CALLBACK(on_notify_title), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
 			G_CALLBACK(on_notify_uri), browser);
+
+	return page;
+}
+
+static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDownload *download)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	const gchar *title = "Loading PDF...";
+	GtkWidget *label;
+	GtkWidget *view;
+	gint page;
+
+	view = gtk_pdf_view_new(download);
+	gtk_widget_show(view);
+
+	label = webkit_browser_tab_label_new(title);
+	gtk_widget_show(label);
+
+	webkit_browser_tab_label_set_loading(WEBKIT_BROWSER_TAB_LABEL(label), TRUE);
+	g_signal_connect(G_OBJECT(view), "notify::title",
+			G_CALLBACK(on_notify_title), label);
+	g_signal_connect(G_OBJECT(view), "notify::loading",
+			G_CALLBACK(on_notify_loading), label);
+
+	page = gtk_notebook_append_page(priv->notebook, view, label);
 
 	return page;
 }
@@ -335,11 +467,28 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 	GtkWidget *widget;
 	const gchar *uri;
 
-	widget = gtk_bin_get_child(GTK_BIN(page));
-	webkit = WEBKIT_WEB_VIEW(widget);
-	frame = webkit_web_view_get_main_frame(webkit);
-	uri = webkit_web_frame_get_uri(frame) ?: "";
-	gtk_entry_set_text(priv->entry, uri);
+	if (GTK_IS_BIN(page)) {
+		/* the notebook page contains a WebKitWebView */
+		widget = gtk_bin_get_child(GTK_BIN(page));
+		webkit = WEBKIT_WEB_VIEW(widget);
+		frame = webkit_web_view_get_main_frame(webkit);
+
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->back), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->forward), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->entry), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->reload), TRUE);
+
+		uri = webkit_web_frame_get_uri(frame) ?: "";
+		gtk_entry_set_text(priv->entry, uri);
+	} else {
+		/* the notebook page contains a GtkPdfView */
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->back), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->forward), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->entry), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(priv->reload), FALSE);
+		/* TODO: set a meaningful URI for the PDF */
+		gtk_entry_set_text(priv->entry, "");
+	}
 }
 
 static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
@@ -356,17 +505,17 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toolbar_set_style(priv->toolbar, GTK_TOOLBAR_ICONS);
 	gtk_toolbar_set_icon_size(priv->toolbar, GTK_ICON_SIZE_DIALOG);
 
-	item = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
-	g_signal_connect(G_OBJECT(item), "clicked",
+	priv->back = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+	g_signal_connect(G_OBJECT(priv->back), "clicked",
 			G_CALLBACK(on_back_clicked), browser);
-	gtk_toolbar_insert(priv->toolbar, item, -1);
-	gtk_widget_show(GTK_WIDGET(item));
+	gtk_toolbar_insert(priv->toolbar, priv->back, -1);
+	gtk_widget_show(GTK_WIDGET(priv->back));
 
-	item = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
-	g_signal_connect(G_OBJECT(item), "clicked",
+	priv->forward = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+	g_signal_connect(G_OBJECT(priv->forward), "clicked",
 			G_CALLBACK(on_forward_clicked), browser);
-	gtk_toolbar_insert(priv->toolbar, item, -1);
-	gtk_widget_show(GTK_WIDGET(item));
+	gtk_toolbar_insert(priv->toolbar, priv->forward, -1);
+	gtk_widget_show(GTK_WIDGET(priv->forward));
 
 	/* address entry */
 	widget = gtk_entry_new();
@@ -381,12 +530,13 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toolbar_insert(priv->toolbar, item, -1);
 	gtk_widget_show(GTK_WIDGET(item));
 
-	item = gtk_tool_button_new(NULL, NULL);
-	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "go-jump");
-	g_signal_connect(G_OBJECT(item), "clicked",
+	priv->reload = gtk_tool_button_new(NULL, NULL);
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
+			"go-jump");
+	g_signal_connect(G_OBJECT(priv->reload), "clicked",
 			G_CALLBACK(on_go_clicked), browser);
-	gtk_toolbar_insert(priv->toolbar, item, -1);
-	gtk_widget_show(GTK_WIDGET(item));
+	gtk_toolbar_insert(priv->toolbar, priv->reload, -1);
+	gtk_widget_show(GTK_WIDGET(priv->reload));
 
 	priv->toggle = GTK_TOGGLE_TOOL_BUTTON(gtk_toggle_tool_button_new());
 	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);

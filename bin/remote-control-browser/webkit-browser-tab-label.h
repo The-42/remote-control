@@ -15,6 +15,7 @@ G_BEGIN_DECLS
 
 #define WEBKIT_TYPE_BROWSER_TAB_LABEL (webkit_browser_tab_label_get_type())
 #define WEBKIT_IS_BROWSER_TAB_LABEL(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), WEBKIT_TYPE_BROWSER_TAB_LABEL))
+#define WEBKIT_BROWSER_TAB_LABEL(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), WEBKIT_TYPE_BROWSER_TAB_LABEL, WebKitBrowserTabLabel))
 
 typedef struct WebKitBrowserTabLabel WebKitBrowserTabLabel;
 typedef struct WebKitBrowserTabLabelClass WebKitBrowserTabLabelClass;
