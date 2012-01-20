@@ -216,13 +216,15 @@ int modem_manager_create(struct modem_manager **managerp, struct rpc_server *ser
 	if ((err < 0) && (err != -ENODEV))
 		goto free;
 
-	err = modem_set_callbacks(manager->modem, &callbacks, manager);
-	if (err < 0)
-		goto free;
+	if (manager->modem) {
+		err = modem_set_callbacks(manager->modem, &callbacks, manager);
+		if (err < 0)
+			goto free;
 
-	manager->poll.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-	manager->poll.fd = modem_get_fd(manager->modem);
-	g_source_add_poll(source, &manager->poll);
+		manager->poll.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+		manager->poll.fd = modem_get_fd(manager->modem);
+		g_source_add_poll(source, &manager->poll);
+	}
 
 	*managerp = manager;
 	return 0;
