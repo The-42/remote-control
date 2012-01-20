@@ -9,8 +9,6 @@
   remote-control-gtk. Also add documentation for the libremote-control client
   library.
 
-* Wait for network connection before loading URL in browser.
-
 * Remove V4L2 tuner implementation. The tm6010 driver can now switch channels
   sufficiently fast to no longer require this dirty hack. Also it is much more
   stable and opening/closing the device file no longer hangs the device.
@@ -18,5 +16,5 @@
 * Remove linphone playback volume boost, because there is no indication that
   it makes any difference.
 
-* Remove the threaded implementation of the libmodem backend. The code should
-  be moved into the GLib main loop by implementing a corresponding GSource.
+* remote-control-browser:
+  - Refactor web-browser and pdf-viewer widgets (BrowserView interface?)
