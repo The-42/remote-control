@@ -99,10 +99,13 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 
 	case PROP_CONTROLS:
 		priv->controls = g_value_get_boolean(value);
-		if (priv->controls)
+		if (priv->controls) {
 			gtk_widget_show(GTK_WIDGET(priv->toolbar));
-		else
+			gtk_notebook_set_show_tabs(GTK_WIDGET(priv->notebook), TRUE);
+		} else {
 			gtk_widget_hide(GTK_WIDGET(priv->toolbar));
+			gtk_notebook_set_show_tabs(GTK_WIDGET(priv->notebook), FALSE);
+		}
 		break;
 
 	default:
@@ -356,6 +359,13 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	GtkWidget *view;
 	gint page;
 
+	/* Allow only one page when notebook tabs are hidden, which is
+	 * the case in kiosk mode. In this case we can not close the tab
+	 * once it is created */
+	if (!gtk_notebook_get_show_tabs(priv->notebook) &&
+	     gtk_notebook_get_n_pages(priv->notebook) > 1)
+		return -1;
+
 	/* create WebKit browser */
 	webkit = webkit_web_view_new();
 
@@ -392,6 +402,13 @@ static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDo
 	GtkWidget *label;
 	GtkWidget *view;
 	gint page;
+
+	/* Allow only one page when notebook tabs are hidden, which is
+	 * the case in kiosk mode. In this case we can not close the tab
+	 * once it is created */
+	if (!gtk_notebook_get_show_tabs(priv->notebook) &&
+	     gtk_notebook_get_n_pages(priv->notebook) > 1)
+		return -1;
 
 	view = gtk_pdf_view_new(download);
 	gtk_widget_show(view);
