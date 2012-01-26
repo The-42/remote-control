@@ -277,16 +277,16 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 	 * that would allow the frontend to enable and disable devices
 	 * explicitly. */
 	/* first disable the previous state */
-	if(audio_get_state (audio, &prev_state) == 0 &&
-			strcmp(ucm_states[prev_state].device, SND_USE_CASE_DEV_NONE)) {
+	if (audio_get_state (audio, &prev_state) == 0 &&
+	    strcmp(ucm_states[prev_state].device, SND_USE_CASE_DEV_NONE) != 0)
 		g_debug("ucm: disable current device: %s", ucm_states[prev_state].device);
 		snd_use_case_set(audio->ucm, "_disdev", ucm_states[prev_state].device);
 	}
 
 	/* FIXME: this is used to work around a bug in the wm8903 codec driver,
 	 * which leads to not-working bypass modes... */
-	if (!strcmp(ucm_states[state].verb, SND_USE_CASE_VERB_VOICECALL)) {
 		g_debug("ucm: play file:///persist/silence.wav");
+	if (strcmp(ucm_states[state].verb, SND_USE_CASE_VERB_VOICECALL) == 0) {
 		sound_manager_play (audio->manager, "file:///persist/silence.wav");
 	}
 
@@ -298,7 +298,7 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 		return err;
 	}
 
-	if (strcmp(s->device, SND_USE_CASE_DEV_NONE)) {
+	if (strcmp(s->device, SND_USE_CASE_DEV_NONE) != 0) {
 		err = snd_use_case_set(audio->ucm, "_enadev", s->device);
 
 		if (err < 0) {
