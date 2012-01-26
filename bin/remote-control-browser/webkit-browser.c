@@ -101,10 +101,10 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		priv->controls = g_value_get_boolean(value);
 		if (priv->controls) {
 			gtk_widget_show(GTK_WIDGET(priv->toolbar));
-			gtk_notebook_set_show_tabs(GTK_WIDGET(priv->notebook), TRUE);
+			gtk_notebook_set_show_tabs(priv->notebook, TRUE);
 		} else {
 			gtk_widget_hide(GTK_WIDGET(priv->toolbar));
-			gtk_notebook_set_show_tabs(GTK_WIDGET(priv->notebook), FALSE);
+			gtk_notebook_set_show_tabs(priv->notebook, FALSE);
 		}
 		break;
 
