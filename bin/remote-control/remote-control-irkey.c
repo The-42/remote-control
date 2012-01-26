@@ -25,7 +25,8 @@
 #endif
 
 #define MAX_QUEUE_DEPTH 10
-#define DEFAULT_IR_PORT "/dev/ttyHS2"
+#define DEFAULT_IR_PORT_VIBRANTE "/dev/ttyHS2"
+#define DEFAULT_IR_PORT_CHROMIUM "/dev/ttyS1"
 
 struct irkey {
 	int tty;
@@ -306,17 +307,29 @@ static int irk_process_buffer(struct irkey *ctx, uint8_t *buf, size_t len)
 
 static gpointer irk_thread_proc(gpointer data)
 {
+	static const char* ttys[] = {
+		DEFAULT_IR_PORT_VIBRANTE,
+		DEFAULT_IR_PORT_CHROMIUM
+	};
 	struct irkey *ctx = data;
 	uint8_t buf[8]; /* messages are normaly 64bits */
 	ssize_t got;
 	fd_set fds;
 	int ret;
 
-	/* we can only work with a opend serial port */
+	/* we can only work with a opened serial port */
 	if (!ctx->tty) {
-		ret = irk_open_tty(ctx, DEFAULT_IR_PORT);
-		if (ret < 0)
-			goto cleanup;
+		int i;
+		for (i=0; i<G_N_ELEMENTS(ttys); i++) {
+			ret = irk_open_tty(ctx, ttys[i]);
+			if (ret < 0) {
+				if (ret == -ENOENT)
+					continue;
+				goto cleanup;
+			}
+			g_debug("%s: using port [%s]", __func__, ttys[i]);
+			break;
+		}
 	}
 
 	FD_ZERO(&fds);
