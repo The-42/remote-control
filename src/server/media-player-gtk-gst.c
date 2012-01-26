@@ -77,7 +77,6 @@ struct media_player {
 	int scale;          /* the scaler mode we have chosen */
 	int displaytype;
 	bool have_nv_omx;
-	bool radio;
 };
 
 #if 0
@@ -95,7 +94,6 @@ static void player_dump(struct media_player *player)
 	g_printf("   scale:............... %d\n", player->scale);
 	g_printf("   displaytype:......... %d\n", player->displaytype);
 	g_printf("   have_nv_omx:......... %d\n", player->have_nv_omx);
-	g_printf("   radio:............... %d\n", player->radio);
 }
 #endif
 
@@ -225,9 +223,9 @@ static void player_show_output(struct media_player *player, gboolean show)
 {
 	if (!player->have_nv_omx && !player->xid && player->window != NULL) {
 		gdk_threads_enter();
-		if (show && !player->radio)
+		if (show) {
 			gdk_window_show(player->window);
-		else {
+		} else if (gdk_window_is_visible(player->window)) {
 			gdk_window_hide(player->window);
 			gdk_window_thaw_updates (player->window);
 			gdk_window_clear(player->window);
