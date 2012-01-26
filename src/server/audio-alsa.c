@@ -279,8 +279,13 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 	/* first disable the previous state */
 	if (audio_get_state (audio, &prev_state) == 0 &&
 	    strcmp(ucm_states[prev_state].device, SND_USE_CASE_DEV_NONE) != 0)
-		g_debug("ucm: disable current device: %s", ucm_states[prev_state].device);
-		snd_use_case_set(audio->ucm, "_disdev", ucm_states[prev_state].device);
+	{
+		err = snd_use_case_set(audio->ucm, "_disdev",
+		                       ucm_states[prev_state].device);
+		if (err < 0) {
+			g_warning("audio-alsa-ucm: failed to disable device %s: %s",
+				ucm_states[prev_state].device, snd_strerror(err));
+		}
 	}
 
 	/* FIXME: this is used to work around a bug in the wm8903 codec driver,
@@ -293,8 +298,8 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 	g_debug("ucm: set verb %s", s->verb);
 	err = snd_use_case_set(audio->ucm, "_verb", s->verb);
 	if (err < 0) {
-		g_warning("audio-alsa-ucm: failed to set use-case: %s",
-				snd_strerror(err));
+		g_warning("audio-alsa-ucm: failed to set use-case %s: %s",
+				s->verb, snd_strerror(err));
 		return err;
 	}
 
