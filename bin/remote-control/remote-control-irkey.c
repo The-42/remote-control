@@ -24,7 +24,7 @@
 #define ARRAY_SIZE(a) (sizeof(a))/(sizeof((a)[0]))
 #endif
 
-#define MAX_QUEUE_DEPTH 10
+#define MAX_QUEUE_DEPTH 2
 #define DEFAULT_IR_PORT_VIBRANTE "/dev/ttyHS2"
 #define DEFAULT_IR_PORT_CHROMIUM "/dev/ttyS1"
 
