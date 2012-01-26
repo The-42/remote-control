@@ -351,6 +351,20 @@ static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *fr
 	return TRUE;
 }
 
+static gboolean can_handle_multiple_tabs(WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	if (gtk_notebook_get_show_tabs(priv->notebook))
+		return TRUE;
+
+	/* Allow only one tab when tabbar is hidden */
+	if (gtk_notebook_get_n_pages(priv->notebook) < 1)
+		return TRUE;
+
+	return FALSE;
+}
+
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
@@ -359,11 +373,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	GtkWidget *view;
 	gint page;
 
-	/* Allow only one page when notebook tabs are hidden, which is
-	 * the case in kiosk mode. In this case we can not close the tab
-	 * once it is created */
-	if (!gtk_notebook_get_show_tabs(priv->notebook) &&
-	     gtk_notebook_get_n_pages(priv->notebook) > 1)
+	if (!can_handle_multiple_tabs(browser))
 		return -1;
 
 	/* create WebKit browser */
@@ -403,11 +413,7 @@ static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDo
 	GtkWidget *view;
 	gint page;
 
-	/* Allow only one page when notebook tabs are hidden, which is
-	 * the case in kiosk mode. In this case we can not close the tab
-	 * once it is created */
-	if (!gtk_notebook_get_show_tabs(priv->notebook) &&
-	     gtk_notebook_get_n_pages(priv->notebook) > 1)
+	if (!can_handle_multiple_tabs(browser))
 		return -1;
 
 	view = gtk_pdf_view_new(download);
