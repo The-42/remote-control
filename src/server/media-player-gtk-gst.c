@@ -1098,30 +1098,56 @@ int media_player_pause(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return -ENOSYS;
+	return player_change_state (player, GST_STATE_PAUSED);
 }
 
 int media_player_resume(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return -ENOSYS;
+	return player_change_state (player, GST_STATE_PLAYING);
 }
 
 int media_player_get_duration(struct media_player *player,
 		unsigned long *duration)
 {
+	GstQuery *query;
+	gboolean res;
+
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return -ENOSYS;
+	query = gst_query_new_duration (GST_FORMAT_TIME);
+	res = gst_element_query (player->pipeline, query);
+	if (res) {
+		gint64 duration_ns;
+		gst_query_parse_duration (query, NULL, &duration_ns);
+		*duration = duration_ns / GST_MSECOND;
+	} else
+		return -EINVAL;
+	gst_query_unref (query);
+
+	return 0;
 }
 
 int media_player_get_position(struct media_player *player,
 		unsigned long *position)
 {
+	GstQuery *query;
+	gboolean res;
+
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return -ENOSYS;
+	query = gst_query_new_position (GST_FORMAT_TIME);
+	res = gst_element_query (player->pipeline, query);
+	if (res) {
+		gint64 position_ns;
+		gst_query_parse_position (query, NULL, &position_ns);
+		*position = position_ns / GST_MSECOND;
+	} else
+		return -EINVAL;
+	gst_query_unref (query);
+
+	return 0;
 }
 
 int media_player_set_position(struct media_player *player,
@@ -1129,7 +1155,13 @@ int media_player_set_position(struct media_player *player,
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return -ENOSYS;
+	if (!gst_element_seek(player->pipeline, 1.0, GST_FORMAT_TIME,
+						  GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
+						  position * GST_MSECOND, GST_SEEK_TYPE_NONE,
+						  GST_CLOCK_TIME_NONE))
+		return -EINVAL;
+
+	return 0;
 }
 
 int media_player_get_state(struct media_player *player,
