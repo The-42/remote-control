@@ -291,10 +291,10 @@
 		<func name="check_io" returns="int32_t" opcode="801">
 			<arg name="value" type="uint8_t" mode="out"/>
 		</func>
-		<func name="justaboard_set_mask" returns="int32_t" opcode="802">
+		<func name="gpio_set_mask" returns="int32_t" opcode="802">
 			<arg name="mask" type="uint32_t" mode="in"/>
 		</func>
-		<func name="justaboard_get_mask" returns="int32_t" opcode="803">
+		<func name="gpio_get_mask" returns="int32_t" opcode="803">
 			<arg name="mask" type="uint32_t" mode="out"/>
 		</func>
 		<!-- IRQ functions -->

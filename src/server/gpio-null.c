@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Avionic Design GmbH
+ * Copyright (C) 2011-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -13,39 +13,43 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-static gboolean gpio_source_prepare(GSource *source, gint *timeout)
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
 {
-	if (timeout)
-		*timeout = -1;
-
-	return FALSE;
+	return 0;
 }
 
-static gboolean gpio_source_check(GSource *source)
+int gpio_chip_free(struct gpio_chip *chip)
 {
-	return FALSE;
+	return 0;
 }
 
-static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
+GSource *gpio_chip_get_source(struct gpio_chip *chip)
 {
-	if (callback)
-		return callback(user_data);
-
-	return TRUE;
+	return NULL;
 }
 
-static void gpio_source_finalize(GSource *source)
+int gpio_chip_get_num_gpios(struct gpio_chip *chip)
 {
+	return 0;
 }
 
-static GSourceFuncs gpio_source_funcs = {
-	.prepare = gpio_source_prepare,
-	.check = gpio_source_check,
-	.dispatch = gpio_source_dispatch,
-	.finalize = gpio_source_finalize,
-};
-
-GSource *gpio_source_new(struct event_manager *events)
+int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio)
 {
-	return g_source_new(&gpio_source_funcs, sizeof(GSource));
+	return -ENOSYS;
+}
+
+int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
+		int value)
+{
+	return -ENOSYS;
+}
+
+int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value)
+{
+	return -ENOSYS;
+}
+
+int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio)
+{
+	return -ENOSYS;
 }

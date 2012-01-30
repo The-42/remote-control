@@ -35,6 +35,7 @@ struct rpc_source {
 
 struct remote_control {
 	struct event_manager *event_manager;
+	struct gpio_chip *gpio;
 	struct audio *audio;
 	struct backlight *backlight;
 	struct media_player *player;
@@ -317,12 +318,6 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
-	source = event_manager_get_source(rc->event_manager);
-	if (source) {
-		g_source_add_child_source(rc->source, source);
-		g_source_unref(source);
-	}
-
 	err = backlight_create(&rc->backlight);
 	if (err < 0) {
 		g_error("backlight_create(): %s", strerror(-err));
@@ -426,6 +421,18 @@ int remote_control_create(struct remote_control **rcp)
 	}
 
 	source = mixer_get_source(rc->mixer);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
+
+	err = gpio_chip_create(&rc->gpio, rc->event_manager);
+	if (err < 0) {
+		g_error("gpio_chip_create(): %s", strerror(-err));
+		return err;
+	}
+
+	source = gpio_chip_get_source(rc->gpio);
 	if (source) {
 		g_source_add_child_source(rc->source, source);
 		g_source_unref(source);
@@ -536,6 +543,11 @@ struct tuner *remote_control_get_tuner(struct remote_control *rc)
 struct handset *remote_control_get_handset(struct remote_control *rc)
 {
 	return rc ? rc->handset : NULL;
+}
+
+struct gpio_chip *remote_control_get_gpio_chip(struct remote_control *rc)
+{
+	return rc ? rc->gpio : NULL;
 }
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request)

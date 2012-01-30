@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -26,7 +26,9 @@ static struct gpio_map {
 	{ 2, GPIO_SMARTCARD },
 };
 
-struct gpio_source {
+static const unsigned int gpios[] = { 34, 35, 36 };
+
+struct gpio_chip {
 	GSource source;
 	GPollFD fd;
 
@@ -43,9 +45,9 @@ static gboolean gpio_source_prepare(GSource *source, gint *timeout)
 
 static gboolean gpio_source_check(GSource *source)
 {
-	struct gpio_source *gpio = (struct gpio_source *)source;
+	struct gpio_chip *chip = (struct gpio_chip *)source;
 
-	if (gpio->fd.revents & G_IO_IN)
+	if (chip->fd.revents & G_IO_IN)
 		return TRUE;
 
 	return FALSE;
@@ -53,14 +55,14 @@ static gboolean gpio_source_check(GSource *source)
 
 static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
 {
-	struct gpio_source *gpio = (struct gpio_source *)source;
+	struct gpio_chip *chip = (struct gpio_chip *)source;
 	enum gpio type = GPIO_UNKNOWN;
 	struct gpio_event data;
 	struct event event;
 	guint i;
 	int err;
 
-	err = read(gpio->fd.fd, &data, sizeof(data));
+	err = read(chip->fd.fd, &data, sizeof(data));
 	if (err < 0) {
 		g_warning("gpiodev: read(): %s", strerror(errno));
 		return TRUE;
@@ -102,7 +104,7 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpoi
 		break;
 	}
 
-	event_manager_report(gpio->events, &event);
+	event_manager_report(chip->events, &event);
 
 	if (callback)
 		return callback(user_data);
@@ -112,10 +114,10 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpoi
 
 static void gpio_source_finalize(GSource *source)
 {
-	struct gpio_source *gpio = (struct gpio_source *)source;
+	struct gpio_chip *chip = (struct gpio_chip *)source;
 
-	if (gpio->fd.fd >= 0)
-		close(gpio->fd.fd);
+	if (chip->fd.fd >= 0)
+		close(chip->fd.fd);
 }
 
 static GSourceFuncs gpio_source_funcs = {
@@ -125,42 +127,126 @@ static GSourceFuncs gpio_source_funcs = {
 	.finalize = gpio_source_finalize,
 };
 
-GSource *gpio_source_new(struct event_manager *events)
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
 {
-	struct gpio_source *gpio;
+	struct gpio_chip *chip;
 	GSource *source;
+	int err;
 	guint i;
 
-	source = g_source_new(&gpio_source_funcs, sizeof(*gpio));
+	g_return_val_if_fail(chipp != NULL, -EINVAL);
+
+	source = g_source_new(&gpio_source_funcs, sizeof(*chip));
 	if (!source)
-		return NULL;
+		return -ENOMEM;
 
-	gpio = (struct gpio_source *)source;
-	gpio->events = events;
+	chip = (struct gpio_chip *)source;
+	chip->events = events;
 
-	gpio->fd.fd = open("/dev/gpio-0", O_RDWR);
-	if (gpio->fd.fd < 0)
+	chip->fd.fd = open("/dev/gpio-0", O_RDWR);
+	if (chip->fd.fd < 0) {
+		err = -errno;
 		goto free;
+	}
 
 	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
 		struct gpio_event enable;
-		int err;
 
 		enable.gpio = gpio_list[i].offset;
 		enable.value = 1;
 
-		err = ioctl(gpio->fd.fd, GPIO_IOC_ENABLE_IRQ, &enable);
-		if (err < 0)
+		err = ioctl(chip->fd.fd, GPIO_IOC_ENABLE_IRQ, &enable);
+		if (err < 0) {
+			err = -errno;
 			goto close;
+		}
 	}
 
-	gpio->fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-	g_source_add_poll(source, &gpio->fd);
-	return source;
+	chip->fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+	g_source_add_poll(source, &chip->fd);
+
+	*chipp = chip;
+	return 0;
 
 close:
-	close(gpio->fd.fd);
+	close(chip->fd.fd);
 free:
 	g_source_unref(source);
-	return NULL;
+	return err;
+}
+
+int gpio_chip_free(struct gpio_chip *chip)
+{
+	return 0;
+}
+
+GSource *gpio_chip_get_source(struct gpio_chip *chip)
+{
+	return chip ? &chip->source : NULL;
+}
+
+int gpio_chip_get_num_gpios(struct gpio_chip *chip)
+{
+	return chip ? G_N_ELEMENTS(gpios) : -EINVAL;
+}
+
+int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio)
+{
+	int err;
+
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	err = ioctl(chip->fd.fd, GPIO_IOC_SET_INPUT, gpios[gpio]);
+	if (err < 0)
+		return -errno;
+
+	return 0;
+}
+
+int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
+		int value)
+{
+	struct gpio_event pin;
+	int err;
+
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	pin.gpio = gpios[gpio];
+	pin.value = !!value;
+
+	err = ioctl(chip->fd.fd, GPIO_IOC_SET_OUTPUT, &pin);
+	if (err < 0)
+		return -errno;
+
+	return 0;
+}
+
+int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value)
+{
+	struct gpio_event pin;
+	int err;
+
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	pin.gpio = gpios[gpio];
+	pin.value = !!value;
+
+	err = ioctl(chip->fd.fd, GPIO_IOC_SET_VALUE, &pin);
+	if (err < 0)
+		return -errno;
+
+	return 0;
+}
+
+int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio)
+{
+	int err;
+
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	err = ioctl(chip->fd.fd, GPIO_IOC_GET_VALUE, gpios[gpio]);
+	if (err < 0)
+		return -errno;
+
+	return !!err;
 }

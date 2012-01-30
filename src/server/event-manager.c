@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -27,16 +27,15 @@ struct event_manager {
 	enum event_rfid_state rfid_state;
 	enum event_modem_state modem_state;
 	GQueue *handset_events;
-
-	GSource *gpio;
 };
 
-int event_manager_create(struct event_manager **managerp, struct rpc_server *server)
+int event_manager_create(struct event_manager **managerp,
+		struct rpc_server *server)
 {
 	struct event_manager *manager;
 	int err = 0;
 
-	if (!managerp)
+	if (!managerp || !server)
 		return -EINVAL;
 
 	manager = g_new0(struct event_manager, 1);
@@ -58,12 +57,6 @@ int event_manager_create(struct event_manager **managerp, struct rpc_server *ser
 		goto free;
 	}
 
-	manager->gpio = gpio_source_new(manager);
-	if (!manager->gpio) {
-		err = -ENOMEM;
-		goto free;
-	}
-
 	*managerp = manager;
 	return 0;
 
@@ -79,14 +72,8 @@ int event_manager_free(struct event_manager *manager)
 		return -EINVAL;
 
 	g_queue_free(manager->handset_events);
-	g_source_unref(manager->gpio);
 	g_free(manager);
 	return 0;
-}
-
-GSource *event_manager_get_source(struct event_manager *manager)
-{
-	return manager ? manager->gpio : NULL;
 }
 
 int event_manager_report(struct event_manager *manager, struct event *event)

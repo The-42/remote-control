@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -23,18 +23,80 @@ int32_t RPC_IMPL(check_io)(void *priv, uint8_t *value)
 	return ret;
 }
 
-int32_t RPC_IMPL(justaboard_set_mask)(void *priv, uint32_t mask)
+int32_t RPC_IMPL(gpio_set_mask)(void *priv, uint32_t mask)
 {
-	int32_t ret = -ENOSYS;
+	struct gpio_chip *chip = remote_control_get_gpio_chip(priv);
+	unsigned int num;
+	unsigned int i;
+	int32_t ret;
+	int err;
+
 	g_debug("> %s(priv=%p, mask=%#x)", __func__, priv, mask);
+	g_debug("  mask: %08x", mask);
+
+	err = gpio_chip_get_num_gpios(chip);
+	if (err < 0) {
+		ret = -err;
+		goto out;
+	}
+
+	num = err;
+
+	for (i = 0; i < num; i++) {
+		int value = (mask >> i) & 1;
+
+		ret = gpio_chip_direction_output(chip, i, value);
+		if (ret < 0) {
+			g_debug("gpio_chip_direction_output(%u) failed: %s",
+					i, strerror(-ret));
+		}
+	}
+
+	ret = 0;
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
-int32_t RPC_IMPL(justaboard_get_mask)(void *priv, uint32_t *mask)
+int32_t RPC_IMPL(gpio_get_mask)(void *priv, uint32_t *mask)
 {
-	int32_t ret = -ENOSYS;
+	struct gpio_chip *chip = remote_control_get_gpio_chip(priv);
+	uint32_t value = 0;
+	unsigned int num;
+	unsigned int i;
+	int32_t ret;
+	int err;
+
 	g_debug("> %s(priv=%p, mask=%p)", __func__, priv, mask);
+
+	err = gpio_chip_get_num_gpios(chip);
+	if (err < 0) {
+		ret = -err;
+		goto out;
+	}
+
+	num = err;
+
+	for (i = 0; i < num; i++) {
+		ret = gpio_chip_get_value(chip, i);
+		if (ret < 0) {
+			g_debug("gpio_chip_get_value(%u) failed: %s",
+					i, strerror(-ret));
+			continue;
+		}
+
+		if (ret)
+			value |= BIT(i);
+	}
+
+	if (mask)
+		*mask = value;
+
+	g_debug("  mask: %08x", value);
+	ret = 0;
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }

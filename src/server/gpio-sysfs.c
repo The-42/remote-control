@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Avionic Design GmbH
+ * Copyright (C) 2011-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,11 +17,7 @@
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
-
-#define SYSFS_PATH "/sys"
-
-/* FIXME: don't hard-code this */
-#define GPIO_START 448
+#include "gpiolib.h"
 
 #define IRQ_TYPE_EDGE_NONE    0
 #define IRQ_TYPE_EDGE_RISING  (1 << 0)
@@ -33,59 +29,17 @@ static struct gpio_map {
 	unsigned int edge;
 	enum gpio type;
 } gpio_list[] = {
-	{ GPIO_START + 0, IRQ_TYPE_EDGE_BOTH, GPIO_HANDSET   },
-	{ GPIO_START + 1, IRQ_TYPE_EDGE_BOTH, GPIO_SMARTCARD },
+	{ 0, IRQ_TYPE_EDGE_BOTH, GPIO_HANDSET   },
+	{ 1, IRQ_TYPE_EDGE_BOTH, GPIO_SMARTCARD },
 };
+
+static const unsigned int gpios[] = { 33, 34, 35, 36 };
 
 struct gpio_desc {
 	GPollFD poll;
 	enum gpio type;
 	guint num;
 };
-
-static int gpio_sysfs_export(unsigned int gpio)
-{
-	int err;
-	int fd;
-
-	fd = open(SYSFS_PATH "/class/gpio/export", O_WRONLY);
-	if (fd < 0)
-		return -errno;
-
-	err = dprintf(fd, "%u", gpio);
-	if (err < 0) {
-		err = -errno;
-		goto out;
-	}
-
-	err = 0;
-
-out:
-	close(fd);
-	return err;
-}
-
-static int gpio_sysfs_unexport(unsigned int gpio)
-{
-	int err;
-	int fd;
-
-	fd = open(SYSFS_PATH "/class/gpio/unexport", O_WRONLY);
-	if (fd < 0)
-		return -errno;
-
-	err = dprintf(fd, "%u", gpio);
-	if (err < 0) {
-		err = -errno;
-		goto out;
-	}
-
-	err = 0;
-
-out:
-	close(fd);
-	return err;
-}
 
 static int gpio_export(struct gpio_desc **gpiop, guint num)
 {
@@ -99,8 +53,8 @@ static int gpio_export(struct gpio_desc **gpiop, guint num)
 	gpio->poll.fd = -1;
 	gpio->num = num;
 
-	err = gpio_sysfs_export(num);
-	if (err < 0) {
+	err = gpio_request(num);
+	if ((err < 0) && (err != -EBUSY)) {
 		g_free(gpio);
 		return err;
 	}
@@ -119,7 +73,7 @@ static int gpio_unexport(struct gpio_desc *gpio)
 	if (gpio->poll.fd >= 0)
 		close(gpio->poll.fd);
 
-	err = gpio_sysfs_unexport(gpio->num);
+	err = gpio_free(gpio->num);
 	if (err < 0) {
 		g_debug("gpio-sysfs: %s failed: %s", "gpio_sysfs_unexport()",
 				g_strerror(-err));
@@ -163,7 +117,7 @@ static int gpio_watch(struct gpio_desc *gpio, unsigned int edge)
 	if (!type)
 		return -ENOTSUP;
 
-	err = asprintf(&buffer, SYSFS_PATH "/class/gpio/gpio%u/edge",
+	err = asprintf(&buffer, SYSFS_GPIO_PATH "/gpio%u/edge",
 			gpio->num);
 	if (err < 0)
 		return -errno;
@@ -185,7 +139,7 @@ static int gpio_watch(struct gpio_desc *gpio, unsigned int edge)
 
 	close(fd);
 
-	err = asprintf(&buffer, SYSFS_PATH "/class/gpio/gpio%u/value",
+	err = asprintf(&buffer, SYSFS_GPIO_PATH "/gpio%u/value",
 			gpio->num);
 	if (err < 0)
 		return -errno;
@@ -205,9 +159,10 @@ static int gpio_watch(struct gpio_desc *gpio, unsigned int edge)
 	return 0;
 }
 
-struct gpio_source {
+struct gpio_chip {
 	GSource source;
 
+	unsigned int base;
 	struct gpio_desc **gpios;
 	guint num_gpios;
 
@@ -224,11 +179,11 @@ static gboolean gpio_source_prepare(GSource *source, gint *timeout)
 
 static gboolean gpio_source_check(GSource *source)
 {
-	struct gpio_source *priv = (struct gpio_source *)source;
+	struct gpio_chip *chip = (struct gpio_chip *)source;
 	guint i;
 
-	for (i = 0; i < priv->num_gpios; i++) {
-		struct gpio_desc *gpio = priv->gpios[i];
+	for (i = 0; i < chip->num_gpios; i++) {
+		struct gpio_desc *gpio = chip->gpios[i];
 		if (gpio->poll.revents & G_IO_ERR)
 			return TRUE;
 	}
@@ -304,15 +259,15 @@ static int gpio_handle_irq(struct gpio_desc *gpio,
 static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback,
 		gpointer user_data)
 {
-	struct gpio_source *priv = (struct gpio_source *)source;
+	struct gpio_chip *chip = (struct gpio_chip *)source;
 	guint i;
 	int err;
 
-	for (i = 0; i < priv->num_gpios; i++) {
-		struct gpio_desc *gpio = priv->gpios[i];
+	for (i = 0; i < chip->num_gpios; i++) {
+		struct gpio_desc *gpio = chip->gpios[i];
 
 		if (gpio->poll.revents & G_IO_ERR) {
-			err = gpio_handle_irq(gpio, priv->events);
+			err = gpio_handle_irq(gpio, chip->events);
 			if (err < 0) {
 				g_debug("gpio-sysfs: %s failed: %s",
 						"gpio_handle_irq()",
@@ -329,15 +284,24 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback,
 
 static void gpio_source_finalize(GSource *source)
 {
-	struct gpio_source *priv = (struct gpio_source *)source;
+	struct gpio_chip *chip = (struct gpio_chip *)source;
 	guint i;
+	int err;
 
-	for (i = 0; i < priv->num_gpios; i++) {
-		struct gpio_desc *gpio = priv->gpios[i];
+	for (i = 0; i < G_N_ELEMENTS(gpios); i++) {
+		err = gpio_free(chip->base + gpios[i]);
+		if (err < 0) {
+			g_debug("gpio-sysfs: %s failed: %s", "gpio_free()",
+					g_strerror(-err));
+		}
+	}
+
+	for (i = 0; i < chip->num_gpios; i++) {
+		struct gpio_desc *gpio = chip->gpios[i];
 		gpio_unexport(gpio);
 	}
 
-	g_free(priv->gpios);
+	g_free(chip->gpios);
 }
 
 static GSourceFuncs gpio_source_funcs = {
@@ -347,30 +311,36 @@ static GSourceFuncs gpio_source_funcs = {
 	.finalize = gpio_source_finalize,
 };
 
-GSource *gpio_source_new(struct event_manager *events)
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
 {
-	struct gpio_source *priv;
+	struct gpio_chip *chip;
 	GSource *source;
+	int err;
 	guint i;
 
-	source = g_source_new(&gpio_source_funcs, sizeof(*priv));
+	g_return_val_if_fail(chipp != NULL, -EINVAL);
+
+	source = g_source_new(&gpio_source_funcs, sizeof(*chip));
 	if (!source)
-		return NULL;
+		return -ENOMEM;
 
-	priv = (struct gpio_source *)source;
-	priv->events = events;
+	chip = (struct gpio_chip *)source;
+	chip->events = events;
 
-	priv->num_gpios = G_N_ELEMENTS(gpio_list);
+	chip->num_gpios = G_N_ELEMENTS(gpio_list);
+	/* FIXME: don't hard-code this */
+	chip->base = 448;
 
-	priv->gpios = g_new0(struct gpio_desc *, priv->num_gpios);
-	if (!priv->gpios)
+	chip->gpios = g_new0(struct gpio_desc *, chip->num_gpios);
+	if (!chip->gpios) {
+		err = -ENOMEM;
 		goto unref;
+	}
 
 	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
 		struct gpio_desc *gpio = NULL;
-		int err;
 
-		err = gpio_export(&gpio, gpio_list[i].offset);
+		err = gpio_export(&gpio, chip->base + gpio_list[i].offset);
 		if (err < 0) {
 			g_debug("gpio-sysfs: %s failed: %s", "gpio_export()",
 					g_strerror(-err));
@@ -378,7 +348,7 @@ GSource *gpio_source_new(struct event_manager *events)
 		}
 
 		gpio->type = gpio_list[i].type;
-		priv->gpios[i] = gpio;
+		chip->gpios[i] = gpio;
 
 		err = gpio_watch(gpio, gpio_list[i].edge);
 		if (err < 0) {
@@ -388,20 +358,104 @@ GSource *gpio_source_new(struct event_manager *events)
 		}
 
 		g_debug("gpio-sysfs: GPIO#%u exported, watching...",
-				gpio_list[i].offset);
+				chip->base + gpio_list[i].offset);
 		g_source_add_poll(source, &gpio->poll);
 	}
 
-	return source;
+	for (i = 0; i < G_N_ELEMENTS(gpios); i++) {
+		err = gpio_request(chip->base + gpios[i]);
+		if ((err < 0) && (err != -EBUSY)) {
+			g_debug("gpio-sysfs: %s failed: %s", "gpio_request",
+					g_strerror(-err));
+		}
+	}
+
+	*chipp = chip;
+	return 0;
 
 free:
-	for (i = 0; i < priv->num_gpios; i++) {
-		struct gpio_desc *gpio = priv->gpios[i];
+	for (i = 0; i < G_N_ELEMENTS(gpios); i++)
+		gpio_free(chip->base + gpios[i]);
+
+	for (i = 0; i < chip->num_gpios; i++) {
+		struct gpio_desc *gpio = chip->gpios[i];
 		gpio_unexport(gpio);
 	}
 
-	g_free(priv->gpios);
+	g_free(chip->gpios);
 unref:
 	g_source_unref(source);
-	return NULL;
+	return err;
+}
+
+int gpio_chip_free(struct gpio_chip *chip)
+{
+	return 0;
+}
+
+GSource *gpio_chip_get_source(struct gpio_chip *chip)
+{
+	return chip ? &chip->source : NULL;
+}
+
+int gpio_chip_get_num_gpios(struct gpio_chip *chip)
+{
+	return chip ? G_N_ELEMENTS(gpios) : -EINVAL;
+}
+
+int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio)
+{
+	int err;
+
+	g_return_val_if_fail(chip != NULL, -EINVAL);
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	err = gpio_direction_input(chip->base + gpios[gpio]);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
+int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
+		int value)
+{
+	int err;
+
+	g_return_val_if_fail(chip != NULL, -EINVAL);
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	err = gpio_direction_output(chip->base + gpios[gpio], value);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
+int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value)
+{
+	int err;
+
+	g_return_val_if_fail(chip != NULL, -EINVAL);
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	err = gpio_set_value(chip->base + gpios[gpio], value);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
+int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio)
+{
+	int err;
+
+	g_return_val_if_fail(chip != NULL, -EINVAL);
+	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+
+	err = gpio_get_value(chip->base + gpios[gpio]);
+	if (err < 0)
+		return err;
+
+	return !!err;
 }

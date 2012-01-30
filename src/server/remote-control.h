@@ -18,6 +18,8 @@
 #define stringify1(x) #x
 #define stringify(x)  stringify1(x)
 
+#define BIT(x) (1 << (x))
+
 /**
  * event manager
  */
@@ -112,7 +114,6 @@ struct event {
 struct event_manager;
 
 int event_manager_create(struct event_manager **managerp, struct rpc_server *server);
-GSource *event_manager_get_source(struct event_manager *manager);
 int event_manager_report(struct event_manager *manager, struct event *event);
 int event_manager_get_status(struct event_manager *manager, uint32_t *statusp);
 int event_manager_get_source_state(struct event_manager *manager, struct event *event);
@@ -360,7 +361,7 @@ int handset_text_show(struct handset *handset, unsigned int x, unsigned int y,
 		const char *text, bool show);
 
 /**
- * GPIO
+ * GPIO chip and event source
  */
 enum gpio {
 	GPIO_UNKNOWN,
@@ -368,7 +369,17 @@ enum gpio {
 	GPIO_SMARTCARD,
 };
 
-GSource *gpio_source_new(struct event_manager *events);
+struct gpio_chip;
+
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events);
+int gpio_chip_free(struct gpio_chip *chip);
+GSource *gpio_chip_get_source(struct gpio_chip *chip);
+int gpio_chip_get_num_gpios(struct gpio_chip *chip);
+int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio);
+int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
+		int value);
+int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value);
+int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio);
 
 /**
  * remote control
@@ -394,6 +405,7 @@ struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct tuner *remote_control_get_tuner(struct remote_control *rc);
 struct handset *remote_control_get_handset(struct remote_control *rc);
+struct gpio_chip *remote_control_get_gpio_chip(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 
