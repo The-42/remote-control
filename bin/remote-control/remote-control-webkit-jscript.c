@@ -17,11 +17,15 @@
 #include <webkit/webkit.h>
 
 #include "remote-control-webkit-jscript.h"
+#if defined(ENABLE_IR_SUPPORT)
 #include "remote-control-irkey.h"
+#endif
 
 struct context {
 	GdkWindow *window;
+#if defined(ENABLE_IR_SUPPORT)
 	struct irkey *irk;
+#endif
 };
 
 static struct context* avionic_get_context()
@@ -30,7 +34,7 @@ static struct context* avionic_get_context()
 	if (ctx == NULL) {
 		ctx = g_new(struct context, 1);
 		memset(ctx, 0, sizeof(*ctx));
-
+#if defined(ENABLE_IR_SUPPORT)
 		ctx->irk = irk_new();
 		if (ctx->irk) {
 			int err = irk_setup_thread(ctx->irk);
@@ -38,6 +42,7 @@ static struct context* avionic_get_context()
 				g_critical("%s: failed to setup irkey thread: %d",
 					__func__, err);
 		}
+#endif
 	}
 	return ctx;
 }
@@ -325,6 +330,7 @@ static JSValueRef avionic_cursor_click_wrapper(JSContextRef context,
 
 static gint avionic_ir_get_message(struct context *ctx, JSStringRef *str)
 {
+#if defined(ENABLE_IR_SUPPORT)
 	struct ir_message *msg = NULL;
 	gchar text[24];
 	int err;
@@ -347,6 +353,9 @@ static gint avionic_ir_get_message(struct context *ctx, JSStringRef *str)
 	g_debug("   got: [%s]", text);
 	*str = JSStringCreateWithUTF8CString(text);
 	return 0;
+#else
+	return -ENOSYS;
+#endif
 }
 
 static JSValueRef avionic_ir_get_msg_wrapper(JSContextRef context,

@@ -222,6 +222,16 @@ if test x"$enable_webkit_js_api" = x"yes"; then
 	AC_DEFINE([ENABLE_WEBKIT_JS_API], [1], [whether JavaScript API is enabled])
 fi
 
+dnl --enable-ir-support=(yes|no)
+AC_ARG_ENABLE([ir-support],
+              [AC_HELP_STRING([--enable-ir-support=@<:@yes|no@:>@],
+                              [Enable IR code passing @<:@default=no@:>@])
+              ], [], [enable_ir_support=yes])
+AM_CONDITIONAL([ENABLE_IR_SUPPORT], test x"$enable_ir_support" = x"yes")
+if test x"$enable_webkit_js_api" = x"yes" -a test x"enable_ir_support" = x"yes"; then
+	AC_DEFINE([ENABLE_IR_SUPPORT], [1], [whether IR support is enabled])
+fi
+
 #
 # check for required files and packages
 #
@@ -298,4 +308,5 @@ Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
   WebKit JavaScript API:     $enable_webkit_js_api
+     IR Support:             $enable_ir_support
 "
