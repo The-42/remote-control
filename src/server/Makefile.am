@@ -18,6 +18,8 @@ libremote_control_la_SOURCES = \
 	audio.c \
 	backlight.c \
 	event-manager.c \
+	gpiolib.c \
+	gpiolib.h \
 	handset.c \
 	io.c \
 	irq.c \
