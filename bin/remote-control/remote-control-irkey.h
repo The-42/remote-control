@@ -1,6 +1,13 @@
+/*
+ * Copyright (C) 2011-2012 Avionic Design GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
 #ifndef _REMOTE_CONTROL_IRKEY__H_
 #define _REMOTE_CONTROL_IRKEY__H_ 1
-
 
 #define HEADER_VERSION_MASK     0x0F
 #define HEADER_VERSION_SHIFT    0
@@ -25,7 +32,6 @@ struct ir_message {
 		uint8_t data[6];
 	};
 };
-
 
 struct irkey;
 
