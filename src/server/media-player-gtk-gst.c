@@ -624,6 +624,7 @@ static int player_create_pipeline(struct media_player *player, const gchar* uri)
 
 static int player_init_gstreamer(struct media_player *player)
 {
+	GstRegistry *registry = gst_registry_get_default();
 	GstPluginFeature *feature;
 	GError *err = NULL;
 	/* FIXME: we need the real arguments, otherwise we can not pass things
@@ -639,13 +640,21 @@ static int player_init_gstreamer(struct media_player *player)
 		return -ENOSYS;
 	}
 
-	feature = gst_registry_lookup_feature(gst_registry_get_default(), "nv_gl_videosink");
+	feature = gst_registry_lookup_feature(registry, "nv_gl_videosink");
 	if (feature) {
 		gst_object_unref(feature);
 		player->have_nv_omx = 1;
 	}
 
 	g_debug("   omx plugin %sfound", player->have_nv_omx ? "" : "not ");
+
+	feature = gst_registry_lookup_feature(registry, "ffdec_mp3");
+	if (feature) {
+		g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+		gst_plugin_feature_set_rank(feature, GST_RANK_MARGINAL);
+		gst_object_unref(feature);
+	}
+
 	return 0;
 }
 
