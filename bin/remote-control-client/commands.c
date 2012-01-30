@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -1430,6 +1430,87 @@ const struct cli_command_info cmd_handset_show_text _command_ = {
 	.help = NULL,
 	.options = NULL,
 	.exec = exec_handset_show_text,
+};
+
+/*
+ * "gpio-get" command
+ */
+static int exec_gpio_get(struct cli *cli, int argc, char *argv[])
+{
+	unsigned int gpio;
+	char *end = NULL;
+	int err;
+
+	if (argc < 2) {
+		printf("no GPIO number specified\n");
+		return -EINVAL;
+	}
+
+	gpio = strtoul(argv[1], &end, 0);
+	if (end == argv[1]) {
+		printf("invalid GPIO: %s\n", argv[1]);
+		return -EINVAL;
+	}
+
+	err = remote_gpio_get(cli->client, gpio);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	printf("GPIO#%u: %u\n", gpio, !!err);
+
+	return 0;
+}
+
+const struct cli_command_info cmd_gpio_get _command_ = {
+	.name = "gpio-get",
+	.summary = "obtain the pin level of a given GPIO",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_gpio_get,
+};
+
+/*
+ * "gpio-set" command
+ */
+static int exec_gpio_set(struct cli *cli, int argc, char *argv[])
+{
+	unsigned int value;
+	unsigned int gpio;
+	char *end = NULL;
+	int err;
+
+	if (argc < 3)
+		return -EINVAL;
+
+	gpio = strtoul(argv[1], &end, 0);
+	if (end == argv[1]) {
+		printf("invalid GPIO: %s\n", argv[1]);
+		return -EINVAL;
+	}
+
+	value = strtoul(argv[2], &end, 0);
+	if ((end == argv[2]) || ((value != 0) && (value != 1))) {
+		printf("invalid pin level: %s\n", argv[2]);
+		return -EINVAL;
+	}
+
+	err = remote_gpio_set(cli->client, gpio, value);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_gpio_set _command_ = {
+	.name = "gpio-set",
+	.summary = "set the pin level of a given GPIO",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_gpio_set,
 };
 
 /*
