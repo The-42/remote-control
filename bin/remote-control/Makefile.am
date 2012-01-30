@@ -19,17 +19,6 @@ remote_control_SOURCES = \
 	remote-control-webkit-window.c \
 	remote-control-webkit-window.h
 
-if ENABLE_WEBKIT_JS_API
-remote_control_SOURCES += \
-	remote-control-webkit-jscript.c \
-	remote-control-webkit-jscript.h
-endif
-if ENABLE_IR_SUPPORT
-remote_control_SOURCES += \
-	remote-control-irkey.c \
-	remote-control-irkey.h
-endif
-
 remote_control_LDADD = \
 	../../src/server/libremote-control.la \
 	../../src/common/libcommon.la \
@@ -38,3 +27,24 @@ remote_control_LDADD = \
 	@LIBRPC_LIBS@ \
 	@WEBKIT_LIBS@ \
 	@ALSA_LIBS@
+
+if ENABLE_JAVASCRIPT
+remote_control_CPPFLAGS += \
+	@GUDEV_CFLAGS@
+
+remote_control_SOURCES += \
+	javascript.c \
+	javascript.h \
+	javascript-input.c \
+	remote-control-webkit-jscript.c \
+	remote-control-webkit-jscript.h
+
+remote_control_LDADD += \
+	@GUDEV_LIBS@
+
+if ENABLE_JAVASCRIPT_IR
+remote_control_SOURCES += \
+	remote-control-irkey.c \
+	remote-control-irkey.h
+endif
+endif

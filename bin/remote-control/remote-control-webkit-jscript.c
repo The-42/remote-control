@@ -1,29 +1,32 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2011-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
-#include <gdk/gdk.h>
+#include <gtk/gtk.h>
 
 #include <JavaScriptCore/JavaScript.h>
-#include <webkit/webkit.h>
 
 #include "remote-control-webkit-jscript.h"
-#if defined(ENABLE_IR_SUPPORT)
+#if defined(ENABLE_JAVASCRIPT_IR)
 #include "remote-control-irkey.h"
 #endif
 
 struct context {
 	GdkWindow *window;
-#if defined(ENABLE_IR_SUPPORT)
+#if defined(ENABLE_JAVASCRIPT_IR)
 	struct irkey *irk;
 #endif
 };
@@ -34,7 +37,7 @@ static struct context* avionic_get_context()
 	if (ctx == NULL) {
 		ctx = g_new(struct context, 1);
 		memset(ctx, 0, sizeof(*ctx));
-#if defined(ENABLE_IR_SUPPORT)
+#if defined(ENABLE_JAVASCRIPT_IR)
 		ctx->irk = irk_new();
 		if (ctx->irk) {
 			int err = irk_setup_thread(ctx->irk);
@@ -51,7 +54,7 @@ static void avionic_set_user_context(gpointer data)
 {
 	struct context *ctx = avionic_get_context();
 	if (ctx)
-		ctx->window = GTK_WIDGET(data)->window;
+		ctx->window = gtk_widget_get_window(GTK_WIDGET(data));
 }
 
 static int avionic_get_user_context(JSContextRef context, struct context **ctx)
@@ -330,7 +333,7 @@ static JSValueRef avionic_cursor_click_wrapper(JSContextRef context,
 
 static gint avionic_ir_get_message(struct context *ctx, JSStringRef *str)
 {
-#if defined(ENABLE_IR_SUPPORT)
+#if defined(ENABLE_JAVASCRIPT_IR)
 	struct ir_message *msg = NULL;
 	gchar text[24];
 	int err;
@@ -441,7 +444,7 @@ static int register_user_function(JSGlobalContextRef ctx,
 	return 0;
 }
 
-int register_user_functions(WebKitWebView *webkit, GtkWindow *window)
+int register_user_functions(WebKitWebView *webkit, GtkWidget *widget)
 {
 	static const struct js_user_func_def functions[] = {
 		{ "avionic_cursor_set",     avionic_cursor_set_wrapper    },
@@ -476,7 +479,7 @@ int register_user_functions(WebKitWebView *webkit, GtkWindow *window)
 		}
 	}
 
-	register_user_context(context, GTK_WIDGET(window));
+	register_user_context(context, widget);
 
 	return err < 0 ? -ENOSYS : 0;
 }

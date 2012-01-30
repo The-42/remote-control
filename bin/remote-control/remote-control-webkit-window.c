@@ -16,13 +16,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include "remote-control-webkit-jscript.h"
 #include "remote-control-webkit-window.h"
+#include "javascript.h"
 #include "utils.h"
 #include "guri.h"
-
-#ifdef ENABLE_WEBKIT_JS_API
-#  include "remote-control-webkit-jscript.h"
-#endif
 
 G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_WINDOW);
 
@@ -90,18 +88,31 @@ static void webkit_finalize(GObject *object)
 	G_OBJECT_CLASS(remote_control_webkit_window_parent_class)->finalize(object);
 }
 
-#ifdef ENABLE_WEBKIT_JS_API
+#ifdef ENABLE_JAVASCRIPT
 static void webkit_on_notify_load_status(WebKitWebView *webkit,
                                          GParamSpec *pspec, gpointer data)
 {
-	GtkWidget *window = GTK_WIDGET(data);
+	RemoteControlWebkitWindowPrivate *priv =
+		REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(data);
 	WebKitLoadStatus status;
 
 	status = webkit_web_view_get_load_status(webkit);
 
 	if (status == WEBKIT_LOAD_COMMITTED) {
-		g_debug("register user functions");
-		register_user_functions(webkit, GTK_WINDOW(window));
+		WebKitWebFrame *frame = webkit_web_view_get_main_frame(webkit);
+		JSGlobalContextRef context;
+		int err;
+
+		context = webkit_web_frame_get_global_context(frame);
+		g_assert(context != NULL);
+
+		err = javascript_register(context, priv->context);
+		if (err < 0) {
+			g_debug("failed to register JavaScript API: %s",
+					g_strerror(-err));
+		}
+
+		register_user_functions(webkit, data);
 	}
 }
 #endif
@@ -219,12 +230,13 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
-#ifdef ENABLE_WEBKIT_JS_API
-	/* Add signal handler for page load status. We use this to register
-	 * jscript functions, which needs to be done for each page and frame
+#ifdef ENABLE_JAVASCRIPT
+	/*
+	 * Add a callback to listen for load-status property changes. This is
+	 * used to register the JavaScript binding within the frame.
 	 */
 	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-status",
-		G_CALLBACK(webkit_on_notify_load_status), window);
+		G_CALLBACK(webkit_on_notify_load_status), self);
 #endif
 	g_signal_connect(G_OBJECT(priv->webkit),
 			"navigation-policy-decision-requested",

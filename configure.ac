@@ -20,6 +20,7 @@ PKG_CHECK_MODULES(GTKOSK, gtkosk)
 PKG_CHECK_MODULES(ALSA, alsa)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(POPPLER, poppler-glib)
+PKG_CHECK_MODULES(GUDEV, gudev-1.0)
 
 PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
 RPC_STUBGEN=rpc-stubgen
@@ -196,6 +197,32 @@ AS_CASE([$with_gpio_backend],
 )
 
 #
+# JavaScript binding
+#
+AC_MSG_CHECKING([whether to enable JavaScript binding])
+AC_ARG_ENABLE([javascript],
+	[AS_HELP_STRING([--enable-javascript],
+			[Enable JavaScript binding [default=no]])],
+	[], [enable_javascript=no])
+AC_MSG_RESULT([$enable_javascript])
+
+AS_IF([test "x$enable_javascript" = "xyes"], [
+	AC_DEFINE([ENABLE_JAVASCRIPT], [1], [whether JavaScript binding is enabled])
+
+	AC_MSG_CHECKING([whether to enable JavaScript IR input support])
+	AC_ARG_ENABLE(javascript-ir,
+		[AS_HELP_STRING([--enable-javascript-ir],
+				[Enable JavaScript IR input support (default: no)])],
+		[], [enable_javascript_ir=no])
+	AC_MSG_RESULT([$enable_javascript_ir])
+
+	AS_IF([test "x$enable_javascript_ir" = "xyes"], [
+		AC_DEFINE([ENABLE_JAVASCRIPT_IR], [1],
+			  [whether JavaScript IR input support is enabled])
+	])
+])
+
+#
 # define automake conditionals according to select backends
 #
 AM_CONDITIONAL(ENABLE_AUDIO_ALSA, [test "x$enable_audio_alsa" = "xyes"])
@@ -211,26 +238,8 @@ AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
-
-dnl --enable-webkit-js-api=(yes|no)
-AC_ARG_ENABLE([webkit-js-api],
-              [AC_HELP_STRING([--enable-webkit-js-api=@<:@no|yes@:>@],
-                              [Enable JavaScript API @<:@default=yes@:>@])
-              ], [], [enable_webkit_js_api=yes])
-AM_CONDITIONAL([ENABLE_WEBKIT_JS_API], test x"$enable_webkit_js_api" = x"yes")
-if test x"$enable_webkit_js_api" = x"yes"; then
-	AC_DEFINE([ENABLE_WEBKIT_JS_API], [1], [whether JavaScript API is enabled])
-fi
-
-dnl --enable-ir-support=(yes|no)
-AC_ARG_ENABLE([ir-support],
-              [AC_HELP_STRING([--enable-ir-support=@<:@yes|no@:>@],
-                              [Enable IR code passing @<:@default=no@:>@])
-              ], [], [enable_ir_support=yes])
-AM_CONDITIONAL([ENABLE_IR_SUPPORT], test x"$enable_ir_support" = x"yes")
-if test x"$enable_webkit_js_api" = x"yes" -a test x"enable_ir_support" = x"yes"; then
-	AC_DEFINE([ENABLE_IR_SUPPORT], [1], [whether IR support is enabled])
-fi
+AM_CONDITIONAL(ENABLE_JAVASCRIPT, [test "x$enable_javascript" = "xyes"])
+AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
 
 #
 # check for required files and packages
@@ -307,6 +316,10 @@ Features:
 Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
-  WebKit JavaScript API:     $enable_webkit_js_api
-     IR Support:             $enable_ir_support
-"
+  JavaScript Binding:        $enable_javascript"
+
+AS_IF([test "x$enable_javascript" = "xyes"], [
+	AS_ECHO("    IR Input Support:        $enable_javascript_ir")
+])
+
+AS_ECHO
