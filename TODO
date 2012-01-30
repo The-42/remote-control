@@ -18,3 +18,11 @@
 
 * remote-control-browser:
   - Refactor web-browser and pdf-viewer widgets (BrowserView interface?)
+  - Add command line option to enable/disable the mouse cursor
+
+* JavaScript API:
+  - investigate garbage collection (when is finalize called?)
+  - refactor old JavaScript implementation:
+    * add AvionicDesign.Cursor object with enable, disable, setPosition and
+      click methods
+    * add AvionicDesign.IR object with callback for IR key codes
