@@ -21,8 +21,6 @@
 struct audio {
 	snd_use_case_mgr_t *ucm;
 	enum audio_state state;
-
-	struct sound_manager *manager;
 };
 
 int audio_get_state(struct audio *audio, enum audio_state *statep);
@@ -199,7 +197,6 @@ int audio_create(struct audio **audiop, struct rpc_server *server)
 {
 	/* TODO: do not hardcode the card name here! */
 	static const char card_name[] = "tegrawm8903";
-	struct remote_control *rc;
 	struct audio *audio;
 	int err;
 
@@ -229,9 +226,6 @@ int audio_create(struct audio **audiop, struct rpc_server *server)
 
 	if (AUDIO_ALSA_DEBUG)
 		alsa_ucm_dump_verbs(audio);
-
-	rc = rpc_server_priv(server);
-	audio->manager = remote_control_get_sound_manager(rc);
 
 	*audiop = audio;
 	return 0;
@@ -286,13 +280,6 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 			g_warning("audio-alsa-ucm: failed to disable device %s: %s",
 				ucm_states[prev_state].device, snd_strerror(err));
 		}
-	}
-
-	/* FIXME: this is used to work around a bug in the wm8903 codec driver,
-	 * which leads to not-working bypass modes... */
-		g_debug("ucm: play file:///persist/silence.wav");
-	if (strcmp(ucm_states[state].verb, SND_USE_CASE_VERB_VOICECALL) == 0) {
-		sound_manager_play (audio->manager, "file:///persist/silence.wav");
 	}
 
 	g_debug("ucm: set verb %s", s->verb);
