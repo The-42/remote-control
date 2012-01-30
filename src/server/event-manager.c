@@ -15,6 +15,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#define IRQ_SEND_ALWAYS 1
 #define BIT(x) (1 << (x))
 
 struct event_manager {
@@ -129,10 +130,33 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		break;
 	}
 
+#ifdef IRQ_SEND_ALWAYS
+	/*
+	 * FIXME: This is a horrible work-around for broken user-interfaces
+	 *        that loose interrupts somewhere along the way. With the
+	 *        default behaviour, this causes subsequent interrupts to not
+	 *        be propagated to the user-interface until the original
+	 *        interrupt has been cleared.
+	 *
+	 *        Note that the default behaviour was actually introduced at
+	 *        some point to get the user-interface to behave properly
+	 *        because it couldn't process interrupts fast enough.
+	 *
+	 *        Now it turns out that there is some other problem in the
+	 *        user-interface implementation that causes interrupts to be
+	 *        dropped. But instead of fixing the bug, it was decided to
+	 *        work around it by sending out interrupts every time.
+	 *
+	 *        I protested but I was ignored.
+	 */
+	ret = RPC_STUB(irq_event)(manager->server, 0);
+	manager->irq_status |= irq_status;
+#else
 	if (irq_status != manager->irq_status) {
 		ret = RPC_STUB(irq_event)(manager->server, 0);
 		manager->irq_status |= irq_status;
 	}
+#endif
 
 	return ret;
 }
