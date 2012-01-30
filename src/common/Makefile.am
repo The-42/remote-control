@@ -5,6 +5,8 @@ libcommon_la_CPPFLAGS = \
 	@GLIB_CFLAGS@
 
 libcommon_la_SOURCES = \
+	gkeyfile.c \
+	gkeyfile.h \
 	guri.c \
 	guri.h
 

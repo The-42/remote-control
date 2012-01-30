@@ -20,10 +20,12 @@
 #include <librpc.h>
 #include <glib.h>
 #include <glib-unix.h>
+#include <gio/gio.h>
 
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
+#include "gkeyfile.h"
 
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
@@ -324,6 +326,57 @@ GtkWidget *create_window(GKeyFile *conf, GMainContext *context, int argc,
 	return NULL;
 }
 
+static gboolean match_glob(GFile *file, gpointer user_data)
+{
+
+	const gchar *glob = user_data;
+	gboolean ret = FALSE;
+	gchar *filename;
+
+	filename = g_file_get_basename(file);
+
+	if (g_pattern_match_simple(glob, filename))
+		ret = TRUE;
+
+	g_free(filename);
+	return ret;
+}
+
+static GKeyFile *remote_control_load_configuration(const gchar *filename,
+		GError **error)
+{
+	static const gchar directory[] = SYSCONF_DIR "/remote-control.conf.d";
+	GError *e = NULL;
+	GKeyFile *file;
+	GKeyFile *conf;
+
+	conf = g_key_file_new();
+	if (!conf)
+		return NULL;
+
+	file = g_key_file_new_from_directory(directory, match_glob, "*.conf", &e);
+	if (!file) {
+		g_debug("failed to load configuration from directory: %s",
+				e->message);
+		g_clear_error(&e);
+	}
+
+	file = g_key_file_new_from_path(filename, G_KEY_FILE_NONE, &e);
+	if (!file) {
+		g_debug("failed to load file: %s", e->message);
+		g_clear_error(&e);
+	}
+
+	if (!g_key_file_merge(conf, file, &e)) {
+		g_debug("failed to merge configuration: %s", e->message);
+		g_clear_error(&e);
+	}
+
+	g_key_file_free(file);
+
+	return conf;
+}
+
 int main(int argc, char *argv[])
 {
 	const gchar *default_config_file = SYSCONF_DIR "/remote-control.conf";
@@ -392,17 +445,14 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	conf = g_key_file_new();
-	if (!conf) {
-		g_print("failed to create key file\n");
-		return EXIT_FAILURE;
-	}
-
 	if (config_file == NULL)
 		config_file = g_strdup(default_config_file);
 
-	if (!g_key_file_load_from_file(conf, config_file, G_KEY_FILE_NONE, NULL))
-		g_warning("failed to load configuration file %s", config_file);
+	conf = remote_control_load_configuration(config_file, &error);
+	if (!conf) {
+		g_debug("failed to load configuration: %s", error->message);
+		g_clear_error(&error);
+	}
 
 #ifdef ENABLE_DBUS
 	owner = g_bus_own_name(G_BUS_TYPE_SESSION, REMOTE_CONTROL_BUS_NAME,
