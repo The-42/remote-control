@@ -1408,7 +1408,7 @@ static int exec_handset_show_text(struct cli *cli, int argc, char *argv[])
 
 		y = strtoul(argv[2], &end, 10);
 		if (end == argv[2]) {
-			printf("invalid X-coordinate: %s\n", argv[2]);
+			printf("invalid Y-coordinate: %s\n", argv[2]);
 			return -EINVAL;
 		}
 
