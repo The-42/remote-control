@@ -937,15 +937,6 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	if (!player || !uri)
 		return -EINVAL;
 
-	if (!g_str_has_prefix(uri, "udp://") &&
-	    !g_str_has_prefix(uri, "file://") &&
-	    !g_str_has_prefix(uri, "http://"))
-	{
-		g_warning("   unsupported uri");
-		err = -EINVAL;
-		goto out;
-	}
-
 	err = media_player_get_state(player, &state);
 	if (err < 0)
 		g_warning("   unable to get state");
@@ -969,7 +960,6 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 									  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
 		}
 	}
-out:
 	g_debug("< %s()", __func__);
 	return err;
 }
