@@ -651,7 +651,7 @@ static int player_init_gstreamer(struct media_player *player)
 	feature = gst_registry_lookup_feature(registry, "ffdec_mp3");
 	if (feature) {
 		g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
-		gst_plugin_feature_set_rank(feature, GST_RANK_MARGINAL);
+		gst_plugin_feature_set_rank(feature, GST_RANK_SECONDARY);
 		gst_object_unref(feature);
 	}
 
