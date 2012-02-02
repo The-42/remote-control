@@ -104,16 +104,19 @@ static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 	return TRUE;
 }
 
-/*
- * FIXME: This is never called because the source is never destroyed, which
- *        should happen in the input object's finalize() callback. However,
- *        the finalize() callback is never invoked either, for yet unknown
- *        reasons.
- */
+static void free_poll(gpointer data)
+{
+	GPollFD *poll = data;
+	close(poll->fd);
+	g_free(poll);
+}
+
 static void input_source_finalize(GSource *source)
 {
-	g_debug("> %s(source=%p)", __func__, source);
-	g_debug("< %s()", __func__);
+	struct input *input = (struct input *)source;
+
+	g_list_free_full(input->devices, free_poll);
+	g_object_unref(input->client);
 }
 
 static GSourceFuncs input_source_funcs = {
@@ -242,8 +245,9 @@ static void input_initialize(JSContextRef context, JSObjectRef object)
 
 static void input_finalize(JSObjectRef object)
 {
-	g_debug("> %s(object=%p)", __func__, object);
-	g_debug("< %s()", __func__);
+	GSource *source = JSObjectGetPrivate(object);
+
+	g_source_destroy(source);
 }
 
 static JSValueRef input_get_onevent(JSContextRef context, JSObjectRef object,
