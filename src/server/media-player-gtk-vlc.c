@@ -32,6 +32,18 @@ struct media_player {
 	libvlc_media_t *media;
 };
 
+static gboolean hide_window(gpointer data)
+{
+	gdk_window_hide(GDK_WINDOW(data));
+	return FALSE;
+}
+
+static gboolean show_window(gpointer data)
+{
+	gdk_window_show(GDK_WINDOW(data));
+	return FALSE;
+}
+
 static void on_playing(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
@@ -43,21 +55,16 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
 
-	GDK_THREADS_ENTER();
+	g_idle_add(hide_window, player->window);
 	player->state = MEDIA_PLAYER_STOPPED;
-	gdk_window_hide(player->window);
-	GDK_THREADS_LEAVE();
 }
 
 static void on_vout(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
 
-	if (event->u.media_player_vout.new_count > 0) {
-		GDK_THREADS_ENTER();
-		gdk_window_show(player->window);
-		GDK_THREADS_LEAVE();
-	}
+	if (event->u.media_player_vout.new_count > 0)
+		g_idle_add(show_window, player->window);
 }
 
 int media_player_create(struct media_player **playerp)
