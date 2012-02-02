@@ -17,7 +17,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-static const char I2C_DEVICE[] = "/dev/i2c-1";
+static const char I2C_DEVICE[] = "/dev/i2c-2";
 static const unsigned int I2C_SLAVE = 0x50;
 
 struct smartcard {
