@@ -259,7 +259,7 @@ static GSourceFuncs remote_control_source_funcs = {
 	.finalize = remote_control_source_finalize,
 };
 
-int remote_control_create(struct remote_control **rcp)
+int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 {
 	struct rpc_server *server;
 	struct remote_control *rc;
@@ -354,7 +354,7 @@ int remote_control_create(struct remote_control **rcp)
 		return err;
 	}
 
-	err = modem_manager_create(&rc->modem, server);
+	err = modem_manager_create(&rc->modem, server, config);
 	if (err < 0) {
 		g_error("modem_manager_create(): %s", strerror(-err));
 		return err;

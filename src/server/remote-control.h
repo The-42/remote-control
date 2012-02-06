@@ -234,7 +234,8 @@ enum modem_state {
 
 struct modem_manager;
 
-int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server);
+int modem_manager_create(struct modem_manager **managerp,
+		struct rpc_server *server, GKeyFile *config);
 GSource *modem_manager_get_source(struct modem_manager *manager);
 int modem_manager_initialize(struct modem_manager *manager);
 int modem_manager_shutdown(struct modem_manager *manager);
@@ -386,7 +387,7 @@ int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio);
  */
 struct remote_control;
 
-int remote_control_create(struct remote_control **rcp);
+int remote_control_create(struct remote_control **rcp, GKeyFile *config);
 GSource *remote_control_get_source(struct remote_control *rc);
 int remote_control_free(struct remote_control *rc);
 

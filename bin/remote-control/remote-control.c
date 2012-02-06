@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
 			g_dbus_name_acquired, g_dbus_name_lost, NULL, NULL);
 #endif
 
-	err = remote_control_create(&rc);
+	err = remote_control_create(&rc, conf);
 	if (err < 0) {
 		g_error("remote_control_create(): %s", strerror(-err));
 		return EXIT_FAILURE;

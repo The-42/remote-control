@@ -194,7 +194,8 @@ static int modem_manager_open(struct modem_manager *manager)
 	return ret;
 }
 
-int modem_manager_create(struct modem_manager **managerp, struct rpc_server *server)
+int modem_manager_create(struct modem_manager **managerp,
+		struct rpc_server *server, GKeyFile *config)
 {
 	struct modem_manager *manager;
 	GSource *source;
