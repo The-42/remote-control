@@ -31,7 +31,7 @@ struct input {
 
 static int input_report(struct input *input, struct input_event *event)
 {
-	JSValueRef exception;
+	JSValueRef exception = NULL;
 	JSValueRef args[4];
 	double timestamp;
 
@@ -51,6 +51,10 @@ static int input_report(struct input *input, struct input_event *event)
 
 	(void)JSObjectCallAsFunction(input->context, input->callback,
 			input->this, G_N_ELEMENTS(args), args, &exception);
+	if (exception) {
+		g_warning("%s: exception in callback", __func__);
+		return -EFAULT;
+	}
 
 	return 0;
 }
