@@ -153,6 +153,7 @@ static int modem_manager_open(struct modem_manager *manager)
 		unsigned int atl;
 	} modem_table[] = {
 		{ "/dev/ttyACM0", MODEM_FLAGS_TOGGLE_HOOK, 1, 0 },
+		{ "/dev/ttyS1", MODEM_FLAGS_DIRECT, 13, 3 },
 		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13, 3 },
 	};
 	int ret = -ENODEV;
