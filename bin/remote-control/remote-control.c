@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Avionic Design GmbH
+ * Copyright (C) 2010-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -359,20 +359,29 @@ static GKeyFile *remote_control_load_configuration(const gchar *filename,
 		g_debug("failed to load configuration from directory: %s",
 				e->message);
 		g_clear_error(&e);
+	} else {
+		if (!g_key_file_merge(conf, file, &e)) {
+			g_debug("failed to merge configuration: %s",
+					e->message);
+			g_clear_error(&e);
+		}
+
+		g_key_file_free(file);
 	}
 
 	file = g_key_file_new_from_path(filename, G_KEY_FILE_NONE, &e);
 	if (!file) {
-		g_debug("failed to load file: %s", e->message);
+		g_debug("failed to load `%s': %s", filename, e->message);
 		g_clear_error(&e);
-	}
+	} else {
+		if (!g_key_file_merge(conf, file, &e)) {
+			g_debug("failed to merge configuration: %s",
+					e->message);
+			g_clear_error(&e);
+		}
 
-	if (!g_key_file_merge(conf, file, &e)) {
-		g_debug("failed to merge configuration: %s", e->message);
-		g_clear_error(&e);
+		g_key_file_free(file);
 	}
-
-	g_key_file_free(file);
 
 	return conf;
 }
