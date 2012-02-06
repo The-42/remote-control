@@ -18,6 +18,13 @@
 #include <modem.h>
 #include <unistd.h>
 
+struct modem_desc {
+	char *device;
+	unsigned long flags;
+	unsigned int vls;
+	unsigned int atl;
+};
+
 struct modem_manager {
 	GSource source;
 	GPollFD poll;
@@ -144,51 +151,137 @@ static int modem_manager_logv(enum modem_log_level level, const char *fmt,
 	return 0;
 }
 
-static int modem_manager_open(struct modem_manager *manager)
+static int modem_manager_open_device(struct modem_manager *manager,
+		const struct modem_desc *desc)
 {
-	static const struct modem_desc {
-		const char *device;
-		unsigned long flags;
-		unsigned int vls;
-		unsigned int atl;
-	} modem_table[] = {
+	struct modem_params params;
+	int err;
+
+	err = modem_open(&manager->modem, desc->device);
+	if (err < 0)
+		return err;
+
+	memset(&params, 0, sizeof(params));
+
+	err = modem_get_params(manager->modem, &params);
+	if (err < 0) {
+		modem_close(manager->modem);
+		manager->modem = NULL;
+		return err;
+	}
+
+	params.flags |= desc->flags;
+	params.vls = desc->vls;
+	params.atl = desc->atl;
+
+	err = modem_set_params(manager->modem, &params);
+	if (err < 0) {
+		modem_close(manager->modem);
+		manager->modem = NULL;
+		return err;
+	}
+
+	g_debug("modem-libmodem: using device %s", desc->device);
+	manager->flags = desc->flags;
+
+	return err;
+}
+
+static int modem_manager_probe(struct modem_manager *manager)
+{
+	static const struct modem_desc modem_table[] = {
 		{ "/dev/ttyACM0", MODEM_FLAGS_TOGGLE_HOOK, 1, 0 },
 		{ "/dev/ttyS1", MODEM_FLAGS_DIRECT, 13, 3 },
 		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13, 3 },
 	};
-	int ret = -ENODEV;
 	guint i;
 
 	for (i = 0; i < G_N_ELEMENTS(modem_table); i++) {
-		const struct modem_desc *desc = &modem_table[i];
-		struct modem_params params;
-		int err;
+		int err = modem_manager_open_device(manager, &modem_table[i]);
+		if (err >= 0)
+			break;
 
-		err = modem_open(&manager->modem, desc->device);
-		if (err < 0)
-			continue;
+		g_debug("modem-libmodem: failed to use `%s' as modem",
+				modem_table[i].device);
+	}
 
-		g_debug("modem-libmodem: using device %s", desc->device);
+	return (i < G_N_ELEMENTS(modem_table)) ? 0 : -ENODEV;
+}
 
-		memset(&params, 0, sizeof(params));
+static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
+{
+	const gchar *var;
+	GError *error;
+	gchar *device;
+	gulong flags;
+	guint vls;
+	guint atl;
 
-		err = modem_get_params(manager->modem, &params);
-		if (err < 0) {
-			modem_close(manager->modem);
-			return err;
+	g_return_val_if_fail(config != NULL, -EINVAL);
+	g_return_val_if_fail(desc != NULL, -EINVAL);
+
+	device = g_key_file_get_value(config, "modem", "device", &error);
+	if (!device) {
+		var = "device";
+		goto out;
+	}
+
+	flags = g_key_file_get_integer(config, "modem", "flags", &error);
+	if (error) {
+		var = "flags";
+		goto out;
+	}
+
+	vls = g_key_file_get_integer(config, "modem", "vls", &error);
+	if (error) {
+		var = "vls";
+		goto out;
+	}
+
+	atl = g_key_file_get_integer(config, "modem", "atl", &error);
+	if (error) {
+		var = "atl";
+		goto out;
+	}
+
+	g_debug("modem-libmodem: configuration loaded: %s, flags:%lx, "
+			"VLS:%u, ATL:%u", device, flags, vls, atl);
+
+	desc->device = device;
+	desc->flags = flags;
+	desc->vls = vls;
+	desc->atl = atl;
+
+	return 0;
+
+out:
+	g_debug("modem-libmodem: %s: %s", var, error->message);
+	g_clear_error(&error);
+	g_free(device);
+	return -EIO;
+}
+
+static int modem_manager_open(struct modem_manager *manager, GKeyFile *config)
+{
+	gboolean need_probe = TRUE;
+	struct modem_desc desc;
+	int ret;
+
+	ret = modem_manager_load_config(config, &desc);
+	if (ret >= 0) {
+		ret = modem_manager_open_device(manager, &desc);
+		if (ret < 0) {
+			g_debug("modem-libmodem: failed to use `%s' as modem",
+					desc.device);
 		}
 
-		params.flags |= desc->flags;
-		params.vls = desc->vls;
-		params.atl = desc->atl;
+		g_free(desc.device);
+		need_probe = FALSE;
+	}
 
-		err = modem_set_params(manager->modem, &params);
-		if (err < 0)
-			modem_close(manager->modem);
-
-		manager->flags = desc->flags;
-		ret = err;
-		break;
+	if (need_probe) {
+		g_debug("modem-libmodem: probing for device...");
+		ret = modem_manager_probe(manager);
 	}
 
 	return ret;
@@ -214,7 +307,7 @@ int modem_manager_create(struct modem_manager **managerp,
 	manager->rc = rpc_server_priv(server);
 	manager->state = MODEM_STATE_IDLE;
 
-	err = modem_manager_open(manager);
+	err = modem_manager_open(manager, config);
 	if ((err < 0) && (err != -ENODEV))
 		goto free;
 
