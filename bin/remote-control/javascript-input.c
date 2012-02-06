@@ -35,6 +35,13 @@ static int input_report(struct input *input, struct input_event *event)
 	JSValueRef args[4];
 	double timestamp;
 
+	g_return_val_if_fail(input->context != NULL, -EINVAL);
+	g_return_val_if_fail(event != NULL, -EINVAL);
+
+	/* Input object has been used but callback has not been set */
+	if (input->callback == NULL)
+		return 0;
+
 	timestamp = event->time.tv_sec + (event->time.tv_usec / 1000000.0f);
 
 	args[0] = JSValueMakeNumber(input->context, timestamp);
