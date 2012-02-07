@@ -210,8 +210,8 @@ static int modem_manager_probe(struct modem_manager *manager)
 
 static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 {
+	GError *error = NULL;
 	const gchar *var;
-	GError *error;
 	gchar *device;
 	gulong flags;
 	guint vls;
