@@ -1,5 +1,56 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.7.0 (2012-02-07)
 ==========================
+* remote-control:
+  - voip-linphone:
+    + Properly handle outgoing call errors by sending the disconnect event.
+  - backlight-sysfs:
+    + Remove dependency on libsysfs by using direct file accesses.
+  - audio-alsa:
+    + audio-alsa: Do not enable any devices in INVALID use case.
+    + Disable active device when switching state.
+  - gpio-sysfs:
+    + Fix inversion of SmartCard detection logic.
+  - media-player-gtk-gst
+    + Add fullscreen tweak.
+    + Add support for Chromium kernels.
+    + Do not show video window for audio-only streams.
+    + Create video window before initializing the pipeline.
+    + Reuse existing pipeline instead of recreating it for each new stream.
+    + Use aliases to refer to audio devices.
+  - media-player-gtk-vlc:
+    + Fix a concurrency bug when the video window is shown or hidden from an
+      event callback that is run from the VLC thread.
+    + Check URI parameter for validity.
+  - modem-libmodem:
+    + Use more recent libmodem and process I/O in the main thread using a
+      GSource.
+    + Gracefully fail if no modem has been detected.
+    + Allow manual configuration (via /etc/remote-control.conf.d).
+  - irkey:
+    + Fix compatibility issues between Vibrante and Chromium kernels.
+    + Reduce queue length to 2.
+    + Make support optional.
+
+  - Allow building against recent versions of GLib.
+  - Allow building against Gtk+ 2.0 and Gtk+ 3.0.
+  - Add gstreamer-based sound manager backend.
+  - Add a timestamp to log message.
+  - Add media player video-on-demand API.
+  - Implement GPIO API.
+  - Add configuration directory support (/etc/remote-control.conf.d).
+  - Implement workaround for buggy user-interfaces that loose interrupts.
+  - Add an initial JavaScript binding.
+  - Implement a JavaScript callback for input events (only supports sx8634
+    capacitive touch controllers found on Avionic Design Medcom-Wide).
+  - Fix incompatibilities between Medatom and Medcom-Wide devices.
+
+* remote-control-client:
+  - Add sound-play command.
+  - Add GPIO API commands.
+
+* remote-control-browser:
+  - Implement tabbed browsing.
+  - Implement PDF viewer.
 
 Release 0.6.2 (2011-12-21)
 ==========================
