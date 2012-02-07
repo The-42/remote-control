@@ -28,3 +28,6 @@
     * add AvionicDesign.IR object with callback for IR key codes
 
 * Implement tests/gkeyfilemerge as proper unit test.
+
+* Beef up GPIO API to provide a complete GPIO controller interface (similar
+  to the Linux kernel's gpiolib).
