@@ -1,5 +1,6 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.7.2 (2012-02-08)
 ==========================
+- Fix a potential crash when the modem configuration is invalid.
 
 Release 0.7.0 (2012-02-07)
 ==========================
