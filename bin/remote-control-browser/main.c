@@ -22,6 +22,7 @@ static gchar *geometry = NULL;
 static gboolean noosk = FALSE;
 static gboolean kiosk = FALSE;
 static gchar *language = NULL;
+static gboolean cursor = FALSE;
 
 static GOptionEntry entries[] = {
 	{
@@ -38,6 +39,9 @@ static GOptionEntry entries[] = {
 	}, {
 		"accept-language", 'l', 0, G_OPTION_ARG_STRING, &language,
 		"Accept-Language string", NULL
+	}, {
+		"show-cursor", 'c', 0, G_OPTION_ARG_NONE, &cursor,
+		"Show cursor", NULL
 	},
 	{ NULL }
 };
@@ -49,15 +53,17 @@ static void on_destroy(GtkWidget *widget, gpointer data)
 
 static void on_realize(GtkWidget *widget, gpointer data)
 {
-	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-	GdkWindow *window = gtk_widget_get_window(widget);
+	if (!cursor) {
+		GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+		GdkWindow *window = gtk_widget_get_window(widget);
 
-	gdk_window_set_cursor(window, cursor);
+		gdk_window_set_cursor(window, cursor);
 #if GTK_CHECK_VERSION(2, 91, 1)
-	g_object_unref(cursor);
+		g_object_unref(cursor);
 #else
-	gdk_cursor_unref(cursor);
+		gdk_cursor_unref(cursor);
 #endif
+	}
 }
 
 gboolean load_configuration(const gchar *filename, GError **error)
