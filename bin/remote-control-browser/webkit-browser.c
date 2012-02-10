@@ -38,6 +38,7 @@ enum {
 	PROP_GEOMETRY,
 	PROP_KEYBOARD,
 	PROP_CONTROLS,
+	PROP_ACCEPT_LANGUAGE,
 };
 
 struct _WebKitBrowserPrivate {
@@ -61,6 +62,8 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
+	SoupSession *session = webkit_get_default_session();
+	gchar *language;
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -73,6 +76,12 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 
 	case PROP_CONTROLS:
 		g_value_set_boolean(value, priv->controls);
+		break;
+
+	case PROP_ACCEPT_LANGUAGE:
+		language = soup_session_get_accept_language(session);
+		g_value_take_string(value, language);
+		break;
 
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -84,6 +93,8 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		const GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
+	SoupSession *session = webkit_get_default_session();
+	const gchar *language;
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -106,6 +117,11 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			gtk_widget_hide(GTK_WIDGET(priv->toolbar));
 			gtk_notebook_set_show_tabs(priv->notebook, FALSE);
 		}
+		break;
+
+	case PROP_ACCEPT_LANGUAGE:
+		language = g_value_get_string(value);
+		soup_session_set_accept_language(session, language);
 		break;
 
 	default:
@@ -702,6 +718,13 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 	g_object_class_install_property(object, PROP_CONTROLS,
 			g_param_spec_boolean("controls", "Browser Controls",
 				"Enable or disable browser controls", TRUE,
+				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_ACCEPT_LANGUAGE,
+			g_param_spec_string("accept-language",
+				"Accept-Language string",
+				"Accept-Language string",
+				NULL,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 

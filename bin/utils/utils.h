@@ -12,6 +12,9 @@
 G_BEGIN_DECLS
 
 void soup_session_set_proxy(SoupSession *session);
+gchar *soup_session_get_accept_language(SoupSession *session);
+void soup_session_set_accept_language(SoupSession *session,
+		const gchar *language);
 
 G_END_DECLS
 
