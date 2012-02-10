@@ -307,7 +307,8 @@ static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpoi
 	case WEBKIT_DOWNLOAD_STATUS_STARTED:
 		g_debug("download started");
 		page = webkit_browser_append_page_with_pdf(browser, download);
-		gtk_notebook_set_current_page(priv->notebook, page);
+		if (page >= 0)
+			gtk_notebook_set_current_page(priv->notebook, page);
 		break;
 
 	case WEBKIT_DOWNLOAD_STATUS_CANCELLED:
@@ -367,16 +368,19 @@ static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *fr
 	return TRUE;
 }
 
-static gboolean can_handle_multiple_tabs(WebKitBrowser *browser)
+static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 
-	if (gtk_notebook_get_show_tabs(priv->notebook))
-		return TRUE;
-
-	/* Allow only one tab when tabbar is hidden */
-	if (gtk_notebook_get_n_pages(priv->notebook) < 1)
-		return TRUE;
+	if (gtk_notebook_get_show_tabs(priv->notebook)) {
+		if (pages < WEBKIT_BROWSER_MAX_PAGES)
+			return TRUE;
+	} else {
+		/* Allow only one tab when tabbar is hidden */
+		if (pages < 1)
+			return TRUE;
+	}
 
 	return FALSE;
 }
@@ -389,7 +393,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	GtkWidget *view;
 	gint page;
 
-	if (!can_handle_multiple_tabs(browser))
+	if (!webkit_browser_can_open_tab(browser))
 		return -1;
 
 	/* create WebKit browser */
@@ -429,7 +433,7 @@ static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDo
 	GtkWidget *view;
 	gint page;
 
-	if (!can_handle_multiple_tabs(browser))
+	if (!webkit_browser_can_open_tab(browser))
 		return -1;
 
 	view = gtk_pdf_view_new(download);
@@ -453,13 +457,11 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	WebKitBrowser *browser = WEBKIT_BROWSER(data);
-	gint pages;
+	gint page;
 
-	pages = gtk_notebook_get_n_pages(priv->notebook);
-	if (pages < WEBKIT_BROWSER_MAX_PAGES) {
-		gint page = webkit_browser_append_tab(browser, NULL);
+	page = webkit_browser_append_tab(browser, NULL, FALSE);
+	if (page >= 0)
 		gtk_notebook_set_current_page(priv->notebook, page);
-	}
 }
 
 static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
