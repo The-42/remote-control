@@ -283,7 +283,7 @@ static void on_notify_loading(GObject *object, GParamSpec *pspec,
 	webkit_browser_tab_label_set_loading(label, loading);
 }
 
-static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title);
+static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden);
 static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDownload *download);
 
 static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpointer data)
@@ -385,7 +385,47 @@ static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 	return FALSE;
 }
 
-static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title)
+static gboolean on_new_window_requested(WebKitWebView *webkit,
+		WebKitWebFrame *frame, WebKitNetworkRequest *request,
+		WebKitWebNavigationAction *action,
+		WebKitWebPolicyDecision *decision, gpointer user_data)
+{
+	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
+
+	if (!webkit_browser_can_open_tab(browser))
+		webkit_web_policy_decision_ignore(decision);
+	else
+		webkit_web_policy_decision_use(decision);
+
+	return TRUE;
+}
+
+static gboolean on_web_view_ready(WebKitWebView *webkit, gpointer user_data)
+{
+	gtk_widget_show_all(GTK_WIDGET(user_data));
+
+	return FALSE;
+}
+
+static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
+		WebKitWebFrame *frame, gpointer user_data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(user_data);
+	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
+	GtkWidget *view;
+	GtkWidget *new;
+	gint page;
+
+	page = webkit_browser_append_tab(browser, NULL, TRUE);
+	gtk_notebook_set_current_page(priv->notebook, page);
+
+	view = gtk_notebook_get_nth_page(priv->notebook, page);
+	new = gtk_bin_get_child(GTK_BIN(view));
+
+	return WEBKIT_WEB_VIEW(new);
+}
+
+static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	GtkWidget *webkit;
@@ -403,7 +443,10 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	view = gtk_scrolled_window_new(NULL, NULL);
 	gtk_rc_parse_string(style_large);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
-	gtk_widget_show_all(view);
+	gtk_widget_show(view);
+
+	if (!hidden)
+		gtk_widget_show(webkit);
 
 	label = webkit_browser_tab_label_new(title);
 	gtk_widget_show(label);
@@ -414,6 +457,14 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(on_mime_type_requested), NULL);
 	g_signal_connect(G_OBJECT(webkit), "download-requested",
 			G_CALLBACK(on_download_requested), browser);
+	g_signal_connect(G_OBJECT(webkit), "new-window-policy-decision-requested",
+			G_CALLBACK(on_new_window_requested), browser);
+	g_signal_connect(G_OBJECT(webkit), "create-web-view",
+			G_CALLBACK(on_create_web_view), browser);
+
+	if (hidden)
+		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
+				G_CALLBACK(on_web_view_ready), webkit);
 
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status), label);
@@ -639,7 +690,7 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 	gtk_widget_show(hbox);
 
 	/* create initial tab */
-	webkit_browser_append_tab(browser, NULL);
+	webkit_browser_append_tab(browser, NULL, FALSE);
 
 	return notebook;
 }
