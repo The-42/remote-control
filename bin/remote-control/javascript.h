@@ -24,6 +24,9 @@ int javascript_register_input_class(void);
 int javascript_register_input(JSContextRef js, GMainContext *context,
 		JSObjectRef parent, const char *name);
 
+int javascript_register_ir_class(void);
+int javascript_register_ir(JSContextRef js, GMainContext *context,
+		JSObjectRef parent, const char *name);
 
 int javascript_register(WebKitWebFrame *frame, GMainContext *context);
 

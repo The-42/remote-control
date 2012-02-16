@@ -43,5 +43,6 @@ remote_control_LDADD += \
 
 if ENABLE_JAVASCRIPT_IR
 remote_control_SOURCES += \
+	javascript-irkey.c
 endif
 endif
