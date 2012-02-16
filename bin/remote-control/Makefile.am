@@ -36,15 +36,11 @@ remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
 	javascript-input.c \
-	remote-control-webkit-jscript.c \
-	remote-control-webkit-jscript.h
 
 remote_control_LDADD += \
 	@GUDEV_LIBS@
 
 if ENABLE_JAVASCRIPT_IR
 remote_control_SOURCES += \
-	remote-control-irkey.c \
-	remote-control-irkey.h
 endif
 endif

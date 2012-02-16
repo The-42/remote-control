@@ -16,7 +16,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "remote-control-webkit-jscript.h"
 #include "remote-control-webkit-window.h"
 #include "javascript.h"
 #include "utils.h"
@@ -111,8 +110,6 @@ static void webkit_on_notify_load_status(WebKitWebView *webkit,
 			g_debug("failed to register JavaScript API: %s",
 					g_strerror(-err));
 		}
-
-		register_user_functions(webkit, data);
 	}
 }
 #endif
