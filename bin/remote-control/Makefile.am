@@ -35,7 +35,8 @@ remote_control_CPPFLAGS += \
 remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
-	javascript-input.c \
+	javascript-cursor.c \
+	javascript-input.c
 
 remote_control_LDADD += \
 	@GUDEV_LIBS@

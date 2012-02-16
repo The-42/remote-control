@@ -19,36 +19,56 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 		GMainContext *context, WebKitWebFrame *frame,
 		JSObjectRef parent, const char *name)
 {
-	JSValueRef exception;
+	JSValueRef exception = NULL;
 	JSObjectRef object;
 	JSStringRef string;
+	int errors = 0;
 	int err;
 
 	object = JSObjectMake(js, NULL, NULL);
 
+	err = javascript_register_cursor(js, frame, object, "Cursor");
+	if (err < 0) {
+		g_warning("%s: failed to register Cursor object: %s",
+			__func__, g_strerror(-err));
+		errors++;
+	}
+
 	err = javascript_register_input(js, context, object, "Input");
 	if (err < 0) {
-		g_debug("failed to register Input object: %s",
-				g_strerror(-err));
-		return err;
+		g_warning("%s: failed to register Input object: %s",
+			__func__, g_strerror(-err));
+		errors++;
 	}
 
 	string = JSStringCreateWithUTF8CString(name);
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-	JSStringRelease(string);
+	if (string) {
+		JSObjectSetProperty(js, parent, string, object, 0, &exception);
+		JSStringRelease(string);
+	}
 
-	return 0;
+	return errors == 0;
 }
 
 static int javascript_register_classes(void)
 {
+	int errors = 0;
 	int err;
 
+	err = javascript_register_cursor_class();
+	if (err < 0) {
+		g_warning("%s: failed to register cursor class: %s",
+			__func__, g_strerror(-err));
+		errors++;
+	}
 	err = javascript_register_input_class();
-	if (err < 0)
-		return err;
+	if (err < 0) {
+		g_warning("%s: failed to register cursor class: %s",
+			__func__, g_strerror(-err));
+		errors++;
+	}
 
-	return 0;
+	return errors == 0;
 }
 
 int javascript_register(WebKitWebFrame *frame, GMainContext *context)

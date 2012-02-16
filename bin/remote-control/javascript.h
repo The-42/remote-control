@@ -16,6 +16,10 @@
 extern "C" {
 #endif
 
+int javascript_register_cursor_class(void);
+int javascript_register_cursor(JSContextRef js, WebKitWebFrame *frame,
+		JSObjectRef parent, const char *name);
+
 int javascript_register_input_class(void);
 int javascript_register_input(JSContextRef js, GMainContext *context,
 		JSObjectRef parent, const char *name);
