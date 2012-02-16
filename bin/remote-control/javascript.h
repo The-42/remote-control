@@ -10,6 +10,7 @@
 #define JAVASCRIPT_API_H 1
 
 #include <JavaScriptCore/JavaScript.h>
+#include <webkit/webkit.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,8 @@ int javascript_register_input_class(void);
 int javascript_register_input(JSContextRef js, GMainContext *context,
 		JSObjectRef parent, const char *name);
 
-int javascript_register(JSGlobalContextRef js, GMainContext *context);
+
+int javascript_register(WebKitWebFrame *frame, GMainContext *context);
 
 #ifdef __cplusplus
 }

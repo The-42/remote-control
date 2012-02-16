@@ -16,7 +16,8 @@
 #include "javascript.h"
 
 static int javascript_register_avionic_design(JSGlobalContextRef js,
-		GMainContext *context, JSObjectRef parent, const char *name)
+		GMainContext *context, WebKitWebFrame *frame,
+		JSObjectRef parent, const char *name)
 {
 	JSValueRef exception;
 	JSObjectRef object;
@@ -50,10 +51,14 @@ static int javascript_register_classes(void)
 	return 0;
 }
 
-int javascript_register(JSGlobalContextRef js, GMainContext *context)
+int javascript_register(WebKitWebFrame *frame, GMainContext *context)
 {
+	JSGlobalContextRef jsc;
 	JSObjectRef object;
 	int err;
+
+	jsc = webkit_web_frame_get_global_context(frame);
+	g_assert(jsc != NULL);
 
 	err = javascript_register_classes();
 	if (err < 0) {
@@ -62,9 +67,9 @@ int javascript_register(JSGlobalContextRef js, GMainContext *context)
 		return err;
 	}
 
-	object = JSContextGetGlobalObject(js);
+	object = JSContextGetGlobalObject(jsc);
 
-	err = javascript_register_avionic_design(js, context, object,
+	err = javascript_register_avionic_design(jsc, context, frame, object,
 			"AvionicDesign");
 	if (err < 0) {
 		g_debug("failed to register AvionicDesign object: %s",

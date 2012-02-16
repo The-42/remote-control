@@ -99,13 +99,9 @@ static void webkit_on_notify_load_status(WebKitWebView *webkit,
 
 	if (status == WEBKIT_LOAD_COMMITTED) {
 		WebKitWebFrame *frame = webkit_web_view_get_main_frame(webkit);
-		JSGlobalContextRef context;
 		int err;
 
-		context = webkit_web_frame_get_global_context(frame);
-		g_assert(context != NULL);
-
-		err = javascript_register(context, priv->context);
+		err = javascript_register(frame, priv->context);
 		if (err < 0) {
 			g_debug("failed to register JavaScript API: %s",
 					g_strerror(-err));
