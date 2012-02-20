@@ -24,29 +24,6 @@ struct cursor {
 	GdkWindow *window;
 };
 
-static int cursor_enable(GdkWindow *window, gboolean enable)
-{
-	GdkCursor *cursor;
-
-	if (!window)
-		return FALSE;
-
-	if (enable) {
-		cursor = gdk_window_get_cursor(gdk_get_default_root_window());
-		if (!cursor)
-			cursor = gdk_cursor_new(GDK_X_CURSOR);
-	}
-	else
-		cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-
-	if (!cursor)
-		return FALSE;
-
-	gdk_window_set_cursor(window, cursor);
-	gdk_cursor_unref(cursor);
-	return TRUE;
-}
-
 static void set_exception_text(JSContextRef context,JSValueRef *exception,
                                const char *failure)
 {
@@ -157,21 +134,33 @@ static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
 }
 
 static bool cursor_set_show(JSContextRef context, JSObjectRef object,
-                            JSStringRef propertyName, JSValueRef value,
+                            JSStringRef property, JSValueRef value,
                             JSValueRef *exception)
 {
-	struct cursor *cursor = JSObjectGetPrivate(object);
-	GdkWindow *window = cursor->window;
+	struct cursor *priv = JSObjectGetPrivate(object);
+	GdkCursor *cursor;
+
 
 	if (!JSValueIsBoolean(context, value)) {
-		set_exception_text(context, exception, "not a boolean value");
+		set_exception_text(context, exception, "not a boolean");
 		return false;
 	}
 
-	if (!cursor_enable(window, JSValueToBoolean(context, value))) {
-		set_exception_text(context, exception, "set failed");
-		return false;
+	if (JSValueToBoolean(context, value)) {
+		cursor = gdk_window_get_cursor(priv->window);
+		if (!cursor) {
+			cursor = gdk_cursor_new_for_display(priv->display,
+			                                    GDK_X_CURSOR);
+		}
+	} else {
+		cursor = gdk_cursor_new_for_display(priv->display,
+		                                    GDK_BLANK_CURSOR);
 	}
+
+	g_assert(priv->window != NULL);
+
+	gdk_window_set_cursor(priv->window, cursor);
+	gdk_cursor_unref(cursor);
 
 	return true;
 }
