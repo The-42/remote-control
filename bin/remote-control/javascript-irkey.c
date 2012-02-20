@@ -21,9 +21,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include <linux/input.h>
-#include <gudev/gudev.h>
-
 #include "javascript.h"
 
 #define DEFAULT_IR_PORT_VIBRANTE "/dev/ttyHS2"
@@ -61,7 +58,6 @@ struct ir {
 	JSObjectRef callback;
 	JSObjectRef thisptr;
 };
-
 
 static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 {
@@ -137,9 +133,6 @@ static int ir_report(struct ir *ir, struct ir_message *message)
 	JSValueRef array[8];
 	int ret = 0;
 
-	g_return_val_if_fail(ir->context != NULL, -EINVAL);
-	g_return_val_if_fail(message != NULL, -EINVAL);
-
 	/* ir object has been used but callback has not been set */
 	if (ir->callback == NULL)
 		return 0;
@@ -195,45 +188,42 @@ static gboolean ir_source_dispatch(GSource *source, GSourceFunc callback,
 		gpointer user_data)
 {
 	struct ir *ir = (struct ir *)source;
+	struct ir_message *msg = NULL;
 	GPollFD *poll = ir->tty;
+	uint8_t buf[8]; /* messages are normaly 64bits */
+	uint8_t proto;
+	ssize_t got;
+	int err;
 
-	if (poll->revents & G_IO_IN) {
-		struct ir_message *msg = NULL;
-		uint8_t buf[8]; /* messages are normaly 64bits */
-		uint8_t proto;
-		ssize_t got;
-		int err;
+	got = read_all(poll->fd, buf, sizeof(buf), 100);
+	if (got < 0) {
+		g_warning("%s: read failed: %zd", __func__, got);
+		goto fail;
+	}
 
-		got = read_all(poll->fd, buf, sizeof(buf), 100);
-		if (got < 0) {
-			g_warning("%s: read failed: %zd", __func__, got);
+	if (got != sizeof(struct ir_message)) {
+		g_warning("%s: invalid length", __func__);
+		goto fail;
+	}
+
+	msg = (struct ir_message*)buf;
+	proto = (msg->header & HEADER_PROTOCOL_MASK) >> HEADER_PROTOCOL_SHIFT;
+
+	switch (proto) {
+	case HEADER_PROTOCOL_RC5:
+	case HEADER_PROTOCOL_LG:
+		err = ir_report(ir, msg);
+		if (err < 0) {
+			g_warning("%s: ir_report(): %s", __func__,
+				g_strerror(-err));
 			goto fail;
 		}
+		break;
 
-		if (got != sizeof(struct ir_message)) {
-			g_warning("%s: invalid length", __func__);
-			goto fail;
-		}
-
-		msg = (struct ir_message*)buf;
-		proto = (msg->header & HEADER_PROTOCOL_MASK) >> HEADER_PROTOCOL_SHIFT;
-
-		switch (proto) {
-		case HEADER_PROTOCOL_RC5:
-		case HEADER_PROTOCOL_LG:
-			err = ir_report(ir, msg);
-			if (err < 0) {
-				g_warning("%s: ir_report(): %s", __func__,
-					g_strerror(-err));
-				goto fail;
-			}
-			break;
-
-		default:
-			g_warning("%s: unsupported protocol: %.2x",
-				__func__, msg->header);
-			break;
-		}
+	default:
+		g_warning("%s: unsupported protocol: %.2x",
+			__func__, msg->header);
+		break;
 	}
 
 fail:
@@ -342,7 +332,6 @@ static GSource *ir_source_new(JSContextRef context)
 	ir->context = context;
 	ir->callback = NULL;
 
-	/* open the tty device we are going to read from */
 	for (i=0; i<G_N_ELEMENTS(ttys); i++) {
 		ret = open_tty(ttys[i], &fd);
 		if (ret < 0) {
@@ -355,7 +344,7 @@ static GSource *ir_source_new(JSContextRef context)
 		g_debug("%s: using port [%s]", __func__, ttys[i]);
 		break;
 	}
-	/* wrap the tty-fd within a glib pollfd we can */
+
 	ret = ir_setup_poll(ir, fd);
 	if (ret < 0) {
 		g_warning("%s: failed to create polling fd: %s", __func__,
