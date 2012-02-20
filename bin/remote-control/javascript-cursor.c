@@ -47,16 +47,6 @@ static int cursor_enable(GdkWindow *window, gboolean enable)
 	return TRUE;
 }
 
-static int cursor_click(GdkWindow *window, int x, int y)
-{
-	if (!window)
-		return FALSE;
-
-	gdk_test_simulate_button(window, x, y, 1, GDK_BUTTON1_MASK, GDK_BUTTON_PRESS);
-	gdk_test_simulate_button(window, x, y, 1, GDK_BUTTON1_MASK, GDK_BUTTON_RELEASE);
-	return TRUE;
-}
-
 static void set_exception_text(JSContextRef context,JSValueRef *exception,
                                const char *failure)
 {
@@ -107,39 +97,41 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 
 static JSValueRef cursor_clickat_callback(JSContextRef context,
                                           JSObjectRef function,
-                                          JSObjectRef thisObject,
-                                          size_t argumentCount,
-                                          const JSValueRef arguments[],
+                                          JSObjectRef object,
+                                          size_t argc, const JSValueRef argv[],
                                           JSValueRef *exception)
 {
-	struct cursor *cursor = JSObjectGetPrivate(thisObject);
-	GdkWindow *window = cursor->window;
+	struct cursor *priv = JSObjectGetPrivate(object);
 	int x, y;
 
-	if (argumentCount != 2) {
+	if (argc != 2) {
 		set_exception_text(context, exception,
 			"invalid argument count");
-		goto invalid_arg;
+		return JSValueMakeBoolean(context, FALSE);
 	}
 
-	if (!JSValueIsNumber(context, arguments[0])) {
+	if (!JSValueIsNumber(context, argv[0])) {
 		set_exception_text(context, exception,
-			"first argument is not a number");
-		goto invalid_arg;
+			"x is not a number");
+		return JSValueMakeBoolean(context, FALSE);
 	}
-	if (!JSValueIsNumber(context, arguments[1])) {
+	if (!JSValueIsNumber(context, argv[1])) {
 		set_exception_text(context, exception,
-			"second argument is not a number");
-		goto invalid_arg;
+			"y is not a number");
+		return JSValueMakeBoolean(context, FALSE);
 	}
 
-	x = JSValueToNumber(context, arguments[0], exception);
-	y = JSValueToNumber(context, arguments[1], exception);
+	x = JSValueToNumber(context, argv[0], exception);
+	y = JSValueToNumber(context, argv[1], exception);
 
-	return JSValueMakeBoolean(context, cursor_click(window, x, y));
+	g_assert(priv->window != NULL);
 
-invalid_arg:
-	return JSValueMakeBoolean(context, FALSE);
+	gdk_test_simulate_button(priv->window, x, y, 1, GDK_BUTTON1_MASK,
+	                         GDK_BUTTON_PRESS);
+	gdk_test_simulate_button(priv->window, x, y, 1, GDK_BUTTON1_MASK,
+	                         GDK_BUTTON_RELEASE);
+
+	return JSValueMakeBoolean(context, TRUE);
 }
 
 static const JSStaticFunction cursor_functions[] = {
