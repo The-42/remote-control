@@ -269,6 +269,7 @@ static int open_tty(const char *tty, int *fd)
 	if (ret != 0) {
 		g_warning("%s: fail to get tty settings: %s",
 			__func__, g_strerror(errno));
+		return -errno;
 	}
 
 	attr.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
@@ -280,6 +281,7 @@ static int open_tty(const char *tty, int *fd)
 	if (ret < 0) {
 		g_warning("%s: failed to set tty settings: %s",
 			__func__, g_strerror(errno));
+		return -errno;
 	}
 
 	ret = tcflush(*fd, TCIFLUSH);
