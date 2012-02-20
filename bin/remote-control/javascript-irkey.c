@@ -267,7 +267,7 @@ static int open_tty(const char *tty, int *fd)
 
 	ret = tcgetattr(*fd, &attr);
 	if (ret != 0) {
-		g_warning("%s: fail to get tty settings: %s",
+		g_warning("%s: failed to get TTY settings: %s",
 			__func__, g_strerror(errno));
 		return -errno;
 	}
@@ -279,14 +279,14 @@ static int open_tty(const char *tty, int *fd)
 
 	ret = tcsetattr(*fd, TCSANOW, &attr);
 	if (ret < 0) {
-		g_warning("%s: failed to set tty settings: %s",
+		g_warning("%s: failed to set TTY settings: %s",
 			__func__, g_strerror(errno));
 		return -errno;
 	}
 
 	ret = tcflush(*fd, TCIFLUSH);
 	if (ret < 0) {
-		g_warning("%s: failed to flush tty: %s",
+		g_warning("%s: failed to flush TTY: %s",
 			__func__, g_strerror(errno));
 	}
 
@@ -339,7 +339,7 @@ static GSource *ir_source_new(JSContextRef context)
 		if (ret < 0) {
 			if (ret == -ENOENT)
 				continue;
-			g_warning("%s: failed to open tty: %s", __func__,
+			g_warning("%s: failed to open TTY: %s", __func__,
 				g_strerror(-ret));
 			goto cleanup;
 		}
