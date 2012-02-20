@@ -192,7 +192,10 @@ static void cursor_initialize(JSContextRef context, JSObjectRef object)
 
 static void cursor_finalize(JSObjectRef object)
 {
-	/* TODO: add cleanup code.... */
+	struct cursor *priv = JSObjectGetPrivate(object);
+
+	g_free(priv);
+	JSObjectSetPrivate(object, NULL);
 }
 
 static const JSClassDefinition cursor_classdef = {
