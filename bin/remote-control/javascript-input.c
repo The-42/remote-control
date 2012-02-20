@@ -265,6 +265,10 @@ static JSValueRef input_get_onevent(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef *exception)
 {
 	struct input *input = JSObjectGetPrivate(object);
+	if (!input) {
+		g_warning("%s: object not valid, context changed?", __func__);
+		return JSValueMakeNull(context);
+	}
 
 	return input->callback;
 }
@@ -273,12 +277,16 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef value, JSValueRef *exception)
 {
 	struct input *input = JSObjectGetPrivate(object);
-	JSValueRef except = NULL;
-
-	input->callback = JSValueToObject(context, value, &except);
-	if (!input->callback)
+	if (!input) {
+		g_warning("%s: object not valid, context changed?", __func__);
 		return false;
+	}
 
+	input->callback = JSValueToObject(context, value, exception);
+	if (!input->callback) {
+		g_warning("%s: failed to assign callback", __func__);
+		return false;
+	}
 	return true;
 }
 

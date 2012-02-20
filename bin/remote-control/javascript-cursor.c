@@ -43,6 +43,12 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 	struct cursor *priv = JSObjectGetPrivate(object);
 	int x, y;
 
+	if (!priv) {
+		set_exception_text(context, exception,
+			"object not valid, context switched?");
+		return JSValueMakeBoolean(context, FALSE);
+	}
+
 	if (argc != 2) {
 		set_exception_text(context, exception,
 			"invalid argument count");
@@ -80,6 +86,12 @@ static JSValueRef cursor_clickat_callback(JSContextRef context,
 {
 	struct cursor *priv = JSObjectGetPrivate(object);
 	int x, y;
+
+	if (!priv) {
+		set_exception_text(context, exception,
+			"object not valid, context switched?");
+		return JSValueMakeBoolean(context, FALSE);
+	}
 
 	if (argc != 2) {
 		set_exception_text(context, exception,
@@ -130,6 +142,12 @@ static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
 	struct cursor *priv = JSObjectGetPrivate(object);
 	GdkCursor *cursor;
 
+	if (!priv) {
+		set_exception_text(context, exception,
+			"object not valid, context switched?");
+		return JSValueMakeBoolean(context, FALSE);
+	}
+
 	g_assert(priv->window != NULL);
 
 	cursor = gdk_window_get_cursor(priv->window);
@@ -150,6 +168,12 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
 {
 	struct cursor *priv = JSObjectGetPrivate(object);
 	GdkCursor *cursor;
+
+	if (!priv) {
+		set_exception_text(context, exception,
+			"object not valid, context switched?");
+		return false;
+	}
 
 
 	if (!JSValueIsBoolean(context, value)) {
