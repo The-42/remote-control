@@ -111,7 +111,7 @@ static int ir_report(struct ir *ir, struct ir_message *message)
 {
 	JSValueRef exception = NULL;
 	JSValueRef arguments[1];
-	JSValueRef args[8];
+	JSValueRef array[8];
 	int ret = 0;
 
 	g_return_val_if_fail(ir->context != NULL, -EINVAL);
@@ -125,16 +125,17 @@ static int ir_report(struct ir *ir, struct ir_message *message)
 	 * TODO: check if this will open up a memory leaks here,
 	 *       or if GC takes care
 	 */
-	args[0] = JSValueMakeNumber(ir->context, message->header);
-	args[1] = JSValueMakeNumber(ir->context, message->reserved);
-	args[2] = JSValueMakeNumber(ir->context, message->d0);
-	args[3] = JSValueMakeNumber(ir->context, message->d1);
-	args[4] = JSValueMakeNumber(ir->context, message->d2);
-	args[5] = JSValueMakeNumber(ir->context, message->d3);
-	args[6] = JSValueMakeNumber(ir->context, message->d4);
-	args[7] = JSValueMakeNumber(ir->context, message->d5);
+	array[0] = JSValueMakeNumber(ir->context, message->header);
+	array[1] = JSValueMakeNumber(ir->context, message->reserved);
+	array[2] = JSValueMakeNumber(ir->context, message->d0);
+	array[3] = JSValueMakeNumber(ir->context, message->d1);
+	array[4] = JSValueMakeNumber(ir->context, message->d2);
+	array[5] = JSValueMakeNumber(ir->context, message->d3);
+	array[6] = JSValueMakeNumber(ir->context, message->d4);
+	array[7] = JSValueMakeNumber(ir->context, message->d5);
 
-	arguments[0] = JSObjectMakeArray(ir->context, G_N_ELEMENTS(args), args, &exception);
+	arguments[0] = JSObjectMakeArray(ir->context, G_N_ELEMENTS(array),
+	                                 array, &exception);
 
 	(void)JSObjectCallAsFunction(ir->context, ir->callback,
 			ir->thisptr, G_N_ELEMENTS(arguments), arguments,
