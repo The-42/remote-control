@@ -41,14 +41,12 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 		errors++;
 	}
 
-#if defined(ENABLE_JAVASCRIPT_IR)
 	err = javascript_register_ir(js, context, object, "IR");
 	if (err < 0) {
 		g_warning("%s: failed to register IR object: %s",
 			__func__, g_strerror(-err));
 		errors++;
 	}
-#endif
 
 	string = JSStringCreateWithUTF8CString(name);
 	if (string) {
@@ -76,14 +74,13 @@ static int javascript_register_classes(void)
 			__func__, g_strerror(-err));
 		errors++;
 	}
-#if defined(ENABLE_JAVASCRIPT_IR)
+
 	err = javascript_register_ir_class();
 	if (err < 0) {
 		g_warning("%s: failed to register cursor class: %s",
 			__func__, g_strerror(-err));
 		errors++;
 	}
-#endif
 
 	return errors == 0;
 }

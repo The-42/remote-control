@@ -24,9 +24,23 @@ int javascript_register_input_class(void);
 int javascript_register_input(JSContextRef js, GMainContext *context,
 		JSObjectRef parent, const char *name);
 
+#ifdef ENABLE_JAVASCRIPT_IR
 int javascript_register_ir_class(void);
 int javascript_register_ir(JSContextRef js, GMainContext *context,
 		JSObjectRef parent, const char *name);
+#else
+static inline int javascript_register_ir_class(void)
+{
+	return 0;
+}
+
+static inline int javascript_register_ir(JSContextRef js,
+		GMainContext *context, JSObjectRef parent,
+		const char *name)
+{
+	return 0;
+}
+#endif
 
 int javascript_register(WebKitWebFrame *frame, GMainContext *context);
 
