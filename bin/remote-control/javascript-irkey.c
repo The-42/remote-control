@@ -107,6 +107,29 @@ static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 	return pos;
 }
 
+static void print_exception(JSContextRef context, JSValueRef exception)
+{
+	JSStringRef text;
+	size_t length;
+	char *buf;
+
+	if (!JSValueIsString(context, exception))
+		return;
+
+	text = JSValueToStringCopy(context, exception, NULL);
+	if (!text)
+		return;
+
+	length = JSStringGetMaximumUTF8CStringSize(text);
+	buf = g_malloc0(length+1);
+	JSStringGetUTF8CString(text, buf, length);
+
+	g_warning("%s", buf);
+
+	JSStringRelease(text);
+	g_free(buf);
+}
+
 static int ir_report(struct ir *ir, struct ir_message *message)
 {
 	JSValueRef exception = NULL;
@@ -142,16 +165,7 @@ static int ir_report(struct ir *ir, struct ir_message *message)
 			&exception);
 	if (exception) {
 		g_warning("%s: exception in callback", __func__);
-#if 0
-		if (JSValueIsString(ir->context, exception)) {
-			JSStringRef error;
-			error = JSValueToStringCopy(ir->context, exception, NULL);
-			if (error) {
-				g_warning("%s", JSStringGetCharactersPtr(error));
-				JSStringRelease(error);
-			}
-		}
-#endif
+		print_exception(ir->context, exception);
 		ret = -EFAULT;
 	}
 
