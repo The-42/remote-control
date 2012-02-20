@@ -125,12 +125,23 @@ static const JSStaticFunction cursor_functions[] = {
 };
 
 static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
-                                  JSStringRef propertyName,
-                                  JSValueRef *exception)
+                                  JSStringRef property, JSValueRef *exception)
 {
-	/* FIXME: add query support */
-	set_exception_text(context, exception, "write only property");
-	return JSValueMakeBoolean(context, FALSE);
+	struct cursor *priv = JSObjectGetPrivate(object);
+	GdkCursor *cursor;
+
+	g_assert(priv->window != NULL);
+
+	cursor = gdk_window_get_cursor(priv->window);
+	if (!cursor) {
+		set_exception_text(context, exception, "window has no cursor");
+		return JSValueMakeBoolean(context, FALSE);
+	}
+
+	if (gdk_cursor_get_cursor_type(cursor) == GDK_BLANK_CURSOR)
+		return JSValueMakeBoolean(context, FALSE);
+
+	return JSValueMakeBoolean(context, TRUE);
 }
 
 static bool cursor_set_show(JSContextRef context, JSObjectRef object,
@@ -168,7 +179,7 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
 static const JSStaticValue cursor_properties[] = {
 	{
 		.name = "show",
-		.getProperty = cursor_get_show /*NULL ?*/,
+		.getProperty = cursor_get_show,
 		.setProperty = cursor_set_show,
 		.attributes = kJSPropertyAttributeNone,
 	}, {
