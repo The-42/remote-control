@@ -20,10 +20,6 @@
 
 struct cursor {
 	GdkWindow *window;
-
-	JSContextRef context;
-	JSObjectRef callback;
-	JSObjectRef thisptr;
 };
 
 static int cursor_move_to(int x, int y)
@@ -217,8 +213,6 @@ static const JSStaticValue cursor_properties[] = {
 
 static void cursor_initialize(JSContextRef context, JSObjectRef object)
 {
-	struct cursor *cursor = JSObjectGetPrivate(object);
-	cursor->thisptr = object;
 }
 
 static void cursor_finalize(JSObjectRef object)
