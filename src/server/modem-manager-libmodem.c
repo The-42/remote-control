@@ -170,6 +170,7 @@ static int modem_manager_open_device(struct modem_manager *manager,
 		return err;
 	}
 
+	params.flags &= ~MODEM_FLAGS_ECHO;
 	params.flags |= desc->flags;
 	params.vls = desc->vls;
 	params.atl = desc->atl;
