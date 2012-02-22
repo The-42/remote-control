@@ -31,12 +31,44 @@ struct _RemoteControlWebkitWindowPrivate {
 	WebKitWebView *webkit;
 	GMainLoop *loop;
 	GURI *uri;
+	gboolean hide_cursor;
 };
 
 enum {
 	PROP_0,
 	PROP_LOOP,
+	PROP_CONTEXT,
+	PROP_CURSOR,
 };
+
+static gboolean webkit_cursor_is_visible(GtkWidget *widget)
+{
+	GdkWindow *window;
+	GdkCursor *cursor;
+
+	window = gtk_widget_get_window(widget);
+	if (!window)
+		return false;
+
+	cursor = gdk_window_get_cursor(window);
+	if (!cursor)
+		return false;
+
+	return gdk_cursor_get_cursor_type(cursor) != GDK_BLANK_CURSOR;
+}
+
+static void webkit_cursor_hide(GtkWidget *widget, gboolean hide)
+{
+	GdkCursor *cursor = gdk_cursor_new(hide ? GDK_BLANK_CURSOR : GDK_X_CURSOR);
+	GdkWindow *window = gtk_widget_get_window(widget);
+
+	gdk_window_set_cursor(window, cursor);
+#if GTK_CHECK_VERSION(2, 91, 7)
+	g_object_unref(cursor);
+#else
+	gdk_cursor_unref(cursor);
+#endif
+}
 
 static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 		GParamSpec *pspec)
@@ -49,6 +81,11 @@ static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 	switch (prop_id) {
 	case PROP_LOOP:
 		g_value_set_pointer(value, priv->loop);
+		break;
+
+	case PROP_CURSOR:
+		g_value_set_boolean(value, !webkit_cursor_is_visible(
+		                            GTK_WIDGET(GTK_WINDOW(window))));
 		break;
 
 	default:
@@ -68,6 +105,11 @@ static void webkit_set_property(GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_LOOP:
 		priv->loop = g_value_get_pointer(value);
+		break;
+
+	case PROP_CURSOR:
+		webkit_cursor_hide(GTK_WIDGET(GTK_WINDOW(window)),
+		                   g_value_get_boolean(value));
 		break;
 
 	default:
@@ -126,19 +168,15 @@ static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowCla
 				"GLib main loop to integrate with.",
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 				G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property(object, PROP_CURSOR,
+			g_param_spec_boolean("hide-cursor", "hide the cursor",
+				"Hide/show the cursor on this page.", TRUE,
+				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void on_realize(GtkWidget *widget, gpointer user_data)
 {
-	GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-	GdkWindow *window = gtk_widget_get_window(widget);
-
-	gdk_window_set_cursor(window, cursor);
-#if GTK_CHECK_VERSION(2, 91, 7)
-	g_object_unref(cursor);
-#else
-	gdk_cursor_unref(cursor);
-#endif
+	g_object_set(widget, "hide-cursor", true, NULL);
 }
 
 static gboolean navigation_policy(WebKitWebView *webkit,
