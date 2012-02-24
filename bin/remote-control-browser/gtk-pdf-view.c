@@ -222,7 +222,11 @@ static gboolean on_canvas_expose(GtkWidget *widget, GdkEvent *event, gpointer da
 
 		window = gtk_widget_get_window(widget);
 		page = poppler_document_get_page(priv->document, priv->page);
+#if GTK_CHECK_VERSION(2, 91, 6)
+		cairo = gdk_cairo_create(window);
+#else
 		cairo = gdk_cairo_create(GDK_DRAWABLE(window));
+#endif
 
 		poppler_page_get_size(page, &width, &height);
 		width *= scale;
@@ -296,6 +300,15 @@ static void gtk_pdf_view_init(GtkPdfView *self)
 	priv->page = 0;
 }
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+static gboolean gtk_pdf_view_draw(GtkWidget *widget, cairo_t *cr)
+{
+	if (gtk_widget_is_drawable(widget))
+		GTK_WIDGET_CLASS(gtk_pdf_view_parent_class)->draw(widget, cr);
+
+	return FALSE;
+}
+#else
 static gboolean gtk_pdf_view_expose(GtkWidget *widget, GdkEventExpose *event)
 {
 	if (gtk_widget_is_drawable(widget))
@@ -303,6 +316,7 @@ static gboolean gtk_pdf_view_expose(GtkWidget *widget, GdkEventExpose *event)
 
 	return FALSE;
 }
+#endif
 
 static void gtk_pdf_view_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
@@ -361,7 +375,11 @@ static void gtk_pdf_view_class_init(GtkPdfViewClass *class)
 	container->add = gtk_pdf_view_add_child;
 	container->remove = gtk_pdf_view_remove_child;
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+	widget->draw = gtk_pdf_view_draw;
+#else
 	widget->expose_event = gtk_pdf_view_expose;
+#endif
 
 	object->get_property = gtk_pdf_view_get_property;
 	object->set_property = gtk_pdf_view_set_property;
