@@ -32,6 +32,12 @@ struct _RemoteControlWebkitWindowPrivate {
 	GMainLoop *loop;
 	GURI *uri;
 	gboolean hide_cursor;
+	gboolean inspector;
+	/* used only when inspector enabled */
+	WebKitWebInspector *webkit_inspector;
+	WebKitWebView *webkit_inspector_view;
+	GtkExpander *expander;
+	GtkVBox *vbox;
 };
 
 enum {
@@ -39,6 +45,7 @@ enum {
 	PROP_LOOP,
 	PROP_CONTEXT,
 	PROP_CURSOR,
+	PROP_INSPECTOR
 };
 
 static gboolean webkit_cursor_is_visible(GtkWidget *widget)
@@ -70,6 +77,8 @@ static void webkit_cursor_hide(GtkWidget *widget, gboolean hide)
 #endif
 }
 
+static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self);
+
 static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 		GParamSpec *pspec)
 {
@@ -86,6 +95,10 @@ static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 	case PROP_CURSOR:
 		g_value_set_boolean(value, !webkit_cursor_is_visible(
 		                            GTK_WIDGET(GTK_WINDOW(window))));
+		break;
+
+	case PROP_INSPECTOR:
+		g_value_set_boolean(value, priv->inspector);
 		break;
 
 	default:
@@ -110,6 +123,11 @@ static void webkit_set_property(GObject *object, guint prop_id,
 	case PROP_CURSOR:
 		webkit_cursor_hide(GTK_WIDGET(GTK_WINDOW(window)),
 		                   g_value_get_boolean(value));
+		break;
+
+	case PROP_INSPECTOR:
+		priv->inspector = g_value_get_boolean(value);
+		remote_control_webkit_construct_view(window);
 		break;
 
 	default:
@@ -172,6 +190,12 @@ static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowCla
 			g_param_spec_boolean("hide-cursor", "hide the cursor",
 				"Hide/show the cursor on this page.", TRUE,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_INSPECTOR,
+			g_param_spec_boolean("inspector", "activate inspector",
+				"Enable this to show an inspector widget.", false,
+				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+				G_PARAM_STATIC_STRINGS));
 }
 
 static void on_realize(GtkWidget *widget, gpointer user_data)
@@ -239,11 +263,78 @@ static gboolean webkit_handle_load_error(WebKitWebView *webkit,
 	return FALSE;
 }
 
+static void remote_control_webkit_expander_callback (
+		GObject *object, GParamSpec *param_spec,
+		RemoteControlWebkitWindow *self)
+{
+	RemoteControlWebkitWindowPrivate *priv;
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+
+	if (gtk_expander_get_expanded (priv->expander)) {
+		gint x, y;
+
+		x = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (priv->webkit), "x"));
+		y = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (priv->webkit), "y"));
+		webkit_web_inspector_inspect_coordinates (priv->webkit_inspector, x, y);
+		webkit_web_inspector_show (priv->webkit_inspector);
+	}
+}
+
+static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self)
+{
+	RemoteControlWebkitWindowPrivate *priv;
+	GtkWindow *window = GTK_WINDOW(self);
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+	GtkWidget *view;
+
+	g_print("construct view\n");
+	if(priv->inspector) {
+		view = gtk_scrolled_window_new(NULL, NULL);
+		gtk_container_add(GTK_CONTAINER(view), GTK_WIDGET(priv->webkit));
+		gtk_widget_show(view);
+
+		WebKitWebSettings *settings =
+				webkit_web_view_get_settings (WEBKIT_WEB_VIEW(priv->webkit));
+		g_object_set (G_OBJECT(settings), "enable-developer-extras", TRUE,
+					  NULL);
+
+		priv->vbox = GTK_VBOX(gtk_vbox_new(false, 0));
+
+		priv->expander = GTK_EXPANDER(gtk_expander_new("Inspector"));
+		g_signal_connect (priv->expander, "notify::expanded",
+						  G_CALLBACK(remote_control_webkit_expander_callback),
+						  self);
+
+		gtk_container_add(GTK_CONTAINER(priv->vbox), GTK_WIDGET(view));
+		gtk_container_add(GTK_CONTAINER(priv->vbox), GTK_WIDGET(priv->expander));
+
+		gtk_box_set_child_packing(GTK_BOX(priv->vbox),
+								  GTK_WIDGET(priv->webkit),
+								  true, /*expand*/
+								  true, /*fill*/
+								  0, /*padding*/
+								  GTK_PACK_START);
+
+		gtk_box_set_child_packing(GTK_BOX(priv->vbox),
+								  GTK_WIDGET(priv->expander),
+								  false, /*expand*/
+								  false, /*fill*/
+								  0, /*padding*/
+								  GTK_PACK_START);
+
+		gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->vbox));
+	} else {
+		gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
+	}
+}
+
 static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 {
 	RemoteControlWebkitWindowPrivate *priv;
 	GtkWindow *window = GTK_WINDOW(self);
 	GdkScreen *screen;
+
 	gint cx;
 	gint cy;
 
@@ -277,10 +368,42 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 			G_CALLBACK(webkit_handle_load_error), self);
 }
 
-GtkWidget *remote_control_webkit_window_new(GMainLoop *loop)
+GtkWidget *remote_control_webkit_window_new(GMainLoop *loop, gboolean inspector)
 {
 	return g_object_new(REMOTE_CONTROL_TYPE_WEBKIT_WINDOW, "loop", loop,
-			NULL);
+						"inspector", inspector, NULL);
+}
+
+static WebKitWebView* remote_control_webkit_inspector_create (
+		gpointer inspector, WebKitWebView* web_view,
+		gpointer data)
+{
+	RemoteControlWebkitWindow *self = data;
+	RemoteControlWebkitWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+
+	priv->webkit_inspector_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+	gtk_container_add(GTK_CONTAINER(priv->expander),
+					 GTK_WIDGET(priv->webkit_inspector_view));
+	gtk_widget_show_all(GTK_WIDGET(priv->expander));
+
+	return priv->webkit_inspector_view;
+}
+
+static gboolean remote_control_webkit_show_inpector (
+		gpointer inspector, gpointer data)
+{
+	RemoteControlWebkitWindow *self = data;
+	RemoteControlWebkitWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+
+	gtk_widget_set_size_request(GTK_WIDGET(priv->webkit_inspector_view),
+								500, 300);
+	gtk_expander_set_expanded(priv->expander, TRUE);
+
+	return TRUE;
 }
 
 gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
@@ -290,6 +413,20 @@ gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
 	webkit_web_view_load_uri(priv->webkit, uri);
+
+	if (priv->inspector) {
+		priv->webkit_inspector =
+			webkit_web_view_get_inspector (WEBKIT_WEB_VIEW(priv->webkit));
+
+		g_signal_connect (G_OBJECT (priv->webkit_inspector),
+						  "inspect-web-view",
+						  G_CALLBACK(remote_control_webkit_inspector_create),
+						  self);
+		g_signal_connect (G_OBJECT (priv->webkit_inspector),
+						  "show-window",
+						  G_CALLBACK(remote_control_webkit_show_inpector),
+						  self);
+	}
 
 	if (priv->uri)
 		g_object_unref(priv->uri);

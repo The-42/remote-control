@@ -35,7 +35,7 @@ struct _RemoteControlWebkitWindowClass {
 
 GType remote_control_webkit_window_get_type(void);
 
-GtkWidget *remote_control_webkit_window_new(GMainLoop *loop);
+GtkWidget *remote_control_webkit_window_new(GMainLoop *loop, gboolean inspector);
 gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 		const gchar *uri);
 

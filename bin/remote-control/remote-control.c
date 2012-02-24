@@ -297,15 +297,21 @@ GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
 {
 	GtkWidget *window = NULL;
 	const gchar *uri = NULL;
+	gboolean inspector = false;
 
 	uri = g_key_file_get_value(conf, "browser", "uri", NULL);
 	if (!uri && (argc > 0))
 		uri = argv[1];
 
+	inspector = g_key_file_get_boolean(conf, "browser", "inspector",
+									   NULL);
+
 	if (uri) {
 		RemoteControlWebkitWindow *webkit;
 
-		window = remote_control_webkit_window_new(loop);
+		g_print("start with inspector: %s\n", inspector ? "enabled" : "disabled");
+		window = remote_control_webkit_window_new(loop, inspector);
+
 		webkit = REMOTE_CONTROL_WEBKIT_WINDOW(window);
 		remote_control_webkit_window_load(webkit, uri);
 
