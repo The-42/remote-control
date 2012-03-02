@@ -429,8 +429,4 @@ unsigned int if_lookup_default(void);
 void gdk_window_clear(GdkWindow *window);
 #endif
 
-void remote_control_log_handler(const gchar *log_domain,
-		GLogLevelFlags log_level, const gchar *message,
-		gpointer unused_data);
-
 #endif /* REMOTE_CONTROL_H */

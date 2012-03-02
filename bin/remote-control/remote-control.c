@@ -30,6 +30,7 @@
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
 #include "gkeyfile.h"
+#include "log.h"
 
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
@@ -489,8 +490,6 @@ int main(int argc, char *argv[])
 		g_thread_init(NULL);
 #endif
 
-	g_log_set_default_handler(remote_control_log_handler, NULL);
-
 	gtk_init(&argc, &argv);
 
 	options = g_option_context_new("- remote control service");
@@ -522,6 +521,13 @@ int main(int argc, char *argv[])
 	}
 
 	g_free(config_file);
+
+	err = remote_control_log_init(conf);
+	if (err < 0) {
+		g_printerr("failed to initialize logging: %s\n",
+				g_strerror(-err));
+		return EXIT_FAILURE;
+	}
 
 	loop = g_main_loop_new(NULL, FALSE);
 	g_assert(loop != NULL);
@@ -574,5 +580,7 @@ int main(int argc, char *argv[])
 #endif
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
+	remote_control_log_exit();
+
 	return EXIT_SUCCESS;
 }

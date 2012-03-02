@@ -13,6 +13,8 @@ remote_control_CPPFLAGS = \
 	@GTK_CFLAGS@
 
 remote_control_SOURCES = \
+	log.c \
+	log.h \
 	remote-control.c \
 	remote-control-rdp-window.c \
 	remote-control-rdp-window.h \
