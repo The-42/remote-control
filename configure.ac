@@ -223,6 +223,21 @@ AS_IF([test "x$enable_javascript" = "xyes"], [
 ])
 
 #
+# D-Bus Watchdog support
+#
+AC_MSG_CHECKING([whether to enable D-Bus watchdog support])
+AC_ARG_ENABLE([watchdog],
+	[AS_HELP_STRING([--enable-watchdog],
+			[Enable D-Bus watchdog support [default=no]])],
+	[], [enable_watchdog=no])
+AC_MSG_RESULT([$enable_watchdog])
+
+AS_IF([test "x$enable_watchdog" = "xyes"], [
+	AC_DEFINE([ENABLE_WATCHDOG], [1], [whether D-Bus watchdog support is enabled])
+	PKG_CHECK_MODULES(WATCHDOG, dbus-watchdog)
+])
+
+#
 # define automake conditionals according to select backends
 #
 AM_CONDITIONAL(ENABLE_AUDIO_ALSA, [test "x$enable_audio_alsa" = "xyes"])
@@ -240,6 +255,7 @@ AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT, [test "x$enable_javascript" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
+AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 
 #
 # check for required files and packages
@@ -322,4 +338,5 @@ AS_IF([test "x$enable_javascript" = "xyes"], [
 	AS_ECHO("    IR Input Support:        $enable_javascript_ir")
 ])
 
+AS_ECHO("  D-Bus Watchdog support:    $enable_watchdog")
 AS_ECHO

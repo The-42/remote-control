@@ -22,6 +22,10 @@
 #include <glib-unix.h>
 #include <gio/gio.h>
 
+#ifdef ENABLE_WATCHDOG
+#  include <dbus-watchdog.h>
+#endif
+
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
@@ -386,6 +390,71 @@ static GKeyFile *remote_control_load_configuration(const gchar *filename,
 	return conf;
 }
 
+#ifdef ENABLE_WATCHDOG
+static gboolean watchdog_timeout(gpointer data)
+{
+	DBusWatchdog *watchdog = data;
+
+	dbus_watchdog_ping(watchdog, NULL, "Hello, World!");
+
+	return TRUE;
+}
+
+static void watchdog_destroy(gpointer data)
+{
+	DBusWatchdog *watchdog = data;
+
+	dbus_watchdog_unref(watchdog);
+}
+
+static GSource *watchdog_new(GKeyFile *conf, GError **error)
+{
+	DBusWatchdog *watchdog;
+	guint64 timeout;
+	GSource *source;
+
+	if (!g_key_file_has_key(conf, "watchdog", "timeout", error))
+		return NULL;
+
+	timeout = g_key_file_get_uint64(conf, "watchdog", "timeout", error);
+	if (!timeout)
+		return NULL;
+
+	source = g_timeout_source_new_seconds(timeout / 3000);
+	if (!source) {
+		g_set_error_literal(error, G_UNIX_ERROR, ENOMEM,
+				g_strerror(ENOMEM));
+		return NULL;
+	}
+
+	watchdog = dbus_watchdog_new(timeout, NULL);
+	if (!watchdog) {
+		g_source_unref(source);
+		return NULL;
+	}
+
+	g_source_set_callback(source, watchdog_timeout, watchdog,
+			watchdog_destroy);
+
+	return source;
+}
+
+static void watchdog_unref(GSource *source)
+{
+	if (source)
+		g_source_destroy(source);
+}
+#else
+static GSource *watchdog_new(GKeyFile *conf, GError **error)
+{
+	return NULL;
+}
+
+static void watchdog_unref(GSource source)
+{
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	const gchar *default_config_file = SYSCONF_DIR "/remote-control.conf";
@@ -403,6 +472,7 @@ int main(int argc, char *argv[])
 	GOptionContext *options;
 	GError *error = NULL;
 	GtkWidget *window;
+	GSource *watchdog;
 	GMainLoop *loop;
 	GSource *source;
 	GKeyFile *conf;
@@ -485,8 +555,16 @@ int main(int argc, char *argv[])
 	g_source_attach(source, context);
 	g_source_unref(source);
 
+	watchdog = watchdog_new(conf, NULL);
+	if (watchdog) {
+		g_debug("D-Bus Watchdog activated");
+		g_source_attach(watchdog, context);
+		g_source_unref(watchdog);
+	}
+
 	g_main_loop_run(loop);
 
+	watchdog_unref(watchdog);
 	g_source_destroy(source);
 #ifdef ENABLE_DBUS
 	g_bus_unown_name(owner);

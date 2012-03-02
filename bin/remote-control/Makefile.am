@@ -46,3 +46,8 @@ remote_control_SOURCES += \
 	javascript-irkey.c
 endif
 endif
+
+if ENABLE_WATCHDOG
+remote_control_CPPFLAGS += @WATCHDOG_CFLAGS@
+remote_control_LDADD += @WATCHDOG_LIBS@
+endif
