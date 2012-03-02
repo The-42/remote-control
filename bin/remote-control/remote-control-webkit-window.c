@@ -29,13 +29,13 @@ G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_
 
 struct _RemoteControlWebkitWindowPrivate {
 	WebKitWebView *webkit;
-	GMainContext *context;
+	GMainLoop *loop;
 	GURI *uri;
 };
 
 enum {
 	PROP_0,
-	PROP_CONTEXT,
+	PROP_LOOP,
 };
 
 static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
@@ -47,8 +47,8 @@ static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(window);
 
 	switch (prop_id) {
-	case PROP_CONTEXT:
-		g_value_set_pointer(value, priv->context);
+	case PROP_LOOP:
+		g_value_set_pointer(value, priv->loop);
 		break;
 
 	default:
@@ -66,8 +66,8 @@ static void webkit_set_property(GObject *object, guint prop_id,
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(window);
 
 	switch (prop_id) {
-	case PROP_CONTEXT:
-		priv->context = g_value_get_pointer(value);
+	case PROP_LOOP:
+		priv->loop = g_value_get_pointer(value);
 		break;
 
 	default:
@@ -99,9 +99,10 @@ static void webkit_on_notify_load_status(WebKitWebView *webkit,
 
 	if (status == WEBKIT_LOAD_COMMITTED) {
 		WebKitWebFrame *frame = webkit_web_view_get_main_frame(webkit);
+		GMainContext *context = g_main_loop_get_context(priv->loop);
 		int err;
 
-		err = javascript_register(frame, priv->context);
+		err = javascript_register(frame, context);
 		if (err < 0) {
 			g_debug("failed to register JavaScript API: %s",
 					g_strerror(-err));
@@ -120,9 +121,9 @@ static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowCla
 	object->set_property = webkit_set_property;
 	object->finalize = webkit_finalize;
 
-	g_object_class_install_property(object, PROP_CONTEXT,
-			g_param_spec_pointer("context", "main loop context",
-				"Main loop context to integrate with.",
+	g_object_class_install_property(object, PROP_LOOP,
+			g_param_spec_pointer("loop", "GLib main loop",
+				"GLib main loop to integrate with.",
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 				G_PARAM_STATIC_STRINGS));
 }
@@ -238,9 +239,10 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 			G_CALLBACK(webkit_handle_load_error), self);
 }
 
-GtkWidget *remote_control_webkit_window_new(GMainContext *context)
+GtkWidget *remote_control_webkit_window_new(GMainLoop *loop)
 {
-	return g_object_new(REMOTE_CONTROL_TYPE_WEBKIT_WINDOW, "context", context, NULL);
+	return g_object_new(REMOTE_CONTROL_TYPE_WEBKIT_WINDOW, "loop", loop,
+			NULL);
 }
 
 gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,

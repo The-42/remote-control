@@ -34,7 +34,7 @@ struct _RemoteControlRdpWindowClass {
 
 GType remote_control_rdp_window_get_type(void);
 
-GtkWidget *remote_control_rdp_window_new(GMainContext *context);
+GtkWidget *remote_control_rdp_window_new(GMainLoop *loop);
 gboolean remote_control_rdp_window_connect(RemoteControlRdpWindow *self,
 		const gchar *hostname, const gchar *username,
 		const gchar *password, guint delay);
