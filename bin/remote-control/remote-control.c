@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
 	int err;
 
 	if (!XInitThreads())
-		g_debug("XInitThreads() failed");
+		g_printerr("XInitThreads() failed\n");
 
 #if !GLIB_CHECK_VERSION(2, 31, 0)
 	if (!g_thread_supported())
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
 	g_option_context_add_main_entries(options, entries, NULL);
 
 	if (!g_option_context_parse(options, &argc, &argv, &error)) {
-		g_print("option parsing failed: %s\n", error->message);
+		g_printerr("option parsing failed: %s\n", error->message);
 		return EXIT_FAILURE;
 	}
 
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
 
 	if (version) {
 		char *copy = strdup(argv[0]);
-		printf("%s %s\n", basename(copy), VERSION);
+		g_print("%s %s\n", basename(copy), VERSION);
 		free(copy);
 		return EXIT_SUCCESS;
 	}
@@ -518,7 +518,7 @@ int main(int argc, char *argv[])
 	g_assert(context != NULL);
 
 	if (!setup_signal_handlers(loop)) {
-		g_print("failed to setup signal handlers\n");
+		g_printerr("failed to setup signal handlers\n");
 		return EXIT_FAILURE;
 	}
 
