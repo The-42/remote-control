@@ -196,7 +196,7 @@ static void child_watch(GPid pid, gint status, gpointer data)
 	priv->watch = NULL;
 	priv->xfreerdp = 0;
 
-	start_delayed(data, RDP_DELAY_RETRY);
+	g_main_loop_quit(priv->loop);
 }
 
 gboolean remote_control_rdp_window_connect(RemoteControlRdpWindow *self,
