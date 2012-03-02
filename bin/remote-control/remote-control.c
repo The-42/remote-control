@@ -511,6 +511,18 @@ int main(int argc, char *argv[])
 		return EXIT_SUCCESS;
 	}
 
+	if (config_file == NULL)
+		config_file = g_strdup(default_config_file);
+
+	conf = remote_control_load_configuration(config_file, &error);
+	if (!conf) {
+		g_printerr("failed to load configuration: %s\n",
+				error->message);
+		g_clear_error(&error);
+	}
+
+	g_free(config_file);
+
 	loop = g_main_loop_new(NULL, FALSE);
 	g_assert(loop != NULL);
 
@@ -520,15 +532,6 @@ int main(int argc, char *argv[])
 	if (!setup_signal_handlers(loop)) {
 		g_printerr("failed to setup signal handlers\n");
 		return EXIT_FAILURE;
-	}
-
-	if (config_file == NULL)
-		config_file = g_strdup(default_config_file);
-
-	conf = remote_control_load_configuration(config_file, &error);
-	if (!conf) {
-		g_debug("failed to load configuration: %s", error->message);
-		g_clear_error(&error);
 	}
 
 #ifdef ENABLE_DBUS
@@ -571,6 +574,5 @@ int main(int argc, char *argv[])
 #endif
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
-	g_free(config_file);
 	return EXIT_SUCCESS;
 }
