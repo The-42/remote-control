@@ -1,0 +1,245 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+		"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+
+<refentry id="remote-control.conf">
+	<refentryinfo>
+		<title>remote-control.conf</title>
+		<productname>@PACKAGE@</productname>
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Thierry</firstname>
+				<surname>Reding</surname>
+				<email>thierry.reding@avionic-design.de</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>remote-control.conf</refentrytitle>
+		<manvolnum>5</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>remote-control.conf</refname>
+		<refpurpose>remote-control configuration file</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<para><filename>remote-control.conf</filename></para>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			remote-control reads its configuration from the
+			following sources. Each subsequent source overrides
+			configuration data of the previous sources.
+		</para>
+		<variablelist>
+			<varlistentry>
+				<term><filename>/etc/remote-control.conf.d/*.conf</filename></term>
+				<listitem><para>
+					Each of these files will be parsed
+					and the contents merged with the
+					previous configuration.
+				</para><para>
+					These configuration snippets are
+					especially useful for device type
+					specific configuration.
+				</para></listitem>
+			</varlistentry>
+			<varlistentry>
+				<term><filename>/etc/remote-control.conf</filename></term>
+				<listitem><para>
+					The main configuration file can be
+					used to override any previous
+					configuration data. It is also
+					possible to have all the configuration
+					in this file.
+				</para></listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>Syntax</title>
+		<para>
+			The configuration file syntax is a simple, text-based,
+			key-value syntax based on the .ini file format.
+		</para>
+		<para>
+			Configuration data is composed of groups, where each
+			group configures one specific software component. The
+			following groups are supported:
+		</para>
+		<variablelist>
+			<varlistentry>
+				<term><varname>rdp</varname> - RDP session configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>hostname</varname></term>
+							<listitem><para>
+								Hostname of RDP server to connect to.
+								This can be either a DNS name or an
+								IP address.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>username</varname></term>
+							<listitem><para>
+								Name of user to connect as.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>password</varname></term>
+							<listitem><para>
+								Password to identify with.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+			<varlistentry>
+				<term><varname>browser</varname> - WWW session configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>uri</varname></term>
+							<listitem><para>
+								URI to open in the browser.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+			<varlistentry>
+				<term><varname>modem</varname> - modem configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>device</varname></term>
+							<listitem><para>
+								The TTY device to use to communicate with the
+								modem.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>flags</varname></term>
+							<listitem><para>
+								A bitmask of the following flags OR'ed together.
+								<variablelist>
+									<varlistentry>
+										<term><literal>DIRECT</literal></term>
+										<listitem><para>
+											The modem is directly connected to the
+											audio equipment. If this flag is not
+											specified the modem is assumed to send
+											and receive audio data interleaved in
+											the command stream. (Value: 0x1)
+										</para></listitem>
+									</varlistentry>
+									<varlistentry>
+										<term><literal>TOGGLE_HOOK</literal></term>
+										<listitem><para>
+											Enable a workaround for some modems that
+											require the hook to be toggled when
+											hanging up to prevent crashes of the
+											modem hardware. (Value: 0x2)
+										</para></listitem>
+									</varlistentry>
+									<varlistentry>
+										<term><literal>ECHO</literal></term>
+										<listitem><para>
+											Enable command echoing. This is disabled
+											by default because it can lead to problems
+											in the AT command parser. (Value: 0x4)
+										</para></listitem>
+									</varlistentry>
+								</variablelist>
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>vls</varname></term>
+							<listitem><para>
+								Analog source and destination selection. This value
+								is directly passed to the AT+VLS command.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>atl</varname></term>
+							<listitem><para>
+								Speaker volume. This value is directly passed to the
+								ATL command.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+			<varlistentry>
+				<term><varname>watchdog</varname> - software watchdog configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>timeout</varname></term>
+							<listitem><para>
+								Specifies the watchdog timeout (in milliseconds).
+								If the program stops pinging the watchdog, the
+								watchdog will terminate the program after this
+								interval. If all goes well, the watchdog will be
+								pinged three times during this interval to ensure
+								that if one of the pings is delayed for a little
+								it will not cause the watchdog to terminate the
+								remote-control process.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+			<varlistentry>
+				<term><varname>logging</varname> - logging configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>target</varname></term>
+							<listitem><para>
+								<variablelist>
+									<varlistentry>
+										<term><literal>stdio</literal></term>
+										<listitem><para>
+											Logs to <filename>stdout</filename> or
+											<filename>stderr</filename> respectively.
+											This is the default.
+										</para></listitem>
+									</varlistentry>
+									<varlistentry>
+										<term><literal>syslog</literal></term>
+										<listitem><para>
+											Logs to the <filename>syslog</filename>
+											facility.
+										</para></listitem>
+									</varlistentry>
+								</variablelist>
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>Example</title>
+		<programlisting>[browser]
+uri = http://www.google.com/ncr
+
+[watchdog]
+timeout = 13000
+</programlisting>
+	</refsect1>
+</refentry>
+
+<!-- vim: set ts=8 sts=8 sw=8: -->

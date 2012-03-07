@@ -4,4 +4,5 @@ SUBDIRS = \
 	src \
 	bin \
 	data \
+	doc \
 	tests

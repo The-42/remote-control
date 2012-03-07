@@ -13,6 +13,8 @@ AC_PROG_LIBTOOL
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
+AC_PROG_SED
+AX_PROG_XSLTPROC
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5 gio-2.0)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
@@ -306,6 +308,7 @@ AC_OUTPUT([
 	bin/utils/Makefile
 	data/de.avionic-design.RemoteControl.service
 	data/Makefile
+	doc/Makefile
 	Makefile
 	src/client/Makefile
 	src/client/remote-control.pc
