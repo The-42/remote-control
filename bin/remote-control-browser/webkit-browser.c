@@ -484,6 +484,17 @@ static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDo
 	GtkWidget *view;
 	gint page;
 
+	/*
+	 * In kiosk mode, only a single tab can be open at a time because
+	 * there are no controls available to navigate or close tabs. To
+	 * allow viewing PDF files we need to remove the existing tab and
+	 * open a new one with the PDF viewer instead.
+	 */
+	if (!gtk_notebook_get_show_tabs(priv->notebook)) {
+		page = gtk_notebook_get_current_page(priv->notebook);
+		gtk_notebook_remove_page(priv->notebook, page);
+	}
+
 	if (!webkit_browser_can_open_tab(browser))
 		return -1;
 
