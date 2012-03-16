@@ -17,6 +17,7 @@
 
 #include "webkit-browser.h"
 #include "gkeyfile.h"
+#include "utils.h"
 
 static const gchar default_configfile[] = SYSCONF_DIR "/browser.conf";
 
@@ -75,6 +76,17 @@ static void on_realize(GtkWidget *widget, gpointer data)
 	}
 }
 
+static void on_uri_notify(GObject *object, GParamSpec *spec, gpointer data)
+{
+	struct watchdog *watchdog = data;
+	gchar *message;
+
+	message = webkit_browser_get_uri(WEBKIT_BROWSER(object));
+	g_debug("watchdog: new message: %s", message);
+	watchdog_set_message(watchdog, message);
+	g_free(message);
+}
+
 GKeyFile *load_configuration(const gchar *filename, GError **error)
 {
 	GKeyFile *keyfile;
@@ -102,6 +114,7 @@ GKeyFile *load_configuration(const gchar *filename, GError **error)
 
 int main(int argc, char *argv[])
 {
+	struct watchdog *watchdog;
 	GOptionContext *options;
 	GMainContext *context;
 	GError *error = NULL;
@@ -142,6 +155,13 @@ int main(int argc, char *argv[])
 	context = g_main_loop_get_context(loop);
 	g_assert(context != NULL);
 
+	/* activate watchdog */
+	watchdog = watchdog_new(conf, NULL);
+	if (watchdog) {
+		g_debug("D-Bus Watchdog activated");
+		watchdog_attach(watchdog, context);
+	}
+
 	browser = webkit_browser_new(geometry);
 	g_object_set(browser, "keyboard", !noosk, NULL);
 	g_object_set(browser, "controls", !kiosk, NULL);
@@ -151,12 +171,15 @@ int main(int argc, char *argv[])
 			loop);
 	g_signal_connect(G_OBJECT(browser), "realize", G_CALLBACK(on_realize),
 			NULL);
+	g_signal_connect(G_OBJECT(browser), "notify::uri", G_CALLBACK(on_uri_notify),
+			watchdog);
 	webkit_browser_load_uri(WEBKIT_BROWSER(browser), uri);
 
 	gtk_widget_show(browser);
 
 	g_main_loop_run(loop);
 
+	watchdog_unref(watchdog);
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
 
