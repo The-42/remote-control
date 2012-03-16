@@ -95,21 +95,22 @@ gboolean load_configuration(const gchar *filename, GError **error)
 int main(int argc, char *argv[])
 {
 	static const gchar configfile[] = SYSCONF_DIR "/browser.conf";
-	GOptionContext *context;
+	GOptionContext *options;
 	GError *error = NULL;
 	GtkWidget *browser;
 	gchar *uri = NULL;
 
-	context = g_option_context_new("- standalone browser");
-	g_option_context_add_main_entries(context, entries, NULL);
-	g_option_context_add_group(context, gtk_get_option_group(TRUE));
+	/* parse command-line */
+	options = g_option_context_new("- standalone browser");
+	g_option_context_add_main_entries(options, entries, NULL);
+	g_option_context_add_group(options, gtk_get_option_group(TRUE));
 
-	if (!g_option_context_parse(context, &argc, &argv, &error)) {
+	if (!g_option_context_parse(options, &argc, &argv, &error)) {
 		g_print("option parsing failed: %s\n", error->message);
 		return 1;
 	}
 
-	g_option_context_free(context);
+	g_option_context_free(options);
 
 	if (!load_configuration(configfile, &error)) {
 		g_printerr("failed to load `%s': %s\n", configfile,
