@@ -48,7 +48,9 @@ static GOptionEntry entries[] = {
 
 static void on_destroy(GtkWidget *widget, gpointer data)
 {
-	gtk_main_quit();
+	GMainLoop *loop = data;
+
+	g_main_loop_quit(loop);
 }
 
 static void on_realize(GtkWidget *widget, gpointer data)
@@ -96,9 +98,11 @@ int main(int argc, char *argv[])
 {
 	static const gchar configfile[] = SYSCONF_DIR "/browser.conf";
 	GOptionContext *options;
+	GMainContext *context;
 	GError *error = NULL;
 	GtkWidget *browser;
 	gchar *uri = NULL;
+	GMainLoop *loop;
 
 	/* parse command-line */
 	options = g_option_context_new("- standalone browser");
@@ -123,20 +127,29 @@ int main(int argc, char *argv[])
 	else
 		uri = argv[1];
 
+	/* setup main loop */
+	loop = g_main_loop_new(NULL, FALSE);
+	g_assert(loop != NULL);
+
+	context = g_main_loop_get_context(loop);
+	g_assert(context != NULL);
+
 	browser = webkit_browser_new(geometry);
 	g_object_set(browser, "keyboard", !noosk, NULL);
 	g_object_set(browser, "controls", !kiosk, NULL);
 	g_object_set(browser, "accept-language", language, NULL);
 
 	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
-			NULL);
+			loop);
 	g_signal_connect(G_OBJECT(browser), "realize", G_CALLBACK(on_realize),
 			NULL);
 	webkit_browser_load_uri(WEBKIT_BROWSER(browser), uri);
 
 	gtk_widget_show(browser);
 
-	gtk_main();
+	g_main_loop_run(loop);
+
+	g_main_loop_unref(loop);
 
 	return 0;
 }

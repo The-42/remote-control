@@ -235,7 +235,9 @@ static void on_keyboard_clicked(GtkWidget *widget, gpointer data)
 
 static void on_exit_clicked(GtkWidget *widget, gpointer data)
 {
-	gtk_main_quit();
+	GtkWidget *window = GTK_WIDGET(data);
+
+	gtk_widget_destroy(window);
 }
 
 static void webkit_browser_realize(GtkWidget *widget)
@@ -653,7 +655,7 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	item = gtk_tool_button_new(NULL, NULL);
 	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "exit");
 	g_signal_connect(G_OBJECT(item), "clicked",
-			G_CALLBACK(on_exit_clicked), NULL);
+			G_CALLBACK(on_exit_clicked), browser);
 	gtk_toolbar_insert(priv->toolbar, item, -1);
 	gtk_widget_show(GTK_WIDGET(item));
 
