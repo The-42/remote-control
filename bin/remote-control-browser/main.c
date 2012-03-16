@@ -18,6 +18,9 @@
 #include "webkit-browser.h"
 #include "gkeyfile.h"
 
+static const gchar default_configfile[] = SYSCONF_DIR "/browser.conf";
+
+static const gchar *configfile = default_configfile;
 static gchar *geometry = NULL;
 static gboolean noosk = FALSE;
 static gboolean kiosk = FALSE;
@@ -25,6 +28,10 @@ static gchar *language = NULL;
 static gboolean cursor = FALSE;
 
 static GOptionEntry entries[] = {
+	{
+		"config", 'f', 0, G_OPTION_ARG_FILENAME, &configfile,
+		"Configuration file", NULL
+	},
 	{
 		"geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry,
 		"Window geometry", NULL
@@ -68,13 +75,13 @@ static void on_realize(GtkWidget *widget, gpointer data)
 	}
 }
 
-gboolean load_configuration(const gchar *filename, GError **error)
+GKeyFile *load_configuration(const gchar *filename, GError **error)
 {
 	GKeyFile *keyfile;
 
 	keyfile = g_key_file_new_from_path(filename, G_KEY_FILE_NONE, error);
 	if (!keyfile)
-		return FALSE;
+		return NULL;
 
 	if (g_key_file_has_group(keyfile, "localization")) {
 		if (!language && g_key_file_has_key(keyfile, "localization",
@@ -83,26 +90,25 @@ gboolean load_configuration(const gchar *filename, GError **error)
 					"localization", "languages", error);
 			if (!language) {
 				g_key_file_free(keyfile);
-				return FALSE;
+				return NULL;
 			}
 		}
 
 		g_clear_error(error);
 	}
 
-	g_key_file_free(keyfile);
-	return TRUE;
+	return keyfile;
 }
 
 int main(int argc, char *argv[])
 {
-	static const gchar configfile[] = SYSCONF_DIR "/browser.conf";
 	GOptionContext *options;
 	GMainContext *context;
 	GError *error = NULL;
 	GtkWidget *browser;
 	gchar *uri = NULL;
 	GMainLoop *loop;
+	GKeyFile *conf;
 
 	/* parse command-line */
 	options = g_option_context_new("- standalone browser");
@@ -116,7 +122,9 @@ int main(int argc, char *argv[])
 
 	g_option_context_free(options);
 
-	if (!load_configuration(configfile, &error)) {
+	/* load configuration file */
+	conf = load_configuration(configfile, &error);
+	if (!conf) {
 		g_printerr("failed to load `%s': %s\n", configfile,
 				error->message);
 		g_clear_error(&error);
@@ -150,6 +158,7 @@ int main(int argc, char *argv[])
 	g_main_loop_run(loop);
 
 	g_main_loop_unref(loop);
+	g_key_file_free(conf);
 
 	return 0;
 }
