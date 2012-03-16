@@ -39,6 +39,7 @@ enum {
 	PROP_KEYBOARD,
 	PROP_CONTROLS,
 	PROP_ACCEPT_LANGUAGE,
+	PROP_URI,
 };
 
 struct _WebKitBrowserPrivate {
@@ -56,6 +57,7 @@ struct _WebKitBrowserPrivate {
 	gchar *geometry;
 	gboolean keyboard;
 	gboolean controls;
+	gchar *uri;
 };
 
 static void webkit_browser_get_property(GObject *object, guint prop_id,
@@ -81,6 +83,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 	case PROP_ACCEPT_LANGUAGE:
 		language = soup_session_get_accept_language(session);
 		g_value_take_string(value, language);
+		break;
+
+	case PROP_URI:
+		g_value_set_string(value, priv->uri);
 		break;
 
 	default:
@@ -122,6 +128,9 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 	case PROP_ACCEPT_LANGUAGE:
 		language = g_value_get_string(value);
 		soup_session_set_accept_language(session, language);
+		break;
+
+	case PROP_URI:
 		break;
 
 	default:
@@ -184,6 +193,10 @@ static void on_notify_uri(WebKitWebView *webkit, GParamSpec *pspec, WebKitBrowse
 	if (webkit == view) {
 		const gchar *uri = webkit_web_view_get_uri(webkit);
 		gtk_entry_set_text(priv->entry, uri);
+
+		g_free(priv->uri);
+		priv->uri = g_strdup(uri);
+		g_object_notify(G_OBJECT(browser), "uri");
 	}
 }
 
@@ -792,6 +805,10 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 				"Accept-Language string",
 				NULL,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_URI,
+			g_param_spec_string("uri", "URI", "URI", NULL,
+				G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 GtkWidget *webkit_browser_new(const gchar *geometry)
@@ -821,4 +838,11 @@ void webkit_browser_load_uri(WebKitBrowser *browser, const gchar *uri)
 			g_object_unref(canonical);
 		}
 	}
+}
+
+gchar *webkit_browser_get_uri(WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	return g_strdup(priv->uri);
 }

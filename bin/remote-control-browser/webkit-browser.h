@@ -32,6 +32,7 @@ GType webkit_browser_get_type(void) G_GNUC_CONST;
 
 GtkWidget *webkit_browser_new(const gchar *geometry);
 void webkit_browser_load_uri(WebKitBrowser *browser, const gchar *uri);
+gchar *webkit_browser_get_uri(WebKitBrowser *browser);
 
 G_END_DECLS
 
