@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
 		watchdog_attach(watchdog, context);
 	}
 
+	/* create and show browser window */
 	browser = webkit_browser_new(geometry);
 	g_object_set(browser, "keyboard", !noosk, NULL);
 	g_object_set(browser, "controls", !kiosk, NULL);
