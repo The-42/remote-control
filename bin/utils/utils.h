@@ -16,6 +16,12 @@ gchar *soup_session_get_accept_language(SoupSession *session);
 void soup_session_set_accept_language(SoupSession *session,
 		const gchar *language);
 
+struct watchdog;
+struct watchdog *watchdog_new(GKeyFile *conf, GError **error);
+void watchdog_unref(struct watchdog *watchdog);
+void watchdog_attach(struct watchdog *watchdog, GMainContext *context);
+void watchdog_set_message(struct watchdog *watchdog, const gchar *fmt, ...);
+
 G_END_DECLS
 
 #endif /* UTILS_H */
