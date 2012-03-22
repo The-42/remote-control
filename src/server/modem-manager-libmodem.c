@@ -221,8 +221,13 @@ static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 	g_return_val_if_fail(config != NULL, -EINVAL);
 	g_return_val_if_fail(desc != NULL, -EINVAL);
 
+	if (!g_key_file_has_group(config, "modem")) {
+		g_debug("modem-libmodem: no configuration for modem found");
+		return -EIO;
+	}
+
 	device = g_key_file_get_value(config, "modem", "device", &error);
-	if (!device) {
+	if (error || !device) {
 		var = "device";
 		goto out;
 	}
