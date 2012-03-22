@@ -340,11 +340,9 @@ GSource *modem_manager_get_source(struct modem_manager *manager)
 	return manager ? &manager->source : NULL;
 }
 
-int modem_manager_initialize(struct modem_manager *manager)
+static int modem_manager_reset_modem(struct modem_manager *manager)
 {
 	int err;
-
-	g_return_val_if_fail(manager != NULL, -EINVAL);
 
 	if (!manager->modem)
 		return -ENODEV;
@@ -352,40 +350,28 @@ int modem_manager_initialize(struct modem_manager *manager)
 	g_free(manager->number);
 	manager->number = NULL;
 
-	err = modem_command(manager->modem, 5000, "ATZ");
+	err = modem_reset(manager->modem);
 	if (err < 0) {
-		g_debug("modem-libmodem: failed to reset modem: %s",
-				strerror(-err));
-		return err;
+		g_debug("modem-libmodem: modem_reset(): %s", strerror(-err));
+		return -err;
 	}
 
 	manager->state = MODEM_STATE_IDLE;
-
 	return 0;
+}
+
+int modem_manager_initialize(struct modem_manager *manager)
+{
+	g_return_val_if_fail(manager != NULL, -EINVAL);
+
+	return modem_manager_reset_modem(manager);
 }
 
 int modem_manager_shutdown(struct modem_manager *manager)
 {
-	int err;
-
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
-	if (!manager->modem)
-		return -ENODEV;
-
-	g_free(manager->number);
-	manager->number = NULL;
-
-	err = modem_command(manager->modem, 5000, "ATZ");
-	if (err < 0) {
-		g_debug("modem-libmodem: failed to reset modem: %s",
-				strerror(-err));
-		return err;
-	}
-
-	manager->state = MODEM_STATE_IDLE;
-
-	return 0;
+	return modem_manager_reset_modem(manager);
 }
 
 int modem_manager_call(struct modem_manager *manager, const char *number)
@@ -479,7 +465,7 @@ int modem_manager_terminate(struct modem_manager *manager)
 	 */
 	if (err < 0) {
 		g_debug("modem-libmodem: recovering, resetting modem");
-		err = modem_command(manager->modem, 5000, "ATZ");
+		err = modem_manager_reset_modem(manager);
 	}
 
 	manager->state = MODEM_STATE_IDLE;
