@@ -13,6 +13,8 @@
 			<value name="AUDIO_STATE_VOICECALL_IP_HANDSET" value="30"/>
 			<value name="AUDIO_STATE_VOICECALL_IP_HEADSET"/>
 			<value name="AUDIO_STATE_VOICECALL_IP_SPEAKER"/>
+			<value name="AUDIO_STATE_LINEIN_SPEAKER" value="40"/>
+			<value name="AUDIO_STATE_LINEIN_HEADSET"/>
 			<value name="AUDIO_STATE_MAX"/>
 		</enum>
 		<enum name="mixer_control" mnemonic="u32">

@@ -124,6 +124,14 @@ static const struct ucm_state ucm_states[] = {
 		.verb = SND_USE_CASE_VERB_IP_VOICECALL,
 		.device = SND_USE_CASE_DEV_SPEAKER,
 	},
+	[AUDIO_STATE_LINEIN_SPEAKER] = {
+		.verb = SND_USE_CASE_VERB_ANALOG_RADIO,
+		.device = SND_USE_CASE_DEV_SPEAKER,
+	},
+	[AUDIO_STATE_LINEIN_HEADSET] = {
+		.verb = SND_USE_CASE_VERB_ANALOG_RADIO,
+		.device = SND_USE_CASE_DEV_HEADSET,
+	},
 };
 
 static int control_set_volume(const char *control, long volume)

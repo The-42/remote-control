@@ -60,6 +60,14 @@ int32_t RPC_IMPL(audio_set_state)(void *priv, enum RPC_TYPE(audio_state) state,
 		as = AUDIO_STATE_VOICECALL_IP_SPEAKER;
 		break;
 
+	case RPC_MACRO(AUDIO_STATE_LINEIN_SPEAKER):
+		as = AUDIO_STATE_LINEIN_SPEAKER;
+		break;
+
+	case RPC_MACRO(AUDIO_STATE_LINEIN_HEADSET):
+		as = AUDIO_STATE_LINEIN_HEADSET;
+		break;
+
 	default:
 		ret = -EINVAL;
 		goto out;
@@ -119,6 +127,14 @@ int32_t RPC_IMPL(audio_get_state)(void *priv, enum RPC_TYPE(audio_state) *statep
 
 	case AUDIO_STATE_VOICECALL_IP_SPEAKER:
 		*statep = RPC_MACRO(AUDIO_STATE_VOICECALL_IP_SPEAKER);
+		break;
+
+	case AUDIO_STATE_LINEIN_SPEAKER:
+		*statep = RPC_MACRO(AUDIO_STATE_LINEIN_SPEAKER);
+		break;
+
+	case AUDIO_STATE_LINEIN_HEADSET:
+		*statep = RPC_MACRO(AUDIO_STATE_LINEIN_HEADSET);
 		break;
 
 	default:
