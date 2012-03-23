@@ -241,6 +241,15 @@ static const LinphoneCoreVTable vtable = {
 	.show = linphone_show_cb,
 };
 
+static void linphone_log(OrtpLogLevel level, const char *fmt, va_list ap)
+{
+	if (level >= ORTP_WARNING) {
+		gchar *message = g_strdup_vprintf(fmt, ap);
+		g_debug("voip-linphone: * %s", message);
+		g_free(message);
+	}
+}
+
 static gboolean voip_timeout(gpointer user_data)
 {
 	struct voip *voip = user_data;
@@ -270,6 +279,8 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 	}
 
 	g_source_set_callback(voip->timeout, voip_timeout, voip, NULL);
+
+	linphone_core_enable_logs_with_cb(linphone_log);
 
 	voip->core = linphone_core_new(&vtable, NULL, factory_config, rc);
 	if (!voip->core) {
