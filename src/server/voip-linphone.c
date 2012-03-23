@@ -259,11 +259,32 @@ static gboolean voip_timeout(gpointer user_data)
 	return TRUE;
 }
 
-int voip_create(struct voip **voipp, struct rpc_server *server)
+static void voip_disable_codec(struct voip *voip, const char *mime_type)
+{
+	const MSList *codecs;
+	const MSList *node;
+
+	codecs = linphone_core_get_audio_codecs(voip->core);
+
+	for (node = codecs; node; node = ms_list_next(node)) {
+		PayloadType *pt = node->data;
+
+		if (g_ascii_strcasecmp(pt->mime_type, mime_type) == 0) {
+			linphone_core_enable_payload_type(voip->core, pt, 0);
+			g_debug("voip-linphone: disabling payload type: %s, "
+				"%d Hz", pt->mime_type, pt->clock_rate);
+		}
+	}
+}
+
+int voip_create(struct voip **voipp, struct rpc_server *server,
+		GKeyFile *config)
 {
 	const char *factory_config = SYSCONF_DIR "/linphone.conf";
 	struct remote_control *rc = rpc_server_priv(server);
 	struct voip *voip;
+	gchar **codecs;
+	gboolean ec;
 
 	if (!voipp)
 		return -EINVAL;
@@ -288,6 +309,27 @@ int voip_create(struct voip **voipp, struct rpc_server *server)
 		g_free(voip);
 		return -ENOMEM;
 	}
+
+	codecs = g_key_file_get_string_list(config, "linphone",
+			"disable-codecs", NULL, NULL);
+	if (codecs) {
+		gchar **codec;
+
+		for (codec = codecs; *codec; codec++)
+			voip_disable_codec(voip, *codec);
+
+		g_strfreev(codecs);
+	}
+
+	/*
+	 * We don't bother checking for errors here because by default we want
+	 * to turn echo cancellation off, which is the value returned by the
+	 * g_key_file_get_boolean() function if the key either was not found
+	 * or cannot be interpreted as a boolean.
+	 */
+	ec = g_key_file_get_boolean(config, "linphone", "echo-cancellation", NULL);
+	g_debug("voip-linphone: echo cancellation %sabled", ec ? "en" : "dis");
+	linphone_core_enable_echo_cancellation(voip->core, ec);
 
 	voip->contact = NULL;
 

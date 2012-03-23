@@ -228,6 +228,28 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>linphone</varname> - Linphone configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>disable-codecs</varname></term>
+							<listitem><para>
+								Specifies a list of codecs to disable, separated by
+								semi-colons (;). By default all codecs are enabled.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>echo-cancellation</varname></term>
+							<listitem><para>
+								Setting this variable to <literal>true</literal> will enable
+								the echo canceller. A value of <literal>false</literal>
+								disables it. This is the default.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -238,6 +260,10 @@ uri = http://www.google.com/ncr
 
 [watchdog]
 timeout = 13000
+
+[linphone]
+disable-codecs = speex;g722
+echo-cancellation = true
 </programlisting>
 	</refsect1>
 </refentry>

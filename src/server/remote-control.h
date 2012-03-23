@@ -256,7 +256,8 @@ enum voip_state {
 
 struct voip;
 
-int voip_create(struct voip **voipp, struct rpc_server *server);
+int voip_create(struct voip **voipp, struct rpc_server *server,
+		GKeyFile *config);
 int voip_free(struct voip *voip);
 GSource *voip_get_source(struct voip *voip);
 int voip_login(struct voip *voip, const char *server, uint16_t port,
