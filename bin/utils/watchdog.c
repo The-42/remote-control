@@ -51,6 +51,9 @@ struct watchdog *watchdog_new(GKeyFile *conf, GError **error)
 	struct watchdog *watchdog;
 	guint64 timeout;
 
+	if (!conf)
+		return NULL;
+
 	if (!g_key_file_has_key(conf, "watchdog", "timeout", error))
 		return NULL;
 
