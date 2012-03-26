@@ -182,7 +182,9 @@ int main(int argc, char *argv[])
 
 	watchdog_unref(watchdog);
 	g_main_loop_unref(loop);
-	g_key_file_free(conf);
+
+	if (conf)
+		g_key_file_free(conf);
 
 	return 0;
 }
