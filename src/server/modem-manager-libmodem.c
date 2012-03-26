@@ -352,8 +352,9 @@ static int modem_manager_reset_modem(struct modem_manager *manager)
 
 	err = modem_reset(manager->modem);
 	if (err < 0) {
-		g_debug("modem-libmodem: modem_reset(): %s", strerror(-err));
-		return -err;
+		g_debug("modem-libmodem: failed to reset modem: %s",
+				strerror(-err));
+		return err;
 	}
 
 	manager->state = MODEM_STATE_IDLE;
