@@ -15,3 +15,10 @@ BUILT_SOURCES = remote-control.conf.xml
 
 man_MANS = \
 	remote-control.conf.5
+
+EXTRA_DIST = \
+	remote-control.conf.xml.in
+
+CLEANFILES = \
+	$(BUILT_SOURCES) \
+	$(man_MANS)
