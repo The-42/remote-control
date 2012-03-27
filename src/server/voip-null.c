@@ -13,7 +13,8 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int voip_create(struct voip **voipp, struct rpc_server *server)
+int voip_create(struct voip **voipp, struct rpc_server *server,
+		GKeyFile *config)
 {
 	return 0;
 }
