@@ -227,6 +227,20 @@ static void on_uri_activate(GtkWidget *widget, gpointer data)
 	webkit_browser_load_uri(browser, uri);
 }
 
+static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+	GtkEditable *editable = GTK_EDITABLE(widget);
+	gboolean focus;
+
+	if(!GTK_WIDGET_HAS_FOCUS (widget)) {
+		gtk_editable_select_region(editable, 0, -1);
+		gtk_widget_grab_focus(widget);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 static void on_go_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowser *browser = WEBKIT_BROWSER(data);
@@ -640,6 +654,8 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	priv->entry = GTK_ENTRY(widget);
 	g_signal_connect(G_OBJECT(widget), "activate",
 			G_CALLBACK(on_uri_activate), browser);
+	g_signal_connect(G_OBJECT(widget), "button-press-event",
+			G_CALLBACK(on_uri_focus), NULL);
 	gtk_widget_show(widget);
 
 	item = gtk_tool_item_new();
