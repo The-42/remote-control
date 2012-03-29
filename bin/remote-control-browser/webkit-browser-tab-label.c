@@ -88,6 +88,9 @@ void webkit_browser_tab_label_set_loading(WebKitBrowserTabLabel *label,
 	WebKitBrowserTabLabelPrivate *priv =
 		WEBKIT_BROWSER_TAB_LABEL_GET_PRIVATE(label);
 
+	if(!priv)
+		return;
+
 	if (loading) {
 		gtk_widget_show(GTK_WIDGET(priv->spinner));
 		gtk_spinner_start(priv->spinner);
