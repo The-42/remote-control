@@ -23,8 +23,11 @@
 
 #include "javascript.h"
 
+/*
+ * TODO: Make this a configuration setting.
+ */
 #define DEFAULT_IR_PORT_VIBRANTE "/dev/ttyHS2"
-#define DEFAULT_IR_PORT_CHROMIUM "/dev/ttyS1" /* S0 is debug */
+#define DEFAULT_IR_PORT_CHROMIUM "/dev/ttyS2" /* S1 is modem */
 
 #define HEADER_VERSION_MASK     0x0F
 #define HEADER_VERSION_SHIFT    0
