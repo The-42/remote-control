@@ -264,17 +264,24 @@ static void on_uri_activate(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	GtkEntry *entry = GTK_ENTRY(widget);
-	const gchar *uri = gtk_entry_get_text(entry);
+	WebKitWebView *webkit;
+	const gchar *uri;
+
+	webkit = webkit_browser_get_current_view(browser);
+	uri = gtk_entry_get_text(entry);
 
 	webkit_browser_load_uri(browser, uri);
+	gtk_widget_grab_focus(GTK_WIDGET(webkit));
 }
 
 static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
+	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
-	gboolean focus;
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
-	if(!GTK_WIDGET_HAS_FOCUS (widget)) {
+	gtk_toggle_tool_button_set_active(priv->toggle, true);
+	if (!GTK_WIDGET_HAS_FOCUS(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
 		gtk_widget_grab_focus(widget);
 		return TRUE;
@@ -597,8 +604,11 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 	gint page;
 
 	page = webkit_browser_append_tab(browser, NULL, FALSE);
-	if (page >= 0)
+	if (page >= 0) {
 		gtk_notebook_set_current_page(priv->notebook, page);
+		gtk_widget_grab_focus(GTK_WIDGET(priv->entry));
+		gtk_toggle_tool_button_set_active(priv->toggle, true);
+	}
 }
 
 static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
@@ -706,7 +716,7 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	g_signal_connect(G_OBJECT(widget), "activate",
 			G_CALLBACK(on_uri_activate), browser);
 	g_signal_connect(G_OBJECT(widget), "button-press-event",
-			G_CALLBACK(on_uri_focus), NULL);
+			G_CALLBACK(on_uri_focus), browser);
 	gtk_widget_show(widget);
 
 	item = gtk_tool_item_new();
@@ -727,7 +737,7 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->toggle),
 			"input-keyboard");
-	g_signal_connect(G_OBJECT(priv->toggle), "clicked",
+	g_signal_connect(G_OBJECT(priv->toggle), "toggled",
 			G_CALLBACK(on_keyboard_clicked), browser);
 	gtk_toolbar_insert(priv->toolbar, GTK_TOOL_ITEM(priv->toggle), -1);
 	gtk_widget_show(GTK_WIDGET(priv->toggle));
