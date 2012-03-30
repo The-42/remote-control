@@ -31,19 +31,25 @@ static void webkit_browser_tab_label_init(WebKitBrowserTabLabel *self)
 	gtk_box_set_homogeneous(box, FALSE);
 	gtk_box_set_spacing(box, 2);
 
+	widget = gtk_label_new("New Tab");
+	gtk_label_set_ellipsize(GTK_LABEL(widget), PANGO_ELLIPSIZE_END);
+	gtk_misc_set_alignment(GTK_MISC(widget), 0.0, 0.5);
+	priv->title = GTK_LABEL(widget);
+
+	PangoFontDescription *font_desc = pango_font_description_new();
+	pango_font_description_set_size(font_desc, 14 * PANGO_SCALE);
+	gtk_widget_modify_font(widget, font_desc);
+	pango_font_description_free(font_desc);
+
+	gtk_widget_show(widget);
+
+	gtk_box_pack_start(box, widget, TRUE, TRUE, 0);
+
 	widget = gtk_spinner_new();
 	priv->spinner = GTK_SPINNER(widget);
 	gtk_widget_hide(widget);
 
 	gtk_box_pack_start(box, widget, FALSE, FALSE, 0);
-
-	widget = gtk_label_new("New Tab");
-	gtk_label_set_ellipsize(GTK_LABEL(widget), PANGO_ELLIPSIZE_END);
-	gtk_misc_set_alignment(GTK_MISC(widget), 0.0, 0.5);
-	priv->title = GTK_LABEL(widget);
-	gtk_widget_show(widget);
-
-	gtk_box_pack_start(box, widget, TRUE, TRUE, 0);
 }
 
 static void webkit_browser_tab_label_finalize(GObject *object)
