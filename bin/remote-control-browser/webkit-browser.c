@@ -168,6 +168,48 @@ static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
 	}
 }
 
+static void on_notify_load_status_global(WebKitWebView *webkit,
+		GParamSpec *pspec, WebKitBrowser *browser)
+{
+	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	switch (status) {
+	case WEBKIT_LOAD_COMMITTED:
+		gtk_toggle_tool_button_set_active(priv->toggle, false);
+		break;
+
+	case WEBKIT_LOAD_FINISHED:
+	case WEBKIT_LOAD_FAILED:
+		gtk_entry_set_progress_fraction(priv->entry, 0.0);
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+static void on_notify_progres(WebKitWebView *webkit, GParamSpec *pspec,
+		WebKitBrowser *browser)
+{
+
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
+
+	gdouble progress = webkit_web_view_get_progress(webkit);
+
+	switch (status) {
+	case WEBKIT_LOAD_FINISHED:
+	case WEBKIT_LOAD_FAILED:
+		progress = 0.0;
+		break;
+	default:
+		break;
+	}
+	gtk_entry_set_progress_fraction(priv->entry, progress);
+}
+
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
@@ -497,6 +539,10 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status), label);
+	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
+			G_CALLBACK(on_notify_load_status_global), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::progress",
+			G_CALLBACK(on_notify_progres), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::title",
 			G_CALLBACK(on_notify_title), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
