@@ -776,7 +776,7 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(button), image);
 	g_signal_connect(G_OBJECT(button), "clicked",
 			G_CALLBACK(on_del_tab_clicked), browser);
-	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 10);
 	gtk_widget_show_all(button);
 
 	gtk_notebook_set_action_widget(priv->notebook, hbox, GTK_PACK_END);
