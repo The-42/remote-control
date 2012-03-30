@@ -697,6 +697,11 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 
 	/* address entry */
 	widget = gtk_entry_new();
+	PangoFontDescription *font_desc = pango_font_description_new();
+	pango_font_description_set_size(font_desc, 16 * PANGO_SCALE);
+	gtk_widget_modify_font(widget, font_desc);
+	pango_font_description_free(font_desc);
+
 	priv->entry = GTK_ENTRY(widget);
 	g_signal_connect(G_OBJECT(widget), "activate",
 			G_CALLBACK(on_uri_activate), browser);
