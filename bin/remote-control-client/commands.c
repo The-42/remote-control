@@ -886,6 +886,36 @@ const struct cli_command_info cmd_modem_terminate _command_ = {
 };
 
 /*
+ * "modem-reset" command
+ */
+static int exec_modem_reset(struct cli *cli, int argc, char *argv[])
+{
+	int32_t err;
+
+	err = remote_modem_deinit(cli->client);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	err = remote_modem_init(cli->client);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_modem_reset _command_ = {
+	.name = "modem-reset",
+	.summary = "reset the modem",
+	.help = "No options",
+	.options = NULL,
+	.exec = exec_modem_reset,
+};
+
+/*
  * "rfid-read" command
  */
 static int exec_rfid_read(struct cli *cli, int argc, char *argv[])
