@@ -189,14 +189,12 @@ static void on_notify_load_status_global(WebKitWebView *webkit,
 	}
 }
 
-
 static void on_notify_progres(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowser *browser)
 {
 
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
-
 	gdouble progress = webkit_web_view_get_progress(webkit);
 
 	switch (status) {
