@@ -16,8 +16,10 @@
 #include "javascript.h"
 
 static int javascript_register_avionic_design(JSGlobalContextRef js,
-		GMainContext *context, WebKitWebFrame *frame,
-		JSObjectRef parent, const char *name)
+                                              JSObjectRef parent,
+                                              const char *name,
+                                              GMainLoop *loop,
+                                              RemoteControlWebkitWindow *window)
 {
 	JSValueRef exception = NULL;
 	JSObjectRef object;
@@ -26,21 +28,21 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 
 	object = JSObjectMake(js, NULL, NULL);
 
-	err = javascript_register_cursor(js, frame, object, "Cursor");
+	err = javascript_register_cursor(js, object, "Cursor", window);
 	if (err < 0) {
 		g_warning("%s: failed to register Cursor object: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}
 
-	err = javascript_register_input(js, context, object, "Input");
+	err = javascript_register_input(js, object, "Input", loop);
 	if (err < 0) {
 		g_warning("%s: failed to register Input object: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}
 
-	err = javascript_register_ir(js, context, object, "IR");
+	err = javascript_register_ir(js, object, "IR", loop);
 	if (err < 0) {
 		g_warning("%s: failed to register IR object: %s",
 			__func__, g_strerror(-err));
@@ -84,14 +86,11 @@ static int javascript_register_classes(void)
 	return 0;
 }
 
-int javascript_register(WebKitWebFrame *frame, GMainContext *context)
+int javascript_register(JSGlobalContextRef context,
+                        struct javascript_userdata *user_data)
 {
-	JSGlobalContextRef jsc;
 	JSObjectRef object;
 	int err;
-
-	jsc = webkit_web_frame_get_global_context(frame);
-	g_assert(jsc != NULL);
 
 	err = javascript_register_classes();
 	if (err < 0) {
@@ -100,10 +99,12 @@ int javascript_register(WebKitWebFrame *frame, GMainContext *context)
 		return err;
 	}
 
-	object = JSContextGetGlobalObject(jsc);
+	object = JSContextGetGlobalObject(context);
 
-	err = javascript_register_avionic_design(jsc, context, frame, object,
-			"AvionicDesign");
+	err = javascript_register_avionic_design(context, object,
+	                                         "AvionicDesign",
+	                                         user_data->loop,
+	                                         user_data->window);
 	if (err < 0) {
 		g_debug("failed to register AvionicDesign object: %s",
 				g_strerror(-err));

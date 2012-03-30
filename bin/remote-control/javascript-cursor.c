@@ -21,7 +21,7 @@
 struct cursor {
 	GdkDisplay *display;
 	GdkScreen *screen;
-	GdkWindow *window;
+	RemoteControlWebkitWindow *window;
 };
 
 static void set_exception_text(JSContextRef context,JSValueRef *exception,
@@ -243,21 +243,17 @@ int javascript_register_cursor_class(void)
 	return 0;
 }
 
-int javascript_register_cursor(JSContextRef js, WebKitWebFrame *frame,
-                               JSObjectRef parent, const char *name)
+int javascript_register_cursor(JSContextRef js, JSObjectRef parent,
+                               const char *name, void *user_data)
 {
 	JSValueRef exception = NULL;
-	struct cursor *priv;
-	WebKitWebView *view;
 	JSObjectRef object;
 	JSStringRef string;
+	struct cursor *priv;
 
 	priv = g_new0(struct cursor, 1);
 	if (!priv)
 		return -ENOMEM;
-
-	view = webkit_web_frame_get_web_view(frame);
-	g_assert(view != NULL);
 
 	priv->display = gdk_display_get_default();
 	g_assert(priv->display != NULL);
@@ -265,8 +261,9 @@ int javascript_register_cursor(JSContextRef js, WebKitWebFrame *frame,
 	priv->screen = gdk_display_get_default_screen(priv->display);
 	g_assert(priv->screen != NULL);
 
-	priv->window = gtk_widget_get_window(GTK_WIDGET(view));
+	priv->window = user_data;
 	g_assert(priv->window != NULL);
+	g_assert(REMOTE_CONTROL_IS_WEBKIT_WINDOW(priv->window));
 
 	object = JSObjectMake(js, cursor_class, priv);
 

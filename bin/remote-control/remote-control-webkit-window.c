@@ -151,18 +151,25 @@ static void webkit_finalize(GObject *object)
 static void webkit_on_notify_load_status(WebKitWebView *webkit,
                                          GParamSpec *pspec, gpointer data)
 {
+	RemoteControlWebkitWindow *window = REMOTE_CONTROL_WEBKIT_WINDOW(data);
 	RemoteControlWebkitWindowPrivate *priv =
-		REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(data);
+	                REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(window);
 	WebKitLoadStatus status;
 
 	status = webkit_web_view_get_load_status(webkit);
-
 	if (status == WEBKIT_LOAD_COMMITTED) {
 		WebKitWebFrame *frame = webkit_web_view_get_main_frame(webkit);
-		GMainContext *context = g_main_loop_get_context(priv->loop);
+		struct javascript_userdata user;
+		JSGlobalContextRef context;
 		int err;
 
-		err = javascript_register(frame, context);
+		user.loop =  priv->loop;
+		user.window = window;
+
+		context = webkit_web_frame_get_global_context(frame);
+		g_assert(context != NULL);
+
+		err = javascript_register(context, &user);
 		if (err < 0) {
 			g_debug("failed to register JavaScript API: %s",
 					g_strerror(-err));

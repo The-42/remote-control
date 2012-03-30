@@ -320,9 +320,10 @@ int javascript_register_input_class(void)
 	return 0;
 }
 
-int javascript_register_input(JSContextRef js, GMainContext *context,
-		JSObjectRef parent, const char *name)
+int javascript_register_input(JSContextRef js, JSObjectRef parent,
+                              const char *name, void *user_data)
 {
+	GMainLoop *loop = user_data;
 	JSValueRef exception;
 	JSObjectRef object;
 	JSStringRef string;
@@ -334,7 +335,7 @@ int javascript_register_input(JSContextRef js, GMainContext *context,
 
 	object = JSObjectMake(js, input_class, source);
 
-	g_source_attach(source, context);
+	g_source_attach(source, g_main_loop_get_context(loop));
 	g_source_unref(source);
 
 	string = JSStringCreateWithUTF8CString(name);
