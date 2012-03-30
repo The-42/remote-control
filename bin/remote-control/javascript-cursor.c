@@ -192,7 +192,7 @@ static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
                                   JSStringRef property, JSValueRef *exception)
 {
 	struct cursor *priv = JSObjectGetPrivate(object);
-	GdkCursor *cursor;
+	gboolean hidden;
 
 	if (!priv) {
 		set_exception_text(context, exception,
@@ -200,18 +200,9 @@ static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
-	g_assert(priv->window != NULL);
+	g_object_get(GTK_WINDOW(priv->window), "hide-cursor", &hidden, NULL);
 
-	cursor = gdk_window_get_cursor(priv->window);
-	if (!cursor) {
-		set_exception_text(context, exception, "window has no cursor");
-		return JSValueMakeBoolean(context, FALSE);
-	}
-
-	if (gdk_cursor_get_cursor_type(cursor) == GDK_BLANK_CURSOR)
-		return JSValueMakeBoolean(context, FALSE);
-
-	return JSValueMakeBoolean(context, TRUE);
+	return JSValueMakeBoolean(context, !hidden);
 }
 
 static bool cursor_set_show(JSContextRef context, JSObjectRef object,
@@ -219,7 +210,7 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
                             JSValueRef *exception)
 {
 	struct cursor *priv = JSObjectGetPrivate(object);
-	GdkCursor *cursor;
+	gboolean enable;
 
 	if (!priv) {
 		set_exception_text(context, exception,
@@ -227,27 +218,13 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
 		return false;
 	}
 
-
 	if (!JSValueIsBoolean(context, value)) {
 		set_exception_text(context, exception, "not a boolean");
 		return false;
 	}
 
-	if (JSValueToBoolean(context, value)) {
-		cursor = gdk_window_get_cursor(priv->window);
-		if (!cursor) {
-			cursor = gdk_cursor_new_for_display(priv->display,
-			                                    GDK_X_CURSOR);
-		}
-	} else {
-		cursor = gdk_cursor_new_for_display(priv->display,
-		                                    GDK_BLANK_CURSOR);
-	}
-
-	g_assert(priv->window != NULL);
-
-	gdk_window_set_cursor(priv->window, cursor);
-	gdk_cursor_unref(cursor);
+	enable = JSValueToBoolean(context, value);
+	g_object_set(GTK_WINDOW(priv->window), "hide-cursor", !enable, NULL);
 
 	return true;
 }
