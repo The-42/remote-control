@@ -25,6 +25,7 @@ static void webkit_browser_tab_label_init(WebKitBrowserTabLabel *self)
 {
 	WebKitBrowserTabLabelPrivate *priv =
 		WEBKIT_BROWSER_TAB_LABEL_GET_PRIVATE(self);
+	PangoFontDescription *font_desc;
 	GtkBox *box = GTK_BOX(self);
 	GtkWidget *widget;
 
@@ -36,7 +37,7 @@ static void webkit_browser_tab_label_init(WebKitBrowserTabLabel *self)
 	gtk_misc_set_alignment(GTK_MISC(widget), 0.0, 0.5);
 	priv->title = GTK_LABEL(widget);
 
-	PangoFontDescription *font_desc = pango_font_description_new();
+	font_desc = pango_font_description_new();
 	pango_font_description_set_size(font_desc, 14 * PANGO_SCALE);
 	gtk_widget_modify_font(widget, font_desc);
 	pango_font_description_free(font_desc);

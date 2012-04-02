@@ -680,6 +680,7 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	PangoFontDescription *font_desc;
 	GtkWidget *toolbar;
 	GtkToolItem *item;
 	GtkWidget *widget;
@@ -705,7 +706,7 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 
 	/* address entry */
 	widget = gtk_entry_new();
-	PangoFontDescription *font_desc = pango_font_description_new();
+	font_desc = pango_font_description_new();
 	pango_font_description_set_size(font_desc, 16 * PANGO_SCALE);
 	gtk_widget_modify_font(widget, font_desc);
 	pango_font_description_free(font_desc);
