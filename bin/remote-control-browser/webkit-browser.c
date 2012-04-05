@@ -274,11 +274,11 @@ static void on_uri_activate(GtkWidget *widget, gpointer data)
 
 static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	WebKitBrowser *browser = WEBKIT_BROWSER(data);
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
-	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
 	gtk_toggle_tool_button_set_active(priv->toggle, true);
+
 	if (!GTK_WIDGET_HAS_FOCUS(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
 		gtk_widget_grab_focus(widget);
