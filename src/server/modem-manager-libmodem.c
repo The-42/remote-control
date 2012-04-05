@@ -352,7 +352,7 @@ static int modem_manager_reset_modem(struct modem_manager *manager)
 
 	err = modem_reset(manager->modem);
 	if (err < 0) {
-		g_debug("modem-libmodem: failed to reset modem: %s",
+		g_critical("modem-libmodem: failed to reset modem: %s",
 				strerror(-err));
 		return err;
 	}
@@ -429,7 +429,10 @@ int modem_manager_accept(struct modem_manager *manager)
 
 	err = modem_accept(manager->modem, NULL, 0);
 	if (err < 0) {
-		manager->state = MODEM_STATE_IDLE;
+		g_critical("modem-libmodem: failed to accept incoming call: %s",
+			   g_strerror(-err));
+		g_critical("modem-libmodem: resetting modem...");
+		modem_manager_reset_modem(manager->modem);
 		return err;
 	}
 
