@@ -112,6 +112,28 @@ static enum media_player_state player_gst_state_2_media_state(GstState state)
 	}
 }
 
+static void set_webkit_appsrc_rank(guint rank)
+{
+	   GstRegistry *registry = gst_registry_get_default();
+	   GstPluginFeature *feature;
+
+	   /* FIXME: the appsrc is used by webkit to provide there own httpsrc,
+		*        and this source is buggy and has a memory leak. */
+	   feature = gst_registry_lookup_feature(registry, "appsrc");
+	   if (feature) {
+			   g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+			   gst_plugin_feature_set_rank(feature, rank);
+			   gst_object_unref(feature);
+	   }
+
+	   feature = gst_registry_lookup_feature(registry, "webkitwebsrc");
+	   if (feature) {
+			   g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+			   gst_plugin_feature_set_rank(feature, rank);
+			   gst_object_unref(feature);
+	   }
+}
+
 static void handle_message_state_change(struct media_player *player, GstMessage *message)
 {
 	GstState pending = GST_STATE_VOID_PENDING;
@@ -491,12 +513,15 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	ad = player->displaytype == NV_DISPLAY_TYPE_HDMI ? "hdmi" : "default";
 	pipe = g_strdup_printf(PIPELINE, ad, uri);
 
+	set_webkit_appsrc_rank(GST_RANK_NONE);
+
 	player->pipeline = gst_parse_launch_full(pipe, NULL, GST_PARSE_FLAG_FATAL_ERRORS, &error);
 	if (!player->pipeline) {
 		g_warning("no pipe: %s\n", error->message);
 		goto cleanup;
 	}
 
+	set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
 
 	/* setup message handling */
 	bus = gst_pipeline_get_bus(GST_PIPELINE(player->pipeline));
@@ -941,6 +966,8 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	if (err < 0)
 		g_warning("   unable to get state");
 
+	set_webkit_appsrc_rank(GST_RANK_NONE);
+
 	/* because url can be valid, but we do not know the content, we can
 	 * not be sure that the chain can handle the new url we destroy the
 	 * old and create a new. this is the safest way */
@@ -960,6 +987,9 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 									  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
 		}
 	}
+
+	set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
+
 	g_debug("< %s()", __func__);
 	return err;
 }
