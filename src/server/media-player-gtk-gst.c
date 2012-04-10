@@ -177,24 +177,24 @@ static void player_check_audio_tracks(GstElement *playbin,
 
 static void set_webkit_appsrc_rank(guint rank)
 {
-	   GstRegistry *registry = gst_registry_get_default();
-	   GstPluginFeature *feature;
+		GstRegistry *registry = gst_registry_get_default();
+		GstPluginFeature *feature;
 
-	   /* FIXME: the appsrc is used by webkit to provide there own httpsrc,
-		*        and this source is buggy and has a memory leak. */
-	   feature = gst_registry_lookup_feature(registry, "appsrc");
-	   if (feature) {
-			   g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
-			   gst_plugin_feature_set_rank(feature, rank);
-			   gst_object_unref(feature);
-	   }
+		/* FIXME: the appsrc is used by webkit to provide there own httpsrc,
+		 *        and this source is buggy and has a memory leak. */
+		feature = gst_registry_lookup_feature(registry, "appsrc");
+		if (feature) {
+				g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+				gst_plugin_feature_set_rank(feature, rank);
+				gst_object_unref(feature);
+		}
 
-	   feature = gst_registry_lookup_feature(registry, "webkitwebsrc");
-	   if (feature) {
-			   g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
-			   gst_plugin_feature_set_rank(feature, rank);
-			   gst_object_unref(feature);
-	   }
+		feature = gst_registry_lookup_feature(registry, "webkitwebsrc");
+		if (feature) {
+				g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+				gst_plugin_feature_set_rank(feature, rank);
+				gst_object_unref(feature);
+		}
 }
 
 static void handle_message_state_change(struct media_player *player, GstMessage *message)
