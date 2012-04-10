@@ -77,6 +77,8 @@ struct media_player {
 	int scale;          /* the scaler mode we have chosen */
 	int displaytype;
 	bool have_nv_omx;
+
+	gchar **preferred_languages;
 };
 
 #if 0
@@ -109,6 +111,64 @@ static enum media_player_state player_gst_state_2_media_state(GstState state)
 		return MEDIA_PLAYER_PAUSED;
 	case GST_STATE_PLAYING:
 		return MEDIA_PLAYER_PLAYING;
+	}
+}
+
+static int player_get_language_code_priority(struct media_player *player,
+											 const gchar *language_code)
+{
+	gchar **language = player->preferred_languages;
+	int priority = 0;
+
+	while (*language) {
+		if (g_ascii_strcasecmp(language_code, *language) == 0)
+			return priority;
+
+		priority++;
+		language++;
+	}
+
+	return -1;
+}
+
+static void player_check_audio_tracks(GstElement *playbin,
+									  gpointer user_data)
+{
+	struct media_player *player = (struct media_player*)user_data;
+	GstTagList *taglist = NULL;
+	int track_priority = -1;
+	int select_track = -1;
+	guint n_audio;
+	int i;
+
+	g_object_get(G_OBJECT(playbin), "n-audio", &n_audio, NULL);
+
+	for (i = 0; i < n_audio; i++) {
+		g_signal_emit_by_name(playbin, "get-audio-tags", i, &taglist);
+
+		if (taglist) {
+			gchar *language_code = NULL;
+			int priority;
+
+			gst_structure_get (GST_STRUCTURE(taglist), "language-code",
+							   G_TYPE_STRING, &language_code, NULL);
+			priority =
+					player_get_language_code_priority(player, language_code);
+
+			if (priority > -1 && (track_priority > priority ||
+								  track_priority == -1)) {
+				track_priority = priority;
+				select_track = i;
+			}
+
+			gst_tag_list_free(taglist);
+			g_free(language_code);
+		}
+	}
+
+	if (select_track != -1) {
+		g_print("Select audio track %d\n", select_track);
+		g_object_set(G_OBJECT(playbin), "current-audio", select_track, NULL);
 	}
 }
 
@@ -147,6 +207,10 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 			gst_element_state_get_name(old_state),
 			gst_element_state_get_name(new_state),
 			gst_element_state_get_name(pending));
+
+		if (new_state == GST_STATE_PLAYING) {
+			player_check_audio_tracks(player->pipeline, player);
+		}
 	}
 }
 
@@ -532,6 +596,10 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 		ret = 0;
 	}
 
+	g_signal_connect (player->pipeline, "audio-changed",
+					  G_CALLBACK (player_check_audio_tracks),
+					  player);
+
 cleanup:
 	if (error)
 		g_error_free(error);
@@ -881,10 +949,23 @@ static int player_xrandr_configure_screen(struct media_player *player,
 }
 #endif
 
+static void media_player_load_config(struct media_player *player, GKeyFile *config)
+{
+	if (!g_key_file_has_group(config, "media-player")) {
+		g_debug("media-player-gtk-gst: no configuration for media-player found");
+		return -EIO;
+	}
+
+	player->preferred_languages =
+			g_key_file_get_string_list(config, "media-player",
+									   "preferred-languages", NULL, NULL);
+	g_debug("Preferred languages: %p\n", player->preferred_languages);
+}
+
 /**
  * HERE comes the part for remote-control
  */
-int media_player_create(struct media_player **playerp)
+int media_player_create(struct media_player **playerp, GKeyFile *config)
 {
 	struct media_player *player = NULL;
 	int ret = -1;
@@ -898,6 +979,8 @@ int media_player_create(struct media_player **playerp)
 		g_warning("out of memory\n");
 		return -ENOMEM;
 	}
+
+	media_player_load_config(player, config);
 
 	g_debug("   setting up gstreamer...");
 	ret = player_init_gstreamer(player);

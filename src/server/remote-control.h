@@ -171,7 +171,7 @@ enum media_player_state {
 
 struct media_player;
 
-int media_player_create(struct media_player **playerp);
+int media_player_create(struct media_player **playerp, GKeyFile *config);
 int media_player_free(struct media_player *player);
 int media_player_set_output_window(struct media_player *player,
 		unsigned int x, unsigned int y, unsigned int width,

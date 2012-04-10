@@ -15,7 +15,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int media_player_create(struct media_player **playerp)
+int media_player_create(struct media_player **playerp, GKeyFile *config)
 {
 	return 0;
 }

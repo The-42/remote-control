@@ -67,7 +67,7 @@ static void on_vout(const struct libvlc_event_t *event, void *data)
 		g_idle_add(show_window, player->window);
 }
 
-int media_player_create(struct media_player **playerp)
+int media_player_create(struct media_player **playerp, GKeyFile *config)
 {
 	GdkWindowAttr attributes = {
 		.width = 320,

@@ -324,7 +324,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = media_player_create(&rc->player);
+	err = media_player_create(&rc->player, config);
 	if (err < 0) {
 		g_error("media_player_create(): %s", strerror(-err));
 		return err;
