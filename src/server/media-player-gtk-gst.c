@@ -120,6 +120,9 @@ static int player_get_language_code_priority(struct media_player *player,
 	gchar **language = player->preferred_languages;
 	int priority = 0;
 
+	if (language == NULL)
+		return -1;
+
 	while (*language) {
 		if (g_ascii_strcasecmp(language_code, *language) == 0)
 			return priority;
