@@ -959,10 +959,8 @@ static int player_xrandr_configure_screen(struct media_player *player,
 
 static void media_player_load_config(struct media_player *player, GKeyFile *config)
 {
-	if (!g_key_file_has_group(config, "media-player")) {
+	if (!g_key_file_has_group(config, "media-player"))
 		g_debug("media-player-gtk-gst: no configuration for media-player found");
-		return -EIO;
-	}
 
 	player->preferred_languages =
 			g_key_file_get_string_list(config, "media-player",
