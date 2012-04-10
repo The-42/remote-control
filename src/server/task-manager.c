@@ -122,8 +122,9 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 
 	display = g_getenv("DISPLAY");
 	if (display) {
+		const char *proxy = g_getenv("http_proxy");
 		const char *home = g_getenv("HOME");
-		envp = g_new0(char *, 3);
+		envp = g_new0(char *, 4);
 		if (!envp) {
 			ret = -ENOMEM;
 			goto free;
@@ -131,7 +132,8 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 
 		envp[0] = g_strdup_printf("DISPLAY=%s", display);
 		envp[1] = g_strdup_printf("HOME=%s", home ? home : "/tmp");
-		envp[2] = NULL;
+		envp[2] = proxy ? g_strdup_printf("http_proxy=%s", proxy) : NULL;
+		envp[3] = NULL;
 	}
 
 	if (!g_shell_parse_argv(command_line, &argc, &argv, &error)) {
