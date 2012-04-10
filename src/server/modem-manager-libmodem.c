@@ -432,7 +432,7 @@ int modem_manager_accept(struct modem_manager *manager)
 		g_critical("modem-libmodem: failed to accept incoming call: %s",
 			   g_strerror(-err));
 		g_critical("modem-libmodem: resetting modem...");
-		modem_manager_reset_modem(manager->modem);
+		modem_manager_reset_modem(manager);
 		return err;
 	}
 
