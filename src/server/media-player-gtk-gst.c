@@ -218,6 +218,8 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 		case GST_STATE_PLAYING:
 			player_check_audio_tracks(player->pipeline, player);
 			break;
+		default:
+			break;
 		}
 	}
 }
