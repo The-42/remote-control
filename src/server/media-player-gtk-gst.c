@@ -211,8 +211,13 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 			gst_element_state_get_name(new_state),
 			gst_element_state_get_name(pending));
 
-		if (new_state == GST_STATE_PLAYING) {
+		switch (new_state) {
+		case GST_STATE_PREROLL:
+			set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
+			break;
+		case GST_STATE_PLAYING:
 			player_check_audio_tracks(player->pipeline, player);
+			break;
 		}
 	}
 }
@@ -586,8 +591,6 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 		g_warning("no pipe: %s\n", error->message);
 		goto cleanup;
 	}
-
-	set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
 
 	/* setup message handling */
 	bus = gst_pipeline_get_bus(GST_PIPELINE(player->pipeline));
@@ -1072,8 +1075,6 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 									  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
 		}
 	}
-
-	set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
 
 	g_debug("< %s()", __func__);
 	return err;
