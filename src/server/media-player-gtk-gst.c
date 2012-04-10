@@ -493,11 +493,10 @@ static int player_destroy_pipeline(struct media_player *player)
 static int player_create_software_pipeline(struct media_player *player, const gchar* uri)
 {
 #define PIPELINE \
-	"playbin " \
+	"playbin2 " \
 		"video-sink=\"glessink name=video-out\" " \
 		"audio-sink=\"alsasink name=audio-out device=%s\" " \
-		"delay=600000000 connection-speed=100000 " \
-		"buffer-duration=1800000000 flags=0x00000143 " \
+		"flags=0x00000160 " \
 		"uri=%s"
 
 	GError *error = NULL;
