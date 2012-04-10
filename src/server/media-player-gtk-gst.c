@@ -918,7 +918,7 @@ static int player_xrandr_configure_screen(struct media_player *player,
 			 available_sizes->height, current_rate);
 
 	/* pause gstreamer, to avoid flow errors */
-	gst_ret = player_change_state(player, GST_STATE_READY);
+	gst_ret = player_change_state(player, GST_STATE_PAUSED);
 	if (gst_ret < 0)
 		g_warning ("Failed to pause playback before mode-switch");
 	else {
