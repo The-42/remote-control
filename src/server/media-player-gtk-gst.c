@@ -212,7 +212,7 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 			gst_element_state_get_name(pending));
 
 		switch (new_state) {
-		case GST_STATE_PREROLL:
+		case GST_STATE_READY:
 			set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
 			break;
 		case GST_STATE_PLAYING:
