@@ -114,6 +114,27 @@ static enum media_player_state player_gst_state_2_media_state(GstState state)
 	}
 }
 
+static void player_source_setup(GstElement *playbin, GstElement *source,
+								gpointer user_data)
+{
+	GObjectClass *source_class = NULL;
+	gchar *uri = NULL;
+	user_data = NULL;
+
+	source_class = G_OBJECT_GET_CLASS (source);
+	if (!g_object_class_find_property (source_class, "is-live"))
+		return;
+
+	g_object_get(playbin, "uri", &uri, NULL);
+	g_print("source-setup: %s, uri: %s\n", GST_ELEMENT_NAME(source), uri);
+	if(!g_ascii_strncasecmp(uri, "http://", 7)) {
+		g_print("Playing http source, assume it's a live source\n");
+		g_object_set(G_OBJECT(source), "is-live", true, "do-timestamp", true,
+					 NULL);
+	}
+	g_free(uri);
+}
+
 static int player_get_language_code_priority(struct media_player *player,
 											 const gchar *language_code)
 {
@@ -644,6 +665,10 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	g_signal_connect (player->pipeline, "audio-changed",
 					  G_CALLBACK (player_check_audio_tracks),
 					  player);
+
+	g_signal_connect (player->pipeline, "source-setup",
+					  G_CALLBACK (player_source_setup),
+					  NULL);
 
 cleanup:
 	if (error)
