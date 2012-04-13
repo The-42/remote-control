@@ -16,7 +16,7 @@
 #include <gtkosk/gtkosk.h>
 #include <libsoup/soup-proxy-resolver-default.h>
 
-#include "gtk-drag-view.h"
+#include "katze-scrolled.h"
 #include "webkit-browser.h"
 #include "webkit-browser-tab-label.h"
 #include "gtk-pdf-view.h"
@@ -540,7 +540,8 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit));
 
 	/* TODO: Support GtkDragView with scrollbar */
-	view = gtk_scrolled_window_new(NULL, NULL);
+	view = katze_scrolled_new(NULL, NULL);
+	g_object_set(G_OBJECT(view), "drag-scrolling", TRUE, NULL);
 	gtk_rc_parse_string(style_large);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show(view);

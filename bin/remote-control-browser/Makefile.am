@@ -14,6 +14,8 @@ remote_control_browser_CPPFLAGS = \
 remote_control_browser_SOURCES = \
 	gtk-drag-view.c \
 	gtk-drag-view.h \
+	katze-scrolled.c \
+	katze-scrolled.h \
 	gtk-pdf-view.c \
 	gtk-pdf-view.h \
 	main.c \
