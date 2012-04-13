@@ -501,6 +501,29 @@ static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
 	return WEBKIT_WEB_VIEW(new);
 }
 
+static void webkit_browser_set_user_agent(WebKitWebView *webkit)
+{
+	WebKitWebSettings *settings;
+	gchar *user_agent;
+	gchar *processor;
+
+	settings = webkit_web_settings_new();
+	user_agent = g_strdup(webkit_web_settings_get_user_agent(settings));
+
+	/* if armv7l is set as processor, we simply remove it,
+	 * as some sites load mobile page versions for any arm
+	 * device */
+	processor = g_strstr_len(user_agent, -1, " armv7l");
+	if(processor) {
+		gchar *processor_end = processor + 7;
+		memmove(processor, processor_end, strlen(processor_end)+1);
+	}
+
+	g_object_set(G_OBJECT(settings), "user-agent", user_agent, NULL);
+	webkit_web_view_set_settings (WEBKIT_WEB_VIEW(webkit), settings);
+	g_free(user_agent);
+}
+
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
@@ -514,6 +537,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 
 	/* create WebKit browser */
 	webkit = webkit_web_view_new();
+	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit));
 
 	/* TODO: Support GtkDragView with scrollbar */
 	view = gtk_scrolled_window_new(NULL, NULL);
