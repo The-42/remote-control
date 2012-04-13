@@ -263,6 +263,42 @@ static void handle_message_info(struct media_player *player, GstMessage *message
 	g_free(debug);
 }
 
+static gboolean is_live_source (GstElement *source)
+{
+  GObjectClass *source_class = NULL;
+  gboolean is_live = FALSE;
+
+  source_class = G_OBJECT_GET_CLASS (source);
+  if (!g_object_class_find_property (source_class, "is-live"))
+	return FALSE;
+
+  g_object_get (G_OBJECT (source), "is-live", &is_live, NULL);
+
+  return is_live;
+}
+
+static void handle_message_buffering(struct media_player *player, GstMessage *message)
+{
+	GstState state = GST_STATE_NULL;
+	GstElement *source = NULL;
+	gboolean is_live = true;
+	gint percent = 0;
+
+	gst_message_parse_buffering (message, &percent);
+
+	g_object_get(player->pipeline, "source", &source, NULL);
+	is_live = is_live_source(source);
+
+	if (!is_live && percent < 100 && state == GST_STATE_PLAYING) {
+		g_print("Go to PAUSED for buffering\n");
+		gst_element_set_state(player->pipeline, GST_STATE_PAUSED);
+	} else if(!is_live && percent >= 100 && state == GST_STATE_PAUSED) {
+		g_print("Go to PLAYING as buffering completed\n");
+		gst_element_set_state(player->pipeline, GST_STATE_PLAYING);
+	}
+	g_object_unref(source);
+}
+
 static gboolean player_set_x_overlay(struct media_player *player)
 {
 	GstElement *video_sink;
@@ -426,6 +462,7 @@ static gboolean player_gst_bus_event(GstBus *bus, GstMessage *msg, gpointer data
 	case GST_MESSAGE_TAG:
 		break;
 	case GST_MESSAGE_BUFFERING:
+		handle_message_buffering(player, msg);
 		break;
 	case GST_MESSAGE_STATE_CHANGED:
 		handle_message_state_change(player, msg);
