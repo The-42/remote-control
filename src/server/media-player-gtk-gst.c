@@ -63,10 +63,6 @@ typedef enum {
 #define SCALE_PREVIEW    0
 #define SCALE_FULLSCREEN 1
 
-//#define ENABLE_FIXED_FULLSCREEN
-#define FULLSCREEN_WIDTH 1280
-#define FULLSCREEN_HEIGHT 720
-
 struct media_player {
 	GstElement *pipeline;
 	GdkWindow *window;   /* the window to use for output */
@@ -77,6 +73,10 @@ struct media_player {
 	int scale;          /* the scaler mode we have chosen */
 	int displaytype;
 	bool have_nv_omx;
+
+	bool enable_fixed_fullscreen; /* force a fixed fullscreen resolution */
+	int fullscreen_width;
+	int fullscreen_height;
 
 	gchar **preferred_languages;
 };
@@ -921,7 +921,6 @@ static int player_change_state(struct media_player *player, GstState state)
 	return 0;
 }
 
-#ifdef ENABLE_FIXED_FULLSCREEN
 static int player_xrandr_configure_screen(struct media_player *player,
 								   int width, int height, int rate)
 {
@@ -1017,10 +1016,11 @@ static int player_xrandr_configure_screen(struct media_player *player,
 
 	return 0;
 }
-#endif
 
 static void media_player_load_config(struct media_player *player, GKeyFile *config)
 {
+	GError *err = NULL;
+
 	if (!g_key_file_has_group(config, "media-player"))
 		g_debug("media-player-gtk-gst: no configuration for media-player found");
 
@@ -1028,6 +1028,26 @@ static void media_player_load_config(struct media_player *player, GKeyFile *conf
 			g_key_file_get_string_list(config, "media-player",
 									   "preferred-languages", NULL, NULL);
 	g_debug("Preferred languages: %p\n", player->preferred_languages);
+
+	player->enable_fixed_fullscreen = true;
+
+	player->fullscreen_width =
+			g_key_file_get_integer(config, "media-player", "fullscreen-width",
+								   &err);
+	if (err != NULL) {
+		player->enable_fixed_fullscreen = false;
+		g_error_free(err);
+		err = NULL;
+	}
+
+	player->fullscreen_height =
+			g_key_file_get_integer(config, "media-player",
+								   "fullscreen-height", &err);
+	if (err != NULL) {
+		player->enable_fixed_fullscreen = false;
+		g_error_free(err);
+		err = NULL;
+	}
 }
 
 /**
@@ -1165,12 +1185,12 @@ int media_player_set_output_window(struct media_player *player,
 		return -EINVAL;
 
 	screen = gdk_screen_get_default();
-#ifdef ENABLE_FIXED_FULLSCREEN
-	if ((width >= gdk_screen_get_width(screen)) &&
+	if (player->enable_fixed_fullscreen &&
+		(width >= gdk_screen_get_width(screen)) &&
 		(height >= gdk_screen_get_height(screen))) {
 		if (player->scale != SCALE_FULLSCREEN) {
-			width = FULLSCREEN_WIDTH;
-			height = FULLSCREEN_HEIGHT;
+			width = player->fullscreen_width;
+			height = player->fullscreen_height;
 
 			player_xrandr_configure_screen (player, width, height, 50);
 			player->scale = SCALE_FULLSCREEN;
@@ -1180,7 +1200,6 @@ int media_player_set_output_window(struct media_player *player,
 		player_xrandr_configure_screen (player, -1, -1, 50);
 		player->scale = SCALE_PREVIEW;
 	}
-#endif
 
 	if (player->xid) {
 		GdkDisplay *display = gdk_display_get_default();
