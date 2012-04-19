@@ -161,40 +161,40 @@ static void player_check_audio_tracks(GstElement *playbin,
                                       gpointer user_data)
 {
 	struct media_player *player = (struct media_player*)user_data;
+	gchar *language_code = NULL;
 	GstTagList *taglist = NULL;
 	int track_priority = -1;
 	int select_track = -1;
 	guint n_audio;
+	int priority;
 	int i;
 
 	g_object_get(G_OBJECT(playbin), "n-audio", &n_audio, NULL);
-
+	track_priority = n_audio - 1;
 	for (i = 0; i < n_audio; i++) {
 		g_signal_emit_by_name(playbin, "get-audio-tags", i, &taglist);
+		if (!taglist)
+			continue;
 
-		if (taglist) {
-			gchar *language_code = NULL;
-			int priority;
+		gst_structure_get (GST_STRUCTURE(taglist),
+		                   "language-code", G_TYPE_STRING,
+		                   &language_code, NULL);
 
-			gst_structure_get (GST_STRUCTURE(taglist), "language-code",
-							   G_TYPE_STRING, &language_code, NULL);
-			priority =
-					player_get_language_code_priority(player, language_code);
-
-			if (priority > -1 && (track_priority > priority ||
-								  track_priority == -1)) {
-				track_priority = priority;
-				select_track = i;
-			}
-
-			gst_tag_list_free(taglist);
-			g_free(language_code);
+		priority = player_get_language_code_priority(player,
+		                                             language_code);
+		if (-1 < priority && priority < track_priority) {
+			track_priority = priority;
+			select_track = i;
 		}
+
+		gst_tag_list_free(taglist);
+		g_free(language_code);
 	}
 
 	if (select_track != -1) {
-		g_print("Select audio track %d\n", select_track);
-		g_object_set(G_OBJECT(playbin), "current-audio", select_track, NULL);
+		g_debug("Select audio track %d", select_track);
+		g_object_set(G_OBJECT(playbin), "current-audio",
+		             select_track, NULL);
 	}
 }
 
