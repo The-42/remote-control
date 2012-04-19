@@ -587,8 +587,7 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus,
 static int player_window_init(struct media_player *player)
 {
 	GdkWindowAttr attributes = {
-//		.width = 320, .height = 240,
-		.x = 34, .y = 55, .width = 765, .height = 422,
+		.x = 0, .y = 0, .width = 854, .height = 480,
 		.wclass = GDK_INPUT_OUTPUT,
 		.window_type = GDK_WINDOW_CHILD,
 		.override_redirect = TRUE,
