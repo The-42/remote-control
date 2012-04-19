@@ -23,7 +23,9 @@
 #include <gst/gst.h>
 #include <gst/interfaces/xoverlay.h>
 
+#if defined(HAVE_XRANDR_H)
 #include <X11/extensions/Xrandr.h>
+#endif
 
 //#include <gst/playback/gstplay-enum.h> // not public
 typedef enum {
@@ -821,7 +823,7 @@ static int player_init_gstreamer(struct media_player *player)
 
 	return 0;
 }
-
+#if defined(HAVE_XRANDR_H)
 	/* only valid for vibrante */
 static int tegra_display_name_to_type(const gchar *name)
 {
@@ -846,9 +848,11 @@ static int tegra_display_name_to_type(const gchar *name)
 
 	return NV_DISPLAY_TYPE_DEFAULT;
 }
+#endif
 
 static int player_find_display_type(struct media_player *player)
 {
+#if defined(HAVE_XRANDR_H)
 	XRRScreenResources *screen_res;
 	XRROutputInfo *output_info;
 	GdkDisplay *display;
@@ -904,6 +908,7 @@ static int player_find_display_type(struct media_player *player)
 	}
 
 	XRRFreeScreenResources(screen_res);
+#endif
 	return 0;
 }
 
@@ -923,6 +928,7 @@ static int player_change_state(struct media_player *player, GstState state)
 	return 0;
 }
 
+#if defined(HAVE_XRANDR_H)
 static int player_xrandr_configure_screen(struct media_player *player,
 								   int width, int height, int rate)
 {
@@ -1018,6 +1024,7 @@ static int player_xrandr_configure_screen(struct media_player *player,
 
 	return 0;
 }
+#endif
 
 static void media_player_load_config(struct media_player *player, GKeyFile *config)
 {
@@ -1187,6 +1194,8 @@ int media_player_set_output_window(struct media_player *player,
 		return -EINVAL;
 
 	screen = gdk_screen_get_default();
+
+#if defined(HAVE_XRANDR_H)
 	if (player->enable_fixed_fullscreen &&
 		(width >= gdk_screen_get_width(screen)) &&
 		(height >= gdk_screen_get_height(screen))) {
@@ -1202,7 +1211,7 @@ int media_player_set_output_window(struct media_player *player,
 		player_xrandr_configure_screen (player, -1, -1, 50);
 		player->scale = SCALE_PREVIEW;
 	}
-
+#endif
 	if (player->xid) {
 		GdkDisplay *display = gdk_display_get_default();
 		Display *xdisplay =  gdk_x11_display_get_xdisplay(display);
