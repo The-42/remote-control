@@ -138,7 +138,7 @@ static void player_source_setup(GstElement *playbin, GstElement *source,
 }
 
 static int player_get_language_code_priority(struct media_player *player,
-											 const gchar *language_code)
+                                             const gchar *language_code)
 {
 	gchar **language = player->preferred_languages;
 	int priority = 0;
@@ -158,7 +158,7 @@ static int player_get_language_code_priority(struct media_player *player,
 }
 
 static void player_check_audio_tracks(GstElement *playbin,
-									  gpointer user_data)
+                                      gpointer user_data)
 {
 	struct media_player *player = (struct media_player*)user_data;
 	GstTagList *taglist = NULL;
@@ -200,24 +200,24 @@ static void player_check_audio_tracks(GstElement *playbin,
 
 static void set_webkit_appsrc_rank(guint rank)
 {
-		GstRegistry *registry = gst_registry_get_default();
-		GstPluginFeature *feature;
+	GstRegistry *registry = gst_registry_get_default();
+	GstPluginFeature *feature;
 
-		/* FIXME: the appsrc is used by webkit to provide there own httpsrc,
-		 *        and this source is buggy and has a memory leak. */
-		feature = gst_registry_lookup_feature(registry, "appsrc");
-		if (feature) {
-				g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
-				gst_plugin_feature_set_rank(feature, rank);
-				gst_object_unref(feature);
-		}
+	/* FIXME: the appsrc is used by webkit to provide there own httpsrc,
+	 *        and this source is buggy and has a memory leak. */
+	feature = gst_registry_lookup_feature(registry, "appsrc");
+	if (feature) {
+		g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+		gst_plugin_feature_set_rank(feature, rank);
+		gst_object_unref(feature);
+	}
 
-		feature = gst_registry_lookup_feature(registry, "webkitwebsrc");
-		if (feature) {
-				g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
-				gst_plugin_feature_set_rank(feature, rank);
-				gst_object_unref(feature);
-		}
+	feature = gst_registry_lookup_feature(registry, "webkitwebsrc");
+	if (feature) {
+		g_debug("   update %s priority", gst_plugin_feature_get_name(feature));
+		gst_plugin_feature_set_rank(feature, rank);
+		gst_object_unref(feature);
+	}
 }
 
 static void handle_message_state_change(struct media_player *player, GstMessage *message)
@@ -649,7 +649,8 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 
 	set_webkit_appsrc_rank(GST_RANK_NONE);
 
-	player->pipeline = gst_parse_launch_full(pipe, NULL, GST_PARSE_FLAG_FATAL_ERRORS, &error);
+	player->pipeline = gst_parse_launch_full(pipe, NULL,
+	                        GST_PARSE_FLAG_FATAL_ERRORS, &error);
 	if (!player->pipeline) {
 		g_warning("no pipe: %s\n", error->message);
 		goto cleanup;
@@ -666,8 +667,8 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	}
 
 	g_signal_connect (player->pipeline, "audio-changed",
-					  G_CALLBACK (player_check_audio_tracks),
-					  player);
+	                  G_CALLBACK (player_check_audio_tracks),
+	                  player);
 
 	g_signal_connect (player->pipeline, "source-setup",
 					  G_CALLBACK (player_source_setup),
@@ -929,7 +930,7 @@ static int player_change_state(struct media_player *player, GstState state)
 
 #if defined(HAVE_XRANDR_H)
 static int player_xrandr_configure_screen(struct media_player *player,
-								   int width, int height, int rate)
+                                          int width, int height, int rate)
 {
 	XRRScreenConfiguration *conf;
 	XRRScreenResources *screen_res;
@@ -970,10 +971,11 @@ static int player_xrandr_configure_screen(struct media_player *player,
 	if (width == -1 && height == -1) {
 		current_size_id = 0;
 	} else if (available_sizes[current_size_id].width != width ||
-			   available_sizes[current_size_id].height != height) {
+	           available_sizes[current_size_id].height != height)
+	{
 		for (i = 0; i < nsizes; i++, available_sizes++) {
 			if (available_sizes->width == width &&
-					available_sizes->height == height) {
+			    available_sizes->height == height) {
 				current_size_id = i;
 				break;
 			}
@@ -1007,8 +1009,8 @@ static int player_xrandr_configure_screen(struct media_player *player,
 	}
 
 	ret = XRRSetScreenConfigAndRate (display, conf, rootwindow,
-									 current_size_id, original_rotation,
-									 current_rate, CurrentTime);
+	                                 current_size_id, original_rotation,
+	                                 current_rate, CurrentTime);
 	if (ret != Success) {
 		g_warning ("xrandr: could not change display settings: %d", ret);
 	}
@@ -1032,25 +1034,22 @@ static void media_player_load_config(struct media_player *player, GKeyFile *conf
 	if (!g_key_file_has_group(config, "media-player"))
 		g_debug("media-player-gtk-gst: no configuration for media-player found");
 
-	player->preferred_languages =
-			g_key_file_get_string_list(config, "media-player",
-									   "preferred-languages", NULL, NULL);
+	player->preferred_languages = g_key_file_get_string_list(config,
+			"media-player", "preferred-languages", NULL, NULL);
 	g_debug("Preferred languages: %p\n", player->preferred_languages);
 
 	player->enable_fixed_fullscreen = true;
 
-	player->fullscreen_width =
-			g_key_file_get_integer(config, "media-player", "fullscreen-width",
-								   &err);
+	player->fullscreen_width = g_key_file_get_integer(config,
+			"media-player", "fullscreen-width", &err);
 	if (err != NULL) {
 		player->enable_fixed_fullscreen = false;
 		g_error_free(err);
 		err = NULL;
 	}
 
-	player->fullscreen_height =
-			g_key_file_get_integer(config, "media-player",
-								   "fullscreen-height", &err);
+	player->fullscreen_height = g_key_file_get_integer(config,
+			"media-player", "fullscreen-height", &err);
 	if (err != NULL) {
 		player->enable_fixed_fullscreen = false;
 		g_error_free(err);
@@ -1197,8 +1196,9 @@ int media_player_set_output_window(struct media_player *player,
 
 #if defined(HAVE_XRANDR_H)
 	if (player->enable_fixed_fullscreen &&
-		(width >= gdk_screen_get_width(screen)) &&
-		(height >= gdk_screen_get_height(screen))) {
+	    (width >= gdk_screen_get_width(screen)) &&
+	    (height >= gdk_screen_get_height(screen)))
+	{
 		if (player->scale != SCALE_FULLSCREEN) {
 			width = player->fullscreen_width;
 			height = player->fullscreen_height;
@@ -1259,7 +1259,7 @@ int media_player_set_output_window(struct media_player *player,
 
 		/* inform the gstreamer output window about the change. this
 		 * step will be removed as soon as the  have-x-window-handle
- 		 * or prepare-x-window-handle notification is working */
+		 * or prepare-x-window-handle notification is working */
 		if (player->scale != SCALE_FULLSCREEN && player->pipeline)
 			tegra_omx_window_move(player, x, y, width, height);
 	}
@@ -1363,9 +1363,9 @@ int media_player_set_position(struct media_player *player,
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
 	if (!gst_element_seek(player->pipeline, 1.0, GST_FORMAT_TIME,
-						  GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
-						  position * GST_MSECOND, GST_SEEK_TYPE_NONE,
-						  GST_CLOCK_TIME_NONE))
+	                      GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
+	                      position * GST_MSECOND, GST_SEEK_TYPE_NONE,
+	                      GST_CLOCK_TIME_NONE))
 		return -EINVAL;
 
 	return 0;
