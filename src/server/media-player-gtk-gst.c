@@ -1120,6 +1120,7 @@ int media_player_free(struct media_player *player)
 	if (!player)
 		return -EINVAL;
 
+	g_strfreev(player->preferred_languages);
 	gst_element_set_state(player->pipeline, GST_STATE_NULL);
 	gst_object_unref(player->pipeline);
 	gst_deinit();
