@@ -249,8 +249,8 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 
 static int handle_message_error(struct media_player *player, GstMessage *message)
 {
-	GError *err;
-	gchar *debug;
+	GError *err = NULL;
+	gchar *debug = NULL;
 
 	gst_message_parse_error(message, &err, &debug);
 	g_printf("ERROR from element %s: %s\n",
