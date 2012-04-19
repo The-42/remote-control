@@ -558,8 +558,6 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus,
 		}
 		break;
 
-	case GST_MESSAGE_ERROR:
-		ret = handle_message_error(player, message);
 	case GST_MESSAGE_EOS:
 		player_show_output(player, FALSE);
 		g_debug("**  hiding window %s",
