@@ -251,8 +251,12 @@ static int handle_message_error(struct media_player *player, GstMessage *message
 	gchar *debug;
 
 	gst_message_parse_error(message, &err, &debug);
-	g_printf("ERROR: %s", err->message);
-
+	g_printf("ERROR from element %s: %s\n",
+			 GST_OBJECT_NAME (message->src), err->message);
+	if (err->domain == GST_STREAM_ERROR) {
+		/* try to restart the pipeline */
+		gst_element_set_state(player->pipeline, GST_STATE_PLAYING);
+	}
 	g_error_free(err);
 	g_free(debug);
 
