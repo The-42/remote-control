@@ -352,18 +352,14 @@ static gboolean player_set_x_overlay(struct media_player *player)
 	gst_x_overlay_expose(GST_X_OVERLAY(video_sink));
 
 	gst_object_unref(video_sink);
-	g_debug(" < %s()", __func__);
 	return TRUE;
 }
 
 static gboolean player_set_x_window_id(struct media_player *player,
                                        const GValue *value)
 {
-	g_debug(" > %s()", __func__);
 	if (!value)
 		return FALSE;
-
-	g_printf("    GValue=%p Type=%s", value, G_VALUE_TYPE_NAME(value));
 
 #ifndef __x86_64__
 	if (G_VALUE_HOLDS_POINTER(value)) {
@@ -436,10 +432,9 @@ static int player_window_update(struct media_player *player)
 		GdkDisplay *display = gdk_display_get_default();
 		Display *xdisplay =  gdk_x11_display_get_xdisplay(display);
 		int err;
-		g_debug("      move to %dx%d and resize to %dx%d",
-			x, y, width, height);
 		err = XMoveResizeWindow(xdisplay, player->xid, x, y, width, height);
-		g_debug("      window moved: %d", err);
+		if (err < 0)
+			g_warning("failed to move window: %d", err);
 	}
 	return 0;
 }
@@ -618,10 +613,9 @@ static int player_destroy_pipeline(struct media_player *player)
 		gst_object_unref(player->pipeline);
 		player->pipeline = NULL;
 	}
-	if (player->xid) {
-		g_debug("         clear xid");
+	if (player->xid)
 		player->xid = 0;
-	}
+
 	return 0;
 }
 
@@ -1068,49 +1062,41 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 	if (!playerp)
 		return -EINVAL;
 
-	g_debug("   allocation memory...");
 	player = g_new0(struct media_player, 1);
-	if (player == NULL) {
-		g_warning("out of memory\n");
+	if (player == NULL)
 		return -ENOMEM;
-	}
 
 	media_player_load_config(player, config);
 
-	g_debug("   setting up gstreamer...");
 	ret = player_init_gstreamer(player);
 	if (ret < 0) {
-		g_warning("failed to initialize gstreamer %d", ret);
+		g_warning("%s: initialize gstreamer failed %d", __func__, ret);
 		goto err;
 	}
 
-	g_debug("   getting display type...");
 	ret = player_find_display_type(player);
 	if (ret < 0) {
-		g_warning("unable to query display type %d", ret);
+		g_warning("%s: unable to query display type %d", __func__, ret);
 		player->displaytype = NV_DISPLAY_TYPE_DEFAULT;
 	}
 
-	g_debug("   preparing window...");
 	ret = player_window_init(player);
 	if (ret < 0) {
-		g_warning("failed to create window %d", ret);
+		g_warning("%s: failed to create window %d", __func__, ret);
 		goto err;
 	}
 
-	g_debug("   creating pipeline...");
 	ret = player_create_pipeline(player, "none");
 	if (ret < 0 || player->pipeline == NULL) {
-		g_warning("failed to setup pipeline");
+		g_warning("%s: failed to setup pipeline", __func__);
 		goto err;
 	}
 
-	g_debug("   assigning player...");
 	*playerp = player;
 	return 1;
 
 err:
-	g_critical("creating player failed %d", ret);
+	g_critical("%s: creating player failed %d", __func__, ret);
 	return ret;
 }
 
