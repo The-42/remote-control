@@ -227,23 +227,25 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 	GstState new_state = GST_STATE_VOID_PENDING;
 
 	gst_message_parse_state_changed(message, &old_state, &new_state, &pending);
-	if (GST_MESSAGE_SRC(message) == GST_OBJECT(player->pipeline)) {
-		g_printf("   Element %s changed state from %s to %s (pending=%s)\n",
-			GST_OBJECT_NAME(message->src),
-			gst_element_state_get_name(old_state),
-			gst_element_state_get_name(new_state),
-			gst_element_state_get_name(pending));
 
-		switch (new_state) {
-		case GST_STATE_READY:
-			set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
-			break;
-		case GST_STATE_PLAYING:
-			player_check_audio_tracks(player->pipeline, player);
-			break;
-		default:
-			break;
-		}
+	if (GST_MESSAGE_SRC(message) != GST_OBJECT(player->pipeline))
+		return;
+
+	g_printf("   Element %s changed state from %s to %s (pending=%s)\n",
+		GST_OBJECT_NAME(message->src),
+		gst_element_state_get_name(old_state),
+		gst_element_state_get_name(new_state),
+		gst_element_state_get_name(pending));
+
+	switch (new_state) {
+	case GST_STATE_READY:
+		set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
+		break;
+	case GST_STATE_PLAYING:
+		player_check_audio_tracks(player->pipeline, player);
+		break;
+	default:
+		break;
 	}
 }
 
