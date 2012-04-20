@@ -952,6 +952,7 @@ static int player_xrandr_configure_screen(struct media_player *player,
 	}
 
 	rootwindow = gdk_x11_drawable_get_xid(GDK_DRAWABLE (player->window));
+retry_config:
 	conf = XRRGetScreenInfo (display, rootwindow);
 	screen_res = XRRGetScreenResources (display, rootwindow);
 	if (!screen_res) {
@@ -1006,8 +1007,13 @@ static int player_xrandr_configure_screen(struct media_player *player,
 	ret = XRRSetScreenConfigAndRate (display, conf, rootwindow,
 	                                 current_size_id, original_rotation,
 	                                 current_rate, CurrentTime);
-	if (ret != Success) {
+	if (ret != RRSetConfigSuccess) {
 		g_warning ("xrandr: could not change display settings: %d", ret);
+		if(ret == RRSetConfigInvalidConfigTime) {
+			XRRFreeScreenConfigInfo(conf);
+			XRRFreeScreenResources(screen_res);
+			goto retry_config;
+		}
 	}
 
 	XRRFreeScreenConfigInfo (conf);
