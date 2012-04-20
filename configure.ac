@@ -130,7 +130,7 @@ AS_CASE([$with_video_backend],
 dnl FIXME: This is not the way to go, try to do this in AC_CASE[gst]
 if test "x$enable_gst" = "xyes"; then
 	PKG_CHECK_MODULES([XRANDR], [xrandr >= 1.3 xrender x11 xproto >= 7.0.17],
-		[AC_DEFINE([HAVE_XRANDR_H], [1], [Define to 1 if you have the <xrandr.h> header file.])])
+		[AC_DEFINE([ENABLE_XRANDR], [1], [Define to 1 when xrandr support is available.])])
 fi
 
 #

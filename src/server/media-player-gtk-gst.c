@@ -23,7 +23,7 @@
 #include <gst/gst.h>
 #include <gst/interfaces/xoverlay.h>
 
-#if defined(HAVE_XRANDR_H)
+#if defined(ENABLE_XRANDR)
 #include <X11/extensions/Xrandr.h>
 #endif
 
@@ -817,7 +817,8 @@ static int player_init_gstreamer(struct media_player *player)
 
 	return 0;
 }
-#if defined(HAVE_XRANDR_H)
+
+#if defined(ENABLE_XRANDR)
 	/* only valid for vibrante */
 static int tegra_display_name_to_type(const gchar *name)
 {
@@ -846,7 +847,7 @@ static int tegra_display_name_to_type(const gchar *name)
 
 static int player_find_display_type(struct media_player *player)
 {
-#if defined(HAVE_XRANDR_H)
+#if defined(ENABLE_XRANDR)
 	XRRScreenResources *screen_res;
 	XRROutputInfo *output_info;
 	GdkDisplay *display;
@@ -922,7 +923,7 @@ static int player_change_state(struct media_player *player, GstState state)
 	return 0;
 }
 
-#if defined(HAVE_XRANDR_H)
+#if defined(ENABLE_XRANDR)
 static int player_xrandr_configure_screen(struct media_player *player,
                                           int width, int height, int rate)
 {
@@ -1180,7 +1181,7 @@ int media_player_set_output_window(struct media_player *player,
 
 	screen = gdk_screen_get_default();
 
-#if defined(HAVE_XRANDR_H)
+#if defined(ENABLE_XRANDR)
 	if (player->enable_fixed_fullscreen &&
 	    (width >= gdk_screen_get_width(screen)) &&
 	    (height >= gdk_screen_get_height(screen)))
