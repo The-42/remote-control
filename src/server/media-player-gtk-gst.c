@@ -961,7 +961,7 @@ retry_config:
 	}
 
 	/* try to find a screen size matching the desired size */
-	available_sizes = XRRSizes (display, 0, &nsizes);
+	available_sizes = XRRConfigSizes(conf, &nsizes);
 	current_size_id = XRRConfigCurrentConfiguration (conf, &original_rotation);
 
 	if (width == -1 && height == -1) {
