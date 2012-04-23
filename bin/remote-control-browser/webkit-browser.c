@@ -40,6 +40,7 @@ enum {
 	PROP_CONTROLS,
 	PROP_ACCEPT_LANGUAGE,
 	PROP_URI,
+	PROP_NOEXIT,
 };
 
 struct _WebKitBrowserPrivate {
@@ -53,10 +54,12 @@ struct _WebKitBrowserPrivate {
 	GtkToolItem *forward;
 	GtkToolItem *reload;
 	GtkToggleToolButton *toggle;
+	GtkToolItem *exit;
 	GtkWidget *osk;
 	gchar *geometry;
 	gboolean keyboard;
 	gboolean controls;
+	gboolean noexit;
 	gchar *uri;
 };
 
@@ -87,6 +90,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 
 	case PROP_URI:
 		g_value_set_string(value, priv->uri);
+		break;
+
+	case PROP_NOEXIT:
+		g_value_set_boolean(value, priv->noexit);
 		break;
 
 	default:
@@ -131,6 +138,14 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		break;
 
 	case PROP_URI:
+		break;
+
+	case PROP_NOEXIT:
+		priv->noexit = g_value_get_boolean(value);
+		if (priv->noexit)
+			gtk_widget_hide(GTK_WIDGET(priv->exit));
+		else
+			gtk_widget_show(GTK_WIDGET(priv->exit));
 		break;
 
 	default:
@@ -766,12 +781,12 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toolbar_insert(priv->toolbar, GTK_TOOL_ITEM(priv->toggle), -1);
 	gtk_widget_show(GTK_WIDGET(priv->toggle));
 
-	item = gtk_tool_button_new(NULL, NULL);
-	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "exit");
-	g_signal_connect(G_OBJECT(item), "clicked",
+	priv->exit = gtk_tool_button_new(NULL, NULL);
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->exit), "exit");
+	g_signal_connect(G_OBJECT(priv->exit), "clicked",
 			G_CALLBACK(on_exit_clicked), browser);
-	gtk_toolbar_insert(priv->toolbar, item, -1);
-	gtk_widget_show(GTK_WIDGET(item));
+	gtk_toolbar_insert(priv->toolbar, priv->exit, -1);
+	gtk_widget_show(GTK_WIDGET(priv->exit));
 
 	return toolbar;
 }
@@ -910,6 +925,11 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 	g_object_class_install_property(object, PROP_URI,
 			g_param_spec_string("uri", "URI", "URI", NULL,
 				G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_NOEXIT,
+			g_param_spec_boolean("no-exit", "No Exit",
+				"Disable exit button", FALSE,
+				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 GtkWidget *webkit_browser_new(const gchar *geometry)

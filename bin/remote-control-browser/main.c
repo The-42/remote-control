@@ -27,6 +27,7 @@ static gboolean noosk = FALSE;
 static gboolean kiosk = FALSE;
 static gchar *language = NULL;
 static gboolean cursor = FALSE;
+static gboolean noexit = FALSE;
 
 static GOptionEntry entries[] = {
 	{
@@ -50,6 +51,9 @@ static GOptionEntry entries[] = {
 	}, {
 		"show-cursor", 'c', 0, G_OPTION_ARG_NONE, &cursor,
 		"Show cursor", NULL
+	}, {
+		"no-exit", 'E', 0, G_OPTION_ARG_NONE, &noexit,
+		"No exit button", NULL
 	},
 	{ NULL }
 };
@@ -167,6 +171,7 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "keyboard", !noosk, NULL);
 	g_object_set(browser, "controls", !kiosk, NULL);
 	g_object_set(browser, "accept-language", language, NULL);
+	g_object_set(browser, "no-exit", noexit, NULL);
 
 	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
 			loop);
