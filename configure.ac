@@ -1,5 +1,5 @@
 AC_PREREQ(2.66)
-AC_INIT([remote-control], [0.7.3], [bugs@avionic-design.de], [remote-control])
+AC_INIT([remote-control], [0.8.0], [bugs@avionic-design.de], [remote-control])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADER([config.h])

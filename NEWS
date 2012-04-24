@@ -1,5 +1,41 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.8.0 (2012-04-24)
 ==========================
+* remote-control-browser:
+  - Make language configurable.
+  - Allow cursor to be shown.
+  - Handle popups.
+  - Build fixes for Gtk 3.0
+  - Fix PDF viewer in kiosk mode.
+  - Add command line option for configuration file path (-f).
+  - Add watchdog support.
+  - Better touchscreen usability.
+    + Auto hide/show of osk.
+    + Kinetic scrolling.
+    + Bigger fonts.
+    + Automatic text-selectio in url bar.
+    + Load progress indication.
+  - Remove armv7l from user-agent.
+  - Allow starting without exit button.
+
+* remote-control:
+  - Add D-Bus watchdog support.
+  - Reworked logging.
+  - Terminate when RDP session is closed.
+  - Add manpage for remote-control.conf.
+  - Add new audio-state linein.
+  - Pass environment variables to spawned processes.
+  - webkit window:
+    + Add WebKitWebInspector view.
+    + Reimplement javascript api.
+    + Add IR to javascript api.
+    + Add Cursor to javascript api.
+  - media-player-gtk-gst:
+    + Switch to playbin2 as new pipeline generator.
+    + Add supported for preferred audio track selection
+  - libmodem:
+    + Extended error checking.
+    + Resetting modem if accept fails.
+    + Disable command echoing.
 
 Release 0.7.2 (2012-02-08)
 ==========================
