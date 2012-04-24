@@ -14,6 +14,18 @@
 				<surname>Reding</surname>
 				<email>thierry.reding@avionic-design.de</email>
 			</author>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Soeren</firstname>
+				<surname>Grunewald</surname>
+				<email>soeren.grunewald@avionic-design.de</email>
+			</author>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Julian</firstname>
+				<surname>Scheel</surname>
+				<email>julian.scheel@avionic-design.de</email>
+			</author>
 		</authorgroup>
 	</refentryinfo>
 
@@ -111,6 +123,15 @@
 							<term><varname>uri</varname></term>
 							<listitem><para>
 								URI to open in the browser.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>inspector</varname></term>
+							<listitem><para>
+								Setting this variable to <literal>true</literal> will enable
+								the WebKitWebInspector view. A value of <literal>false</literal>
+								disables it. This is the default and should be used in productive
+								environments.
 							</para></listitem>
 						</varlistentry>
 					</variablelist>
@@ -250,6 +271,39 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>media-player</varname> - media-player configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>preferred-languages</varname></term>
+							<listitem><para>
+								Specifies a colon seperated list of iso-639-2 language codes. The
+								media-player tries to select the best matching available audio
+								track. The first entry in the list has the highest priority.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>fullscreen-width</varname></term>
+							<listitem><para>
+								Sets a desired screen resolution width for fullscreen playback. When
+								this as well as <literal>fullscreen-height</literal> is set, the
+								player tries to switch output device resolution to match this setting
+								when entering fullscreen playback.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>fullscreen-height</varname></term>
+							<listitem><para>
+								Sets a desired screen resolution height for fullscreen playback. When
+								this as well as <literal>fullscreen-width</literal> is set, the
+								player tries to switch output device resolution to match this setting
+								when entering fullscreen playback.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -257,6 +311,7 @@
 		<title>Example</title>
 		<programlisting>[browser]
 uri = http://www.google.com/ncr
+inspector = false
 
 [watchdog]
 timeout = 13000
@@ -264,6 +319,11 @@ timeout = 13000
 [linphone]
 disable-codecs = speex;g722
 echo-cancellation = true
+
+[media-player]
+preferred-languages = de;en
+fullscreen-width = 1280
+fullscreen-height = 720
 </programlisting>
 	</refsect1>
 </refentry>
