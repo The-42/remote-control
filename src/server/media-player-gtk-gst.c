@@ -161,16 +161,15 @@ static void player_check_audio_tracks(GstElement *playbin,
                                       gpointer user_data)
 {
 	struct media_player *player = (struct media_player*)user_data;
+	int track_priority = INT_MAX;
 	gchar *language_code = NULL;
 	GstTagList *taglist = NULL;
-	int track_priority = -1;
 	int select_track = -1;
 	guint n_audio;
 	int priority;
 	int i;
 
 	g_object_get(G_OBJECT(playbin), "n-audio", &n_audio, NULL);
-	track_priority = n_audio - 1;
 	for (i = 0; i < n_audio; i++) {
 		g_signal_emit_by_name(playbin, "get-audio-tags", i, &taglist);
 		if (!taglist)
