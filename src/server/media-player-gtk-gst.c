@@ -912,6 +912,8 @@ static int player_find_display_type(struct media_player *player)
 static int player_change_state(struct media_player *player, GstState state)
 {
 	GstStateChangeReturn ret;
+	int err;
+	int i;
 
 	if (!player || !player->pipeline)
 		return -EINVAL;
@@ -922,7 +924,24 @@ static int player_change_state(struct media_player *player, GstState state)
 		return -ECANCELED;
 	}
 
-	return 0;
+	/* When set state reports ASYNC, we wait till we get a useful result.
+	 * But we do not wait forever, since there are situations where the
+	 * we always get ASYNC as result */
+	if (ret == GST_STATE_CHANGE_ASYNC) {
+		for (i=0; i<3; i++) {
+			ret = gst_element_get_state(player->pipeline, NULL,
+			                            NULL, GST_SECOND);
+			if (ret == GST_STATE_CHANGE_FAILURE) {
+				g_critical("%s: failed to get player state", __func__);
+				return -ECANCELED;
+			}
+
+			if (ret != GST_STATE_CHANGE_ASYNC)
+				break;
+			sleep(1); /* re-schedule */
+		}
+	}
+	return ret;
 }
 
 #if defined(ENABLE_XRANDR)
