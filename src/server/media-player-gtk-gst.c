@@ -901,7 +901,8 @@ static int player_find_display_type(struct media_player *player)
 	return 0;
 }
 
-static int player_change_state(struct media_player *player, GstState state)
+static int player_change_state(struct media_player *player, GstState state,
+                               gboolean sync)
 {
 	GstStateChangeReturn ret;
 	int err;
@@ -919,7 +920,7 @@ static int player_change_state(struct media_player *player, GstState state)
 	/* When set state reports ASYNC, we wait till we get a useful result.
 	 * But we do not wait forever, since there are situations where the
 	 * we always get ASYNC as result */
-	if (ret == GST_STATE_CHANGE_ASYNC) {
+	if (sync && ret == GST_STATE_CHANGE_ASYNC) {
 		for (i=0; i<3; i++) {
 			ret = gst_element_get_state(player->pipeline, NULL,
 			                            NULL, GST_SECOND);
@@ -1005,7 +1006,7 @@ retry_config:
 			 available_sizes->height, current_rate);
 
 	/* pause gstreamer, to avoid flow errors */
-	gst_ret = player_change_state(player, GST_STATE_PAUSED);
+	gst_ret = player_change_state(player, GST_STATE_PAUSED, true);
 	if (gst_ret < 0)
 		g_warning ("Failed to pause playback before mode-switch");
 
@@ -1025,7 +1026,7 @@ retry_config:
 	XRRFreeScreenResources (screen_res);
 
 	/* resume gstreamer playback */
-	gst_ret = player_change_state(player, GST_STATE_PLAYING);
+	gst_ret = player_change_state(player, GST_STATE_PLAYING, false);
 	if (gst_ret < 0)
 		g_warning ("Failed to resume playback after mode-switch");
 
@@ -1153,14 +1154,14 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		gst_element_set_state(player->pipeline, GST_STATE_READY);
 		g_object_set(player->pipeline, "uri", (const gchar*)uri, NULL);
 		err = player_change_state(player, state == MEDIA_PLAYER_STOPPED
-								  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
+								  ? GST_STATE_PAUSED : GST_STATE_PLAYING, false);
 	} else {
 		if (player_create_pipeline(player, (const gchar*)uri) < 0) {
 			g_critical("  failed to create pipeline");
 			err = -ENOSYS;
 		} else {
 			err = player_change_state(player, state == MEDIA_PLAYER_STOPPED
-									  ? GST_STATE_PAUSED : GST_STATE_PLAYING);
+									  ? GST_STATE_PAUSED : GST_STATE_PLAYING, false);
 		}
 	}
 
@@ -1251,7 +1252,7 @@ int media_player_set_output_window(struct media_player *player,
 
 			uri = g_strdup(player->uri);
 			ret = player_create_pipeline(player, uri);
-			ret = player_change_state(player, state);
+			ret = player_change_state(player, state, false);
 			g_free(uri);
 		}
 
@@ -1268,7 +1269,7 @@ int media_player_set_output_window(struct media_player *player,
 
 int media_player_play(struct media_player *player)
 {
-	int ret = player_change_state(player, GST_STATE_PLAYING);
+	int ret = player_change_state(player, GST_STATE_PLAYING, false);
 	if (ret < 0) {
 		gchar *uri = g_strdup(player->uri);
 		ret = media_player_set_uri(player, player->uri);
@@ -1303,14 +1304,14 @@ int media_player_pause(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return player_change_state (player, GST_STATE_PAUSED);
+	return player_change_state (player, GST_STATE_PAUSED, false);
 }
 
 int media_player_resume(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	return player_change_state (player, GST_STATE_PLAYING);
+	return player_change_state (player, GST_STATE_PLAYING, false);
 }
 
 int media_player_get_duration(struct media_player *player,
