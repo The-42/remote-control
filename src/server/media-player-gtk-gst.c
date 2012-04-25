@@ -905,7 +905,6 @@ static int player_change_state(struct media_player *player, GstState state,
                                gboolean sync)
 {
 	GstStateChangeReturn ret;
-	int err;
 	int i;
 
 	if (!player || !player->pipeline)
