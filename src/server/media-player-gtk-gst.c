@@ -934,7 +934,7 @@ static int player_change_state(struct media_player *player, GstState state,
 			sleep(1); /* re-schedule */
 		}
 	}
-	return ret;
+	return 0;
 }
 
 #if defined(ENABLE_XRANDR)
