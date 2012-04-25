@@ -1,5 +1,9 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.8.2 (2012-04-25)
 ==========================
+* remote-conrol
+  - Restore userspace behaviour for rpc return values.
+  - Fix application slowdown, introduced by unnecessary
+    synchronous handling of state changes.
 
 Release 0.8.0 (2012-04-24)
 ==========================
