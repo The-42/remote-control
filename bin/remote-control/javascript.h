@@ -45,6 +45,23 @@ static inline int javascript_register_ir(JSContextRef js, JSObjectRef parent,
 	return 0;
 }
 #endif
+#ifdef ENABLE_JAVASCRIPT_LCD
+int javascript_register_lcd_class(void);
+int javascript_register_lcd(JSContextRef js, JSObjectRef parent,
+                            const char *name, void *user_data);
+#else
+static inline int javascript_register_lcd_class(void)
+{
+	return 0;
+}
+
+static inline int javascript_register_lcd(JSContextRef js, JSObjectRef parent,
+                                          const char *name, void *user_data)
+{
+	return 0;
+}
+#endif
+
 
 int javascript_register(JSGlobalContextRef js,
                         struct javascript_userdata *user_data);

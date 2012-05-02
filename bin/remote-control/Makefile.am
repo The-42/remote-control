@@ -46,8 +46,12 @@ remote_control_LDADD += \
 if ENABLE_JAVASCRIPT_IR
 remote_control_SOURCES += \
 	javascript-irkey.c
-endif
-endif
+endif  # ENABLE_JAVASCRIPT_IR
+if ENABLE_JAVASCRIPT_LCD
+remote_control_SOURCES += \
+	javascript-lcd.c
+endif  # ENABLE_JAVASCRIPT_LCD
+endif # ENABLE_JAVASCRIPT
 
 if ENABLE_WATCHDOG
 remote_control_CPPFLAGS += @WATCHDOG_CFLAGS@

@@ -223,6 +223,19 @@ AS_IF([test "x$enable_javascript" = "xyes"], [
 		AC_DEFINE([ENABLE_JAVASCRIPT_IR], [1],
 			  [whether JavaScript IR input support is enabled])
 	])
+
+	# LCD TV Serial support
+	AC_MSG_CHECKING([whether to enable JavaScript LCD Serial support])
+	AC_ARG_ENABLE(javascript-lcd,
+		[AS_HELP_STRING([--enable-javascript-lcd],
+				[Enable JavaScript LCD Serial support (default: no)])],
+		[], [enable_javascript_lcd=no])
+	AC_MSG_RESULT([$enable_javascript_lcd])
+
+	AS_IF([test "x$enable_javascript_lcd" = "xyes"], [
+		AC_DEFINE([ENABLE_JAVASCRIPT_LCD], [1],
+			  [whether JavaScript LCD Serial support is enabled])
+	])
 ])
 
 #
@@ -258,6 +271,7 @@ AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT, [test "x$enable_javascript" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
+AM_CONDITIONAL(ENABLE_JAVASCRIPT_LCD, [test "x$enable_javascript_lcd" = "xyes"])
 AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 
 #
@@ -340,6 +354,9 @@ Options:
 
 AS_IF([test "x$enable_javascript" = "xyes"], [
 	AS_ECHO("    IR Input Support:        $enable_javascript_ir")
+])
+AS_IF([test "x$enable_javascript" = "xyes"], [
+	AS_ECHO("    LCD Serial Support:      $enable_javascript_lcd")
 ])
 
 AS_ECHO("  D-Bus Watchdog support:    $enable_watchdog")
