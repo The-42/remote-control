@@ -65,6 +65,9 @@ typedef enum {
 #define SCALE_PREVIEW    0
 #define SCALE_FULLSCREEN 1
 
+#define MEDIA_PLAYER_SECTION "media-player"
+#define DEFAULT_BUFFER_DURATION  (1 * GST_SECOND)
+
 struct media_player {
 	GstElement *pipeline;
 	GdkWindow *window;   /* the window to use for output */
@@ -79,6 +82,8 @@ struct media_player {
 	bool enable_fixed_fullscreen; /* force a fixed fullscreen resolution */
 	int fullscreen_width;
 	int fullscreen_height;
+
+	guint64 buffer_duration;
 
 	gchar **preferred_languages;
 };
@@ -624,7 +629,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	"playbin2 " \
 		"video-sink=\"glessink name=video-out\" " \
 		"audio-sink=\"alsasink name=audio-out device=%s\" " \
-		"flags=0x00000160 " \
+		"flags=0x00000160 buffer-duration=%llu " \
 		"uri=%s"
 
 	GError *error = NULL;
@@ -638,7 +643,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 
 	/* for HDMI we need to select the correct audio device */
 	ad = player->displaytype == NV_DISPLAY_TYPE_HDMI ? "hdmi" : "default";
-	pipe = g_strdup_printf(PIPELINE, ad, uri);
+	pipe = g_strdup_printf(PIPELINE, ad, player->buffer_duration, uri);
 
 	set_webkit_appsrc_rank(GST_RANK_NONE);
 
@@ -1037,13 +1042,13 @@ retry_config:
 static void media_player_load_config(struct media_player *player, GKeyFile *config)
 {
 	GError *err = NULL;
+	guint64 duration;
 
 	if (!g_key_file_has_group(config, "media-player"))
 		g_debug("media-player-gtk-gst: no configuration for media-player found");
 
 	player->preferred_languages = g_key_file_get_string_list(config,
 			"media-player", "preferred-languages", NULL, NULL);
-	g_debug("Preferred languages: %p\n", player->preferred_languages);
 
 	player->enable_fixed_fullscreen = true;
 
@@ -1062,6 +1067,19 @@ static void media_player_load_config(struct media_player *player, GKeyFile *conf
 		g_error_free(err);
 		err = NULL;
 	}
+
+	duration = g_key_file_get_int64(config,
+			MEDIA_PLAYER_SECTION, "buffer-duration", &err);
+	if (err != NULL) {
+		player->buffer_duration = DEFAULT_BUFFER_DURATION;
+		g_error_free(err);
+		err = NULL;
+	} else {
+		player->buffer_duration = duration * GST_MSECOND;
+	}
+
+	g_debug("   Preferred languages: %p\n", player->preferred_languages);
+	g_debug("   Buffer Duration:     %llu\n", player->buffer_duration);
 }
 
 /**

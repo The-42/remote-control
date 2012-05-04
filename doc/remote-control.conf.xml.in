@@ -273,6 +273,7 @@
 			</varlistentry>
 			<varlistentry>
 				<term><varname>media-player</varname> - media-player configuration</term>
+				<para>media-player specific configuration options. Currently only honoured by builds using gstreamer backend.</para>
 				<listitem><para>
 					<variablelist>
 						<varlistentry>
@@ -301,6 +302,12 @@
 								when entering fullscreen playback.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>buffer-duration</varname></term>
+							<listitem><para>
+								Sets the initial buffering duration in milliseconds.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
@@ -324,6 +331,7 @@ echo-cancellation = true
 preferred-languages = de;en
 fullscreen-width = 1280
 fullscreen-height = 720
+buffer-duration = 1000
 </programlisting>
 	</refsect1>
 </refentry>
