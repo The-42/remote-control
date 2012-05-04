@@ -1044,16 +1044,16 @@ static void media_player_load_config(struct media_player *player, GKeyFile *conf
 	GError *err = NULL;
 	guint64 duration;
 
-	if (!g_key_file_has_group(config, "media-player"))
-		g_debug("media-player-gtk-gst: no configuration for media-player found");
+	if (!g_key_file_has_group(config, MEDIA_PLAYER_SECTION))
+		g_warning("no configuration for %s found", MEDIA_PLAYER_SECTION);
 
 	player->preferred_languages = g_key_file_get_string_list(config,
-			"media-player", "preferred-languages", NULL, NULL);
+			MEDIA_PLAYER_SECTION, "preferred-languages", NULL, NULL);
 
 	player->enable_fixed_fullscreen = true;
 
 	player->fullscreen_width = g_key_file_get_integer(config,
-			"media-player", "fullscreen-width", &err);
+			MEDIA_PLAYER_SECTION, "fullscreen-width", &err);
 	if (err != NULL) {
 		player->enable_fixed_fullscreen = false;
 		g_error_free(err);
@@ -1061,7 +1061,7 @@ static void media_player_load_config(struct media_player *player, GKeyFile *conf
 	}
 
 	player->fullscreen_height = g_key_file_get_integer(config,
-			"media-player", "fullscreen-height", &err);
+			MEDIA_PLAYER_SECTION, "fullscreen-height", &err);
 	if (err != NULL) {
 		player->enable_fixed_fullscreen = false;
 		g_error_free(err);
