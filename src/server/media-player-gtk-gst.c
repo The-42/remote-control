@@ -1216,10 +1216,10 @@ int media_player_set_output_window(struct media_player *player,
 	    (width >= gdk_screen_get_width(screen)) &&
 	    (height >= gdk_screen_get_height(screen)))
 	{
-		if (player->scale != SCALE_FULLSCREEN) {
-			width = player->fullscreen_width;
-			height = player->fullscreen_height;
+		width = player->fullscreen_width;
+		height = player->fullscreen_height;
 
+		if (player->scale != SCALE_FULLSCREEN) {
 			player_xrandr_configure_screen (player, width, height, 50);
 			player->scale = SCALE_FULLSCREEN;
 		}
