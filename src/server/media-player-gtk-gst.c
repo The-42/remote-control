@@ -180,9 +180,12 @@ static void player_check_audio_tracks(GstElement *playbin,
 		if (!taglist)
 			continue;
 
-		gst_structure_get (GST_STRUCTURE(taglist),
-		                   "language-code", G_TYPE_STRING,
-		                   &language_code, NULL);
+		if(!gst_structure_get (GST_STRUCTURE(taglist),
+		                       "language-code", G_TYPE_STRING,
+		                       &language_code, NULL)) {
+			gst_tag_list_free(taglist);
+			continue;
+		}
 
 		priority = player_get_language_code_priority(player,
 		                                             language_code);
