@@ -1001,14 +1001,13 @@ retry_config:
 		}
 	}
 
-	g_debug ("   xrandr: switch to %dx%d/%dHz\n", available_sizes->width,
-			 available_sizes->height, current_rate);
-
 	/* pause gstreamer, to avoid flow errors */
-	gst_ret = player_change_state(player, GST_STATE_PAUSED, true);
+	gst_ret = player_change_state(player, GST_STATE_READY, true);
 	if (gst_ret < 0)
 		g_warning ("Failed to pause playback before mode-switch");
 
+	g_debug ("   xrandr: switch to %dx%d/%dHz\n", available_sizes->width,
+			 available_sizes->height, current_rate);
 	ret = XRRSetScreenConfigAndRate (display, conf, rootwindow,
 	                                 current_size_id, original_rotation,
 	                                 current_rate, CurrentTime);
