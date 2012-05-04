@@ -964,9 +964,11 @@ static int player_xrandr_configure_screen(struct media_player *player,
 
 	rootwindow = gdk_x11_drawable_get_xid(GDK_DRAWABLE (player->window));
 retry_config:
+	XLockDisplay(display);
 	conf = XRRGetScreenInfo (display, rootwindow);
 	screen_res = XRRGetScreenResources (display, rootwindow);
 	if (!screen_res) {
+		XUnlockDisplay(display);
 		g_warning("no screen resource");
 		return -ENOMEM;
 	}
@@ -1015,12 +1017,14 @@ retry_config:
 		if(ret == RRSetConfigInvalidConfigTime) {
 			XRRFreeScreenConfigInfo(conf);
 			XRRFreeScreenResources(screen_res);
+			XUnlockDisplay(display);
 			goto retry_config;
 		}
 	}
 
 	XRRFreeScreenConfigInfo (conf);
 	XRRFreeScreenResources (screen_res);
+	XUnlockDisplay(display);
 
 	/* resume gstreamer playback */
 	gst_ret = player_change_state(player, GST_STATE_PLAYING, false);
@@ -1218,8 +1222,10 @@ int media_player_set_output_window(struct media_player *player,
 	 * should be sufficient, but since we can not assign our window
 	 * to the gstreamer plugin we need to do this seperatly */
 	if (player->window) {
+		gdk_threads_enter();
 		gdk_window_move_resize(player->window, x, y, width, height);
 		gdk_window_clear(player->window);
+		gdk_threads_leave();
 	}
 
 	if (player->have_nv_omx) {
