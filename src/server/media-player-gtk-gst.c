@@ -83,6 +83,9 @@ struct media_player {
 	int fullscreen_width;
 	int fullscreen_height;
 
+	int native_width;
+	int native_height;
+
 	guint64 buffer_duration;
 
 	gchar **preferred_languages;
@@ -607,6 +610,11 @@ static int player_window_init(struct media_player *player)
 		.override_redirect = TRUE,
 	};
 	GdkRegion *region;
+	GdkScreen *screen;
+
+	screen = gdk_screen_get_default();
+	player->native_width = gdk_screen_get_width(screen);
+	player->native_height = gdk_screen_get_height(screen);
 
 	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
 	if (!player->window)
@@ -1216,20 +1224,17 @@ int media_player_set_output_window(struct media_player *player,
                                    unsigned int width,
                                    unsigned int height)
 {
-	GdkScreen *screen;
-
 	g_debug("> %s(player=%p, x=%d, y=%d, width=%d, height=%d)",
 		__func__, player, x, y, width, height);
 
 	if (!player)
 		return -EINVAL;
 
-	screen = gdk_screen_get_default();
-
 #if defined(ENABLE_XRANDR)
 	if (player->enable_fixed_fullscreen &&
-	    (width >= gdk_screen_get_width(screen)) &&
-	    (height >= gdk_screen_get_height(screen)))
+	    (x == 0) && (y == 0) &&
+	    (width >= player->native_width) &&
+	    (height >= player->native_height))
 	{
 		width = player->fullscreen_width;
 		height = player->fullscreen_height;
@@ -1263,8 +1268,8 @@ int media_player_set_output_window(struct media_player *player,
 	if (player->have_nv_omx) {
 		int scale = player->scale;
 
-		if ((width >= gdk_screen_get_width(screen)) &&
-		    (height >= gdk_screen_get_height(screen)))
+		if ((width >= player->native_width) &&
+		    (height >= player->native_height))
 			player->scale = SCALE_FULLSCREEN;
 		else
 			player->scale = SCALE_PREVIEW;
