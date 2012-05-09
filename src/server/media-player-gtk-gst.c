@@ -88,6 +88,11 @@ struct media_player {
 	gchar **preferred_languages;
 };
 
+#if defined(ENABLE_XRANDR)
+static int player_xrandr_configure_screen(struct media_player *player,
+                                          int width, int height, int rate);
+#endif
+
 #if 0
 static void player_dump(struct media_player *player)
 {
@@ -400,6 +405,13 @@ static void player_show_output(struct media_player *player, gboolean show)
 			gdk_threads_leave();
 		}
 	}
+
+#if defined(ENABLE_XRANDR)
+	if (!show && player->scale != SCALE_PREVIEW) {
+		g_debug("   restoring default screen setting");
+		player_xrandr_configure_screen(player, -1, -1, 50);
+	}
+#endif
 }
 
 static int tegra_omx_window_move(struct media_player *player,
