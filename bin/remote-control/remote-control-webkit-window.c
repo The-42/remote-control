@@ -359,7 +359,6 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	soup_session_set_proxy(webkit_get_default_session());
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
-	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
 #ifdef ENABLE_JAVASCRIPT
 	/*
 	 * Add a callback to listen for load-status property changes. This is
