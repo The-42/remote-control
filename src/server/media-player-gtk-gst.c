@@ -89,6 +89,7 @@ struct media_player {
 	guint64 buffer_duration;
 
 	gchar **preferred_languages;
+	gchar *override_language;
 };
 
 #if defined(ENABLE_XRANDR)
@@ -155,6 +156,19 @@ static int player_get_language_code_priority(struct media_player *player,
 {
 	gchar **language = player->preferred_languages;
 	int priority = 0;
+
+	if (player->override_language != NULL) {
+		/* explicit override has to win! */
+		if (g_ascii_strcasecmp(language_code, player->override_language) == 0) {
+			g_debug ("Use override audio language\n");
+			return priority;
+		}
+
+		/* if override_language is set, the priority for preferred
+		 * languages has to start at 1, so override is always highest
+		 * priority */
+		priority++;
+	}
 
 	if (language == NULL)
 		return -1;
@@ -1172,9 +1186,27 @@ int media_player_free(struct media_player *player)
 	return 0;
 }
 
+void media_player_parse_uri_options(struct media_player *player, const char **uri_options)
+{
+	while (*uri_options) {
+		if (!g_ascii_strncasecmp(*uri_options, "audio-language=", 15)) {
+			gchar *lang = g_strrstr(*uri_options, "=") + 1;
+
+			if(player->override_language)
+				g_free(player->override_language);
+
+			player->override_language = g_strdup(lang);
+			g_debug("  select audio-language for stream: %s",
+				lang);
+		}
+		uri_options++;
+	}
+}
+
 int media_player_set_uri(struct media_player *player, const char *uri)
 {
 	enum media_player_state state = MEDIA_PLAYER_STOPPED;
+	gchar **uriparts;
 	int err = 0;
 
 	g_debug("> %s(uri=%s)", __func__, uri);
@@ -1188,6 +1220,16 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 
 	set_webkit_appsrc_rank(GST_RANK_NONE);
 
+	/* check the uri for additional options */
+	if (player->override_language) {
+		g_free(player->override_language);
+		player->override_language = NULL;
+	}
+
+	uriparts = g_strsplit (uri, " :", 0);
+	if (uriparts[1] != NULL)
+		media_player_parse_uri_options(player, (const gchar**)&uriparts[1]);
+
 	/* because url can be valid, but we do not know the content, we can
 	 * not be sure that the chain can handle the new url we destroy the
 	 * old and create a new. this is the safest way */
@@ -1195,11 +1237,13 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	if (player->pipeline) {
 		g_warning("reuse old pipeline");
 		gst_element_set_state(player->pipeline, GST_STATE_READY);
-		g_object_set(player->pipeline, "uri", (const gchar*)uri, NULL);
+		g_object_set(player->pipeline, "uri", (const
+				gchar*)uriparts[0], NULL);
+
 		err = player_change_state(player, state == MEDIA_PLAYER_STOPPED
 								  ? GST_STATE_PAUSED : GST_STATE_PLAYING, false);
 	} else {
-		if (player_create_pipeline(player, (const gchar*)uri) < 0) {
+		if (player_create_pipeline(player, (const gchar*)uriparts[0]) < 0) {
 			g_critical("  failed to create pipeline");
 			err = -ENOSYS;
 		} else {
@@ -1208,6 +1252,7 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		}
 	}
 
+	g_strfreev(uriparts);
 	g_debug("< %s()", __func__);
 	return err;
 }
