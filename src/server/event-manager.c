@@ -119,7 +119,7 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		item = g_new(struct event_handset, 1);
 		if (!item) {
 			ret = -ENOMEM;
-			break;
+			goto out;
 		}
 
 		memcpy(item, &event->handset, sizeof(event->handset));
@@ -129,7 +129,7 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 
 	default:
 		ret = -ENXIO;
-		break;
+		goto out;
 	}
 
 	g_debug("  IRQ: %08x", irq_status);
@@ -162,6 +162,7 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	}
 #endif
 
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
