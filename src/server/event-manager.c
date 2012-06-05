@@ -83,6 +83,8 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	gpointer item;
 	int ret = 0;
 
+	g_debug("> %s(manager=%p, event=%p)", __func__, manager, event);
+
 	switch (event->source) {
 	case EVENT_SOURCE_MODEM:
 		manager->modem_state = event->modem.state;
@@ -130,6 +132,8 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		break;
 	}
 
+	g_debug("  IRQ: %08x", irq_status);
+
 #ifdef IRQ_SEND_ALWAYS
 	/*
 	 * FIXME: This is a horrible work-around for broken user-interfaces
@@ -158,6 +162,7 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	}
 #endif
 
+	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
