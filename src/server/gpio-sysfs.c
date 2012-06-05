@@ -248,7 +248,10 @@ static int gpio_handle_irq(struct gpio_desc *gpio,
 
 	if (name) {
 		g_debug("gpio-sysfs: %s --> %s", name, state);
-		event_manager_report(events, &event);
+		err = event_manager_report(events, &event);
+		if (err < 0)
+			g_debug("gpio-sysfs: failed to report event: %s",
+				g_strerror(-err));
 	} else {
 		g_debug("gpio-sysfs: GPIO#%u --> %u", gpio->type, value);
 	}

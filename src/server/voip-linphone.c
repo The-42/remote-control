@@ -59,6 +59,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 	const LinphoneAddress *address;
 	struct event event;
 	const char *name;
+	int err;
 
 	name = linphone_call_state_to_string(state);
 
@@ -81,7 +82,11 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 		}
 
 		event.voip.state = EVENT_VOIP_STATE_INCOMING;
-		event_manager_report(manager, &event);
+
+		err = event_manager_report(manager, &event);
+		if (err < 0)
+			g_debug("voip-linphone: failed to report event: %s",
+				g_strerror(-err));
 
 		if (voip->contact) {
 			g_free(voip->contact);
@@ -103,12 +108,20 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 
 	case LinphoneCallConnected:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_CONNECTED;
-		event_manager_report(manager, &event);
+
+		err = event_manager_report(manager, &event);
+		if (err < 0)
+			g_debug("voip-linphone: failed to report event: %s",
+				g_strerror(-err));
 		break;
 
 	case LinphoneCallEnd:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_DISCONNECTED;
-		event_manager_report(manager, &event);
+
+		err = event_manager_report(manager, &event);
+		if (err < 0)
+			g_debug("voip-linphone: failed to report event: %s",
+				g_strerror(-err));
 		break;
 
 	case LinphoneCallIncomingEarlyMedia:
@@ -119,12 +132,20 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 
 	case LinphoneCallOutgoingProgress:
 		event.voip.state = EVENT_VOIP_STATE_OUTGOING;
-		event_manager_report(manager, &event);
+
+		err = event_manager_report(manager, &event);
+		if (err < 0)
+			g_debug("voip-linphone: failed to report event: %s",
+				g_strerror(-err));
 		break;
 
 	case LinphoneCallError:
 		event.voip.state = EVENT_VOIP_STATE_OUTGOING_DISCONNECTED;
-		event_manager_report(manager, &event);
+
+		err = event_manager_report(manager, &event);
+		if (err < 0)
+			g_debug("voip-linphone: failed to report event: %s",
+				g_strerror(-err));
 		break;
 
 	default:

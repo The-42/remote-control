@@ -104,7 +104,10 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpoi
 		break;
 	}
 
-	event_manager_report(chip->events, &event);
+	err = event_manager_report(chip->events, &event);
+	if (err < 0)
+		g_debug("gpiodev: failed to report event: %s",
+			g_strerror(-err));
 
 	if (callback)
 		return callback(user_data);

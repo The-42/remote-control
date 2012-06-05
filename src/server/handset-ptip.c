@@ -54,7 +54,10 @@ static int handset_handle_event(struct handset *handset)
 			(event->flags & PTIP_EVENT_PRESS) ?
 				"pressed" : "released");
 
-	event_manager_report(events, &report);
+	err = event_manager_report(events, &report);
+	if (err < 0)
+		g_debug("PT-IP: failed to report event: %s",
+			g_strerror(-err));
 
 	ptip_event_free(event);
 	return 0;
