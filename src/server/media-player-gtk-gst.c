@@ -145,7 +145,7 @@ static void player_source_setup(GstElement *playbin, GstElement *source,
 	g_print("source-setup: %s, uri: %s\n", GST_ELEMENT_NAME(source), uri);
 	if(!g_ascii_strncasecmp(uri, "http://", 7)) {
 		g_print("Playing http source, assume it's a live source\n");
-		g_object_set(G_OBJECT(source), "is-live", true, "do-timestamp", true,
+		g_object_set(G_OBJECT(source), "is-live", true, "do-timestamp", false,
 					 NULL);
 	}
 	g_free(uri);
