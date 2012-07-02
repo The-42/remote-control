@@ -453,10 +453,12 @@ static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *fr
 		WebKitNetworkRequest *request, const gchar *mimetype,
 		WebKitWebPolicyDecision *decision, gpointer data)
 {
-	if (g_str_equal(mimetype, "application/pdf"))
+	if (g_str_equal(mimetype, "application/pdf")) { 
 		webkit_web_policy_decision_download(decision);
+		return TRUE;
+	}
 
-	return TRUE;
+	return FALSE;
 }
 
 static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
