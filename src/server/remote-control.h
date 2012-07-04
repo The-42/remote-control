@@ -365,7 +365,7 @@ int handset_text_show(struct handset *handset, unsigned int x, unsigned int y,
 		const char *text, bool show);
 
 /**
- * GPIO chip and event source
+ * GPIO backend and event source
  */
 enum gpio {
 	GPIO_UNKNOWN,
@@ -373,18 +373,18 @@ enum gpio {
 	GPIO_SMARTCARD,
 };
 
-struct gpio_chip;
+struct gpio_backend;
 
-int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
+int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *events,
 		GKeyFile *config);
-int gpio_chip_free(struct gpio_chip *chip);
-GSource *gpio_chip_get_source(struct gpio_chip *chip);
-int gpio_chip_get_num_gpios(struct gpio_chip *chip);
-int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio);
-int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
+int gpio_backend_free(struct gpio_backend *backend);
+GSource *gpio_backend_get_source(struct gpio_backend *backend);
+int gpio_backend_get_num_gpios(struct gpio_backend *backend);
+int gpio_backend_direction_input(struct gpio_backend *backend, unsigned int gpio);
+int gpio_backend_direction_output(struct gpio_backend *backend, unsigned int gpio,
 		int value);
-int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value);
-int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio);
+int gpio_backend_set_value(struct gpio_backend *backend, unsigned int gpio, int value);
+int gpio_backend_get_value(struct gpio_backend *backend, unsigned int gpio);
 
 /**
  * remote control
@@ -410,7 +410,7 @@ struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct tuner *remote_control_get_tuner(struct remote_control *rc);
 struct handset *remote_control_get_handset(struct remote_control *rc);
-struct gpio_chip *remote_control_get_gpio_chip(struct remote_control *rc);
+struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 

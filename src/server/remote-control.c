@@ -35,7 +35,7 @@ struct rpc_source {
 
 struct remote_control {
 	struct event_manager *event_manager;
-	struct gpio_chip *gpio;
+	struct gpio_backend *gpio;
 	struct audio *audio;
 	struct backlight *backlight;
 	struct media_player *player;
@@ -426,13 +426,13 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		g_source_unref(source);
 	}
 
-	err = gpio_chip_create(&rc->gpio, rc->event_manager, config);
+	err = gpio_backend_create(&rc->gpio, rc->event_manager, config);
 	if (err < 0) {
-		g_error("gpio_chip_create(): %s", strerror(-err));
+		g_error("gpio_backend_create(): %s", strerror(-err));
 		return err;
 	}
 
-	source = gpio_chip_get_source(rc->gpio);
+	source = gpio_backend_get_source(rc->gpio);
 	if (source) {
 		g_source_add_child_source(rc->source, source);
 		g_source_unref(source);
@@ -545,7 +545,7 @@ struct handset *remote_control_get_handset(struct remote_control *rc)
 	return rc ? rc->handset : NULL;
 }
 
-struct gpio_chip *remote_control_get_gpio_chip(struct remote_control *rc)
+struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc)
 {
 	return rc ? rc->gpio : NULL;
 }

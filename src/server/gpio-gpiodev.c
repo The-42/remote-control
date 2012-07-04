@@ -28,7 +28,7 @@ static struct gpio_map {
 
 static const unsigned int gpios[] = { 34, 35, 36 };
 
-struct gpio_chip {
+struct gpio_backend {
 	GSource source;
 	GPollFD fd;
 
@@ -45,9 +45,9 @@ static gboolean gpio_source_prepare(GSource *source, gint *timeout)
 
 static gboolean gpio_source_check(GSource *source)
 {
-	struct gpio_chip *chip = (struct gpio_chip *)source;
+	struct gpio_backend *backend = (struct gpio_backend *)source;
 
-	if (chip->fd.revents & G_IO_IN)
+	if (backend->fd.revents & G_IO_IN)
 		return TRUE;
 
 	return FALSE;
@@ -55,14 +55,14 @@ static gboolean gpio_source_check(GSource *source)
 
 static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
 {
-	struct gpio_chip *chip = (struct gpio_chip *)source;
+	struct gpio_backend *backend = (struct gpio_backend *)source;
 	enum gpio type = GPIO_UNKNOWN;
 	struct gpio_event data;
 	struct event event;
 	guint i;
 	int err;
 
-	err = read(chip->fd.fd, &data, sizeof(data));
+	err = read(backend->fd.fd, &data, sizeof(data));
 	if (err < 0) {
 		g_warning("gpiodev: read(): %s", strerror(errno));
 		return TRUE;
@@ -104,7 +104,7 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpoi
 		break;
 	}
 
-	err = event_manager_report(chip->events, &event);
+	err = event_manager_report(backend->events, &event);
 	if (err < 0)
 		g_debug("gpiodev: failed to report event: %s",
 			g_strerror(-err));
@@ -117,10 +117,10 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpoi
 
 static void gpio_source_finalize(GSource *source)
 {
-	struct gpio_chip *chip = (struct gpio_chip *)source;
+	struct gpio_backend *backend = (struct gpio_backend *)source;
 
-	if (chip->fd.fd >= 0)
-		close(chip->fd.fd);
+	if (backend->fd.fd >= 0)
+		close(backend->fd.fd);
 }
 
 static GSourceFuncs gpio_source_funcs = {
@@ -130,25 +130,25 @@ static GSourceFuncs gpio_source_funcs = {
 	.finalize = gpio_source_finalize,
 };
 
-int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
+int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *events,
 		     GKeyFile *config)
 {
-	struct gpio_chip *chip;
+	struct gpio_backend *backend;
 	GSource *source;
 	int err;
 	guint i;
 
-	g_return_val_if_fail(chipp != NULL, -EINVAL);
+	g_return_val_if_fail(backendp != NULL, -EINVAL);
 
-	source = g_source_new(&gpio_source_funcs, sizeof(*chip));
+	source = g_source_new(&gpio_source_funcs, sizeof(*backend));
 	if (!source)
 		return -ENOMEM;
 
-	chip = (struct gpio_chip *)source;
-	chip->events = events;
+	backend = (struct gpio_backend *)source;
+	backend->events = events;
 
-	chip->fd.fd = open("/dev/gpio-0", O_RDWR);
-	if (chip->fd.fd < 0) {
+	backend->fd.fd = open("/dev/gpio-0", O_RDWR);
+	if (backend->fd.fd < 0) {
 		err = -errno;
 		goto free;
 	}
@@ -159,55 +159,55 @@ int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
 		enable.gpio = gpio_list[i].offset;
 		enable.value = 1;
 
-		err = ioctl(chip->fd.fd, GPIO_IOC_ENABLE_IRQ, &enable);
+		err = ioctl(backend->fd.fd, GPIO_IOC_ENABLE_IRQ, &enable);
 		if (err < 0) {
 			err = -errno;
 			goto close;
 		}
 	}
 
-	chip->fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-	g_source_add_poll(source, &chip->fd);
+	backend->fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+	g_source_add_poll(source, &backend->fd);
 
-	*chipp = chip;
+	*backendp = backend;
 	return 0;
 
 close:
-	close(chip->fd.fd);
+	close(backend->fd.fd);
 free:
 	g_source_unref(source);
 	return err;
 }
 
-int gpio_chip_free(struct gpio_chip *chip)
+int gpio_backend_free(struct gpio_backend *backend)
 {
 	return 0;
 }
 
-GSource *gpio_chip_get_source(struct gpio_chip *chip)
+GSource *gpio_backend_get_source(struct gpio_backend *backend)
 {
-	return chip ? &chip->source : NULL;
+	return backend ? &backend->source : NULL;
 }
 
-int gpio_chip_get_num_gpios(struct gpio_chip *chip)
+int gpio_backend_get_num_gpios(struct gpio_backend *backend)
 {
-	return chip ? G_N_ELEMENTS(gpios) : -EINVAL;
+	return backend ? G_N_ELEMENTS(gpios) : -EINVAL;
 }
 
-int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio)
+int gpio_backend_direction_input(struct gpio_backend *backend, unsigned int gpio)
 {
 	int err;
 
 	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
 
-	err = ioctl(chip->fd.fd, GPIO_IOC_SET_INPUT, gpios[gpio]);
+	err = ioctl(backend->fd.fd, GPIO_IOC_SET_INPUT, gpios[gpio]);
 	if (err < 0)
 		return -errno;
 
 	return 0;
 }
 
-int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
+int gpio_backend_direction_output(struct gpio_backend *backend, unsigned int gpio,
 		int value)
 {
 	struct gpio_event pin;
@@ -218,14 +218,14 @@ int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
 	pin.gpio = gpios[gpio];
 	pin.value = !!value;
 
-	err = ioctl(chip->fd.fd, GPIO_IOC_SET_OUTPUT, &pin);
+	err = ioctl(backend->fd.fd, GPIO_IOC_SET_OUTPUT, &pin);
 	if (err < 0)
 		return -errno;
 
 	return 0;
 }
 
-int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value)
+int gpio_backend_set_value(struct gpio_backend *backend, unsigned int gpio, int value)
 {
 	struct gpio_event pin;
 	int err;
@@ -235,20 +235,20 @@ int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value)
 	pin.gpio = gpios[gpio];
 	pin.value = !!value;
 
-	err = ioctl(chip->fd.fd, GPIO_IOC_SET_VALUE, &pin);
+	err = ioctl(backend->fd.fd, GPIO_IOC_SET_VALUE, &pin);
 	if (err < 0)
 		return -errno;
 
 	return 0;
 }
 
-int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio)
+int gpio_backend_get_value(struct gpio_backend *backend, unsigned int gpio)
 {
 	int err;
 
 	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
 
-	err = ioctl(chip->fd.fd, GPIO_IOC_GET_VALUE, gpios[gpio]);
+	err = ioctl(backend->fd.fd, GPIO_IOC_GET_VALUE, gpios[gpio]);
 	if (err < 0)
 		return -errno;
 
