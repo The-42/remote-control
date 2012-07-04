@@ -62,6 +62,8 @@ struct _WebKitBrowserPrivate {
 	gboolean controls;
 	gboolean noexit;
 	gchar *uri;
+	GtkWidget *addTab;
+	GtkWidget *delTab;
 };
 
 static void webkit_browser_get_property(GObject *object, guint prop_id,
@@ -649,6 +651,11 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 		gtk_notebook_set_current_page(priv->notebook, page);
 		gtk_widget_grab_focus(GTK_WIDGET(priv->entry));
 		gtk_toggle_tool_button_set_active(priv->toggle, true);
+
+		if(page == WEBKIT_BROWSER_MAX_PAGES - 1)
+			gtk_widget_set_sensitive(priv->addTab, false);
+		if(!gtk_widget_is_sensitive(priv->delTab))
+			gtk_widget_set_sensitive(priv->delTab, true);
 	}
 }
 
@@ -661,6 +668,11 @@ static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 	if (pages > WEBKIT_BROWSER_MIN_PAGES) {
 		page = gtk_notebook_get_current_page(priv->notebook);
 		gtk_notebook_remove_page(priv->notebook, page);
+
+		if(pages == WEBKIT_BROWSER_MIN_PAGES + 1)
+			gtk_widget_set_sensitive(priv->delTab, false);
+		if(!gtk_widget_is_sensitive(priv->addTab))
+			gtk_widget_set_sensitive(priv->addTab, true);
 	}
 }
 
@@ -801,7 +813,6 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	GtkWidget *notebook;
-	GtkWidget *button;
 	GtkWidget *image;
 	GtkWidget *hbox;
 
@@ -817,22 +828,23 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 
 	hbox = gtk_hbox_new(FALSE, 0);
 
-	button = gtk_button_new();
+	priv->addTab = gtk_button_new();
 	image = gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON);
-	gtk_container_add(GTK_CONTAINER(button), image);
-	g_signal_connect(G_OBJECT(button), "clicked",
+	gtk_container_add(GTK_CONTAINER(priv->addTab), image);
+	g_signal_connect(G_OBJECT(priv->addTab), "clicked",
 			G_CALLBACK(on_add_tab_clicked), browser);
-	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-	gtk_widget_show_all(button);
+	gtk_box_pack_start(GTK_BOX(hbox), priv->addTab, FALSE, FALSE, 0);
+	gtk_widget_show_all(priv->addTab);
 
-	button = gtk_button_new();
+	priv->delTab = gtk_button_new();
 	image = gtk_image_new_from_stock(GTK_STOCK_REMOVE,
 			GTK_ICON_SIZE_BUTTON);
-	gtk_container_add(GTK_CONTAINER(button), image);
-	g_signal_connect(G_OBJECT(button), "clicked",
+	gtk_container_add(GTK_CONTAINER(priv->delTab), image);
+	g_signal_connect(G_OBJECT(priv->delTab), "clicked",
 			G_CALLBACK(on_del_tab_clicked), browser);
-	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 10);
-	gtk_widget_show_all(button);
+	gtk_box_pack_start(GTK_BOX(hbox), priv->delTab, FALSE, FALSE, 10);
+	gtk_widget_show_all(priv->delTab);
+	gtk_widget_set_sensitive(priv->delTab, false);
 
 	gtk_notebook_set_action_widget(priv->notebook, hbox, GTK_PACK_END);
 	gtk_widget_show(hbox);
