@@ -28,6 +28,7 @@ static const gchar style_large[] = \
 	"class \"GtkScrollbar\" style \"scrollbar-large\"";
 
 #define WEBKIT_BROWSER_MAX_PAGES 8
+#define WEBKIT_BROWSER_MIN_PAGES 1
 
 G_DEFINE_TYPE(WebKitBrowser, webkit_browser, GTK_TYPE_WINDOW);
 
@@ -654,10 +655,13 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 	gint page;
 
-	page = gtk_notebook_get_current_page(priv->notebook);
-	gtk_notebook_remove_page(priv->notebook, page);
+	if (pages > WEBKIT_BROWSER_MIN_PAGES) {
+		page = gtk_notebook_get_current_page(priv->notebook);
+		gtk_notebook_remove_page(priv->notebook, page);
+	}
 }
 
 static void on_size_allocate(GtkNotebook *notebook, GdkRectangle *allocation,
