@@ -24,16 +24,15 @@
 #define IRQ_TYPE_EDGE_FALLING (1 << 1)
 #define IRQ_TYPE_EDGE_BOTH    (IRQ_TYPE_EDGE_RISING | IRQ_TYPE_EDGE_FALLING)
 
-static struct gpio_map {
-	unsigned int offset;
-	unsigned int edge;
-	enum gpio type;
-} gpio_list[] = {
-	{ 0, IRQ_TYPE_EDGE_BOTH, GPIO_HANDSET   },
-	{ 1, IRQ_TYPE_EDGE_BOTH, GPIO_SMARTCARD },
-};
+static const char GPIO_GROUP[] = "gpio";
 
-static const unsigned int gpios[] = { 33, 34, 35, 36 };
+static struct gpio_map {
+	enum gpio gpio;
+	char *name;
+} gpio_list[] = {
+	{ GPIO_HANDSET, "handset" },
+	{ GPIO_SMARTCARD, "smartcard" },
+};
 
 struct gpio_desc {
 	GPollFD poll;
@@ -162,9 +161,12 @@ static int gpio_watch(struct gpio_desc *gpio, unsigned int edge)
 struct gpio_chip {
 	GSource source;
 
-	unsigned int base;
+	guint base;
 	struct gpio_desc **gpios;
-	guint num_gpios;
+	guint gpio_map[sizeof(enum gpio)];
+
+	gint *exposed_gpios;
+	gsize num_exposed;
 
 	struct event_manager *events;
 };
@@ -182,7 +184,7 @@ static gboolean gpio_source_check(GSource *source)
 	struct gpio_chip *chip = (struct gpio_chip *)source;
 	guint i;
 
-	for (i = 0; i < chip->num_gpios; i++) {
+	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
 		struct gpio_desc *gpio = chip->gpios[i];
 		if (gpio->poll.revents & G_IO_ERR)
 			return TRUE;
@@ -266,7 +268,7 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback,
 	guint i;
 	int err;
 
-	for (i = 0; i < chip->num_gpios; i++) {
+	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
 		struct gpio_desc *gpio = chip->gpios[i];
 
 		if (gpio->poll.revents & G_IO_ERR) {
@@ -291,20 +293,21 @@ static void gpio_source_finalize(GSource *source)
 	guint i;
 	int err;
 
-	for (i = 0; i < G_N_ELEMENTS(gpios); i++) {
-		err = gpio_free(chip->base + gpios[i]);
+	for (i = 0; i < chip->num_exposed; i++) {
+		err = gpio_free(chip->base + chip->exposed_gpios[i]);
 		if (err < 0) {
 			g_debug("gpio-sysfs: %s failed: %s", "gpio_free()",
 					g_strerror(-err));
 		}
 	}
 
-	for (i = 0; i < chip->num_gpios; i++) {
+	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
 		struct gpio_desc *gpio = chip->gpios[i];
 		gpio_unexport(gpio);
 	}
 
 	g_free(chip->gpios);
+	g_free(chip->exposed_gpios);
 }
 
 static GSourceFuncs gpio_source_funcs = {
@@ -314,7 +317,88 @@ static GSourceFuncs gpio_source_funcs = {
 	.finalize = gpio_source_finalize,
 };
 
-int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
+int gpio_load_config(struct gpio_chip *chip, GKeyFile *config)
+{
+	GError *err = NULL;
+	guint gpio;
+	int i;
+
+	if (!g_key_file_has_group(config, GPIO_GROUP)) {
+		g_warning("gpio-sysfs: configuration is missing");
+		return -EINVAL;
+	}
+
+	chip->base = g_key_file_get_integer(config, GPIO_GROUP, "base",
+					    &err);
+	if (err != NULL) {
+		g_warning("gpio-sysfs: could not load gpio base address (%s)",
+			  err->message);
+		g_error_free(err);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
+		gpio = g_key_file_get_integer(config, GPIO_GROUP,
+					gpio_list[i].name, &err);
+
+		if (err != NULL) {
+			g_warning("gpio-sysfs: could not load gpio id for %s "
+				  "(%s)", gpio_list[i].name, err->message);
+			g_error_free(err);
+	                err = NULL;
+		}
+		chip->gpio_map[gpio_list[i].gpio] = gpio;
+	}
+
+	chip->exposed_gpios = g_key_file_get_integer_list(config, GPIO_GROUP,
+					"expose", &chip->num_exposed, &err);
+	if (err != NULL) {
+		g_warning("gpio-sysfs: could not load expose list, no gpios will "
+			  "be exposed (%s)", err->message);
+		g_error_free(err);
+		err = NULL;
+	}
+
+	return 0;
+}
+
+static struct gpio_desc* initialize_gpio(enum gpio type, GSource *source,
+					 struct gpio_chip *chip)
+{
+	int gpio_num = chip->gpio_map[type];
+	struct gpio_desc *gpio = NULL;
+	int err;
+
+	err = gpio_export(&gpio, chip->base + gpio_num);
+	if (err < 0) {
+		g_debug("gpio-sysfs: %s failed: %s", "gpio_export()",
+				g_strerror(-err));
+		goto free;
+	}
+
+	gpio->type = type;
+
+	err = gpio_watch(gpio, IRQ_TYPE_EDGE_BOTH);
+	if (err < 0) {
+		g_debug("gpio-sysfs: %s failed: %s", "gpio_watch()",
+				g_strerror(-err));
+		goto free;
+	}
+
+	g_debug("gpio-sysfs: GPIO#%u exported, watching...",
+			chip->base + gpio_num);
+	g_source_add_poll(source, &gpio->poll);
+
+	return gpio;
+
+free:
+	gpio_unexport(gpio);
+	return NULL;
+
+}
+
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
+                     GKeyFile *config)
 {
 	struct gpio_chip *chip;
 	GSource *source;
@@ -329,44 +413,25 @@ int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
 
 	chip = (struct gpio_chip *)source;
 	chip->events = events;
+	gpio_load_config(chip, config);
 
-	chip->num_gpios = G_N_ELEMENTS(gpio_list);
-	/* FIXME: don't hard-code this */
-	chip->base = 448;
-
-	chip->gpios = g_new0(struct gpio_desc *, chip->num_gpios);
+	chip->gpios = g_new0(struct gpio_desc *, G_N_ELEMENTS(gpio_list));
 	if (!chip->gpios) {
 		err = -ENOMEM;
 		goto unref;
 	}
 
 	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
-		struct gpio_desc *gpio = NULL;
-
-		err = gpio_export(&gpio, chip->base + gpio_list[i].offset);
-		if (err < 0) {
-			g_debug("gpio-sysfs: %s failed: %s", "gpio_export()",
-					g_strerror(-err));
-			goto free;
+		chip->gpios[i] = initialize_gpio(gpio_list[i].gpio, source,
+						 chip);
+		if (chip->gpios[i] == NULL) {
+			g_debug("could not initialize gpio %s",
+				gpio_list[i].name);
 		}
-
-		gpio->type = gpio_list[i].type;
-		chip->gpios[i] = gpio;
-
-		err = gpio_watch(gpio, gpio_list[i].edge);
-		if (err < 0) {
-			g_debug("gpio-sysfs: %s failed: %s", "gpio_watch()",
-					g_strerror(-err));
-			goto free;
-		}
-
-		g_debug("gpio-sysfs: GPIO#%u exported, watching...",
-				chip->base + gpio_list[i].offset);
-		g_source_add_poll(source, &gpio->poll);
 	}
 
-	for (i = 0; i < G_N_ELEMENTS(gpios); i++) {
-		err = gpio_request(chip->base + gpios[i]);
+	for (i = 0; i < chip->num_exposed; i++) {
+		err = gpio_request(chip->base + chip->exposed_gpios[i]);
 		if ((err < 0) && (err != -EBUSY)) {
 			g_debug("gpio-sysfs: %s failed: %s", "gpio_request",
 					g_strerror(-err));
@@ -376,16 +441,6 @@ int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
 	*chipp = chip;
 	return 0;
 
-free:
-	for (i = 0; i < G_N_ELEMENTS(gpios); i++)
-		gpio_free(chip->base + gpios[i]);
-
-	for (i = 0; i < chip->num_gpios; i++) {
-		struct gpio_desc *gpio = chip->gpios[i];
-		gpio_unexport(gpio);
-	}
-
-	g_free(chip->gpios);
 unref:
 	g_source_unref(source);
 	return err;
@@ -403,7 +458,7 @@ GSource *gpio_chip_get_source(struct gpio_chip *chip)
 
 int gpio_chip_get_num_gpios(struct gpio_chip *chip)
 {
-	return chip ? G_N_ELEMENTS(gpios) : -EINVAL;
+	return chip ? chip->num_exposed : -EINVAL;
 }
 
 int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio)
@@ -411,9 +466,9 @@ int gpio_chip_direction_input(struct gpio_chip *chip, unsigned int gpio)
 	int err;
 
 	g_return_val_if_fail(chip != NULL, -EINVAL);
-	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+	g_return_val_if_fail(gpio < chip->num_exposed, -EINVAL);
 
-	err = gpio_direction_input(chip->base + gpios[gpio]);
+	err = gpio_direction_input(chip->base + chip->exposed_gpios[gpio]);
 	if (err < 0)
 		return err;
 
@@ -426,9 +481,10 @@ int gpio_chip_direction_output(struct gpio_chip *chip, unsigned int gpio,
 	int err;
 
 	g_return_val_if_fail(chip != NULL, -EINVAL);
-	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+	g_return_val_if_fail(gpio < chip->num_exposed, -EINVAL);
 
-	err = gpio_direction_output(chip->base + gpios[gpio], value);
+	err = gpio_direction_output(chip->base + chip->exposed_gpios[gpio],
+				    value);
 	if (err < 0)
 		return err;
 
@@ -440,9 +496,9 @@ int gpio_chip_set_value(struct gpio_chip *chip, unsigned int gpio, int value)
 	int err;
 
 	g_return_val_if_fail(chip != NULL, -EINVAL);
-	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+	g_return_val_if_fail(gpio < chip->num_exposed, -EINVAL);
 
-	err = gpio_set_value(chip->base + gpios[gpio], value);
+	err = gpio_set_value(chip->base + chip->exposed_gpios[gpio], value);
 	if (err < 0)
 		return err;
 
@@ -454,9 +510,9 @@ int gpio_chip_get_value(struct gpio_chip *chip, unsigned int gpio)
 	int err;
 
 	g_return_val_if_fail(chip != NULL, -EINVAL);
-	g_return_val_if_fail(gpio < G_N_ELEMENTS(gpios), -EINVAL);
+	g_return_val_if_fail(gpio < chip->num_exposed, -EINVAL);
 
-	err = gpio_get_value(chip->base + gpios[gpio]);
+	err = gpio_get_value(chip->base + chip->exposed_gpios[gpio]);
 	if (err < 0)
 		return err;
 

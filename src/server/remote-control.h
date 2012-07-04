@@ -375,7 +375,8 @@ enum gpio {
 
 struct gpio_chip;
 
-int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events);
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
+		GKeyFile *config);
 int gpio_chip_free(struct gpio_chip *chip);
 GSource *gpio_chip_get_source(struct gpio_chip *chip);
 int gpio_chip_get_num_gpios(struct gpio_chip *chip);

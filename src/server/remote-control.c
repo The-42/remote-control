@@ -426,7 +426,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		g_source_unref(source);
 	}
 
-	err = gpio_chip_create(&rc->gpio, rc->event_manager);
+	err = gpio_chip_create(&rc->gpio, rc->event_manager, config);
 	if (err < 0) {
 		g_error("gpio_chip_create(): %s", strerror(-err));
 		return err;

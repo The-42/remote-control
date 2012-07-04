@@ -130,7 +130,8 @@ static GSourceFuncs gpio_source_funcs = {
 	.finalize = gpio_source_finalize,
 };
 
-int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
+		     GKeyFile *config)
 {
 	struct gpio_chip *chip;
 	GSource *source;

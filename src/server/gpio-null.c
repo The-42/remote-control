@@ -13,7 +13,8 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events)
+int gpio_chip_create(struct gpio_chip **chipp, struct event_manager *events,
+		     GKeyFile *config)
 {
 	return 0;
 }

@@ -311,6 +311,48 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>gpio</varname> - gpio-sysfs backend configuration</term>
+				<para>
+					Configuration of the ports used by the sysfs gpio backend. This	has
+					to be setup properly when the gpio-sysfs backend is being used.
+				</para>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>base</varname></term>
+							<listitem><para>
+								Specifies the base address of the gpio controller to be
+								used. This has to match the used gpio driver.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>handset</varname></term>
+							<listitem><para>
+								The offset against the base address of the gpio that is
+								being used for handset hook detection. The absolute gpio
+								address for handsek hook is computed as base+handset.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>smartcard</varname></term>
+							<listitem><para>
+								The offset against the base address of the gpio that is
+								being used for smartcard detection. The absolute gpio
+								address for smartcard is computed as base+smartcard.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>expose</varname></term>
+							<listitem><para>
+								Colon seperated list of gpio offsets which are exposed as
+								gpios through the RPC interface. The absolute gpio address
+								of each exposed gpio is compute as base+exposed-gpio.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -332,6 +374,12 @@ preferred-languages = de;en
 fullscreen-width = 1280
 fullscreen-height = 720
 buffer-duration = 1000
+
+[gpio]
+base = 448
+handset = 0
+smartcard = 1
+expose = 32;33;34;35
 </programlisting>
 	</refsect1>
 </refentry>
