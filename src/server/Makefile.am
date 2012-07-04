@@ -18,8 +18,6 @@ libremote_control_la_SOURCES = \
 	audio.c \
 	backlight.c \
 	event-manager.c \
-	gpiolib.c \
-	gpiolib.h \
 	handset.c \
 	io.c \
 	irq.c \
@@ -151,6 +149,8 @@ if ENABLE_GPIO_GPIODEV
 libremote_control_la_SOURCES += gpio-gpiodev.c
 else
 if ENABLE_GPIO_SYSFS
+libremote_control_la_CFLAGS += @LIBGPIO_CFLAGS@
+libremote_control_la_LIBADD += @LIBGPIO_LIBS@
 libremote_control_la_SOURCES += gpio-sysfs.c
 else
 libremote_control_la_SOURCES += gpio-null.c

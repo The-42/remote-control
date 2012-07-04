@@ -371,6 +371,7 @@ enum gpio {
 	GPIO_UNKNOWN,
 	GPIO_HANDSET,
 	GPIO_SMARTCARD,
+	GPIO_NUM
 };
 
 struct gpio_backend;

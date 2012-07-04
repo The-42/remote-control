@@ -23,6 +23,7 @@ PKG_CHECK_MODULES(ALSA, alsa)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(POPPLER, poppler-glib)
 PKG_CHECK_MODULES(GUDEV, gudev-1.0)
+PKG_CHECK_MODULES(LIBGPIO, libgpio)
 
 PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
 RPC_STUBGEN=rpc-stubgen
@@ -198,6 +199,8 @@ AS_CASE([$with_gpio_backend],
 	[sysfs], [enable_gpio_sysfs=yes],
 	[AC_MSG_ERROR([Invalid GPIO backend: must be none, gpiodev or sysfs])]
 )
+
+AS_IF([test "x$enable_gpio_sysfs" = "xyes"], [PKG_CHECK_MODULES(LIBGPIO, libgpio)])
 
 #
 # JavaScript binding
