@@ -398,7 +398,9 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 
 	err = modem_call(manager->modem, number);
 	if (err < 0) {
-		manager->state = MODEM_STATE_IDLE;
+		g_critical("modem-libmodem: failed to call: %s",
+			   g_strerror(-err));
+		modem_manager_reset_modem(manager);
 		return err;
 	}
 
@@ -431,7 +433,6 @@ int modem_manager_accept(struct modem_manager *manager)
 	if (err < 0) {
 		g_critical("modem-libmodem: failed to accept incoming call: %s",
 			   g_strerror(-err));
-		g_critical("modem-libmodem: resetting modem...");
 		modem_manager_reset_modem(manager);
 		return err;
 	}
@@ -467,10 +468,8 @@ int modem_manager_terminate(struct modem_manager *manager)
 	 * in which case there is nothing else we can do but to reset the
 	 * modem.
 	 */
-	if (err < 0) {
-		g_debug("modem-libmodem: recovering, resetting modem");
+	if (err < 0)
 		err = modem_manager_reset_modem(manager);
-	}
 
 	manager->state = MODEM_STATE_IDLE;
 	return err;
