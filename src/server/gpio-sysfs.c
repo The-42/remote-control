@@ -297,7 +297,9 @@ int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *ev
 
 	backend = (struct gpio_backend *)source;
 	backend->events = events;
-	gpio_load_config(backend, config);
+	err = gpio_load_config(backend, config);
+	if (err < 0)
+		goto unref;
 
 	err = asprintf(&syspath, SYSFS_GPIO_PATH "/gpiochip%u", backend->base);
 	if (err < 0)
