@@ -90,6 +90,7 @@ struct media_player {
 
 	gchar **preferred_languages;
 	gchar *override_language;
+	gchar *http_proxy;
 };
 
 #if defined(ENABLE_XRANDR)
@@ -131,8 +132,9 @@ static enum media_player_state player_gst_state_2_media_state(GstState state)
 }
 
 static void player_source_setup(GstElement *playbin, GstElement *source,
-								gpointer user_data)
+                                gpointer user_data)
 {
+	struct media_player *player = user_data;
 	GObjectClass *source_class = NULL;
 	gchar *uri = NULL;
 	user_data = NULL;
@@ -146,7 +148,10 @@ static void player_source_setup(GstElement *playbin, GstElement *source,
 	if(!g_ascii_strncasecmp(uri, "http://", 7)) {
 		g_print("Playing http source, assume it's a live source\n");
 		g_object_set(G_OBJECT(source), "is-live", true, "do-timestamp", false,
-					 NULL);
+		             NULL);
+		if (player->http_proxy)
+			g_object_set(G_OBJECT(source), "proxy",
+			             player->http_proxy, NULL);
 	}
 	g_free(uri);
 }
@@ -1196,15 +1201,23 @@ int media_player_free(struct media_player *player)
 void media_player_parse_uri_options(struct media_player *player, const char **uri_options)
 {
 	while (*uri_options) {
-		if (!g_ascii_strncasecmp(*uri_options, "audio-language=", 15)) {
-			gchar *lang = g_strrstr(*uri_options, "=") + 1;
-
+		if (g_ascii_strncasecmp(*uri_options, "audio-language=", 15) == 0) {
+			const gchar *lang = g_strrstr(*uri_options, "=") + 1;
 			if(player->override_language)
 				g_free(player->override_language);
 
 			player->override_language = g_strdup(lang);
 			g_debug("  select audio-language for stream: %s",
-				lang);
+				player->override_language);
+		}
+		else if (g_ascii_strncasecmp(*uri_options, "http-proxy=", 11) == 0) {
+			const gchar *proxy = g_strrstr(*uri_options, "=") + 1;
+			if(player->http_proxy)
+				g_free(player->http_proxy);
+
+			player->http_proxy = g_strdup(proxy);
+			g_debug("  select http-proxy for stream: %s",
+				player->http_proxy);
 		}
 		uri_options++;
 	}
@@ -1231,6 +1244,10 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	if (player->override_language) {
 		g_free(player->override_language);
 		player->override_language = NULL;
+	}
+	if (player->http_proxy) {
+		g_free(player->http_proxy);
+		player->http_proxy = NULL;
 	}
 
 	uriparts = g_strsplit (uri, " :", 0);
