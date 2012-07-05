@@ -380,6 +380,22 @@ static void on_notify_loading(GObject *object, GParamSpec *pspec,
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden);
 static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDownload *download);
 
+static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
+{
+	gint pages = gtk_notebook_get_n_pages(priv->notebook);
+
+	if(pages == WEBKIT_BROWSER_MAX_PAGES) {
+		gtk_widget_set_sensitive(priv->addTab, false);
+		gtk_widget_set_sensitive(priv->delTab, true);
+	} else if (pages == WEBKIT_BROWSER_MIN_PAGES) {
+		gtk_widget_set_sensitive(priv->addTab, true);
+		gtk_widget_set_sensitive(priv->delTab, false);
+	} else {
+		gtk_widget_set_sensitive(priv->addTab, true);
+		gtk_widget_set_sensitive(priv->delTab, true);
+	}
+}
+
 static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpointer data)
 {
 	WebKitDownloadStatus status = webkit_download_get_status(download);
@@ -518,6 +534,8 @@ static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
 	view = gtk_notebook_get_nth_page(priv->notebook, page);
 	new = gtk_bin_get_child(GTK_BIN(view));
 
+	webkit_browser_update_tab_controls(priv);
+
 	return WEBKIT_WEB_VIEW(new);
 }
 
@@ -636,7 +654,7 @@ static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDo
 			G_CALLBACK(on_notify_loading), label);
 
 	page = gtk_notebook_append_page(priv->notebook, view, label);
-
+	webkit_browser_update_tab_controls(priv);
 	return page;
 }
 
@@ -652,10 +670,7 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 		gtk_widget_grab_focus(GTK_WIDGET(priv->entry));
 		gtk_toggle_tool_button_set_active(priv->toggle, true);
 
-		if(page == WEBKIT_BROWSER_MAX_PAGES - 1)
-			gtk_widget_set_sensitive(priv->addTab, false);
-		if(!gtk_widget_is_sensitive(priv->delTab))
-			gtk_widget_set_sensitive(priv->delTab, true);
+		webkit_browser_update_tab_controls(priv);
 	}
 }
 
@@ -669,10 +684,7 @@ static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 		page = gtk_notebook_get_current_page(priv->notebook);
 		gtk_notebook_remove_page(priv->notebook, page);
 
-		if(pages == WEBKIT_BROWSER_MIN_PAGES + 1)
-			gtk_widget_set_sensitive(priv->delTab, false);
-		if(!gtk_widget_is_sensitive(priv->addTab))
-			gtk_widget_set_sensitive(priv->addTab, true);
+		webkit_browser_update_tab_controls(priv);
 	}
 }
 
@@ -844,7 +856,6 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 			G_CALLBACK(on_del_tab_clicked), browser);
 	gtk_box_pack_start(GTK_BOX(hbox), priv->delTab, FALSE, FALSE, 10);
 	gtk_widget_show_all(priv->delTab);
-	gtk_widget_set_sensitive(priv->delTab, false);
 
 	gtk_notebook_set_action_widget(priv->notebook, hbox, GTK_PACK_END);
 	gtk_widget_show(hbox);
@@ -902,6 +913,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_widget_show(vbox);
 
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
+
+	webkit_browser_update_tab_controls(priv);
 }
 
 static void webkit_browser_class_init(WebKitBrowserClass *class)
