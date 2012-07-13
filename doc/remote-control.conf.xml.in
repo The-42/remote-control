@@ -268,6 +268,13 @@
 								disables it. This is the default.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>registration-expiry</varname></term>
+							<listitem><para>
+								Specifies the initial expiry time for the REGISTER message.
+								The value is valid in a range from 1 to 3600. The linphone default is 600.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
@@ -368,6 +375,7 @@ timeout = 13000
 [linphone]
 disable-codecs = speex;g722
 echo-cancellation = true
+registration-expiry = 600
 
 [media-player]
 preferred-languages = de;en
