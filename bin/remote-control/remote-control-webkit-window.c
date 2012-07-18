@@ -440,4 +440,15 @@ gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 	priv->uri = g_uri_new(uri);
 
 	return TRUE;
+
+}
+
+gboolean remote_control_webkit_window_reload(RemoteControlWebkitWindow *self)
+{
+	RemoteControlWebkitWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+	webkit_web_view_reload(priv->webkit);
+
+	return TRUE;
 }
