@@ -371,8 +371,6 @@ Options:
 
 AS_IF([test "x$enable_javascript" = "xyes"], [
 	AS_ECHO("    IR Input Support:        $enable_javascript_ir")
-])
-AS_IF([test "x$enable_javascript" = "xyes"], [
 	AS_ECHO("    LCD Serial Support:      $enable_javascript_lcd")
 	AS_ECHO("    Application Watchdog Support: $enable_javascript_app_watchdog")
 ])
