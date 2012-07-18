@@ -28,9 +28,10 @@ void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
 static int javascript_register_avionic_design(JSGlobalContextRef js,
                                               JSObjectRef parent,
                                               const char *name,
-                                              GMainLoop *loop,
-                                              RemoteControlWebkitWindow *window)
+					      struct javascript_userdata *data)
 {
+	RemoteControlWebkitWindow *window = data->window;
+	GMainLoop *loop = data->loop;
 	JSValueRef exception = NULL;
 	JSObjectRef object;
 	JSStringRef string;
@@ -127,8 +128,7 @@ int javascript_register(JSGlobalContextRef context,
 
 	err = javascript_register_avionic_design(context, object,
 	                                         "AvionicDesign",
-	                                         user_data->loop,
-	                                         user_data->window);
+	                                         user_data);
 	if (err < 0) {
 		g_debug("failed to register AvionicDesign object: %s",
 				g_strerror(-err));
