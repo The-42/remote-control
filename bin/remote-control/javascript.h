@@ -65,6 +65,22 @@ static inline int javascript_register_lcd(JSContextRef js, JSObjectRef parent,
 }
 #endif
 
+#ifdef ENABLE_JAVASCRIPT_APP_WATCHDOG
+int javascript_register_app_watchdog_class(void);
+int javascript_register_app_watchdog(JSContextRef js,
+		JSObjectRef parent, const char *name, void *user_data);
+#else
+static inline int javascript_register_app_watchdog_class(void)
+{
+	return 0;
+}
+
+static inline int javascript_register_app_watchdog(JSContextRef js,
+		JSObjectRef parent, const char *name, void *user_data)
+{
+	return 0;
+}
+#endif
 
 int javascript_register(JSGlobalContextRef js,
                         struct javascript_userdata *user_data);

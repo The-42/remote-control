@@ -67,6 +67,13 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 		return err;
 	}
 
+	err = javascript_register_app_watchdog(js, object, "Watchdog", data);
+	if (err < 0) {
+		g_warning("%s: failed to register Watchdog object: %s",
+			__func__, g_strerror(-err));
+		return err;
+	}
+
 	string = JSStringCreateWithUTF8CString(name);
 	if (string) {
 		JSObjectSetProperty(js, parent, string, object, 0, &exception);
@@ -104,6 +111,13 @@ static int javascript_register_classes(void)
 	err = javascript_register_lcd_class();
 	if (err < 0) {
 		g_warning("%s: failed to register cursor class: %s",
+			__func__, g_strerror(-err));
+		return err;
+	}
+
+	err = javascript_register_app_watchdog_class();
+	if (err < 0) {
+		g_warning("%s: failed to register app_watchdog class: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}
