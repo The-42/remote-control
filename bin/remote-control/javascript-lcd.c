@@ -155,17 +155,6 @@ static int parse_response(guint8 *buffer, guint length)
 	return -ENOSYS;
 }
 
-static void set_exception_text(JSContextRef context,JSValueRef *exception,
-                               const char *failure)
-{
-	g_debug("   %s", failure);
-	if (exception) {
-		JSStringRef text = JSStringCreateWithUTF8CString(failure);
-		*exception = JSValueMakeString(context, text);
-		JSStringRelease(text);
-	}
-}
-
 static void print_exception(JSContextRef context, JSValueRef exception)
 {
 	JSStringRef text;
@@ -488,19 +477,19 @@ static JSValueRef lcd_function_send(JSContextRef context,
 	ssize_t ret;
 
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 1) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"invalid argument count");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (!JSValueIsString(context, argv[0])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"command is not a string");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -519,7 +508,7 @@ static JSValueRef lcd_function_send(JSContextRef context,
 
 	ret = write(poll->fd, command, length);
 	if (ret < 0) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"write failed");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -542,19 +531,19 @@ static JSValueRef lcd_function_power(JSContextRef context,
 	int ret;
 
 	if (!lcd) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 1) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"invalid argument count");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (!JSValueIsBoolean(context, argv[0])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"command is not a boolean");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -564,7 +553,7 @@ static JSValueRef lcd_function_power(JSContextRef context,
 
 	ret = lcd_send_command(lcd, cmd, 0);
 	if (ret < 0) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"write failed");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -587,19 +576,19 @@ static JSValueRef lcd_function_mute(JSContextRef context,
 	int ret;
 
 	if (!lcd) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 1) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"invalid argument count");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (!JSValueIsBoolean(context, argv[0])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"command is not a boolean");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -609,7 +598,7 @@ static JSValueRef lcd_function_mute(JSContextRef context,
 
 	ret = lcd_send_command(lcd, cmd, 0);
 	if (ret < 0) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"write failed");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -640,7 +629,7 @@ static JSValueRef lcd_get_onevent(JSContextRef context, JSObjectRef object,
 {
 	struct lcd *priv = JSObjectGetPrivate(object);
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeNull(context);
 	}
@@ -653,7 +642,7 @@ static bool lcd_set_onevent(JSContextRef context, JSObjectRef object,
 {
 	struct lcd *priv = JSObjectGetPrivate(object);
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return false;
 	}

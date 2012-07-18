@@ -15,6 +15,16 @@
 
 #include "javascript.h"
 
+void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
+                               const char *failure)
+{
+	if (exception) {
+		JSStringRef text = JSStringCreateWithUTF8CString(failure);
+		*exception = JSValueMakeString(context, text);
+		JSStringRelease(text);
+	}
+}
+
 static int javascript_register_avionic_design(JSGlobalContextRef js,
                                               JSObjectRef parent,
                                               const char *name,

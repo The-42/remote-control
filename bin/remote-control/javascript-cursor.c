@@ -30,16 +30,6 @@ struct cursor {
 	int uinput; /* dummy input device */
 };
 
-static void set_exception_text(JSContextRef context,JSValueRef *exception,
-                               const char *failure)
-{
-	if (exception) {
-		JSStringRef text = JSStringCreateWithUTF8CString(failure);
-		*exception = JSValueMakeString(context, text);
-		JSStringRelease(text);
-	}
-}
-
 static inline int uinput_send_event(int uinput, int type, int code, int value)
 {
 	struct input_event event;
@@ -85,24 +75,24 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 	int x, y;
 
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 2) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"invalid argument count");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (!JSValueIsNumber(context, argv[0])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"x is not a number");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 	if (!JSValueIsNumber(context, argv[1])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"y is not a number");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -133,24 +123,24 @@ static JSValueRef cursor_clickat_callback(JSContextRef context,
 	int x, y;
 
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 2) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"invalid argument count");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (!JSValueIsNumber(context, argv[0])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"x is not a number");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 	if (!JSValueIsNumber(context, argv[1])) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"y is not a number");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -195,7 +185,7 @@ static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
 	gboolean hidden;
 
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
@@ -213,13 +203,14 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
 	gboolean enable;
 
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return false;
 	}
 
 	if (!JSValueIsBoolean(context, value)) {
-		set_exception_text(context, exception, "not a boolean");
+		javascript_set_exception_text(context, exception,
+			"not a boolean");
 		return false;
 	}
 

@@ -106,17 +106,6 @@ static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 	return pos;
 }
 
-static void set_exception_text(JSContextRef context,JSValueRef *exception,
-                               const char *failure)
-{
-	g_debug("   %s", failure);
-	if (exception) {
-		JSStringRef text = JSStringCreateWithUTF8CString(failure);
-		*exception = JSValueMakeString(context, text);
-		JSStringRelease(text);
-	}
-}
-
 static void print_exception(JSContextRef context, JSValueRef exception)
 {
 	JSStringRef text;
@@ -394,7 +383,7 @@ static JSValueRef ir_get_onevent(JSContextRef context, JSObjectRef object,
 {
 	struct ir *priv = JSObjectGetPrivate(object);
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return JSValueMakeNull(context);
 	}
@@ -406,7 +395,7 @@ static bool ir_set_onevent(JSContextRef context, JSObjectRef object,
 {
 	struct ir *priv = JSObjectGetPrivate(object);
 	if (!priv) {
-		set_exception_text(context, exception,
+		javascript_set_exception_text(context, exception,
 			"object not valid, context switched?");
 		return false;
 	}

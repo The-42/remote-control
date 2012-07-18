@@ -21,6 +21,9 @@ struct javascript_userdata {
 extern "C" {
 #endif
 
+void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
+                               const char *failure);
+
 int javascript_register_cursor_class(void);
 int javascript_register_cursor(JSContextRef js, JSObjectRef parent,
                                const char *name, void *user_data);
