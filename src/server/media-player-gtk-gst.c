@@ -714,7 +714,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 
 	g_signal_connect (player->pipeline, "source-setup",
 					  G_CALLBACK (player_source_setup),
-					  NULL);
+					  player);
 
 cleanup:
 	if (error)
