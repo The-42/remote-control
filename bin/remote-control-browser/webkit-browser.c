@@ -384,7 +384,7 @@ static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
 {
 	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 
-	if(pages == WEBKIT_BROWSER_MAX_PAGES) {
+	if (pages == WEBKIT_BROWSER_MAX_PAGES) {
 		gtk_widget_set_sensitive(priv->addTab, FALSE);
 		gtk_widget_set_sensitive(priv->delTab, FALSE);
 	} else if (pages == WEBKIT_BROWSER_MIN_PAGES) {
