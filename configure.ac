@@ -44,11 +44,13 @@ AC_ARG_WITH([gtk],
 
 AS_CASE([$with_gtk],
 	[2.0], [REQUIRED_WEBKIT=-1.0],
-	[3.0], [REQUIRED_WEBKIT=gtk-3.0],
+	[3.0], [REQUIRED_WEBKIT=2gtk-3.0],
 	[AC_MSG_ERROR([Invalid Gtk+ version specified: must be 2.0 or 3.0])])
 
 if test "x$with_gtk" = "x3.0"; then
 	AC_DEFINE([HAVE_GTKX_H], [1], [If Gtk+ 3.0 is used])
+	AC_DEFINE([USE_GTK3], [1], [If Gtk+ 3.0 is used])
+	AC_DEFINE([USE_WEBKIT2], [1], [If WebKit2 API is used])
 fi
 
 PKG_CHECK_MODULES(GTK, gtk+-x11-$with_gtk x11 xext)
@@ -295,6 +297,7 @@ AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_LCD, [test "x$enable_javascript_lcd" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_APP_WATCHDOG, [test "x$enable_javascript_app_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
+AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_gtk" = "x3.0"])
 
 #
 # check for required files and packages
