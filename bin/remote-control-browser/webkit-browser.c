@@ -295,7 +295,7 @@ static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
 
-	gtk_toggle_tool_button_set_active(priv->toggle, true);
+	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
 	if (!GTK_WIDGET_HAS_FOCUS(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
@@ -385,14 +385,14 @@ static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
 	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 
 	if(pages == WEBKIT_BROWSER_MAX_PAGES) {
-		gtk_widget_set_sensitive(priv->addTab, false);
-		gtk_widget_set_sensitive(priv->delTab, true);
+		gtk_widget_set_sensitive(priv->addTab, FALSE);
+		gtk_widget_set_sensitive(priv->delTab, FALSE);
 	} else if (pages == WEBKIT_BROWSER_MIN_PAGES) {
-		gtk_widget_set_sensitive(priv->addTab, true);
-		gtk_widget_set_sensitive(priv->delTab, false);
+		gtk_widget_set_sensitive(priv->addTab, TRUE);
+		gtk_widget_set_sensitive(priv->delTab, FALSE);
 	} else {
-		gtk_widget_set_sensitive(priv->addTab, true);
-		gtk_widget_set_sensitive(priv->delTab, true);
+		gtk_widget_set_sensitive(priv->addTab, TRUE);
+		gtk_widget_set_sensitive(priv->delTab, TRUE);
 	}
 }
 
@@ -668,7 +668,7 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 	if (page >= 0) {
 		gtk_notebook_set_current_page(priv->notebook, page);
 		gtk_widget_grab_focus(GTK_WIDGET(priv->entry));
-		gtk_toggle_tool_button_set_active(priv->toggle, true);
+		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
 		webkit_browser_update_tab_controls(priv);
 	}
