@@ -838,7 +838,11 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 	g_signal_connect(G_OBJECT(notebook), "switch-page",
 			G_CALLBACK(on_page_switched), browser);
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+#else
 	hbox = gtk_hbox_new(FALSE, 0);
+#endif
 
 	priv->addTab = gtk_button_new();
 	image = gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON);

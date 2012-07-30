@@ -285,7 +285,11 @@ static void gtk_pdf_view_init(GtkPdfView *self)
 
 	canvas = gtk_drawing_area_new();
 	gtk_widget_set_app_paintable(canvas, TRUE);
+#if GTK_CHECK_VERSION(2, 91, 0)
+	g_signal_connect(G_OBJECT(canvas), "draw",
+#else
 	g_signal_connect(G_OBJECT(canvas), "expose-event",
+#endif
 			G_CALLBACK(on_canvas_expose), self);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(window),
 			canvas);
