@@ -14,8 +14,6 @@ remote_control_browser_CPPFLAGS = \
 remote_control_browser_SOURCES = \
 	gtk-drag-view.c \
 	gtk-drag-view.h \
-	katze-scrolled.c \
-	katze-scrolled.h \
 	gtk-pdf-view.c \
 	gtk-pdf-view.h \
 	main.c \
@@ -23,6 +21,12 @@ remote_control_browser_SOURCES = \
 	webkit-browser.h \
 	webkit-browser-tab-label.c \
 	webkit-browser-tab-label.h
+
+if !ENABLE_WEBKIT2
+remote_control_browser_SOURCES += \
+	katze-scrolled.c \
+	katze-scrolled.h
+endif
 
 remote_control_browser_LDADD = \
 	../../src/common/libcommon.la \

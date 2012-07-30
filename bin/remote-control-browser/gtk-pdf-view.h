@@ -9,7 +9,15 @@
 #ifndef GTK_PDF_VIEW_H
 #define GTK_PDF_VIEW_H 1
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#ifdef USE_WEBKIT2
+#include <webkit2/webkit2.h>
+#else
 #include <webkit/webkit.h>
+#endif
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS

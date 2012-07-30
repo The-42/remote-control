@@ -12,11 +12,19 @@
 
 #include <string.h>
 #include <gdk/gdkx.h>
+
+#ifdef USE_WEBKIT2
+#include <webkit2/webkit2.h>
+#else
 #include <webkit/webkit.h>
+#endif
+
 #include <gtkosk/gtkosk.h>
 #include <libsoup/soup-proxy-resolver-default.h>
 
+#ifndef USE_WEBKIT2
 #include "katze-scrolled.h"
+#endif
 #include "webkit-browser.h"
 #include "webkit-browser-tab-label.h"
 #include "gtk-pdf-view.h"
@@ -39,7 +47,10 @@ enum {
 	PROP_GEOMETRY,
 	PROP_KEYBOARD,
 	PROP_CONTROLS,
+// FIXME: PROP_ACCEPT_LANGUAGE for webkit2
+#ifndef USE_WEBKIT2
 	PROP_ACCEPT_LANGUAGE,
+#endif
 	PROP_URI,
 	PROP_NOEXIT,
 };
@@ -70,8 +81,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
+#ifndef USE_WEBKIT2
 	SoupSession *session = webkit_get_default_session();
 	gchar *language;
+#endif
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -86,10 +99,12 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_boolean(value, priv->controls);
 		break;
 
+#ifndef USE_WEBKIT2
 	case PROP_ACCEPT_LANGUAGE:
 		language = soup_session_get_accept_language(session);
 		g_value_take_string(value, language);
 		break;
+#endif
 
 	case PROP_URI:
 		g_value_set_string(value, priv->uri);
@@ -109,8 +124,10 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		const GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
+#ifndef USE_WEBKIT2
 	SoupSession *session = webkit_get_default_session();
 	const gchar *language;
+#endif
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -134,11 +151,12 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			gtk_notebook_set_show_tabs(priv->notebook, FALSE);
 		}
 		break;
-
+#ifndef USE_WEBKIT2
 	case PROP_ACCEPT_LANGUAGE:
 		language = g_value_get_string(value);
 		soup_session_set_accept_language(session, language);
 		break;
+#endif
 
 	case PROP_URI:
 		break;
@@ -166,6 +184,19 @@ static void webkit_browser_finalize(GObject *object)
 	G_OBJECT_CLASS(webkit_browser_parent_class)->finalize(object);
 }
 
+#ifdef USE_WEBKIT2
+static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
+		WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	gdouble progress =
+		webkit_web_view_get_estimated_load_progress(webkit);
+
+	if (progress == 1.0)
+		progress = 0.0;
+	gtk_entry_set_progress_fraction(priv->entry, progress);
+}
+#else
 static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowserTabLabel *label)
 {
@@ -207,10 +238,9 @@ static void on_notify_load_status_global(WebKitWebView *webkit,
 	}
 }
 
-static void on_notify_progres(WebKitWebView *webkit, GParamSpec *pspec,
+static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowser *browser)
 {
-
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
 	gdouble progress = webkit_web_view_get_progress(webkit);
@@ -225,6 +255,7 @@ static void on_notify_progres(WebKitWebView *webkit, GParamSpec *pspec,
 	}
 	gtk_entry_set_progress_fraction(priv->entry, progress);
 }
+#endif
 
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 {
@@ -235,8 +266,12 @@ static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 
 	page = gtk_notebook_get_current_page(priv->notebook);
 	widget = gtk_notebook_get_nth_page(priv->notebook, page);
-	widget = gtk_bin_get_child(GTK_BIN(widget));
+#ifdef USE_WEBKIT2
 	view = WEBKIT_WEB_VIEW(widget);
+#else
+	widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(widget))));
+	view = WEBKIT_WEB_VIEW(widget);
+#endif
 
 	return view;
 }
@@ -297,7 +332,7 @@ static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 
 	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
-	if (!GTK_WIDGET_HAS_FOCUS(widget)) {
+	if (!gtk_widget_has_focus(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
 		gtk_widget_grab_focus(widget);
 		return TRUE;
@@ -396,6 +431,55 @@ static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
 	}
 }
 
+#ifdef USE_WEBKIT2
+static gboolean on_download_created_destination(WebKitDownload *download,
+	gchar *destination, gpointer data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	WebKitBrowser *browser = (WebKitBrowser *)data;
+	gint page;
+
+	g_debug("download started");
+	page = webkit_browser_append_page_with_pdf(browser, download);
+	if (page >= 0)
+		gtk_notebook_set_current_page(priv->notebook, page);
+
+	return TRUE;
+}
+
+static void webkit_download_started(WebKitWebContext *context,
+	WebKitDownload *download, gpointer user_data)
+{
+	const gchar *template = "download-XXXXXX";
+	gchar *filename = NULL;
+	GError *error = NULL;
+	gchar *uri;
+	gint fd;
+
+	fd = g_file_open_tmp(template, &filename, &error);
+	if (fd < 0) {
+		g_debug("g_file_open_tmp(): %s", error->message);
+		g_error_free(error);
+		return;
+	}
+
+	close(fd);
+
+	g_print("Webkit download started! Loading to: %s\n", filename);
+
+	uri = g_strdup_printf("file://%s", filename);
+	g_debug("downloading to %s", filename);
+
+	g_signal_connect(G_OBJECT(download), "created-destination",
+			G_CALLBACK(on_download_created_destination), user_data);
+	webkit_download_set_destination(download, uri);
+
+	unlink(filename);
+	g_free(filename);
+	g_free(uri);
+	return;
+}
+#else
 static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpointer data)
 {
 	WebKitDownloadStatus status = webkit_download_get_status(download);
@@ -439,7 +523,8 @@ static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpoi
 	}
 }
 
-static gboolean on_download_requested(WebKitWebView *webkit, WebKitDownload *download, gpointer data)
+static gboolean on_download_requested(WebKitWebView *webkit,
+		WebKitDownload *download, gpointer data)
 {
 	const gchar *template = "download-XXXXXX";
 	gchar *filename = NULL;
@@ -467,18 +552,7 @@ static gboolean on_download_requested(WebKitWebView *webkit, WebKitDownload *dow
 	g_free(uri);
 	return TRUE;
 }
-
-static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *frame,
-		WebKitNetworkRequest *request, const gchar *mimetype,
-		WebKitWebPolicyDecision *decision, gpointer data)
-{
-	if (g_str_equal(mimetype, "application/pdf")) {
-		webkit_web_policy_decision_download(decision);
-		return TRUE;
-	}
-
-	return FALSE;
-}
+#endif
 
 static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 {
@@ -492,6 +566,19 @@ static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 		/* Allow only one tab when tabbar is hidden */
 		if (pages < 1)
 			return TRUE;
+	}
+
+	return FALSE;
+}
+
+#ifndef USE_WEBKIT2
+static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *frame,
+		WebKitNetworkRequest *request, const gchar *mimetype,
+		WebKitWebPolicyDecision *decision, gpointer data)
+{
+	if (g_str_equal(mimetype, "application/pdf")) {
+		webkit_web_policy_decision_download(decision);
+		return TRUE;
 	}
 
 	return FALSE;
@@ -511,6 +598,36 @@ static gboolean on_new_window_requested(WebKitWebView *webkit,
 
 	return TRUE;
 }
+#else
+static gboolean webkit_decide_policy (WebKitWebView *web_view,
+	WebKitPolicyDecision *decision, WebKitPolicyDecisionType type,
+	gpointer user_data)
+{
+	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
+
+	if (type == WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION) {
+		if (!webkit_browser_can_open_tab(browser))
+			webkit_policy_decision_ignore(decision);
+		else
+			webkit_policy_decision_use(decision);
+	} else if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE) {
+		WebKitResponsePolicyDecision *response_policy =
+			WEBKIT_RESPONSE_POLICY_DECISION(decision);
+		WebKitURIResponse *response =
+			webkit_response_policy_decision_get_response(response_policy);
+		const gchar *mimetype =	webkit_uri_response_get_mime_type(response);
+
+		if (g_str_equal(mimetype, "application/pdf")) {
+			webkit_policy_decision_download(decision);
+		} else if (g_ascii_strncasecmp(mimetype, "application/", 12)
+				== 0) {
+			webkit_policy_decision_ignore(decision);
+		}
+	}
+
+	return TRUE;
+}
+#endif
 
 static gboolean on_web_view_ready(WebKitWebView *webkit, gpointer user_data)
 {
@@ -519,8 +636,8 @@ static gboolean on_web_view_ready(WebKitWebView *webkit, gpointer user_data)
 	return FALSE;
 }
 
-static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
-		WebKitWebFrame *frame, gpointer user_data)
+static WebKitWebView *on_create_web_view(WebKitWebView *web_view,
+	gpointer user_data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(user_data);
 	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
@@ -541,6 +658,8 @@ static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
 
 static void webkit_browser_set_user_agent(WebKitWebView *webkit)
 {
+// FIXME: As of v1.8.1 webkit2 lacks a user agent.
+#ifndef USE_WEBKIT2
 	WebKitWebSettings *settings;
 	gchar *user_agent;
 	gchar *processor;
@@ -560,14 +679,22 @@ static void webkit_browser_set_user_agent(WebKitWebView *webkit)
 	g_object_set(G_OBJECT(settings), "user-agent", user_agent, NULL);
 	webkit_web_view_set_settings (WEBKIT_WEB_VIEW(webkit), settings);
 	g_free(user_agent);
+#else
+	#warning "User Agent setting is not implemented in Webkit2"
+#endif
 }
 
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+#ifdef USE_WEBKIT2
+	WebKitWebContext *context = webkit_web_context_get_default();
+#endif
 	GtkWidget *webkit;
 	GtkWidget *label;
+#ifndef USE_WEBKIT2
 	GtkWidget *view;
+#endif
 	gint page;
 
 	if (!webkit_browser_can_open_tab(browser))
@@ -576,20 +703,32 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	/* create WebKit browser */
 	webkit = webkit_web_view_new();
 	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit));
+	gtk_widget_set_double_buffered(webkit, TRUE);
 
 	/* TODO: Support GtkDragView with scrollbar */
+#ifndef USE_WEBKIT2
 	view = katze_scrolled_new(NULL, NULL);
 	g_object_set(G_OBJECT(view), "drag-scrolling", TRUE, NULL);
 	gtk_rc_parse_string(style_large);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show(view);
-
+#endif
 	if (!hidden)
 		gtk_widget_show(webkit);
 
 	label = webkit_browser_tab_label_new(title);
 	gtk_widget_show(label);
 
+#ifdef USE_WEBKIT2
+	page = gtk_notebook_append_page(priv->notebook, webkit, label);
+
+	g_signal_connect(G_OBJECT(webkit), "decide-policy",
+			G_CALLBACK(webkit_decide_policy), browser);
+	g_signal_connect(G_OBJECT(context), "download-started",
+			G_CALLBACK(webkit_download_started), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::estimated-load-progress",
+			G_CALLBACK(on_notify_progress), browser);
+#else
 	page = gtk_notebook_append_page(priv->notebook, view, label);
 
 	g_signal_connect(G_OBJECT(webkit), "mime-type-policy-decision-requested",
@@ -598,19 +737,20 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(on_download_requested), browser);
 	g_signal_connect(G_OBJECT(webkit), "new-window-policy-decision-requested",
 			G_CALLBACK(on_new_window_requested), browser);
-	g_signal_connect(G_OBJECT(webkit), "create-web-view",
+	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
+			G_CALLBACK(on_notify_load_status), label);
+	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
+			G_CALLBACK(on_notify_load_status_global), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::progress",
+			G_CALLBACK(on_notify_progress), browser);
+#endif
+	g_signal_connect(G_OBJECT(webkit), "notify::create",
 			G_CALLBACK(on_create_web_view), browser);
 
 	if (hidden)
 		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
 				G_CALLBACK(on_web_view_ready), webkit);
 
-	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
-			G_CALLBACK(on_notify_load_status), label);
-	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
-			G_CALLBACK(on_notify_load_status_global), browser);
-	g_signal_connect(G_OBJECT(webkit), "notify::progress",
-			G_CALLBACK(on_notify_progres), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::title",
 			G_CALLBACK(on_notify_title), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
@@ -719,22 +859,35 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	WebKitWebView *webkit;
+#ifndef USE_WEBKIT2
 	WebKitWebFrame *frame;
+#endif
 	GtkWidget *widget;
 	const gchar *uri;
 
+#ifdef USE_WEBKIT2
+	if (WEBKIT_IS_WEB_VIEW(page)) {
+		/* the notebook page contains a WebKitWebView */
+		widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(page))));
+		webkit = WEBKIT_WEB_VIEW(widget);
+#else
 	if (GTK_IS_BIN(page)) {
 		/* the notebook page contains a WebKitWebView */
 		widget = gtk_bin_get_child(GTK_BIN(page));
 		webkit = WEBKIT_WEB_VIEW(widget);
 		frame = webkit_web_view_get_main_frame(webkit);
+#endif
 
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->back), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->forward), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->entry), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->reload), TRUE);
 
+#ifdef USE_WEBKIT2
+		uri = webkit_web_view_get_uri(webkit) ?: "";
+#else
 		uri = webkit_web_frame_get_uri(frame) ?: "";
+#endif
 		gtk_entry_set_text(priv->entry, uri);
 	} else {
 		/* the notebook page contains a GtkPdfView */
@@ -873,13 +1026,16 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 static void webkit_browser_init(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+#ifndef USE_WEBKIT2
 	SoupSession *session = webkit_get_default_session();
+#endif
 	GtkOskLayout *layout;
 	GtkWidget *notebook;
 	GtkWidget *toolbar;
 	GtkWidget *vbox;
 
 	/* enable cookies */
+#ifndef USE_WEBKIT2
 	priv->cookie = soup_cookie_jar_new();
 	soup_session_add_feature(session, SOUP_SESSION_FEATURE(priv->cookie));
 
@@ -893,6 +1049,10 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	/* enable proxy support */
 	soup_session_add_feature_by_type(session,
 			SOUP_TYPE_PROXY_RESOLVER_DEFAULT);
+#else
+	#warning "Proxy support missing in webkit2"
+	#warning "Cookie support missing in webkit2"
+#endif
 
 	toolbar = webkit_browser_create_toolbar(browser);
 	gtk_widget_show(toolbar);
@@ -949,13 +1109,14 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 			g_param_spec_boolean("controls", "Browser Controls",
 				"Enable or disable browser controls", TRUE,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
+#ifndef USE_WEBKIT2
 	g_object_class_install_property(object, PROP_ACCEPT_LANGUAGE,
 			g_param_spec_string("accept-language",
 				"Accept-Language string",
 				"Accept-Language string",
 				NULL,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+#endif
 
 	g_object_class_install_property(object, PROP_URI,
 			g_param_spec_string("uri", "URI", "URI", NULL,
