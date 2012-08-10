@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Avionic Design GmbH
+ * Copyright (C) 2011-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -25,73 +25,156 @@
 #include "smbus.h"
 
 struct backlight {
-	GUdevClient *udev;
-	GUdevDevice *device;
 	Display *display;
 	int fd;
+
+	int (*release)(struct backlight *backlight);
+	int (*set)(struct backlight *backlight, unsigned int brightness);
+	int (*get)(struct backlight *backlight);
 };
 
-int backlight_create(struct backlight **backlightp)
+static int backlight_dpms_probe(struct backlight *backlight)
 {
-	const char *const subsystems[] = { "i2c-dev", NULL };
-	struct backlight *backlight;
-	const char *device;
-	int dummy = 0;
-	int major = 0;
-	int minor = 0;
-	GList *list;
-	GList *node;
-	int err;
-	int i;
+	int dummy = 0, major = 0, minor = 0;
 
-	if (!backlightp)
+	if (!backlight)
 		return -EINVAL;
 
-	backlight = calloc(1, sizeof(*backlight));
-	if (!backlight)
-		return -ENOMEM;
-
 	backlight->display = XOpenDisplay(NULL);
-	if (!backlight->display) {
-		err = -ENODEV;
-		goto free;
-	}
+	if (!backlight->display)
+		return -ENODEV;
 
 	if (!DPMSGetVersion(backlight->display, &major, &minor) ||
 	    !DPMSCapable(backlight->display) ||
 	    !DPMSQueryExtension(backlight->display, &dummy, &dummy)) {
-		err = -ENOTSUP;
-		goto close_x;
+		XCloseDisplay(backlight->display);
+		return -ENOTSUP;
 	}
 
-	backlight->udev = g_udev_client_new(subsystems);
-	if (!backlight->udev) {
-		err = -ENODEV;
-		goto close_x;
-	}
+	return 0;
+}
 
-	list = g_udev_client_query_by_subsystem(backlight->udev, "i2c-dev");
+static int backlight_dpms_release(struct backlight *backlight)
+{
+	if (backlight->display)
+		XCloseDisplay(backlight->display);
+
+	return 0;
+}
+
+static GUdevDevice *sysfs_find_i2c_bus_by_name(const char *name)
+{
+	const char *const subsystems[] = { "i2c-dev", NULL };
+	GUdevDevice *gmbus = NULL;
+	GList *list, *node;
+	GUdevClient *udev;
+
+	udev = g_udev_client_new(subsystems);
+	if (!udev)
+		return NULL;
+
+	list = g_udev_client_query_by_subsystem(udev, "i2c-dev");
 	for (node = list; node; node = g_list_next(node)) {
 		GUdevDevice *device = G_UDEV_DEVICE(node->data);
-		const char *name;
+		const char *sysfs_name;
 
-		name = g_udev_device_get_sysfs_attr(device, "name");
+		sysfs_name = g_udev_device_get_sysfs_attr(device, "name");
 
-		if (strcmp(name, "i915 gmbus panel") == 0) {
-			backlight->device = g_object_ref(device);
+		if (sysfs_name && strcmp(sysfs_name, name) == 0) {
+			gmbus = g_object_ref(device);
 			break;
 		}
 	}
 
 	g_list_free_full(list, g_object_unref);
+	g_object_unref(udev);
 
-	if (!backlight->device) {
-		err = -ENODEV;
-		goto unref;
+	return gmbus;
+}
+
+static int backlight_i2c_release(struct backlight *backlight)
+{
+	if (backlight->fd >= 0)
+		close(backlight->fd);
+
+	return 0;
+}
+
+static int backlight_i2c_set(struct backlight *backlight, unsigned int brightness)
+{
+	uint8_t command[2] = { 0xb1, brightness };
+	int err;
+
+	err = write(backlight->fd, command, sizeof(command));
+	if (err < 0)
+		return -errno;
+
+	return 0;
+}
+
+static int backlight_i2c_get(struct backlight *backlight)
+{
+	uint8_t reg = 0xb1;
+	uint8_t value = 0;
+	int err;
+
+	err = write(backlight->fd, &reg, sizeof(reg));
+	if (err < 0)
+		return -errno;
+
+	err = read(backlight->fd, &value, sizeof(value));
+	if (err < 0)
+		return -errno;
+
+	return value;
+}
+
+static int i2c_probe_device(int fd, unsigned int slave)
+{
+	int err;
+
+	err = ioctl(fd, I2C_SLAVE, slave);
+	if (err < 0)
+		return -errno;
+
+	if ((slave < 0x30 || slave > 0x37) && (slave < 0x50 || slave > 0x5f))
+		return i2c_smbus_write_quick(fd, I2C_SMBUS_WRITE);
+
+	return i2c_smbus_read_byte(fd);
+}
+
+static int i2c_probe_bus(int fd)
+{
+	unsigned int i;
+	int err;
+
+	g_debug("backlight: probing slaves...");
+
+	for (i = 0x03; i <= 0x77; i++) {
+		err = i2c_probe_device(fd, i);
+		if (err < 0)
+			continue;
+
+		g_debug("backlight:   found: %#02x", i);
 	}
 
-	device = g_udev_device_get_device_file(backlight->device);
-	g_debug("backlight: using %s", device);
+	g_debug("backlight: done");
+
+	return 0;
+}
+
+static int backlight_i2c_probe(struct backlight *backlight)
+{
+	unsigned int slave = 0x37;
+	GUdevDevice *gmbus;
+	const char *device;
+	int err;
+
+	gmbus = sysfs_find_i2c_bus_by_name("i915 gmbus panel");
+	if (!gmbus)
+		return -ENODEV;
+
+	device = g_udev_device_get_device_file(gmbus);
 
 	err = open(device, O_RDWR);
 	if (err < 0) {
@@ -106,63 +189,86 @@ int backlight_create(struct backlight **backlightp)
 	 *        of the complete I2C bus before the backlight controller
 	 *        (0x37) can be accessed.
 	 */
-	g_debug("%s(): probing slaves...", __func__);
-
-	for (i = 0x03; i <= 0x77; i++) {
-		err = ioctl(backlight->fd, I2C_SLAVE, i);
-		if (err < 0)
-			continue;
-
-		if (((i >= 0x30) && (i <= 0x37)) || ((i >= 0x50) && (i <= 0x5f)))
-			err = i2c_smbus_read_byte(backlight->fd);
-		else
-			err = i2c_smbus_write_quick(backlight->fd, I2C_SMBUS_WRITE);
-
-		if (err < 0)
-			continue;
-
-		g_debug("%s():  found: %#02x", __func__, i);
-	}
-
-	g_debug("%s(): done", __func__);
-
-	err = ioctl(backlight->fd, I2C_SLAVE, 0x37);
-	if (err < 0) {
-		err = -errno;
+	err = i2c_probe_bus(backlight->fd);
+	if (err < 0)
 		goto close;
-	}
 
-	*backlightp = backlight;
+	err = i2c_probe_device(backlight->fd, slave);
+	if (err < 0)
+		goto close;
+
+	backlight->release = backlight_i2c_release;
+	backlight->set = backlight_i2c_set;
+	backlight->get = backlight_i2c_get;
+
+	g_debug("backlight: using I2C bus %s, slave %#x", device, slave);
+	g_object_unref(gmbus);
+
 	return 0;
 
 close:
 	close(backlight->fd);
 unref:
-	if (backlight->device)
-		g_object_unref(backlight->device);
-
-	g_object_unref(backlight->udev);
-close_x:
-	XCloseDisplay(backlight->display);
-free:
-	free(backlight);
+	g_object_unref(gmbus);
 	return err;
+}
+
+static int backlight_probe(struct backlight *backlight)
+{
+	int err;
+
+	err = backlight_dpms_probe(backlight);
+	if (err < 0)
+		return err;
+
+	err = backlight_i2c_probe(backlight);
+	if (err < 0) {
+		backlight_remove_dpms(backlight);
+		return err;
+	}
+
+	return 0;
+}
+
+int backlight_create(struct backlight **backlightp)
+{
+	struct backlight *backlight;
+	int err;
+
+	if (!backlightp)
+		return -EINVAL;
+
+	backlight = g_new0(struct backlight, 1);
+	if (!backlight)
+		return -ENOMEM;
+
+	err = backlight_probe(backlight);
+	if (err < 0) {
+		g_free(backlight);
+		return -err;
+	}
+
+	*backlightp = backlight;
+
+	return 0;
 }
 
 int backlight_free(struct backlight *backlight)
 {
+	int err;
+
 	if (!backlight)
 		return -EINVAL;
 
-	if (backlight->device)
-		g_object_unref(backlight->device);
+	err = backlight->release(backlight);
+	if (err < 0)
+		return err;
 
-	if (backlight->udev)
-		g_object_unref(backlight->udev);
+	err = backlight_dpms_release(backlight);
+	if (err < 0)
+		return err;
 
-	close(backlight->fd);
-	XCloseDisplay(backlight->display);
-	free(backlight);
+	g_free(backlight);
 
 	return 0;
 }
@@ -182,35 +288,16 @@ int backlight_enable(struct backlight *backlight, bool enable)
 
 int backlight_set(struct backlight *backlight, unsigned int brightness)
 {
-	uint8_t command[2] = { 0xb1, brightness };
-	int err;
-
-	if (!backlight)
+	if (!backlight || brightness > 255)
 		return -EINVAL;
 
-	err = write(backlight->fd, command, sizeof(command));
-	if (err < 0)
-		return -errno;
-
-	return 0;
+	return backlight->set(backlight, brightness);
 }
 
 int backlight_get(struct backlight *backlight)
 {
-	uint8_t reg = 0xb1;
-	uint8_t value = 0;
-	int err;
-
 	if (!backlight)
 		return -EINVAL;
 
-	err = write(backlight->fd, &reg, sizeof(reg));
-	if (err < 0)
-		return -errno;
-
-	err = read(backlight->fd, &value, sizeof(value));
-	if (err < 0)
-		return -errno;
-
-	return value;
+	return backlight->get(backlight);
 }
