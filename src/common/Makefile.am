@@ -9,6 +9,8 @@ libcommon_la_SOURCES = \
 	gdevicetree.h \
 	gkeyfile.c \
 	gkeyfile.h \
+	glogging.c \
+	glogging.h \
 	guri.c \
 	guri.h
 

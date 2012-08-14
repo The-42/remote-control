@@ -9,7 +9,6 @@
 #ifndef REMOTE_CONTROL_H
 #define REMOTE_CONTROL_H 1
 
-#include <stdarg.h>
 #include <stdint.h>
 
 #include <gtk/gtk.h>
@@ -418,16 +417,6 @@ int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *reques
 /**
  * utilities
  */
-enum {
-	DUMP_PREFIX_NONE,
-	DUMP_PREFIX_ADDRESS,
-	DUMP_PREFIX_OFFSET,
-};
-
-gboolean g_log_hex_dump(const gchar *domain, GLogLevelFlags flags,
-		const char *prefix_str, int prefix_type, size_t rowsize,
-		const void *buffer, size_t size, bool ascii);
-
 unsigned int if_lookup_default(void);
 
 #if GTK_CHECK_VERSION(2, 91, 0)
