@@ -11,6 +11,7 @@
 
 #include <glib.h>
 
+void remote_control_log_early_init(void);
 int remote_control_log_init(GKeyFile *conf);
 void remote_control_log_exit(void);
 

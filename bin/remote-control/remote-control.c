@@ -430,6 +430,8 @@ int main(int argc, char *argv[])
 
 	gtk_init(&argc, &argv);
 
+	remote_control_log_early_init();
+
 	options = g_option_context_new("- remote control service");
 	g_option_context_add_group(options, gtk_get_option_group(TRUE));
 	g_option_context_add_main_entries(options, entries, NULL);

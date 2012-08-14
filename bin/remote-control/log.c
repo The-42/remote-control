@@ -144,6 +144,11 @@ static void remote_control_syslog_exit(void *data)
  * public interface
  */
 
+void remote_control_log_early_init(void)
+{
+	g_log_set_default_handler(remote_control_stdio_log_handler, NULL);
+}
+
 int remote_control_log_init(GKeyFile *conf)
 {
 	GLogFunc handler = remote_control_stdio_log_handler;
