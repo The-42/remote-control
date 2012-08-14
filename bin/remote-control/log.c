@@ -16,6 +16,9 @@
 
 #include <alsa/asoundlib.h>
 
+#define pr_fmt(fmt) "log: " fmt
+
+#include "glogging.h"
 #include "log.h"
 
 static void (*log_exit)(void *data) = NULL;
@@ -191,7 +194,7 @@ int remote_control_log_init(GKeyFile *conf)
 		g_free(target);
 	}
 
-	g_print("log: using %s backend\n", backend);
+	pr_debug("switching to %s backend", backend);
 	g_log_set_default_handler(handler, data);
 
 	return 0;

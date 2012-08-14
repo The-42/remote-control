@@ -420,8 +420,10 @@ int main(int argc, char *argv[])
 #endif
 	int err;
 
-	if (!XInitThreads())
-		g_printerr("XInitThreads() failed\n");
+	if (!XInitThreads()) {
+		g_critical("XInitThreads() failed");
+		return EXIT_FAILURE;
+	}
 
 #if !GLIB_CHECK_VERSION(2, 31, 0)
 	if (!g_thread_supported())
@@ -437,7 +439,7 @@ int main(int argc, char *argv[])
 	g_option_context_add_main_entries(options, entries, NULL);
 
 	if (!g_option_context_parse(options, &argc, &argv, &error)) {
-		g_printerr("option parsing failed: %s\n", error->message);
+		g_critical("option parsing failed: %s\n", error->message);
 		return EXIT_FAILURE;
 	}
 
@@ -455,8 +457,8 @@ int main(int argc, char *argv[])
 
 	conf = remote_control_load_configuration(config_file, &error);
 	if (!conf) {
-		g_printerr("failed to load configuration: %s\n",
-				error->message);
+		g_message("failed to load configuration: %s\n",
+			  error->message);
 		g_clear_error(&error);
 	}
 
@@ -464,8 +466,8 @@ int main(int argc, char *argv[])
 
 	err = remote_control_log_init(conf);
 	if (err < 0) {
-		g_printerr("failed to initialize logging: %s\n",
-				g_strerror(-err));
+		g_critical("failed to initialize logging: %s\n",
+			   g_strerror(-err));
 		return EXIT_FAILURE;
 	}
 
@@ -476,7 +478,7 @@ int main(int argc, char *argv[])
 	g_assert(context != NULL);
 
 	if (!setup_signal_handlers(loop)) {
-		g_printerr("failed to setup signal handlers\n");
+		g_critical("failed to setup signal handlers\n");
 		return EXIT_FAILURE;
 	}
 
@@ -488,7 +490,7 @@ int main(int argc, char *argv[])
 
 	err = remote_control_create(&rc, conf);
 	if (err < 0) {
-		g_error("remote_control_create(): %s", strerror(-err));
+		g_critical("remote_control_create(): %s", strerror(-err));
 		return EXIT_FAILURE;
 	}
 
