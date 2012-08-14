@@ -16,6 +16,7 @@
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
+#include "gdevicetree.h"
 
 struct mixer_element;
 
@@ -121,7 +122,6 @@ static struct mixer_element_ops capture_ops = {
 static int mixer_element_create(struct mixer_element **elementp, snd_mixer_elem_t *elem)
 {
 	struct mixer_element *element;
-	const char *name;
 
 	if (!elementp || !elem)
 		return -EINVAL;
@@ -130,21 +130,13 @@ static int mixer_element_create(struct mixer_element **elementp, snd_mixer_elem_
 	if (!element)
 		return -ENOMEM;
 
-	name = snd_mixer_selem_get_name(elem);
-
 	element->element = elem;
 
-	if (snd_mixer_selem_has_playback_volume(elem)) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "element \"%s\" is "
-				"playback control", name);
+	if (snd_mixer_selem_has_playback_volume(elem))
 		element->ops = &playback_ops;
-	}
 
-	if (snd_mixer_selem_has_capture_volume(elem)) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "element \"%s\" is "
-				"capture control", name);
+	if (snd_mixer_selem_has_capture_volume(elem))
 		element->ops = &capture_ops;
-	}
 
 	*elementp = element;
 	return 0;
@@ -233,137 +225,294 @@ static GSourceFuncs mixer_source_funcs = {
 	.finalize = mixer_source_finalize,
 };
 
+static const char *control_names[] = {
+	[MIXER_CONTROL_UNKNOWN] = "unknown",
+	[MIXER_CONTROL_PLAYBACK_MASTER] = "master",
+	[MIXER_CONTROL_PLAYBACK_PCM] = "PCM",
+	[MIXER_CONTROL_PLAYBACK_HEADSET] = "headset",
+	[MIXER_CONTROL_PLAYBACK_SPEAKER] = "speaker",
+	[MIXER_CONTROL_PLAYBACK_HANDSET] = "handset",
+	[MIXER_CONTROL_CAPTURE_MASTER] = "master",
+};
+
+static const char *input_names[] = {
+	[MIXER_INPUT_SOURCE_UNKNOWN] = "unknown",
+	[MIXER_INPUT_SOURCE_HEADSET] = "headset",
+	[MIXER_INPUT_SOURCE_HANDSET] = "handset",
+	[MIXER_INPUT_SOURCE_LINE] = "line",
+};
+
+static struct mixer_map {
+	const char *compatible;
+	struct mixer_map_control {
+		enum mixer_control control;
+		const char *name;
+		unsigned int index;
+	} controls[MIXER_CONTROL_MAX];
+	struct mixer_map_input {
+		enum mixer_input_source source;
+		const char *name;
+	} inputs[MIXER_INPUT_SOURCE_MAX];
+} mixer_maps[] = {
+	{
+		.compatible = "ad,medatom",
+		.controls = {
+			{
+				.control = MIXER_CONTROL_PLAYBACK_MASTER,
+				.name = "Master",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_PCM,
+				.name = "PCM",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_HEADSET,
+				.name = "Headphone",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_SPEAKER,
+				.name = "Speaker",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_HANDSET,
+				.name = "Front",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_CAPTURE_MASTER,
+				.name = "Capture",
+				.index = 0,
+			}, {
+				/* sentinel */
+			}
+		},
+		.inputs = {
+			{
+				.source = MIXER_INPUT_SOURCE_HEADSET,
+				.name = "Mic"
+			}, {
+				.source = MIXER_INPUT_SOURCE_HANDSET,
+				.name = "Internal Mic"
+			}, {
+				.source = MIXER_INPUT_SOURCE_LINE,
+				.name = "Line"
+			}, {
+				/* sentinel */
+			}
+		},
+	}, {
+		.compatible = "ad,medatom-wide",
+		.controls = {
+			{
+				.control = MIXER_CONTROL_PLAYBACK_MASTER,
+				.name = "Master",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_PCM,
+				.name = "PCM",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_HEADSET,
+				.name = "Headphone",
+				.index = 1,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_SPEAKER,
+				.name = "Speaker",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_PLAYBACK_HANDSET,
+				.name = "Headphone",
+				.index = 0,
+			}, {
+				.control = MIXER_CONTROL_CAPTURE_MASTER,
+				.name = "Capture",
+				.index = 0,
+			}, {
+				/* sentinel */
+			}
+		},
+		.inputs = {
+			{
+				.source = MIXER_INPUT_SOURCE_HEADSET,
+				.name = "Mic",
+			}, {
+				.source = MIXER_INPUT_SOURCE_HANDSET,
+				.name = "Internal Mic",
+			}, {
+				.source = MIXER_INPUT_SOURCE_LINE,
+				.name = "CD",
+			}, {
+				/* sentinel */
+			}
+		},
+	},
+};
+
+static inline bool mixer_map_control_match(struct mixer_map_control *control,
+					   const char *name,
+					   unsigned int index)
+{
+	if (!control || !name)
+		return false;
+
+	if (strcmp(control->name, name) != 0)
+		return false;
+
+	return control->index == index;
+}
+
+static inline bool mixer_map_input_match(struct mixer_map_input *input,
+					 const char *name)
+{
+	if (!input || !name)
+		return false;
+
+	return strcmp(input->name, name) == 0;
+}
+
+static int setup_control(struct mixer *mixer, snd_mixer_elem_t *elem,
+			 struct mixer_map *map)
+{
+	const char *name = snd_mixer_selem_get_name(elem);
+	struct mixer_map_control *control, *match = NULL;
+	int index = snd_mixer_selem_get_index(elem);
+	struct mixer_element *element = NULL;
+	const char *direction;
+	int err;
+
+	for (control = map->controls; control->name; control++) {
+		if (mixer_map_control_match(control, name, index)) {
+			match = control;
+			break;
+		}
+	}
+
+	if (!match)
+		return -ENODEV;
+
+	err = mixer_element_create(&element, elem);
+	if (err < 0) {
+		g_debug("mixer-alsa: failed to create element: %s",
+			g_strerror(-err));
+		return err;
+	}
+
+	if (snd_mixer_selem_has_playback_volume(elem))
+		direction = "playback";
+	else
+		direction = "capture";
+
+	if (index > 0)
+		g_debug("mixer-alsa: `%s %d' is %s %s control", name, index,
+			direction, control_names[match->control]);
+	else
+		g_debug("mixer-alsa: `%s' is %s %s control", name, direction,
+			control_names[match->control]);
+
+	mixer->elements[match->control] = element;
+
+	return 0;
+}
+
+static int setup_input_source(struct mixer *mixer, snd_mixer_elem_t *elem,
+			      struct mixer_map *map)
+{
+	const char *name = snd_mixer_selem_get_name(elem);
+	int num = snd_mixer_selem_get_enum_items(elem);
+	int index = snd_mixer_selem_get_index(elem);
+	char buf[16];
+	int err, i;
+
+	if (mixer->input)
+		return -EEXIST;
+
+	if ((strcmp(name, "Input Source") == 0) && (index == 0))
+		mixer->input = elem;
+
+	for (i = 0; i < num; i++) {
+		struct mixer_map_input *input, *match = NULL;
+
+		err = snd_mixer_selem_get_enum_item_name(elem, i, sizeof(buf),
+							 buf);
+		if (err < 0)
+			continue;
+
+		for (input = map->inputs; input->name; input++) {
+			if (mixer_map_input_match(input, buf)) {
+				match = input;
+				break;
+			}
+		}
+
+		if (!match)
+			continue;
+
+		g_debug("mixer-alsa: `%s' is %s source", match->name,
+			input_names[match->source]);
+
+		mixer->input_source[match->source] = i;
+	}
+
+	mixer->input_source_bits = 0;
+
+	for (i = 0; i <= SND_MIXER_SCHN_LAST; i++) {
+		unsigned int item = 0;
+
+		if (snd_mixer_selem_get_enum_item(elem, i, &item) >= 0)
+			mixer->input_source_bits |= 1 << i;
+	}
+
+	return 0;
+}
+
+#define snd_mixer_for_each_element(element, mixer)		\
+	for (element = snd_mixer_first_elem(mixer);		\
+	     element;						\
+	     element = snd_mixer_elem_next(element))
+
 static int mixer_probe(struct mixer *mixer)
 {
-	snd_mixer_selem_id_t *sid;
+	struct mixer_map *map = NULL;
 	snd_mixer_elem_t *elem;
+	GError *error = NULL;
+	GDeviceTree *dt;
 	int err;
 	int i;
 
-	snd_mixer_selem_id_alloca(&sid);
+	dt = g_device_tree_load(&error);
+	if (!dt)
+		return -ENOMEM;
 
-	for (elem = snd_mixer_first_elem(mixer->mixer); elem; elem = snd_mixer_elem_next(elem)) {
-		const char *name = snd_mixer_selem_get_name(elem);
-		enum mixer_control type = MIXER_CONTROL_UNKNOWN;
-		int index = snd_mixer_selem_get_index(elem);
-		struct mixer_element *element = NULL;
-		const char *desc = NULL;
-
-		snd_mixer_selem_get_id(elem, sid);
-
-		if (snd_mixer_selem_has_playback_volume(elem)) {
-			if (strcmp(name, "Master") == 0) {
-				type = MIXER_CONTROL_PLAYBACK_MASTER;
-				desc = "master";
-			}
-
-			if (strcmp(name, "PCM") == 0) {
-				type = MIXER_CONTROL_PLAYBACK_PCM;
-				desc = "PCM";
-			}
-
-			if (strcmp(name, "Headphone") == 0) {
-				type = MIXER_CONTROL_PLAYBACK_HEADSET;
-				desc = "headset";
-			}
-
-			if (strcmp(name, "Speaker") == 0) {
-				type = MIXER_CONTROL_PLAYBACK_SPEAKER;
-				desc = "speaker";
-			}
-
-			if (strcmp(name, "Front") == 0) {
-				type = MIXER_CONTROL_PLAYBACK_HANDSET;
-				desc = "handset";
-			}
-
-			if (!desc)
-				continue;
-
-			err = mixer_element_create(&element, elem);
-			if (err < 0) {
-				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR,
-						"failed to create element: "
-						"%s", strerror(-err));
-				continue;
-			}
-
-			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "\"%s\" is %s "
-					"playback control", name, desc);
-			mixer->elements[type] = element;
-			continue;
+	for (i = 0; i < G_N_ELEMENTS(mixer_maps); i++) {
+		if (g_device_tree_is_compatible(dt, mixer_maps[i].compatible)) {
+			map = &mixer_maps[i];
+			break;
 		}
+	}
 
-		if (snd_mixer_selem_has_capture_volume(elem)) {
-			if ((strcmp(name, "Capture") == 0) && (index == 0)) {
-				type = MIXER_CONTROL_CAPTURE_MASTER;
-				desc = "master";
+	g_device_tree_free(dt);
+
+	if (map)
+		g_debug("mixer-alsa: compatible with %s", map->compatible);
+	else
+		return -ENODEV;
+
+	snd_mixer_for_each_element(elem, mixer->mixer) {
+		if (snd_mixer_selem_has_playback_volume(elem) ||
+		    snd_mixer_selem_has_capture_volume(elem)) {
+			err = setup_control(mixer, elem, map);
+			if (err < 0 && err != -ENODEV) {
+				g_debug("mixer-alsa: failed to setup control: %s",
+					g_strerror(-err));
+				return err;
 			}
-
-			if (!desc)
-				continue;
-
-			err = mixer_element_create(&element, elem);
-			if (err < 0) {
-				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR,
-						"failed to create element: "
-						"%s", strerror(-err));
-				continue;
-			}
-
-			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "\"%s\" is "
-					"master capture control", name);
-			mixer->elements[type] = element;
-			continue;
 		}
 
 		if (snd_mixer_selem_is_enum_capture(elem)) {
-			int num = snd_mixer_selem_get_enum_items(elem);
-			char buf[16];
-
-			if (mixer->input)
-				continue;
-
-			if ((strcmp(name, "Input Source") == 0) && (index == 0))
-				mixer->input = elem;
-
-			for (i = 0; i < num; i++) {
-				err = snd_mixer_selem_get_enum_item_name(elem, i, sizeof(buf), buf);
-				if (err < 0)
-					continue;
-
-				if (strcmp(buf, "Mic") == 0) {
-					mixer->input_source[MIXER_INPUT_SOURCE_HEADSET] = i;
-					g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
-							"\"%s\" is headset "
-							"source", buf);
-					continue;
-				}
-
-				if (strcmp(buf, "Internal Mic") == 0) {
-					mixer->input_source[MIXER_INPUT_SOURCE_HANDSET] = i;
-					g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
-							"\"%s\" is handset "
-							"source", buf);
-					continue;
-				}
-
-				if (strcmp(buf, "Line") == 0) {
-					mixer->input_source[MIXER_INPUT_SOURCE_LINE] = i;
-					g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
-							"\"%s\" is line "
-							"source", buf);
-					continue;
-				}
-			}
-
-			mixer->input_source_bits = 0;
-
-			for (i = 0; i <= SND_MIXER_SCHN_LAST; i++) {
-				unsigned int item = 0;
-
-				if (snd_mixer_selem_get_enum_item(elem, i, &item) >= 0)
-					mixer->input_source_bits |= 1 << i;
+			err = setup_input_source(mixer, elem, map);
+			if (err < 0 && err != -EEXIST) {
+				g_debug("mixer-alsa: failed to setup input source: %s",
+					g_strerror(-err));
+				return err;
 			}
 		}
 	}
