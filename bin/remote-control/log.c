@@ -10,13 +10,32 @@
 #  include "config.h"
 #endif
 
+#include <stdarg.h>
 #include <syslog.h>
 #include <unistd.h>
+
+#include <alsa/asoundlib.h>
 
 #include "log.h"
 
 static void (*log_exit)(void *data) = NULL;
 static void *log_data = NULL;
+
+static void alsa_error_handler(const char *file, int line, const char *function,
+			       int err, const char *fmt, ...)
+{
+	gchar *buffer;
+	va_list ap;
+
+	buffer = g_strdup_printf("alsa: %s:%d/%s(): %s", file, line, function,
+				 fmt);
+
+	va_start(ap, fmt);
+	g_logv(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, buffer, ap);
+	va_end(ap);
+
+	g_free(buffer);
+}
 
 /*
  * stdio backend
@@ -147,6 +166,7 @@ static void remote_control_syslog_exit(void *data)
 void remote_control_log_early_init(void)
 {
 	g_log_set_default_handler(remote_control_stdio_log_handler, NULL);
+	snd_lib_error_set_handler(alsa_error_handler);
 }
 
 int remote_control_log_init(GKeyFile *conf)
