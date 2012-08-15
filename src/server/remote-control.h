@@ -204,7 +204,8 @@ int sound_manager_play(struct sound_manager *manager, const char *uri);
  */
 struct smartcard;
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server);
+int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
+		     GKeyFile *config);
 int smartcard_free(struct smartcard *smartcard);
 int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep);
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, size_t size);

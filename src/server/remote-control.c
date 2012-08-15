@@ -342,7 +342,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = smartcard_create(&rc->smartcard, server);
+	err = smartcard_create(&rc->smartcard, server, config);
 	if (err < 0) {
 		g_error("smartcard_create(): %s", strerror(-err));
 		return err;

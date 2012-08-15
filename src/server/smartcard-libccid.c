@@ -291,7 +291,8 @@ struct smartcard {
 	struct ccid *ccid;
 };
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server)
+int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
+		     GKeyFile *config)
 {
 	struct remote_control *rc = rpc_server_priv(server);
 	struct smartcard *smartcard;
