@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = \
 	libcommon.la
 
 libcommon_la_CPPFLAGS = \
-	@GLIB_CFLAGS@
+	@GUDEV_CFLAGS@
 
 libcommon_la_SOURCES = \
 	gdevicetree.c \
@@ -11,8 +11,12 @@ libcommon_la_SOURCES = \
 	gkeyfile.h \
 	glogging.c \
 	glogging.h \
+	gsysfs.c \
+	gsysfs.h \
+	gsysfsgpio.c \
+	gsysfsgpio.h \
 	guri.c \
 	guri.h
 
 libcommon_la_LIBADD = \
-	@GLIB_LIBS@
+	@GUDEV_LIBS@
