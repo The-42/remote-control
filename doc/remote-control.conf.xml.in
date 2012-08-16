@@ -1,7 +1,10 @@
 <?xml version='1.0'?>
 <?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
-		"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+			  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+	<!ENTITY i2c-chip-spec "<replaceable>chip</replaceable>:<replaceable>pin</replaceable>:<replaceable>flags</replaceable>">
+	<!ENTITY gpio-spec "<replaceable>bus</replaceable>:<replaceable>slave</replaceable>">
+]>
 
 <refentry id="remote-control.conf">
 	<refentryinfo>
@@ -360,6 +363,103 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>smartcard</varname> - SmartCard backend configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>power-gpio</varname></term>
+							<listitem>
+								<para>
+									Specifies the GPIO to use for enabling and disabling
+									power to the SmartCard slot. The format of the value
+									is &i2c-chip-spec;, where each field is as described
+									below:
+								</para>
+								<variablelist>
+									<varlistentry>
+										<term><varname>chip</varname></term>
+										<listitem><para>
+											The name of the GPIO chip that controls the
+											given <varname>pin</varname>. It should match
+											the sysfs name of the chip as found in the
+											<filename>/sysfs/class/gpio</filename>
+											directory.
+										</para></listitem>
+									</varlistentry>
+									<varlistentry>
+										<term><varname>pin</varname></term>
+										<listitem><para>
+											The offset relative to the GPIO chip of the
+											GPIO pin to use.
+										</para></listitem>
+									</varlistentry>
+									<varlistentry>
+										<term><varname>flags</varname></term>
+										<listitem><para>
+											An OR'ed bitfield that specifies how the GPIO should
+											be configured. The following list shows the meaning
+											of the individual bits:
+											<variablelist>
+												<varlistentry>
+													<term><varname>0</varname></term>
+													<listitem><para>
+														This bit specifies the direction of the
+														GPIO. If set, the GPIO will be configured
+														as an output. Otherwise the GPIO is used
+														as an input.
+													</para></listitem>
+												</varlistentry>
+												<varlistentry>
+													<term><varname>1</varname></term>
+													<listitem><para>
+														When a GPIO pin is configured as an output,
+														this bit defines the initial value. If the
+														bit is set, the initial value of the GPIO
+														is high. Otherwise the GPIO is initialized
+														as a low output. Note that this bit is only
+														meaningful if bit <constant>0</constant> is
+														set.
+													</para></listitem>
+												</varlistentry>
+											</variablelist>
+										</para></listitem>
+									</varlistentry>
+								</variablelist>
+							</listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>device</varname></term>
+							<listitem>
+								<para>
+									Specifies the SmartCard device to use. The format of
+									the value is &gpio-spec;, where each field is as
+									described below:
+								</para>
+								<variablelist>
+									<varlistentry>
+										<term><varname>bus</varname></term>
+										<listitem><para>
+											Defines the I2C bus that is used to access the
+											SmartCard. It should be one of the character
+											devices listed in the <filename>/dev</filename>
+											directory (e.g. <filename>/dev/i2c-1</filename>).
+										</para></listitem>
+									</varlistentry>
+									<varlistentry>
+										<term><varname>slave</varname></term>
+										<listitem><para>
+											Specifies the I2C slave address of the SmartCard
+											in hexadecimal notation. Typically this value
+											should be <constant>0x50</constant>.
+										</para></listitem>
+									</varlistentry>
+								</variablelist>
+							</listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -388,6 +488,10 @@ base = 448
 handset = 0
 smartcard = 1
 expose = 32;33;34;35
+
+[smartcard]
+power-gpio = gpiochip192:1:0x1
+device = /dev/i2c-1:0x50
 </programlisting>
 	</refsect1>
 </refentry>
