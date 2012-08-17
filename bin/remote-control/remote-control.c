@@ -338,7 +338,6 @@ GtkWidget *create_window(GKeyFile *conf, GMainLoop *loop, int argc,
 
 static gboolean match_glob(GFile *file, gpointer user_data)
 {
-
 	const gchar *glob = user_data;
 	gboolean ret = FALSE;
 	gchar *filename;
