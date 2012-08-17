@@ -15,6 +15,7 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_SED
 AX_PROG_XSLTPROC
+AM_NLS
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5 gio-2.0)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
@@ -28,6 +29,11 @@ PKG_CHECK_MODULES(LIBGPIO, libgpio)
 PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
+
+AS_IF([test "x$USE_NLS" = "xyes"],
+	[AC_DEFINE([ENABLE_NLS], [1], [Define to 1 if NLS support is enabled])],
+	[AC_DEFINE([ENABLE_NLS], [0], [Define to 0 if NLS support is disabled])]
+)
 
 #
 # Gtk+ version

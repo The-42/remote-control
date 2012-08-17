@@ -430,6 +430,9 @@ int main(int argc, char *argv[])
 		g_thread_init(NULL);
 #endif
 
+	if (!ENABLE_NLS)
+		gtk_disable_setlocale();
+
 	gtk_init(&argc, &argv);
 
 	remote_control_log_early_init();

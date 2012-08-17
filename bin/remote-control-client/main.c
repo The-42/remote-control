@@ -455,17 +455,19 @@ int main(int argc, char *argv[])
 	struct cli *cli;
 	int err;
 
-	if (!setlocale(LC_ALL, ""))
-		perror("setlocale");
+	if (ENABLE_NLS) {
+		if (!setlocale(LC_ALL, ""))
+			perror("setlocale");
 
-	if (!bindtextdomain(GETTEXT_PACKAGE, LOCALEBASEDIR)) {
-		perror("bindtextdomain");
-		return 1;
-	}
+		if (!bindtextdomain(GETTEXT_PACKAGE, LOCALEBASEDIR)) {
+			perror("bindtextdomain");
+			return 1;
+		}
 
-	if (!textdomain(GETTEXT_PACKAGE)) {
-		perror("textdomain");
-		return 1;
+		if (!textdomain(GETTEXT_PACKAGE)) {
+			perror("textdomain");
+			return 1;
+		}
 	}
 
 	cli = cli_new(options);
