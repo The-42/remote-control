@@ -21,7 +21,7 @@ struct voip {
 	GSource *timeout;
 	LinphoneCore *core;
 	gchar *contact;
-	int registration_expiry;
+	int expires;
 };
 
 static void linphone_global_state_changed_cb(LinphoneCore *core,
@@ -354,17 +354,16 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 	linphone_core_enable_echo_cancellation(voip->core, ec);
 
 	/*
-	 * Allow to override the register-expirie-time. We need to store it,
-	 * because it needs to be set during login, and there we do not have
-	 * access to the keyfile.
+	 * Allow the default expiration time for SIP registrations to be
+	 * overridden.
 	 */
-	if (g_key_file_has_key (config, "linphone", "registration-expiry", NULL)) {
-		voip->registration_expiry = g_key_file_get_integer(config,
-		                                "linphone", "registration-expiry",
-		                                NULL);
-		voip->registration_expiry = CLAMP(voip->registration_expiry, 1, 3600);
+	if (g_key_file_has_key(config, "linphone", "registration-expiry", NULL)) {
+		voip->expires = g_key_file_get_integer(config, "linphone",
+						       "registration-expiry",
+						       NULL);
+		voip->expires = CLAMP(voip->expires, 1, 3600);
 		g_debug("voip-linphone: registration-expiry: %d",
-		        voip->registration_expiry);
+			voip->expires);
 	}
 
 	voip->contact = NULL;
@@ -486,7 +485,7 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 
 	linphone_proxy_config_set_server_addr(proxy, server);
 	linphone_proxy_config_set_identity(proxy, identity);
-	linphone_proxy_config_expires(proxy, voip->registration_expiry);
+	linphone_proxy_config_expires(proxy, voip->expires);
 	linphone_proxy_config_enable_register(proxy, TRUE);
 
 	if (!use_default) {
