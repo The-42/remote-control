@@ -361,7 +361,7 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 		voip->expires = g_key_file_get_integer(config, "linphone",
 						       "registration-expiry",
 						       NULL);
-		voip->expires = CLAMP(voip->expires, 1, 3600);
+		voip->expires = CLAMP(voip->expires, 30, 3600);
 		g_debug("voip-linphone: registration-expiry: %d",
 			voip->expires);
 	}
