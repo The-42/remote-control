@@ -20,11 +20,14 @@
 #include <X11/extensions/dpms.h>
 #include <gudev/gudev.h>
 
+#include "gsysfsbacklight.h"
+
 #include "remote-control-stub.h"
 #include "remote-control.h"
 #include "smbus.h"
 
 struct backlight {
+	GSysfsBacklight *sysfs;
 	Display *display;
 	int fd;
 
@@ -213,6 +216,84 @@ unref:
 	return err;
 }
 
+static int backlight_sysfs_release(struct backlight *backlight)
+{
+	if (backlight->sysfs)
+		g_object_unref(backlight->sysfs);
+
+	return 0;
+}
+
+static int backlight_sysfs_set(struct backlight *backlight,
+			       unsigned int brightness)
+{
+	GSysfsBacklight *bl = backlight->sysfs;
+	GError *error = NULL;
+	guint value, max;
+
+	max = g_sysfs_backlight_get_max_brightness(bl);
+	value = (brightness * max) / 255;
+
+	if (!g_sysfs_backlight_set_brightness(bl, value, &error)) {
+		g_debug("backlight: failed to set brightness: %s",
+			error->message);
+		g_clear_error(&error);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int backlight_sysfs_get(struct backlight *backlight)
+{
+	GSysfsBacklight *bl = backlight->sysfs;
+	GError *error = NULL;
+	guint value, max;
+
+	max = g_sysfs_backlight_get_max_brightness(bl);
+
+	value = g_sysfs_backlight_get_brightness(bl, &error);
+	if (error) {
+		g_debug("backlight: failed to get brightness: %s",
+			error->message);
+		g_clear_error(&error);
+		return -EIO;
+	}
+
+	return (value * 255) / max;
+}
+
+static int backlight_sysfs_probe(struct backlight *backlight)
+{
+	GError *error = NULL;
+	guint max_brightness;
+	GUdevDevice *device;
+	const gchar *path;
+
+	backlight->sysfs = g_sysfs_backlight_new("intel_backlight", &error);
+	if (!backlight->sysfs) {
+		g_debug("backlight: failed to create sysfs backlight: %s",
+			error->message);
+		g_clear_error(&error);
+		return -ENODEV;
+	}
+
+	backlight->release = backlight_sysfs_release;
+	backlight->set = backlight_sysfs_set;
+	backlight->get = backlight_sysfs_get;
+
+	g_object_get(backlight->sysfs, "device", &device, "max-brightness",
+		     &max_brightness, NULL);
+	path = g_udev_device_get_sysfs_path(device);
+
+	g_debug("backlight: using %s, maximum brightness %u", path,
+		max_brightness);
+
+	g_object_unref(device);
+
+	return 0;
+}
+
 static int backlight_probe(struct backlight *backlight)
 {
 	int err;
@@ -221,10 +302,13 @@ static int backlight_probe(struct backlight *backlight)
 	if (err < 0)
 		return err;
 
-	err = backlight_i2c_probe(backlight);
+	err = backlight_sysfs_probe(backlight);
 	if (err < 0) {
-		backlight_remove_dpms(backlight);
-		return err;
+		err = backlight_i2c_probe(backlight);
+		if (err < 0) {
+			backlight_dpms_release(backlight);
+			return err;
+		}
 	}
 
 	return 0;
