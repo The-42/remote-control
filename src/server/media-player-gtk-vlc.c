@@ -76,6 +76,7 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 		.window_type = GDK_WINDOW_CHILD,
 		.override_redirect = TRUE,
 	};
+	const char *argv[] = { "--no-osd" };
 	struct media_player *player;
 #if GTK_CHECK_VERSION(2, 90, 5)
 	cairo_region_t *region;
@@ -113,7 +114,7 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 	gdk_region_destroy(region);
 #endif
 
-	player->vlc = libvlc_new(0, NULL);
+	player->vlc = libvlc_new(G_N_ELEMENTS(argv), argv);
 	player->player = libvlc_media_player_new(player->vlc);
 	libvlc_audio_set_volume(player->player, LIBVLC_AUDIO_VOLUME_MAX);
 	player->evman = libvlc_media_player_event_manager(player->player);
