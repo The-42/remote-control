@@ -14,9 +14,12 @@
 #include <alsa/asoundlib.h>
 #include <glib.h>
 
+#define pr_fmt(fmt) "mixer-alsa: " fmt
+
 #include "remote-control-stub.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
+#include "glogging.h"
 
 struct mixer_element;
 
@@ -391,8 +394,7 @@ static int setup_control(struct mixer *mixer, snd_mixer_elem_t *elem,
 
 	err = mixer_element_create(&element, elem);
 	if (err < 0) {
-		g_debug("mixer-alsa: failed to create element: %s",
-			g_strerror(-err));
+		pr_debug("failed to create element: %s", g_strerror(-err));
 		return err;
 	}
 
@@ -402,11 +404,11 @@ static int setup_control(struct mixer *mixer, snd_mixer_elem_t *elem,
 		direction = "capture";
 
 	if (index > 0)
-		g_debug("mixer-alsa: `%s %d' is %s %s control", name, index,
-			direction, control_names[match->control]);
+		pr_debug("`%s %d' is %s %s control", name, index, direction,
+			 control_names[match->control]);
 	else
-		g_debug("mixer-alsa: `%s' is %s %s control", name, direction,
-			control_names[match->control]);
+		pr_debug("`%s' is %s %s control", name, direction,
+			 control_names[match->control]);
 
 	mixer->elements[match->control] = element;
 
@@ -446,8 +448,8 @@ static int setup_input_source(struct mixer *mixer, snd_mixer_elem_t *elem,
 		if (!match)
 			continue;
 
-		g_debug("mixer-alsa: `%s' is %s source", match->name,
-			input_names[match->source]);
+		pr_debug("`%s' is %s source", match->name,
+			 input_names[match->source]);
 
 		mixer->input_source[match->source] = i;
 	}
@@ -492,7 +494,7 @@ static int mixer_probe(struct mixer *mixer)
 	g_device_tree_free(dt);
 
 	if (map)
-		g_debug("mixer-alsa: compatible with %s", map->compatible);
+		pr_debug("compatible with %s", map->compatible);
 	else
 		return -ENODEV;
 
@@ -501,8 +503,8 @@ static int mixer_probe(struct mixer *mixer)
 		    snd_mixer_selem_has_capture_volume(elem)) {
 			err = setup_control(mixer, elem, map);
 			if (err < 0 && err != -ENODEV) {
-				g_debug("mixer-alsa: failed to setup control: %s",
-					g_strerror(-err));
+				pr_debug("failed to setup control: %s",
+					 g_strerror(-err));
 				return err;
 			}
 		}
@@ -510,8 +512,8 @@ static int mixer_probe(struct mixer *mixer)
 		if (snd_mixer_selem_is_enum_capture(elem)) {
 			err = setup_input_source(mixer, elem, map);
 			if (err < 0 && err != -EEXIST) {
-				g_debug("mixer-alsa: failed to setup input source: %s",
-					g_strerror(-err));
+				pr_debug("failed to setup input source: %s",
+					 g_strerror(-err));
 				return err;
 			}
 		}
@@ -541,8 +543,8 @@ int mixer_create(struct mixer **mixerp)
 
 	err = snd_mixer_open(&mixer->mixer, 0);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to open audio "
-				"mixer: %s", snd_strerror(err));
+		pr_debug("failed to open audio mixer mixer: %s",
+			 snd_strerror(err));
 		goto free;
 	}
 
@@ -550,36 +552,35 @@ int mixer_create(struct mixer **mixerp)
 
 	err = snd_mixer_attach(mixer->mixer, card);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to attach "
-				"audio mixer to card: %s", snd_strerror(err));
+		pr_debug("failed to attach audio mixer to card: %s",
+			 snd_strerror(err));
 		goto close;
 	}
 
 	err = snd_mixer_selem_register(mixer->mixer, NULL, NULL);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to register "
-				"elements: %s", snd_strerror(err));
+		pr_debug("failed to register elements: %s",
+			 snd_strerror(err));
 		goto close;
 	}
 
 	err = snd_mixer_load(mixer->mixer);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to load "
-				"mixer: %s", snd_strerror(err));
+		pr_debug("failed to load mixer: %s", snd_strerror(err));
 		goto close;
 	}
 
 	err = mixer_probe(mixer);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to probe "
-				"mixer elements: %s", snd_strerror(err));
+		pr_debug("failed to probe mixer elements: %s",
+			 snd_strerror(err));
 		goto close;
 	}
 
 	err = snd_mixer_poll_descriptors_count(mixer->mixer);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to get poll "
-				"descriptor count: %s", snd_strerror(err));
+		pr_debug("failed to get poll descriptor count: %s",
+			 snd_strerror(err));
 		goto close;
 	}
 
@@ -587,8 +588,7 @@ int mixer_create(struct mixer **mixerp)
 
 	mixer->fds = g_new0(GPollFD, mixer->num_fds);
 	if (!mixer->fds) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to allocate "
-				"poll descriptors\n");
+		pr_debug("failed to allocate poll descriptors");
 		goto close;
 	}
 
@@ -596,8 +596,8 @@ int mixer_create(struct mixer **mixerp)
 
 	err = snd_mixer_poll_descriptors(mixer->mixer, fds, mixer->num_fds);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to get poll "
-				"descriptors: %s", snd_strerror(err));
+		pr_debug("failed to get poll descriptors: %s",
+			 snd_strerror(err));
 		goto free_fds;
 	}
 
@@ -642,17 +642,15 @@ int mixer_set_volume(struct mixer *mixer, unsigned short control, unsigned int v
 
 	err = scale_volume(element, &value);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to scale "
-				"volume for control %s: %s", name,
-				snd_strerror(err));
+		pr_debug("failed to scale volume for control %s: %s", name,
+			 snd_strerror(err));
 		return err;
 	}
 
 	err = element->ops->set_volume(element->element, value);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to set volume "
-				"for control %s: %s", name,
-				snd_strerror(err));
+		pr_debug("failed to set volume for control %s: %s", name,
+			 snd_strerror(err));
 		return err;
 	}
 
@@ -680,17 +678,15 @@ int mixer_get_volume(struct mixer *mixer, unsigned short control, unsigned int *
 
 	err = element->ops->get_volume(element->element, &value);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to get "
-				"volume for control %s: %s", name,
-				snd_strerror(err));
+		pr_debug("failed to get volume for control %s: %s", name,
+			 snd_strerror(err));
 		return err;
 	}
 
 	err = normalize_volume(element, &value);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to normalize "
-				"volume for control %s: %s", name,
-				snd_strerror(err));
+		pr_debug("failed to normalize volume for control %s: %s",
+			 name, snd_strerror(err));
 		return err;
 	}
 
@@ -918,15 +914,15 @@ static gpointer loopback_thread(gpointer data)
 
 	err = create_playback(&playback, 44100, 2, SND_PCM_FORMAT_S16_LE);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "create_playback(): %s",
-				snd_strerror(err));
+		pr_debug("failed to create playback device: %s",
+			 snd_strerror(err));
 		return NULL;
 	}
 
 	err = create_capture(&capture, 44100, 2, SND_PCM_FORMAT_S16_LE);
 	if (err < 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "create_capture(): %s",
-				snd_strerror(err));
+		pr_debug("failed to create capture device: %s",
+			 snd_strerror(err));
 		goto close_playback;
 	}
 
@@ -943,8 +939,8 @@ static gpointer loopback_thread(gpointer data)
 					continue;
 				}
 
-				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "snd_pcm_readi(): %s",
-						snd_strerror(err));
+				pr_debug("failed to read samples: %s",
+					 snd_strerror(err));
 				break;
 			}
 
@@ -957,13 +953,13 @@ static gpointer loopback_thread(gpointer data)
 				continue;
 
 			if (err == -EPIPE) {
-				g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "buffer underrun");
+				pr_debug("buffer underrun");
 				snd_pcm_prepare(playback);
 				continue;
 			}
 
-			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "snd_pcm_writei(): %s",
-					snd_strerror(err));
+			pr_debug("failed to write samples: %s",
+				 snd_strerror(err));
 			mixer->loop = FALSE;
 		}
 
