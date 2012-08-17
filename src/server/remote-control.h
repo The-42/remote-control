@@ -14,9 +14,6 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 
-#define stringify1(x) #x
-#define stringify(x)  stringify1(x)
-
 #define BIT(x) (1 << (x))
 
 /**
