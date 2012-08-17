@@ -13,6 +13,8 @@ libcommon_la_SOURCES = \
 	glogging.h \
 	gsysfs.c \
 	gsysfs.h \
+	gsysfsbacklight.c \
+	gsysfsbacklight.h \
 	gsysfsgpio.c \
 	gsysfsgpio.h \
 	guri.c \
