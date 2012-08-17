@@ -25,7 +25,9 @@
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
+#include "gdevicetree.h"
 #include "gkeyfile.h"
+#include "glogging.h"
 #include "utils.h"
 #include "log.h"
 
@@ -350,8 +352,67 @@ static gboolean match_glob(GFile *file, gpointer user_data)
 	return ret;
 }
 
+static GKeyFile *g_device_tree_load_configuration(GDeviceTree *dt,
+						  const gchar *directory,
+						  GError **errorp)
+{
+	gchar **compat, **cp;
+	GKeyFile *conf;
+	guint count;
+
+	conf = g_key_file_new();
+	if (!conf) {
+		g_set_error(errorp, G_DEVICE_TREE_ERROR,
+			    G_DEVICE_TREE_ERROR_OUT_OF_MEMORY,
+			    "out of memory");
+		return NULL;
+	}
+
+	compat = g_device_tree_get_compatible(dt, &count);
+	if (compat) {
+		gchar *dir, *c;
+
+		for (cp = compat; *cp; cp++) {
+			GError *error = NULL;
+			GKeyFile *file;
+
+			/* skip vendor prefix, if any */
+			c = strchr(*cp, ',');
+
+			if (!c)
+				c = *cp;
+			else
+				c++;
+
+			dir = g_strdup_printf("%s/%s", directory, c);
+			pr_debug("looking for configuration in %s", dir);
+
+			file = g_key_file_new_from_directory(dir, match_glob,
+							     "*.conf", &error);
+			if (file) {
+				if (!g_key_file_merge(conf, file, &error)) {
+					pr_debug("failed to merge configuration: %s",
+						 error->message);
+					g_clear_error(&error);
+				}
+
+				g_key_file_free(file);
+			} else {
+				g_clear_error(&error);
+			}
+
+			g_free(dir);
+		}
+
+		g_strfreev(compat);
+	}
+
+	return conf;
+}
+
 static GKeyFile *remote_control_load_configuration(const gchar *filename,
-		GError **error)
+						   GDeviceTree *dt,
+						   GError **error)
 {
 	static const gchar directory[] = SYSCONF_DIR "/remote-control.conf.d";
 	GError *e = NULL;
@@ -375,6 +436,23 @@ static GKeyFile *remote_control_load_configuration(const gchar *filename,
 		}
 
 		g_key_file_free(file);
+	}
+
+	if (dt) {
+		file = g_device_tree_load_configuration(dt, directory, &e);
+		if (!file) {
+			pr_debug("failed to load configuration: %s",
+				 e->message);
+			g_clear_error(&e);
+		} else {
+			if (!g_key_file_merge(conf, file, &e)) {
+				pr_debug("failed to merge configuration: %s",
+					 e->message);
+				g_clear_error(&e);
+			}
+
+			g_key_file_free(file);
+		}
 	}
 
 	file = g_key_file_new_from_path(filename, G_KEY_FILE_NONE, &e);
@@ -412,6 +490,7 @@ int main(int argc, char *argv[])
 	GOptionContext *options;
 	GError *error = NULL;
 	GtkWidget *window;
+	GDeviceTree *dt;
 	GMainLoop *loop;
 	GSource *source;
 	GKeyFile *conf;
@@ -459,13 +538,43 @@ int main(int argc, char *argv[])
 	if (config_file == NULL)
 		config_file = g_strdup(default_config_file);
 
-	conf = remote_control_load_configuration(config_file, &error);
+	dt = g_device_tree_load(&error);
+	if (dt) {
+		gchar **models, **model;
+		gchar **compat, **cp;
+		guint num;
+
+		models = g_device_tree_get_model(dt, &num);
+		if (models) {
+			pr_debug("%u models:", num);
+
+			for (model = models; *model; model++)
+				pr_debug("  %s", *model);
+
+			g_strfreev(models);
+		}
+
+		compat = g_device_tree_get_compatible(dt, &num);
+		if (compat) {
+			pr_debug("%u compatibles:", num);
+
+			for (cp = compat; *cp; cp++)
+				pr_debug("  %s", *cp);
+
+			g_strfreev(compat);
+		}
+	} else {
+		pr_debug("%s", error->message);
+	}
+
+	conf = remote_control_load_configuration(config_file, dt, &error);
 	if (!conf) {
 		g_message("failed to load configuration: %s\n",
 			  error->message);
 		g_clear_error(&error);
 	}
 
+	g_device_tree_free(dt);
 	g_free(config_file);
 
 	err = remote_control_log_init(conf);
