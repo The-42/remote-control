@@ -361,9 +361,8 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 		voip->expires = g_key_file_get_integer(config, "linphone",
 						       "registration-expiry",
 						       NULL);
-		voip->expires = CLAMP(voip->expires, 30, 3600);
-		g_debug("voip-linphone: registration-expiry: %d",
-			voip->expires);
+		if (voip->expires != 0)
+			voip->expires = CLAMP(voip->expires, 30, 3600);
 	}
 
 	voip->contact = NULL;
@@ -485,7 +484,13 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 
 	linphone_proxy_config_set_server_addr(proxy, server);
 	linphone_proxy_config_set_identity(proxy, identity);
-	linphone_proxy_config_expires(proxy, voip->expires);
+
+	if (voip->expires) {
+		g_debug("voip-linphone: registration expires in %d seconds",
+			voip->expires);
+		linphone_proxy_config_expires(proxy, voip->expires);
+	}
+
 	linphone_proxy_config_enable_register(proxy, TRUE);
 
 	if (!use_default) {
