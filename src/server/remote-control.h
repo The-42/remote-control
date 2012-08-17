@@ -14,6 +14,8 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 
+#include <librpc.h>
+
 #define BIT(x) (1 << (x))
 
 /**
