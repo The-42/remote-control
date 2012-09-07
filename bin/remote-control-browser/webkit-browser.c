@@ -269,7 +269,7 @@ static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 #ifdef USE_WEBKIT2
 	view = WEBKIT_WEB_VIEW(widget);
 #else
-	widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(widget))));
+	widget = gtk_bin_get_child(GTK_BIN(widget));
 	view = WEBKIT_WEB_VIEW(widget);
 #endif
 
@@ -868,8 +868,7 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 #ifdef USE_WEBKIT2
 	if (WEBKIT_IS_WEB_VIEW(page)) {
 		/* the notebook page contains a WebKitWebView */
-		widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(page))));
-		webkit = WEBKIT_WEB_VIEW(widget);
+		webkit = WEBKIT_WEB_VIEW(page);
 #else
 	if (GTK_IS_BIN(page)) {
 		/* the notebook page contains a WebKitWebView */
