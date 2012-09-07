@@ -74,6 +74,12 @@ typedef enum {
 #define MEDIA_PLAYER_SECTION "media-player"
 #define DEFAULT_BUFFER_DURATION  (1 * GST_SECOND)
 
+typedef enum {
+	PIPELINE_PLAYBIN,
+	PIPELINE_V4L_VIDEO,
+	PIPELINE_V4L_RADIO
+} media_player_pipeline;
+
 struct media_player {
 	GstElement *pipeline;
 	GdkWindow *window;   /* the window to use for output */
@@ -81,6 +87,9 @@ struct media_player {
 	enum media_player_state state;
 
 	gchar *uri;         /* the last used uri */
+	media_player_pipeline pipeline_type; /* the current pipeline type */
+	int v4l_frequency;
+
 	int scale;          /* the scaler mode we have chosen */
 	int displaytype;
 	bool have_nv_omx;
@@ -97,6 +106,9 @@ struct media_player {
 	gchar **preferred_languages;
 	gchar *override_language;
 	gchar *http_proxy;
+
+	/* FIXME: ugly alsaloop hack */
+	GPid loop_pid;
 };
 
 #if defined(ENABLE_XRANDR)
@@ -268,6 +280,52 @@ static void set_webkit_appsrc_rank(guint rank)
 	}
 }
 
+/**
+ *FIXME: this is a very ugly hack, which should be removed immediately
+ *	 the only reason for having it is extreme pressure from the
+ *	 management, to get analog stick working */
+static int player_start_alsa_loop(struct media_player *player)
+{
+	const gchar *command_line = "/usr/bin/alsaloop -C hw:1 -P default -S 4 -w -A 2 -r 48000 -t 50000";
+	gchar **argv = NULL;
+	gint argc;
+	GError *error = NULL;
+
+	if (player->loop_pid != 0)
+		return -EBUSY;
+
+	g_printf("Spawning alsa loopback process.");
+	if (!g_shell_parse_argv(command_line, &argc, &argv, &error)) {
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to parse "
+				"command-line: %s", error->message);
+		g_error_free(error);
+		return -EACCES;
+	}
+
+	if (!g_spawn_async(NULL, argv, NULL, 0, NULL,
+				NULL, &player->loop_pid, &error)) {
+		g_printf("failed to execute "
+				"child process: %s", error->message);
+		g_error_free(error);
+		return -EACCES;
+	}
+
+	return 0;
+}
+
+static int player_stop_alsa_loop(struct media_player *player)
+{
+	g_printf("Stop alsa loopback process with pid %d\n",
+		player->loop_pid);
+	if (player->loop_pid != 0) {
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Terminating alsa loopback process.");
+		kill(player->loop_pid, SIGTERM);
+		player->loop_pid = 0;
+	}
+
+	return 0;
+}
+
 static void handle_message_state_change(struct media_player *player, GstMessage *message)
 {
 	GstState pending = GST_STATE_VOID_PENDING;
@@ -286,10 +344,18 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 		gst_element_state_get_name(pending));
 
 	switch (new_state) {
-	case GST_STATE_PLAYING:
+	case GST_STATE_PLAYING: {
 		set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
-		player_check_audio_tracks(player->pipeline, player);
+		g_printf("new state playing\n");
+		if (player->pipeline_type == PIPELINE_PLAYBIN)
+			player_check_audio_tracks(player->pipeline, player);
+		else if (player->pipeline_type == PIPELINE_V4L_VIDEO ||
+			player->pipeline_type == PIPELINE_V4L_RADIO) {
+			g_printf("start alsa loop\n");
+			player_start_alsa_loop(player);
+		}
 		break;
+	}
 	default:
 		break;
 	}
@@ -717,6 +783,9 @@ static int player_destroy_pipeline(struct media_player *player)
 		g_free(player->uri);
 		player->uri = NULL;
 	}
+	if (player->loop_pid != 0) {
+		player_stop_alsa_loop(player);
+	}
 	if (player->pipeline) {
 		gst_element_set_state(player->pipeline, GST_STATE_NULL);
 		gst_object_unref(player->pipeline);
@@ -730,16 +799,29 @@ static int player_destroy_pipeline(struct media_player *player)
 
 static int player_create_software_pipeline(struct media_player *player, const gchar* uri)
 {
+#if GST_CHECK_VERSION(1, 0, 0)
+#define PIPELINE \
+	"playbin " \
+		"video-sink=\"glessink name=video-out\" " \
+		"audio-sink=\"alsasink name=audio-out device=%s\" " \
+		"uri=%s"
+#else
 #define PIPELINE \
 	"playbin2 " \
 		"video-sink=\"glessink name=video-out\" " \
 		"audio-sink=\"alsasink name=audio-out device=%s\" " \
 		"flags=0x00000160 buffer-duration=%llu " \
 		"uri=%s"
+#endif
+
+#define V4L_PIPELINE \
+	"v4l2src ! queue ! ffmpegcolorspace ! glessink name=\"video-out\""
+#define V4L_RADIO_PIPELINE \
+	"fakesrc ! fakesink v4l2radio frequency=%d"
 
 	GError *error = NULL;
 	GstBus *bus;
-	gchar *pipe;
+	gchar *pipe = NULL;
 	const gchar *ad;
 	int ret = -EINVAL;
 
@@ -748,7 +830,20 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 
 	/* for HDMI we need to select the correct audio device */
 	ad = player->displaytype == NV_DISPLAY_TYPE_HDMI ? "hdmi" : "default";
-	pipe = g_strdup_printf(PIPELINE, ad, player->buffer_duration, uri);
+
+	if (g_ascii_strncasecmp(uri, "v4l2:///dev/radio0", 18) == 0) {
+		pipe = g_strdup_printf(V4L_RADIO_PIPELINE, player->v4l_frequency);
+		player->pipeline_type = PIPELINE_V4L_RADIO;
+	} else if (g_ascii_strncasecmp(uri, "v4l2://", 7) == 0) {
+		pipe = g_strdup_printf(V4L_PIPELINE);
+		player->pipeline_type = PIPELINE_V4L_VIDEO;
+	} else {
+#if GST_CHECK_VERSION(1, 0, 0)
+		pipe = g_strdup_printf(PIPELINE, ad, uri);
+#else
+		pipe = g_strdup_printf(PIPELINE, ad, player->buffer_duration, uri);
+#endif
+	}
 
 	set_webkit_appsrc_rank(GST_RANK_NONE);
 
@@ -763,19 +858,28 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	bus = gst_pipeline_get_bus(GST_PIPELINE(player->pipeline));
 	if (bus) {
 		gst_bus_add_watch(bus, (GstBusFunc)player_gst_bus_event, player);
+
+#if GST_CHECK_VERSION(1, 0, 0)
+		gst_bus_set_sync_handler(bus,
+			(GstBusSyncHandler)player_gst_bus_sync_handler,
+			player, NULL);
+#else
 		gst_bus_set_sync_handler(bus,
 			(GstBusSyncHandler)player_gst_bus_sync_handler, player);
+#endif
 		gst_object_unref(GST_OBJECT(bus));
 		ret = 0;
 	}
 
-	g_signal_connect (player->pipeline, "audio-changed",
-	                  G_CALLBACK (player_check_audio_tracks),
-	                  player);
+	if (player->pipeline == PIPELINE_PLAYBIN) {
+		g_signal_connect (player->pipeline, "audio-changed",
+				  G_CALLBACK (player_check_audio_tracks),
+				  player);
 
-	g_signal_connect (player->pipeline, "source-setup",
-					  G_CALLBACK (player_source_setup),
-					  player);
+		g_signal_connect (player->pipeline, "source-setup",
+						  G_CALLBACK (player_source_setup),
+						  player);
+	}
 
 cleanup:
 	if (error)
@@ -1035,6 +1139,12 @@ static int player_change_state(struct media_player *player, GstState state,
 	if (!player || !player->pipeline)
 		return -EINVAL;
 
+	if ((state == GST_STATE_NULL || state == GST_STATE_READY || state ==
+		GST_STATE_PAUSED) &&
+		(player->loop_pid != 0)) {
+		player_stop_alsa_loop(player);
+	}
+
 	ret = gst_element_set_state(player->pipeline, state);
 	if (ret == GST_STATE_CHANGE_FAILURE) {
 		g_critical("failed to set player state");
@@ -1293,9 +1403,35 @@ void media_player_parse_uri_options(struct media_player *player, const char **ur
 			player->http_proxy = g_strdup(proxy);
 			g_debug("  select http-proxy for stream: %s",
 				player->http_proxy);
+		} else if (g_ascii_strncasecmp(*uri_options, "standard=", 9) == 0) {
+			const gchar *standard = g_strrstr(*uri_options, "=") + 1;
+			g_debug("  select v4l input standard: %s", standard);
+			tuner_set_standard(NULL, standard);
+		} else if (g_ascii_strncasecmp(*uri_options, "input=", 6) == 0) {
+			const gchar *input_str = g_strrstr(*uri_options, "=") + 1;
+			const gint64 input = g_ascii_strtoll(input_str, NULL, 10);
+			g_debug("  select v4l input: %lld", input);
+			tuner_set_input(NULL, input);
+		} else if (g_ascii_strncasecmp(*uri_options, "tuner-frequency=", 16) == 0) {
+			const gchar *frequency_str = g_strrstr(*uri_options, "=") + 1;
+			const gint64 frequency = g_ascii_strtoll(frequency_str, NULL, 10);
+			g_debug("  select v4l input frequency: %lld", frequency);
+			tuner_set_frequency(NULL, frequency);
+			player->v4l_frequency = frequency * 1000;
 		}
 		uri_options++;
 	}
+}
+
+static gboolean media_player_is_pipeline_reusable(const gchar *last_uri,
+	const gchar *uri)
+{
+	gboolean reusable = true;
+	if (g_ascii_strncasecmp(last_uri, "v4l2://", 7) == 0 ||
+		g_ascii_strncasecmp(uri, "v4l2://", 7) == 0)
+		reusable = false;
+
+	return reusable;
 }
 
 int media_player_set_uri(struct media_player *player, const char *uri)
@@ -1333,7 +1469,9 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	 * not be sure that the chain can handle the new url we destroy the
 	 * old and create a new. this is the safest way */
 	g_debug("   destroy old pipeline...");
-	if (player->pipeline) {
+	if (player->pipeline &&
+		media_player_is_pipeline_reusable((const gchar*)player->uri,
+		(const gchar*)uriparts[0])) {
 		g_warning("reuse old pipeline");
 		gst_element_set_state(player->pipeline, GST_STATE_READY);
 		g_object_set(player->pipeline, "uri", (const
@@ -1342,6 +1480,9 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		err = player_change_state(player, state == MEDIA_PLAYER_STOPPED
 								  ? GST_STATE_PAUSED : GST_STATE_PLAYING, false);
 	} else {
+		if (player->pipeline)
+			player_destroy_pipeline(player);
+
 		if (player_create_pipeline(player, (const gchar*)uriparts[0]) < 0) {
 			g_critical("  failed to create pipeline");
 			err = -ENOSYS;

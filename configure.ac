@@ -133,6 +133,7 @@ AS_CASE([$with_video_backend],
 	[none], [],
 	[libvlc], [PKG_CHECK_MODULES(LIBVLC, libvlc, [enable_libvlc=yes])],
 	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-plugins-base-0.10 gstreamer-interfaces-0.10, [enable_gst=yes])],
+	[gst-1.0], [PKG_CHECK_MODULES(GST, gstreamer-1.0 gstreamer-plugins-base-1.0 gstreamer-video-1.0, [enable_gst=yes])],
 	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 dnl FIXME: This is not the way to go, try to do this in AC_CASE[gst]

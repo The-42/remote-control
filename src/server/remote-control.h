@@ -344,6 +344,8 @@ struct tuner;
 int tuner_create(struct tuner **tunerp);
 int tuner_free(struct tuner *tuner);
 int tuner_set_frequency(struct tuner *tuner, unsigned long frequency);
+int tuner_set_input(struct tuner *tuner, int input_nr);
+int tuner_set_standard(struct tuner *tuner, const char *standard);
 
 /**
  * handset

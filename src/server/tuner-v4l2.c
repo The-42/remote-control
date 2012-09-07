@@ -61,6 +61,67 @@ int tuner_free(struct tuner *tuner)
 	return 0;
 }
 
+int tuner_set_input(struct tuner *tuner, int input_nr)
+{
+	struct v4l2_tuner input;
+	int v4l2_fd;
+	int err;
+
+	v4l2_fd = open(V4L2_DEVICE, O_RDWR);
+	if (v4l2_fd < 0) {
+		err = -errno;
+		g_debug("  failed to open %s: %s", V4L2_DEVICE, strerror(-err));
+		goto out;
+	}
+
+	err = ioctl(v4l2_fd, VIDIOC_S_INPUT, &input_nr);
+	if (err < 0) {
+		g_debug("   ioctl(VIDIOC_S_INPUT): %s", strerror(-err));
+		goto close;
+	}
+close:
+	close(v4l2_fd);
+out:
+	return err;
+}
+
+int tuner_set_standard(struct tuner *tuner, const gchar *standard)
+{
+	v4l2_std_id std_id = V4L2_STD_PAL_BG;
+	struct v4l2_tuner input;
+	int v4l2_fd;
+	int err;
+
+	v4l2_fd = open(V4L2_DEVICE, O_RDWR);
+	if (v4l2_fd < 0) {
+		err = -errno;
+		g_debug("  failed to open %s: %s", V4L2_DEVICE, strerror(-err));
+		goto out;
+	}
+
+	if (g_ascii_strncasecmp(standard, "PAL-BG", 6) == 0)
+		std_id = V4L2_STD_PAL_BG;
+	else if (g_ascii_strncasecmp(standard, "PAL-B", 5) == 0)
+		std_id = V4L2_STD_PAL_B;
+	else if (g_ascii_strncasecmp(standard, "PAL-G", 5) == 0)
+		std_id = V4L2_STD_PAL_G;
+	else {
+		g_debug("Unknwon v4l2 standard: %s", standard);
+		err = -EINVAL;
+		goto close;
+	}
+
+	err = ioctl(v4l2_fd, VIDIOC_S_STD, &std_id);
+	if (err < 0) {
+		g_debug("   ioctl(VIDIOC_S_STD): %s", strerror(-err));
+		exit (EXIT_FAILURE);
+	}
+close:
+	close(v4l2_fd);
+out:
+	return err;
+}
+
 int tuner_set_frequency(struct tuner *tuner, unsigned long frequency)
 {
 	struct v4l2_frequency freq;
