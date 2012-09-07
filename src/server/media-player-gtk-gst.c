@@ -1506,6 +1506,32 @@ int media_player_get_uri(struct media_player *player, char **urip)
 	return urip == NULL ? -ENOMEM : 0;
 }
 
+int media_player_set_crop(struct media_player *player,
+				unsigned int left, unsigned int right,
+				unsigned int top, unsigned int bottom)
+{
+	GstElement *crop = NULL;
+
+	g_debug("> %s(player=%p, left=%d, right=%d, top=%d, bottom=%d)",
+		__func__, player, left, right, top, bottom);
+
+	if (!player)
+		return -EINVAL;
+
+	crop = gst_bin_get_by_name(GST_BIN(player->pipeline), "video-out");
+	if (!crop) {
+		g_warning("%s: could not find crop element.", __func__);
+		return -EEXIST;
+	}
+
+
+	g_object_set(crop, "crop-top", top, "crop-bottom", bottom,
+			"crop-left", left, "crop-right", right, NULL);
+
+	g_debug("< %s()", __func__);
+	return 0;
+}
+
 int media_player_set_output_window(struct media_player *player,
                                    unsigned int x, unsigned int y,
                                    unsigned int width,

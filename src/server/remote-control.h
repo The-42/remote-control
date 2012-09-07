@@ -171,6 +171,9 @@ struct media_player;
 
 int media_player_create(struct media_player **playerp, GKeyFile *config);
 int media_player_free(struct media_player *player);
+int media_player_set_crop(struct media_player *player,
+		unsigned int left, unsigned int right, unsigned int top,
+		unsigned int bottom);
 int media_player_set_output_window(struct media_player *player,
 		unsigned int x, unsigned int y, unsigned int width,
 		unsigned int height);

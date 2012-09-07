@@ -229,6 +229,12 @@
 		<func name="media_player_set_position" returns="int32_t" opcode="510">
 			<arg name="position" type="uint32_t" mode="in"/>
 		</func>
+		<func name="media_player_set_crop" returns="int32_t" opcode="511">
+			<arg name="left" type="uint16_t" mode="in"/>
+			<arg name="right" type="uint16_t" mode="in"/>
+			<arg name="top" type="uint16_t" mode="in"/>
+			<arg name="bottom" type="uint16_t" mode="in"/>
+		</func>
 		<!-- Tuner -->
 		<func name="tuner_set_output_window" returns="int32_t" opcode="600">
 			<arg name="x" type="uint16_t" mode="in"/>
