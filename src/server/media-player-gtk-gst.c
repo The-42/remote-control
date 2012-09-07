@@ -14,18 +14,24 @@
 #include <errno.h>
 
 #include <gtk/gtk.h>
-#include <gdk/gdkscreen.h>
-#include <gdk/gdkwindow.h>
+#include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 
 #include <glib/gprintf.h>
 
+#define GST_USE_UNSTABLE_API
 #include <gst/gst.h>
+#if GST_CHECK_VERSION(1,0,0)
+#include <gst/video/videooverlay.h>
+#else
 #include <gst/interfaces/xoverlay.h>
+#endif
 
 #if defined(ENABLE_XRANDR)
 #include <X11/extensions/Xrandr.h>
 #endif
+
+#include <signal.h>
 
 //#include <gst/playback/gstplay-enum.h> // not public
 typedef enum {
@@ -152,6 +158,10 @@ static void player_source_setup(GstElement *playbin, GstElement *source,
 		if (player->http_proxy)
 			g_object_set(G_OBJECT(source), "proxy",
 			             player->http_proxy, NULL);
+	} else if(!g_ascii_strncasecmp(uri, "udp://", 6)) {
+		g_print("Playing udp source, setting multicast interface\n");
+		g_object_set(G_OBJECT(source), "multicast-iface", "eth0",
+				NULL);
 	}
 	g_free(uri);
 }
@@ -234,7 +244,11 @@ static void player_check_audio_tracks(GstElement *playbin,
 
 static void set_webkit_appsrc_rank(guint rank)
 {
+#if GST_CHECK_VERSION(1,0,0)
+	GstRegistry *registry = gst_registry_get();
+#else
 	GstRegistry *registry = gst_registry_get_default();
+#endif
 	GstPluginFeature *feature;
 
 	/* FIXME: the appsrc is used by webkit to provide there own httpsrc,
@@ -375,17 +389,31 @@ static gboolean player_set_x_overlay(struct media_player *player)
 
 	if (GDK_IS_WINDOW(player->window)) {
 		g_debug("   gst_x_overlay_set_window_handle()....");
+#if GST_CHECK_VERSION(1, 0, 0)
+		gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(video_sink),
+				GDK_WINDOW_XID(player->window));
+#else
 		gst_x_overlay_set_window_handle(GST_X_OVERLAY(video_sink),
-				GDK_WINDOW_XWINDOW(player->window));
+				GDK_WINDOW_XID(player->window));
+#endif
 		gdk_window_freeze_updates (player->window);
 	} else {
 		g_debug("   window not ready");
+#if GST_CHECK_VERSION(1, 0, 0)
+		gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(video_sink),
+				player->xid);
+#else
 		gst_x_overlay_set_window_handle(GST_X_OVERLAY(video_sink),
 				player->xid);
+#endif
 	}
 
 	/* force redraw */
+#if GST_CHECK_VERSION(1, 0, 0)
+	gst_video_overlay_expose(GST_VIDEO_OVERLAY(video_sink));
+#else
 	gst_x_overlay_expose(GST_X_OVERLAY(video_sink));
+#endif
 
 	gst_object_unref(video_sink);
 	return TRUE;
@@ -465,7 +493,12 @@ static int player_window_update(struct media_player *player)
 		return -EINVAL;
 
 	gdk_window_get_position(GDK_WINDOW(player->window), &x, &y);
+#if GTK_CHECK_VERSION(2, 91, 0)
+	width = gdk_window_get_width(player->window);
+	height = gdk_window_get_height(player->window);
+#else
 	gdk_drawable_get_size(GDK_DRAWABLE(player->window), &width, &height);
+#endif
 
 	if (player->have_nv_omx)
 		return tegra_omx_window_move(player, x, y, width, height);
@@ -488,18 +521,36 @@ static gboolean player_element_message_sync(GstBus *bus, GstMessage *msg,
 	gboolean ret = FALSE;
 	const gchar* name;
 
+#if GST_CHECK_VERSION(1, 0, 0)
+	const GstStructure *structure = gst_message_get_structure(msg);
+	name = gst_structure_get_name(structure);
+#else
 	if (!msg->structure)
 		return FALSE;
 
 	name = gst_structure_get_name(msg->structure);
+#endif
+
+
+	g_print("player_element_message_sync\n");
+#if GST_CHECK_VERSION(1, 0, 0)
+	if (g_strcmp0(name, "prepare-window-handle") == 0) {
+		g_debug("    prepare-window-handle");
+#else
 	if (g_strcmp0(name, "prepare-xwindow-id") == 0) {
 		g_debug("    prepare-xwindow-id");
+#endif
 		ret = player_set_x_overlay(player);
 	}
 	else if (g_strcmp0(name, "have-xwindow-id") == 0) {
 		g_debug("    have-xwindow-id");
+#if GST_CHECK_VERSION(1, 0, 0)
+		ret = player_set_x_window_id(player,
+			gst_structure_get_value(structure, "xwindow-id"));
+#else
 		ret = player_set_x_window_id(player,
 			gst_structure_get_value(msg->structure, "xwindow-id"));
+#endif
 	}
 	return ret;
 }
@@ -630,7 +681,11 @@ static int player_window_init(struct media_player *player)
 		.window_type = GDK_WINDOW_CHILD,
 		.override_redirect = TRUE,
 	};
+#if GTK_CHECK_VERSION(2, 91, 0)
+	cairo_region_t *region;
+#else
 	GdkRegion *region;
+#endif
 	GdkScreen *screen;
 
 	screen = gdk_screen_get_default();
@@ -643,9 +698,15 @@ static int player_window_init(struct media_player *player)
 
 	gdk_window_set_decorations(player->window, 0);
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+	region = cairo_region_create();
+	gdk_window_input_shape_combine_region(player->window, region, 0, 0);
+	cairo_region_destroy(region);
+#else
 	region = gdk_region_new();
 	gdk_window_input_shape_combine_region(player->window, region, 0, 0);
 	gdk_region_destroy(region);
+#endif
 
 	return 0;
 }
@@ -783,8 +844,14 @@ static int player_create_nvidia_pipeline(struct media_player *player, const gcha
 	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
 	if (bus) {
 		gst_bus_add_watch(bus, (GstBusFunc)player_gst_bus_event, player);
+#if GST_CHECK_VERSION(1, 0, 0)
+		gst_bus_set_sync_handler(bus,
+			(GstBusSyncHandler)player_gst_bus_sync_handler,
+			player, NULL);
+#else
 		gst_bus_set_sync_handler(bus,
 			(GstBusSyncHandler)player_gst_bus_sync_handler, player);
+#endif
 		gst_object_unref(GST_OBJECT(bus));
 	}
 
@@ -832,7 +899,11 @@ static int player_create_pipeline(struct media_player *player, const gchar* uri)
 
 static int player_init_gstreamer(struct media_player *player)
 {
+#if GST_CHECK_VERSION(1, 0, 0)
+	GstRegistry *registry = gst_registry_get();
+#else
 	GstRegistry *registry = gst_registry_get_default();
+#endif
 	GstPluginFeature *feature;
 	GError *err = NULL;
 	/* FIXME: we need the real arguments, otherwise we can not pass things
@@ -928,7 +999,7 @@ static int player_find_display_type(struct media_player *player)
 		g_warning("no xdisplay");
 		return -1;
 	}
-	rootwindow = gdk_x11_drawable_get_xid(GDK_DRAWABLE(window));
+	rootwindow = GDK_WINDOW_XID(window);
 
 	if (!XRRQueryExtension(xdisplay, &event_base, &error_base)) {
 		g_warning("randr not available: %d %d", event_base, error_base);
@@ -1018,7 +1089,11 @@ static int player_xrandr_configure_screen(struct media_player *player,
 		return -ENOSYS;
 	}
 
+#if GTK_CHECK_VERSION(2, 91, 0)
+	rootwindow = gdk_x11_window_get_xid(player->window);
+#else
 	rootwindow = gdk_x11_drawable_get_xid(GDK_DRAWABLE (player->window));
+#endif
 retry_config:
 	XLockDisplay(display);
 	conf = XRRGetScreenInfo (display, rootwindow);
