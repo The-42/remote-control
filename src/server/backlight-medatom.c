@@ -24,6 +24,7 @@
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
+#include "gdevicetree.h"
 #include "smbus.h"
 
 struct backlight {
@@ -269,6 +270,17 @@ static int backlight_sysfs_probe(struct backlight *backlight)
 	guint max_brightness;
 	GUdevDevice *device;
 	const gchar *path;
+	GDeviceTree *dt;
+
+	dt = g_device_tree_load(NULL);
+	if (dt) {
+		if (g_device_tree_is_compatible(dt, "ad,medatom")) {
+			g_device_tree_free(dt);
+			return -ENOTSUP;
+		}
+
+		g_device_tree_free(dt);
+	}
 
 	backlight->sysfs = g_sysfs_backlight_new("intel_backlight", &error);
 	if (!backlight->sysfs) {
