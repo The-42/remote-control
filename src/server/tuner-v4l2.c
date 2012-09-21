@@ -63,7 +63,6 @@ int tuner_free(struct tuner *tuner)
 
 int tuner_set_input(struct tuner *tuner, int input_nr)
 {
-	struct v4l2_tuner input;
 	int v4l2_fd;
 	int err;
 
@@ -88,7 +87,6 @@ out:
 int tuner_set_standard(struct tuner *tuner, const gchar *standard)
 {
 	v4l2_std_id std_id = V4L2_STD_PAL_BG;
-	struct v4l2_tuner input;
 	int v4l2_fd;
 	int err;
 
