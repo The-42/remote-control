@@ -127,6 +127,9 @@ int main(int argc, char *argv[])
 	GMainLoop *loop;
 	GKeyFile *conf;
 
+	if (!ENABLE_NLS)
+		gtk_disable_setlocale();
+
 	/* parse command-line */
 	options = g_option_context_new("- standalone browser");
 	g_option_context_add_main_entries(options, entries, NULL);
