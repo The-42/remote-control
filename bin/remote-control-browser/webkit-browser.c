@@ -16,11 +16,11 @@
 #ifdef USE_WEBKIT2
 #include <webkit2/webkit2.h>
 #else
+#include <libsoup/soup-proxy-resolver-default.h>
 #include <webkit/webkit.h>
 #endif
 
 #include <gtkosk/gtkosk.h>
-#include <libsoup/soup-proxy-resolver-default.h>
 
 #ifndef USE_WEBKIT2
 #include "katze-scrolled.h"
@@ -47,10 +47,7 @@ enum {
 	PROP_GEOMETRY,
 	PROP_KEYBOARD,
 	PROP_CONTROLS,
-// FIXME: PROP_ACCEPT_LANGUAGE for webkit2
-#ifndef USE_WEBKIT2
 	PROP_ACCEPT_LANGUAGE,
-#endif
 	PROP_URI,
 	PROP_NOEXIT,
 };
@@ -75,16 +72,65 @@ struct _WebKitBrowserPrivate {
 	gchar *uri;
 	GtkWidget *addTab;
 	GtkWidget *delTab;
+
+#ifdef USE_WEBKIT2
+	gchar **languages;
+#endif
 };
+
+#ifdef USE_WEBKIT2
+static gchar *webkit_browser_get_accept_language(WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	return g_strjoinv(";", priv->languages);
+}
+
+static void webkit_browser_set_accept_language(WebKitBrowser *browser,
+					       const gchar *language)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	WebKitWebContext *context = webkit_web_context_get_default();
+	gchar **languages;
+
+	languages = g_strsplit(language, ";", 0);
+
+	webkit_web_context_set_preferred_languages(context,
+			(const gchar *const *)languages);
+
+	g_strfreev(priv->languages);
+	priv->languages = languages;
+}
+#else
+static gchar *webkit_browser_get_accept_language(WebKitBrowser *browser)
+{
+	SoupSession *session = webkit_get_default_session();
+	gchar *language;
+
+	g_return_val_if_fail(SOUP_IS_SESSION(session), NULL);
+
+	g_object_get(session, SOUP_SESSION_ACCEPT_LANGUAGE, &language, NULL);
+
+	return language;
+}
+
+static void webkit_browser_set_accept_language(WebKitBrowser *browser,
+					       const gchar *language)
+{
+	SoupSession *session = webkit_get_default_session();
+
+	g_return_if_fail(SOUP_IS_SESSION(session));
+
+	g_object_set(session, SOUP_SESSION_ACCEPT_LANGUAGE, language, NULL);
+}
+#endif
 
 static void webkit_browser_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
-#ifndef USE_WEBKIT2
-	SoupSession *session = webkit_get_default_session();
+	WebKitBrowser *browser = WEBKIT_BROWSER(object);
 	gchar *language;
-#endif
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -99,12 +145,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_boolean(value, priv->controls);
 		break;
 
-#ifndef USE_WEBKIT2
 	case PROP_ACCEPT_LANGUAGE:
-		language = soup_session_get_accept_language(session);
+		language = webkit_browser_get_accept_language(browser);
 		g_value_take_string(value, language);
 		break;
-#endif
 
 	case PROP_URI:
 		g_value_set_string(value, priv->uri);
@@ -124,10 +168,7 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		const GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
-#ifndef USE_WEBKIT2
-	SoupSession *session = webkit_get_default_session();
-	const gchar *language;
-#endif
+	WebKitBrowser *browser = WEBKIT_BROWSER(object);
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -151,12 +192,11 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			gtk_notebook_set_show_tabs(priv->notebook, FALSE);
 		}
 		break;
-#ifndef USE_WEBKIT2
+
 	case PROP_ACCEPT_LANGUAGE:
-		language = g_value_get_string(value);
-		soup_session_set_accept_language(session, language);
+		webkit_browser_set_accept_language(browser,
+						   g_value_get_string(value));
 		break;
-#endif
 
 	case PROP_URI:
 		break;
@@ -1109,14 +1149,13 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 			g_param_spec_boolean("controls", "Browser Controls",
 				"Enable or disable browser controls", TRUE,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-#ifndef USE_WEBKIT2
+
 	g_object_class_install_property(object, PROP_ACCEPT_LANGUAGE,
 			g_param_spec_string("accept-language",
 				"Accept-Language string",
 				"Accept-Language string",
 				NULL,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-#endif
 
 	g_object_class_install_property(object, PROP_URI,
 			g_param_spec_string("uri", "URI", "URI", NULL,

@@ -12,9 +12,6 @@
 G_BEGIN_DECLS
 
 void soup_session_set_proxy(SoupSession *session);
-gchar *soup_session_get_accept_language(SoupSession *session);
-void soup_session_set_accept_language(SoupSession *session,
-		const gchar *language);
 
 struct watchdog;
 struct watchdog *watchdog_new(GKeyFile *conf, GError **error);

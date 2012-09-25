@@ -38,22 +38,3 @@ void soup_session_set_proxy(SoupSession *session)
 	g_object_set(session, SOUP_SESSION_PROXY_URI, uri, NULL);
 	soup_uri_free(uri);
 }
-
-gchar *soup_session_get_accept_language(SoupSession *session)
-{
-	gchar *language;
-
-	g_return_val_if_fail(SOUP_IS_SESSION(session), NULL);
-
-	g_object_get(session, SOUP_SESSION_ACCEPT_LANGUAGE, &language, NULL);
-
-	return language;
-}
-
-void soup_session_set_accept_language(SoupSession *session,
-		const gchar *language)
-{
-	g_return_if_fail(SOUP_IS_SESSION(session));
-
-	g_object_set(session, SOUP_SESSION_ACCEPT_LANGUAGE, language, NULL);
-}
