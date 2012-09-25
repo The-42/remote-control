@@ -22,9 +22,10 @@
 
 #include <gtkosk/gtkosk.h>
 
-#ifndef USE_WEBKIT2
+#if !GTK_CHECK_VERSION(3, 0, 0)
 #include "katze-scrolled.h"
 #endif
+
 #include "webkit-browser.h"
 #include "webkit-browser-tab-label.h"
 #include "gtk-pdf-view.h"
@@ -306,7 +307,7 @@ static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 
 	page = gtk_notebook_get_current_page(priv->notebook);
 	widget = gtk_notebook_get_nth_page(priv->notebook, page);
-#ifdef USE_WEBKIT2
+#if GTK_CHECK_VERSION(3, 0, 0)
 	view = WEBKIT_WEB_VIEW(widget);
 #else
 	widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(widget))));
@@ -768,9 +769,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 #endif
 	GtkWidget *webkit;
 	GtkWidget *label;
-#ifndef USE_WEBKIT2
 	GtkWidget *view;
-#endif
 	gint page;
 
 	if (!webkit_browser_can_open_tab(browser))
@@ -782,12 +781,14 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	gtk_widget_set_double_buffered(webkit, TRUE);
 
 	/* TODO: Support GtkDragView with scrollbar */
-#ifndef USE_WEBKIT2
+#if !GTK_CHECK_VERSION(3, 0, 0)
 	view = katze_scrolled_new(NULL, NULL);
 	g_object_set(G_OBJECT(view), "drag-scrolling", TRUE, NULL);
 	gtk_rc_parse_string(style_large);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show(view);
+#else
+	view = webkit;
 #endif
 	if (!hidden)
 		gtk_widget_show(webkit);
@@ -795,9 +796,9 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	label = webkit_browser_tab_label_new(title);
 	gtk_widget_show(label);
 
-#ifdef USE_WEBKIT2
-	page = gtk_notebook_append_page(priv->notebook, webkit, label);
+	page = gtk_notebook_append_page(priv->notebook, view, label);
 
+#if USE_WEBKIT2
 	g_signal_connect(G_OBJECT(webkit), "decide-policy",
 			G_CALLBACK(webkit_decide_policy), browser);
 	g_signal_connect(G_OBJECT(context), "download-started",
@@ -805,8 +806,6 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	g_signal_connect(G_OBJECT(webkit), "notify::estimated-load-progress",
 			G_CALLBACK(on_notify_progress), browser);
 #else
-	page = gtk_notebook_append_page(priv->notebook, view, label);
-
 	g_signal_connect(G_OBJECT(webkit), "mime-type-policy-decision-requested",
 			G_CALLBACK(on_mime_type_requested), NULL);
 	g_signal_connect(G_OBJECT(webkit), "download-requested",
@@ -941,16 +940,19 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 	GtkWidget *widget;
 	const gchar *uri;
 
-#ifdef USE_WEBKIT2
+#if GTK_CHECK_VERSION(3, 0, 0)
 	if (WEBKIT_IS_WEB_VIEW(page)) {
 		/* the notebook page contains a WebKitWebView */
 		widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(page))));
-		webkit = WEBKIT_WEB_VIEW(widget);
 #else
 	if (GTK_IS_BIN(page)) {
 		/* the notebook page contains a WebKitWebView */
 		widget = gtk_bin_get_child(GTK_BIN(page));
+#endif
+
 		webkit = WEBKIT_WEB_VIEW(widget);
+
+#ifndef USE_WEBKIT2
 		frame = webkit_web_view_get_main_frame(webkit);
 #endif
 
