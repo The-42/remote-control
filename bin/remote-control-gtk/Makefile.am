@@ -1,5 +1,3 @@
-INCLUDES = -I ../../src/client -I $(srcdir)/../../src/client
-
 bin_PROGRAMS = \
 	remote-control-gtk
 
@@ -18,6 +16,8 @@ remote_control_gtk_SOURCES = \
 	webkit.c
 
 remote_control_gtk_CPPFLAGS = \
+	-I ../../src/client \
+	-I $(srcdir)/../../src/client \
 	-DPKG_DATA_DIR=\"$(pkgdatadir)\"
 
 remote_control_gtk_CFLAGS = \

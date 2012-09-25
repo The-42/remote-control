@@ -1,10 +1,9 @@
-INCLUDES = -I$(top_srcdir)/src/common
-
 bin_PROGRAMS = \
 	remote-control-browser
 
 remote_control_browser_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
+	-I$(top_srcdir)/src/common \
 	-I$(top_srcdir)/bin/utils \
 	@POPPLER_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
