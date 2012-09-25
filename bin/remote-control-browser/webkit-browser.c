@@ -696,32 +696,68 @@ static WebKitWebView *on_create_web_view(WebKitWebView *web_view,
 	return WEBKIT_WEB_VIEW(new);
 }
 
+#ifdef USE_WEBKIT2
+static gchar *webkit_web_view_get_user_agent(WebKitWebView *webkit)
+{
+	WebKitSettings *settings;
+	const gchar *user_agent;
+
+	settings = webkit_web_view_get_settings(webkit);
+	user_agent = webkit_settings_get_user_agent(settings);
+
+	return g_strdup(user_agent);
+}
+
+static void webkit_web_view_set_user_agent(WebKitWebView *webkit,
+					   const gchar *user_agent)
+{
+	WebKitSettings *settings;
+
+	settings = webkit_web_view_get_settings(webkit);
+	webkit_settings_set_user_agent(settings, user_agent);
+}
+#else
+static gchar *webkit_web_view_get_user_agent(WebKitWebView *webkit)
+{
+	WebKitWebSettings *settings;
+	const gchar *user_agent;
+
+	settings = webkit_web_view_get_settings(webkit);
+	user_agent = webkit_web_settings_get_user_agent(settings);
+
+	return g_strdup(user_agent);
+}
+
+static void webkit_web_view_set_user_agent(WebKitWebView *webkit,
+					   const gchar *user_agent)
+{
+	WebKitWebSettings *settings;
+
+	settings = webkit_web_view_get_settings(webkit);
+	g_object_set(G_OBJECT(settings), "user-agent", user_agent, NULL);
+}
+#endif
+
 static void webkit_browser_set_user_agent(WebKitWebView *webkit)
 {
-// FIXME: As of v1.8.1 webkit2 lacks a user agent.
-#ifndef USE_WEBKIT2
-	WebKitWebSettings *settings;
-	gchar *user_agent;
-	gchar *processor;
+	gchar *user_agent, *ptr;
 
-	settings = webkit_web_settings_new();
-	user_agent = g_strdup(webkit_web_settings_get_user_agent(settings));
+	user_agent = webkit_web_view_get_user_agent(webkit);
 
-	/* if armv7l is set as processor, we simply remove it,
-	 * as some sites load mobile page versions for any arm
-	 * device */
-	processor = g_strstr_len(user_agent, -1, " armv7l");
-	if(processor) {
-		gchar *processor_end = processor + 7;
-		memmove(processor, processor_end, strlen(processor_end)+1);
+	/*
+	 * If armv7l is set as processor we simply remove it. This is an ugly
+	 * workaround for some sites that redirect to mobile versions of the
+	 * page for *any* ARM device.
+	 */
+	ptr = g_strstr_len(user_agent, -1, " armv7l");
+	if (ptr) {
+		gsize length = strlen(ptr + 7) + 1;
+
+		memmove(ptr, ptr + 7, length);
 	}
 
-	g_object_set(G_OBJECT(settings), "user-agent", user_agent, NULL);
-	webkit_web_view_set_settings (WEBKIT_WEB_VIEW(webkit), settings);
+	webkit_web_view_set_user_agent(webkit, user_agent);
 	g_free(user_agent);
-#else
-	#warning "User Agent setting is not implemented in Webkit2"
-#endif
 }
 
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden)
