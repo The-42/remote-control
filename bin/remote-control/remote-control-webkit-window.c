@@ -397,7 +397,11 @@ static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self
 		g_object_set (G_OBJECT(settings), "enable-developer-extras", TRUE,
 					  NULL);
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+		priv->vbox = GTK_VBOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+#else
 		priv->vbox = GTK_VBOX(gtk_vbox_new(false, 0));
+#endif
 
 		priv->expander = GTK_EXPANDER(gtk_expander_new("Inspector"));
 		g_signal_connect (priv->expander, "notify::expanded",
