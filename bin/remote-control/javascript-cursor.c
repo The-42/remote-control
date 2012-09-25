@@ -103,9 +103,14 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 	if (priv->uinput) {
 		cursor_uinput_move(priv, x, y);
 	} else {
-		g_assert(priv->display != NULL);
-		g_assert(priv->screen != NULL);
+#if GTK_CHECK_VERSION(3, 0, 0)
+		GdkDeviceManager *manager = gdk_display_get_device_manager(priv->display);
+		GdkDevice *device = gdk_device_manager_get_client_pointer(manager);
+
+		gdk_device_warp(device, priv->screen, x, y);
+#else
 		gdk_display_warp_pointer(priv->display, priv->screen, x, y);
+#endif
 		gdk_display_flush(priv->display);
 	}
 
