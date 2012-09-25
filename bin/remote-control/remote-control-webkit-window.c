@@ -174,15 +174,14 @@ static void webkit_on_load_changed(WebKitWebView *webkit,
 		user.loop =  priv->loop;
 		user.window = window;
 
-		// FIXME Webkit2
-		/*context = webkit_web_view_get_javascript_global_context(webkit);
+		context = webkit_web_view_get_javascript_global_context(webkit);
 		g_assert(context != NULL);
 
 		err = javascript_register(context, &user);
 		if (err < 0) {
 			g_debug("failed to register JavaScript API: %s",
 					g_strerror(-err));
-		}*/
+		}
 		break;
 	}
 	default:
