@@ -385,7 +385,7 @@ static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self
 #ifdef USE_WEBKIT2
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
 #else
-	if(priv->inspector) {
+	if (priv->inspector) {
 		GtkWidget *view;
 
 		view = gtk_scrolled_window_new(NULL, NULL);
