@@ -43,18 +43,31 @@ AC_ARG_WITH([gtk],
 	], [], [with_gtk=2.0])
 
 AS_CASE([$with_gtk],
-	[2.0], [REQUIRED_WEBKIT=-1.0],
-	[3.0], [REQUIRED_WEBKIT=2gtk-3.0],
+	[2.0], [],
+	[3.0], [
+		AC_DEFINE([HAVE_GTKX_H], [1], [If Gtk+ 3.0 is used])
+		AC_DEFINE([USE_GTK3], [1], [If Gtk+ 3.0 is used])
+	],
 	[AC_MSG_ERROR([Invalid Gtk+ version specified: must be 2.0 or 3.0])])
 
-if test "x$with_gtk" = "x3.0"; then
-	AC_DEFINE([HAVE_GTKX_H], [1], [If Gtk+ 3.0 is used])
-	AC_DEFINE([USE_GTK3], [1], [If Gtk+ 3.0 is used])
-	AC_DEFINE([USE_WEBKIT2], [1], [If WebKit2 API is used])
-fi
+AC_ARG_WITH([webkit],
+	[AS_HELP_STRING([--with-webkit=@<:@1.0|2.0@:>@],
+			[The WebKit version to use (default: 1.0)])
+	], [], [with_webkit=1.0])
+
+AS_CASE([$with_webkit],
+	[1.0], [],
+	[2.0], [AC_DEFINE([USE_WEBKIT2], [1], [If WebKit2 API is used])],
+	[AC_MSG_ERROR([Invalid Webkit2 version specified, must be 1.0 or 2.0])])
+
+AS_CASE([$with_gtk:$with_webkit],
+	[2.0:1.0], [REQUIRED_WEBKIT=webkit-1.0],
+	[2.0:2.0], [AC_MSG_ERROR([WebKit2 requires Gtk+ 3.0])],
+	[3.0:1.0], [REQUIRED_WEBKIT=webkitgtk-3.0],
+	[3.0:2.0], [REQUIRED_WEBKIT=webkit2gtk-3.0])
 
 PKG_CHECK_MODULES(GTK, gtk+-x11-$with_gtk x11 xext)
-PKG_CHECK_MODULES(WEBKIT, webkit$REQUIRED_WEBKIT)
+PKG_CHECK_MODULES(WEBKIT, $REQUIRED_WEBKIT)
 
 #
 # audio (UCM) backend
@@ -376,6 +389,7 @@ Features:
 Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
+  WebKit Version:            $with_webkit
   JavaScript Binding:        $enable_javascript"
 
 AS_IF([test "x$enable_javascript" = "xyes"], [
