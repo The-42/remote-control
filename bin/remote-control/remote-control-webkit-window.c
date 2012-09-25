@@ -449,9 +449,7 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 
 	gtk_widget_set_size_request(GTK_WIDGET(window), cx, cy);
 
-#ifdef USE_WEBKIT2
-	#warning "Proxy setting not implemented for webkit2"
-#else
+#ifndef USE_WEBKIT2
 	soup_session_set_proxy(webkit_get_default_session());
 #endif
 

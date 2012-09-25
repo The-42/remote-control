@@ -10,6 +10,7 @@
 #  include "config.h"
 #endif
 
+#ifndef USE_WEBKIT2
 #include <libsoup/soup-session.h>
 #include <libsoup/soup-uri.h>
 
@@ -38,3 +39,4 @@ void soup_session_set_proxy(SoupSession *session)
 	g_object_set(session, SOUP_SESSION_PROXY_URI, uri, NULL);
 	soup_uri_free(uri);
 }
+#endif

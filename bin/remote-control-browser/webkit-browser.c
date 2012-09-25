@@ -1110,8 +1110,8 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	GtkWidget *toolbar;
 	GtkWidget *vbox;
 
-	/* enable cookies */
 #ifndef USE_WEBKIT2
+	/* enable cookies */
 	priv->cookie = soup_cookie_jar_new();
 	soup_session_add_feature(session, SOUP_SESSION_FEATURE(priv->cookie));
 
@@ -1126,8 +1126,10 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	soup_session_add_feature_by_type(session,
 			SOUP_TYPE_PROXY_RESOLVER_DEFAULT);
 #else
-	#warning "Proxy support missing in webkit2"
-	#warning "Cookie support missing in webkit2"
+	/*
+	 * WebKit2 automatically enables the default proxy resolver and stores
+	 * cookies in memory unless told otherwise.
+	 */
 #endif
 
 	toolbar = webkit_browser_create_toolbar(browser);

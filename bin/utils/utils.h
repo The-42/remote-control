@@ -9,9 +9,16 @@
 #ifndef UTILS_H
 #define UTILS_H 1
 
+#ifndef USE_WEBKIT2
+#include <libsoup/soup-logger.h>
+#include <libsoup/soup-session.h>
+#endif
+
 G_BEGIN_DECLS
 
+#ifndef USE_WEBKIT2
 void soup_session_set_proxy(SoupSession *session);
+#endif
 
 struct watchdog;
 struct watchdog *watchdog_new(GKeyFile *conf, GError **error);
