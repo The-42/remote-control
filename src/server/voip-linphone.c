@@ -377,6 +377,17 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 	linphone_core_set_playback_gain_db(voip->core, 1.0f);
 	linphone_core_set_ring(voip->core, NULL);
 
+	/*
+	 * The keepi-alive period can be set in .linphonerc or /etc/linphone.conf.
+	 * But the API does not allow to set the period directly, so we can only
+	 * enable/disable keep-alive.
+	 */
+	if (g_key_file_has_key(config, "linphone", "keep-alive", NULL)) {
+		gboolean enable = g_key_file_get_boolean(config, "linphone",
+		                                         "keep-alive", NULL);
+		linphone_core_enable_keep_alive(voip->core, enable);
+	}
+
 	*voipp = voip;
 	return 0;
 }

@@ -278,6 +278,14 @@
 								The value is valid in a range from 1 to 3600. The linphone default is 600.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>keep-alive</varname></term>
+							<listitem><para>
+								Setting this to false instructs linphone to not send
+								keep-alive packets. These packets are normally used to keep
+								connections open in firewall setups.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
@@ -476,6 +484,7 @@ timeout = 13000
 disable-codecs = speex;g722
 echo-cancellation = true
 registration-expiry = 600
+keep-alive = false
 
 [media-player]
 preferred-languages = de;en
