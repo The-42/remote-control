@@ -539,6 +539,7 @@ int voip_logout(struct voip *voip)
 			g_debug("voip-linphone: proxy configuration failed");
 	}
 
+	linphone_core_clear_proxy_config(voip->core);
 	return 0;
 }
 
