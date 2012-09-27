@@ -397,6 +397,10 @@ ssize_t net_send_async(struct net *net, const void *buffer, size_t size)
 	}
 
 	channel = net->primary;
+	if (!channel) {
+		err = -ENETDOWN;
+		goto out;
+	}
 
 	err = sendto(channel->fd, buffer, size, 0, channel->addr,
 			channel->addrlen);
