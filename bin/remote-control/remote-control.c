@@ -470,6 +470,80 @@ static GKeyFile *remote_control_load_configuration(const gchar *filename,
 	return conf;
 }
 
+struct remote_control_data {
+	GKeyFile *config;
+	GMainLoop *loop;
+	GThread *thread;
+};
+
+static gpointer remote_control_thread(gpointer data)
+{
+	struct remote_control_data *rcd = data;
+	struct remote_control *rc;
+	GMainContext *context;
+	gpointer ret = NULL;
+	GSource *source;
+	int err;
+
+	context = g_main_context_new();
+	if (!context) {
+		g_error("failed to create main context");
+		return NULL;
+	}
+
+	rcd->loop = g_main_loop_new(context, FALSE);
+
+	err = remote_control_create(&rc, rcd->config);
+	if (err < 0) {
+		g_error("remote_control_create(): %s", strerror(-err));
+		return NULL;
+	}
+
+	source = remote_control_get_source(rc);
+	g_assert(source != NULL);
+
+	g_source_attach(source, context);
+	g_source_unref(source);
+
+	g_main_loop_run(rcd->loop);
+
+	g_source_destroy(source);
+	g_main_loop_unref(rcd->loop);
+
+	return ret;
+}
+
+static struct remote_control_data *start_remote_control(GKeyFile *config,
+							GError **errorp)
+{
+	struct remote_control_data *rcd;
+
+	rcd = g_new0(struct remote_control_data, 1);
+	if (!rcd) {
+		g_set_error(errorp, G_THREAD_ERROR, 0, "out of memory");
+		return NULL;
+	}
+
+	rcd->config = config;
+
+	rcd->thread = g_thread_new("remote-control", remote_control_thread,
+				   rcd);
+	if (!rcd->thread) {
+		g_set_error(errorp, G_THREAD_ERROR, 0, "cannot create thread");
+		g_free(rcd);
+		return NULL;
+	}
+
+	return rcd;
+}
+
+static void stop_remote_control(struct remote_control_data *rcd)
+{
+	g_main_loop_quit(rcd->loop);
+	g_thread_join(rcd->thread);
+	g_free(rcd);
+}
+
 int main(int argc, char *argv[])
 {
 	const gchar *default_config_file = SYSCONF_DIR "/remote-control.conf";
@@ -482,15 +556,14 @@ int main(int argc, char *argv[])
 			"Print version information and exit", NULL },
 		{ NULL, 0, 0, 0, NULL, NULL, NULL }
 	};
+	struct remote_control_data *rcd;
 	GMainContext *context = NULL;
-	struct remote_control *rc;
 	struct watchdog *watchdog;
 	GOptionContext *options;
 	GError *error = NULL;
 	GtkWidget *window;
 	GDeviceTree *dt;
 	GMainLoop *loop;
-	GSource *source;
 	GKeyFile *conf;
 #ifdef ENABLE_DBUS
 	guint owner;
@@ -599,9 +672,11 @@ int main(int argc, char *argv[])
 			g_dbus_name_acquired, g_dbus_name_lost, NULL, NULL);
 #endif
 
-	err = remote_control_create(&rc, conf);
-	if (err < 0) {
-		g_critical("remote_control_create(): %s", strerror(-err));
+	rcd = start_remote_control(conf, &error);
+	if (!rcd) {
+		g_critical("failed to create control thread: %s",
+			   error->message);
+		g_clear_error(&error);
 		return EXIT_FAILURE;
 	}
 
@@ -610,12 +685,6 @@ int main(int argc, char *argv[])
 		g_signal_connect(G_OBJECT(window), "destroy",
 				G_CALLBACK(on_window_destroy), loop);
 	}
-
-	source = remote_control_get_source(rc);
-	g_assert(source != NULL);
-
-	g_source_attach(source, context);
-	g_source_unref(source);
 
 	watchdog = watchdog_new(conf, NULL);
 	if (watchdog) {
@@ -626,7 +695,7 @@ int main(int argc, char *argv[])
 	g_main_loop_run(loop);
 
 	watchdog_unref(watchdog);
-	g_source_destroy(source);
+	stop_remote_control(rcd);
 #ifdef ENABLE_DBUS
 	g_bus_unown_name(owner);
 #endif
