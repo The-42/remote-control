@@ -440,6 +440,7 @@ int main(int argc, char *argv[])
 
 	if (!g_option_context_parse(options, &argc, &argv, &error)) {
 		g_critical("option parsing failed: %s\n", error->message);
+		g_clear_error(&error);
 		return EXIT_FAILURE;
 	}
 
