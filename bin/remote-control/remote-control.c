@@ -305,8 +305,7 @@ GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
 	if (!uri && (argc > 0))
 		uri = argv[1];
 
-	inspector = g_key_file_get_boolean(conf, "browser", "inspector",
-									   NULL);
+	inspector = g_key_file_get_boolean(conf, "browser", "inspector", NULL);
 
 	if (uri) {
 		RemoteControlWebkitWindow *webkit;
