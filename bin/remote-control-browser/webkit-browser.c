@@ -310,7 +310,7 @@ static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 #if GTK_CHECK_VERSION(3, 0, 0)
 	view = WEBKIT_WEB_VIEW(widget);
 #else
-	widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(widget))));
+	widget = gtk_bin_get_child(GTK_BIN(widget));
 	view = WEBKIT_WEB_VIEW(widget);
 #endif
 
@@ -944,10 +944,10 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 #if GTK_CHECK_VERSION(3, 0, 0)
 	if (WEBKIT_IS_WEB_VIEW(page)) {
 		/* the notebook page contains a WebKitWebView */
-		widget = gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(GTK_BIN(page))));
+		widget = page;
 #else
 	if (GTK_IS_BIN(page)) {
-		/* the notebook page contains a WebKitWebView */
+		/* the notebook page contains a KatzeScrolled */
 		widget = gtk_bin_get_child(GTK_BIN(page));
 #endif
 
