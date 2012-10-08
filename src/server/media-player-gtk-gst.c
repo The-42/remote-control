@@ -824,7 +824,8 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 #endif
 
 #define V4L_PIPELINE \
-	"v4l2src name=\"v4l2src\" ! queue ! ffmpegcolorspace ! glessink name=\"video-out\""
+	"v4l2src name=\"v4l2src\" ! queue ! ffmpegcolorspace ! " \
+		"glessink name=\"video-out\" drop_first=1"
 #define V4L_RADIO_PIPELINE \
 	"fakesrc ! fakesink v4l2radio frequency=%d"
 
@@ -1532,7 +1533,6 @@ int media_player_set_crop(struct media_player *player,
 		g_warning("%s: could not find crop element.", __func__);
 		return -EEXIST;
 	}
-
 
 	g_object_set(crop, "crop-top", top, "crop-bottom", bottom,
 			"crop-left", left, "crop-right", right, NULL);
