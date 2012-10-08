@@ -640,9 +640,10 @@ static gboolean on_new_window_requested(WebKitWebView *webkit,
 	return TRUE;
 }
 #else
-static gboolean webkit_decide_policy (WebKitWebView *web_view,
-	WebKitPolicyDecision *decision, WebKitPolicyDecisionType type,
-	gpointer user_data)
+static gboolean webkit_decide_policy(WebKitWebView *web_view,
+				     WebKitPolicyDecision *decision,
+				     WebKitPolicyDecisionType type,
+				     gpointer user_data)
 {
 	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
 
