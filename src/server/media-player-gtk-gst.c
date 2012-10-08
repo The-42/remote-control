@@ -351,8 +351,17 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 			player_check_audio_tracks(player->pipeline, player);
 		else if (player->pipeline_type == PIPELINE_V4L_VIDEO ||
 			player->pipeline_type == PIPELINE_V4L_RADIO) {
+			GstElement *v4l2src;
+
 			g_printf("start alsa loop\n");
 			player_start_alsa_loop(player);
+
+			v4l2src = gst_bin_get_by_name(GST_BIN(player->pipeline),
+				"v4l2src");
+			if (v4l2src) {
+				g_object_set(v4l2src, "brightness", 25, NULL);
+				g_object_set(v4l2src, "saturation", 125, NULL);
+			}
 		}
 		break;
 	}
@@ -815,7 +824,7 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 #endif
 
 #define V4L_PIPELINE \
-	"v4l2src ! queue ! ffmpegcolorspace ! glessink name=\"video-out\""
+	"v4l2src name=\"v4l2src\" ! queue ! ffmpegcolorspace ! glessink name=\"video-out\""
 #define V4L_RADIO_PIPELINE \
 	"fakesrc ! fakesink v4l2radio frequency=%d"
 
