@@ -28,7 +28,6 @@ libremote_control_la_SOURCES = \
 	media.c \
 	media-player.c \
 	mixer.c \
-	mixer-alsa.c \
 	modem.c \
 	net.c \
 	net-unix.c \
@@ -54,6 +53,14 @@ libremote_control_la_SOURCES += audio-alsa.c
 libremote_control_la_LIBADD += @ALSA_LIBS@
 else
 libremote_control_la_SOURCES += audio-null.c
+endif
+
+if ENABLE_MIXER_ALSA
+libremote_control_la_CFLAGS += @ALSA_CFLAGS@
+libremote_control_la_SOURCES += mixer-alsa.c
+libremote_control_la_LIBADD += @ALSA_LIBS@
+else
+libremote_control_la_SOURCES += mixer-null.c
 endif
 
 if ENABLE_BACKLIGHT_DPMS

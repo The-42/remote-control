@@ -156,6 +156,22 @@ AS_CASE([$with_voip_backend],
 )
 
 #
+# Mixer backend
+#
+enable_mixer_alsa=no
+
+AC_ARG_WITH(mixer_backend,
+	[AS_HELP_STRING([--with-mixer-backend=@<:@none/alsa@:>@],
+		[Use the specified mixer backend. [default=alsa]])
+	], [], [with_mixer_backend=alsa])
+
+AS_CASE([$with_mixer_backend],
+	[none], [],
+	[alsa], [PKG_CHECK_MODULES(ALSA, alsa, [enable_mixer_alsa=yes])],
+	[AC_MSG_ERROR([Invalid mixer backend: must be none or alsa])]
+)
+
+#
 # Modem backend
 #
 enable_libmodem=no
@@ -278,6 +294,7 @@ AS_IF([test "x$enable_watchdog" = "xyes"], [
 # define automake conditionals according to select backends
 #
 AM_CONDITIONAL(ENABLE_AUDIO_ALSA, [test "x$enable_audio_alsa" = "xyes"])
+AM_CONDITIONAL(ENABLE_MIXER_ALSA, [test "x$enable_mixer_alsa" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_DPMS, [test "x$enable_backlight_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
@@ -365,6 +382,7 @@ Features:
   Video Backend:             $with_video_backend
   SmartCard/RFID Backend:    $with_smartcard_backend
   VoIP Backend:              $with_voip_backend
+  Mixer Backend:             $with_mixer_backend
   Modem Backend:             $with_modem_backend
   Handset Backend:           $with_handset_backend
   GPIO Backend:              $with_gpio_backend
