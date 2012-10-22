@@ -15,6 +15,12 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#if GST_CHECK_VERSION(1, 0, 0)
+#  define PLAYBIN_ELEMENT "playbin"
+#else
+#  define PLAYBIN_ELEMENT "playbin2"
+#endif
+
 struct sound_manager {
 	GstElement *play;
 	GstBus *bus;
@@ -77,7 +83,12 @@ int sound_manager_create(struct sound_manager **managerp)
 	}
 
 	/* create the playbin instance */
-	manager->play = gst_element_factory_make ("playbin2", "play");
+	manager->play = gst_element_factory_make(PLAYBIN_ELEMENT, "play");
+	if (!manager->play) {
+		g_free(manager);
+		return -ENOSYS;
+	}
+
 	manager->bus = gst_pipeline_get_bus(GST_PIPELINE(manager->play));
 	gst_bus_add_watch(manager->bus, (GstBusFunc)sound_manger_gst_bus_event,
 					  manager);
