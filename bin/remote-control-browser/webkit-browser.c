@@ -463,7 +463,7 @@ static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
 
 	if (pages == WEBKIT_BROWSER_MAX_PAGES) {
 		gtk_widget_set_sensitive(priv->add_tab, FALSE);
-		gtk_widget_set_sensitive(priv->del_tab, FALSE);
+		gtk_widget_set_sensitive(priv->del_tab, TRUE);
 	} else if (pages == WEBKIT_BROWSER_MIN_PAGES) {
 		gtk_widget_set_sensitive(priv->add_tab, TRUE);
 		gtk_widget_set_sensitive(priv->del_tab, FALSE);
