@@ -678,8 +678,11 @@ static gboolean on_web_view_ready(WebKitWebView *webkit, gpointer user_data)
 
 	return FALSE;
 }
-
+#if USE_WEBKIT2
 static WebKitWebView *on_create_web_view(WebKitWebView *web_view,
+#else
+static WebKitWebView *on_create_web_view(WebKitWebView *web_view, WebKitWebFrame *frame,
+#endif
 	gpointer user_data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(user_data);
@@ -807,6 +810,8 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(webkit_download_started), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::estimated-load-progress",
 			G_CALLBACK(on_notify_progress), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::create",
+			G_CALLBACK(on_create_web_view), browser);
 #else
 	g_signal_connect(G_OBJECT(webkit), "mime-type-policy-decision-requested",
 			G_CALLBACK(on_mime_type_requested), NULL);
@@ -820,9 +825,9 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(on_notify_load_status_global), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::progress",
 			G_CALLBACK(on_notify_progress), browser);
-#endif
-	g_signal_connect(G_OBJECT(webkit), "notify::create",
+	g_signal_connect(G_OBJECT(webkit), "create-web-view",
 			G_CALLBACK(on_create_web_view), browser);
+#endif
 
 	if (hidden)
 		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
