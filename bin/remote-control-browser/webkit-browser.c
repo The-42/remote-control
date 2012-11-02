@@ -1153,6 +1153,7 @@ static void webkit_browser_init(WebKitBrowser *browser)
 #ifndef USE_WEBKIT2
 	SoupSession *session = webkit_get_default_session();
 #endif
+	WebKitWebView *webkit;
 	GtkOskLayout *layout;
 	GtkWidget *notebook;
 	GtkWidget *toolbar;
@@ -1205,6 +1206,14 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
 
 	webkit_browser_update_tab_controls(priv);
+
+	/*
+	 * Make the browser widget grab the focus. Otherwise Gtk+ will focus
+	 * the toolbar by default, which isn't very useful for an application
+	 * designed for touchscreen use.
+	 */
+	webkit = webkit_browser_get_current_view(browser);
+	gtk_widget_grab_focus(GTK_WIDGET(webkit));
 
 	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
 			 NULL);
