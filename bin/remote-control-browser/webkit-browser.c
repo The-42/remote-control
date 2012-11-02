@@ -420,6 +420,36 @@ static void on_exit_clicked(GtkWidget *widget, gpointer data)
 	gtk_widget_destroy(window);
 }
 
+static void webkit_browser_view_stop(GtkWidget *widget, gpointer data)
+{
+	WebKitWebView *view;
+
+#if GTK_CHECK_VERSION(3, 0, 0)
+	view = WEBKIT_WEB_VIEW(widget);
+#else
+	widget = gtk_bin_get_child(GTK_BIN(widget));
+	view = WEBKIT_WEB_VIEW(widget);
+#endif
+
+	/* FIXME: disconnect notify::progress signal handler instead? */
+	webkit_web_view_stop_loading(view);
+}
+
+static gboolean on_destroy(GtkWidget *widget, gpointer data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(widget);
+
+	/*
+	 * Stop load operations on all WebKitWebView widgets because they may
+	 * keep sending events to the URI entry progress bar, which may go
+	 * away earlier.
+	 */
+	gtk_container_foreach(GTK_CONTAINER(priv->notebook),
+			      webkit_browser_view_stop, NULL);
+
+	return FALSE;
+}
+
 static void webkit_browser_realize(GtkWidget *widget)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(widget);
@@ -1192,6 +1222,9 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
 
 	webkit_browser_update_tab_controls(priv);
+
+	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
+			 NULL);
 }
 
 static void webkit_browser_class_init(WebKitBrowserClass *class)
