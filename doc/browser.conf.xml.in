@@ -90,6 +90,22 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>limits</varname> - Program resource limitations</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>memory</varname></term>
+							<listitem><para>
+								Restricts the total amount of memory that the program can use.
+								Note that this includes all loaded shared libraries.
+								The value can be specified in KiB, MiB or GiB by appending
+								the K, M or G unit respectively.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -97,6 +113,9 @@
 		<title>Example</title>
 		<programlisting>[watchdog]
 timeout = 13000
+
+[limits]
+memory = 512M
 		</programlisting>
 	</refsect1>
 </refentry>

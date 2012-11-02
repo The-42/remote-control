@@ -10,7 +10,11 @@
 #  include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+
+#include <sys/resource.h>
 
 #include <webkit/webkit.h>
 #include <gtk/gtk.h>
@@ -91,6 +95,67 @@ static void on_uri_notify(GObject *object, GParamSpec *spec, gpointer data)
 	g_free(message);
 }
 
+static int parse_mem(const gchar *s, size_t *size)
+{
+	size_t value, unit = 1;
+	gchar *end;
+
+	value = strtoul(s, &end, 10);
+	if (end == s)
+		return -EINVAL;
+
+	switch (*end) {
+	case 'G':
+		unit *= 1024;
+
+	case 'M':
+		unit *= 1024;
+
+	case 'K':
+		unit *= 1024;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	*size = value * unit;
+
+	return 0;
+}
+
+static void set_memory_limits(GKeyFile *keyfile)
+{
+	size_t limit = 0;
+	struct rlimit l;
+	gchar *value;
+	int err;
+
+	if (!keyfile || !g_key_file_has_group(keyfile, "limits"))
+		return;
+
+	value = g_key_file_get_string(keyfile, "limits", "memory", NULL);
+	if (!value) {
+		g_warning("\"memory\" key not found");
+		return;
+	}
+
+	err = parse_mem(value, &limit);
+	if (err < 0) {
+		g_warning("failed to parse memory value: %s", strerror(-err));
+		g_free(value);
+		return;
+	}
+
+	g_free(value);
+
+	l.rlim_cur = l.rlim_max = limit;
+
+	err = setrlimit(RLIMIT_AS, &l);
+	if (err < 0)
+		g_warning("failed to set memory limit: %s", strerror(-err));
+}
+
 GKeyFile *load_configuration(const gchar *filename, GError **error)
 {
 	GKeyFile *keyfile;
@@ -149,6 +214,8 @@ int main(int argc, char *argv[])
 				error->message);
 		g_clear_error(&error);
 	}
+
+	set_memory_limits(conf);
 
 	if (argc < 2)
 		uri = "http://www.google.com/ncr";
