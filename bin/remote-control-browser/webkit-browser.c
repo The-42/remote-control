@@ -73,7 +73,6 @@ struct _WebKitBrowserPrivate {
 	gchar *uri;
 	GtkWidget *add_tab;
 	GtkWidget *del_tab;
-	gboolean loading;
 
 #ifdef USE_WEBKIT2
 	gchar **languages;
@@ -226,6 +225,24 @@ static void webkit_browser_finalize(GObject *object)
 	G_OBJECT_CLASS(webkit_browser_parent_class)->finalize(object);
 }
 
+static gboolean webkit_web_view_is_loading(WebKitWebView *webkit)
+{
+	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
+
+	switch (status) {
+	case WEBKIT_LOAD_COMMITTED:
+	case WEBKIT_LOAD_FIRST_VISUALLY_NON_EMPTY_LAYOUT:
+		return TRUE;
+
+	case WEBKIT_LOAD_FINISHED:
+	case WEBKIT_LOAD_FAILED:
+	default:
+		return FALSE;
+	}
+
+	return FALSE;
+}
+
 #ifdef USE_WEBKIT2
 static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowser *browser)
@@ -243,47 +260,24 @@ static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowserTabLabel *label)
 {
-	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
+	gboolean loading = webkit_web_view_is_loading(webkit);
 
-	switch (status) {
-	case WEBKIT_LOAD_COMMITTED:
-		webkit_browser_tab_label_set_loading(label, TRUE);
-		break;
-
-	case WEBKIT_LOAD_FINISHED:
-	case WEBKIT_LOAD_FAILED:
-		webkit_browser_tab_label_set_loading(label, FALSE);
-		break;
-
-	default:
-		break;
-	}
+	webkit_browser_tab_label_set_loading(label, loading);
 }
 
 static void on_notify_load_status_global(WebKitWebView *webkit,
 		GParamSpec *pspec, WebKitBrowser *browser)
 {
-	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
-	switch (status) {
-	case WEBKIT_LOAD_COMMITTED:
+	if (webkit_web_view_is_loading(webkit)) {
 		gtk_toggle_tool_button_set_active(priv->toggle, false);
 		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
-			"stop");
-		priv->loading = TRUE;
-		break;
-
-	case WEBKIT_LOAD_FINISHED:
-	case WEBKIT_LOAD_FAILED:
-		gtk_entry_set_progress_fraction(priv->entry, 0.0);
+					      "stop");
+	} else {
 		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
-			"go-jump");
-		priv->loading = FALSE;
-		break;
-
-	default:
-		break;
+					      "go-jump");
+		gtk_entry_set_progress_fraction(priv->entry, 0.0);
 	}
 }
 
@@ -291,17 +285,11 @@ static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
-	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
-	gdouble progress = webkit_web_view_get_progress(webkit);
+	gdouble progress = 0.0;
 
-	switch (status) {
-	case WEBKIT_LOAD_FINISHED:
-	case WEBKIT_LOAD_FAILED:
-		progress = 0.0;
-		break;
-	default:
-		break;
-	}
+	if (webkit_web_view_is_loading(webkit))
+		progress = webkit_web_view_get_progress(webkit);
+
 	gtk_entry_set_progress_fraction(priv->entry, progress);
 }
 #endif
@@ -394,15 +382,17 @@ static void on_go_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	WebKitBrowserPrivate *priv;
+	WebKitWebView *webkit;
 	const gchar *uri;
 
+	webkit = webkit_browser_get_current_view(browser);
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	uri = gtk_entry_get_text(priv->entry);
-	if (priv->loading)
-		webkit_web_view_stop_loading(webkit_browser_get_current_view(browser));
-	else
-		webkit_browser_load_uri(browser, uri);
 
+	if (!webkit_web_view_is_loading(webkit))
+		webkit_browser_load_uri(browser, uri);
+	else
+		webkit_web_view_stop_loading(webkit);
 }
 
 static void on_keyboard_clicked(GtkWidget *widget, gpointer data)
@@ -981,12 +971,12 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 		guint index, gpointer data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	const gchar *uri, *icon;
 	WebKitWebView *webkit;
 #ifndef USE_WEBKIT2
 	WebKitWebFrame *frame;
 #endif
 	GtkWidget *widget;
-	const gchar *uri;
 
 #if GTK_CHECK_VERSION(3, 0, 0)
 	if (WEBKIT_IS_WEB_VIEW(page)) {
@@ -1009,20 +999,13 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->entry), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->reload), TRUE);
 
-		switch (webkit_web_view_get_load_status(webkit)) {
-		case WEBKIT_LOAD_COMMITTED:
-		case WEBKIT_LOAD_FIRST_VISUALLY_NON_EMPTY_LAYOUT:
-			priv->loading = TRUE;
-			break;
+		if (!webkit_web_view_is_loading(webkit))
+			icon = "go-jump";
+		else
+			icon = "stop";
 
-		case WEBKIT_LOAD_FINISHED:
-		case WEBKIT_LOAD_FAILED:
-		default:
-			priv->loading = FALSE;
-			break;
-		}
 		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
-				priv->loading ? "stop" : "go-jump");
+					      icon);
 
 #ifdef USE_WEBKIT2
 		uri = webkit_web_view_get_uri(webkit) ?: "";
