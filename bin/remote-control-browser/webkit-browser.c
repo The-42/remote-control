@@ -12,11 +12,20 @@
 
 #include <string.h>
 #include <gdk/gdkx.h>
-#include <webkit/webkit.h>
-#include <gtkosk/gtkosk.h>
-#include <libsoup/soup-proxy-resolver-default.h>
 
+#ifdef USE_WEBKIT2
+#include <webkit2/webkit2.h>
+#else
+#include <libsoup/soup-proxy-resolver-default.h>
+#include <webkit/webkit.h>
+#endif
+
+#include <gtkosk/gtkosk.h>
+
+#if !GTK_CHECK_VERSION(3, 0, 0)
 #include "katze-scrolled.h"
+#endif
+
 #include "webkit-browser.h"
 #include "webkit-browser-tab-label.h"
 #include "gtk-pdf-view.h"
@@ -62,15 +71,66 @@ struct _WebKitBrowserPrivate {
 	gboolean controls;
 	gboolean noexit;
 	gchar *uri;
-	GtkWidget *addTab;
-	GtkWidget *delTab;
+	GtkWidget *add_tab;
+	GtkWidget *del_tab;
+
+#ifdef USE_WEBKIT2
+	gchar **languages;
+#endif
 };
+
+#ifdef USE_WEBKIT2
+static gchar *webkit_browser_get_accept_language(WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	return g_strjoinv(";", priv->languages);
+}
+
+static void webkit_browser_set_accept_language(WebKitBrowser *browser,
+					       const gchar *language)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	WebKitWebContext *context = webkit_web_context_get_default();
+	gchar **languages;
+
+	languages = g_strsplit(language, ";", 0);
+
+	webkit_web_context_set_preferred_languages(context,
+			(const gchar *const *)languages);
+
+	g_strfreev(priv->languages);
+	priv->languages = languages;
+}
+#else
+static gchar *webkit_browser_get_accept_language(WebKitBrowser *browser)
+{
+	SoupSession *session = webkit_get_default_session();
+	gchar *language;
+
+	g_return_val_if_fail(SOUP_IS_SESSION(session), NULL);
+
+	g_object_get(session, SOUP_SESSION_ACCEPT_LANGUAGE, &language, NULL);
+
+	return language;
+}
+
+static void webkit_browser_set_accept_language(WebKitBrowser *browser,
+					       const gchar *language)
+{
+	SoupSession *session = webkit_get_default_session();
+
+	g_return_if_fail(SOUP_IS_SESSION(session));
+
+	g_object_set(session, SOUP_SESSION_ACCEPT_LANGUAGE, language, NULL);
+}
+#endif
 
 static void webkit_browser_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
-	SoupSession *session = webkit_get_default_session();
+	WebKitBrowser *browser = WEBKIT_BROWSER(object);
 	gchar *language;
 
 	switch (prop_id) {
@@ -87,7 +147,7 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		break;
 
 	case PROP_ACCEPT_LANGUAGE:
-		language = soup_session_get_accept_language(session);
+		language = webkit_browser_get_accept_language(browser);
 		g_value_take_string(value, language);
 		break;
 
@@ -109,8 +169,7 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		const GValue *value, GParamSpec *pspec)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
-	SoupSession *session = webkit_get_default_session();
-	const gchar *language;
+	WebKitBrowser *browser = WEBKIT_BROWSER(object);
 
 	switch (prop_id) {
 	case PROP_GEOMETRY:
@@ -136,8 +195,8 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		break;
 
 	case PROP_ACCEPT_LANGUAGE:
-		language = g_value_get_string(value);
-		soup_session_set_accept_language(session, language);
+		webkit_browser_set_accept_language(browser,
+						   g_value_get_string(value));
 		break;
 
 	case PROP_URI:
@@ -166,65 +225,74 @@ static void webkit_browser_finalize(GObject *object)
 	G_OBJECT_CLASS(webkit_browser_parent_class)->finalize(object);
 }
 
-static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
-		WebKitBrowserTabLabel *label)
+static gboolean webkit_web_view_is_loading(WebKitWebView *webkit)
 {
 	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
 
 	switch (status) {
 	case WEBKIT_LOAD_COMMITTED:
-		webkit_browser_tab_label_set_loading(label, TRUE);
-		break;
+	case WEBKIT_LOAD_FIRST_VISUALLY_NON_EMPTY_LAYOUT:
+		return TRUE;
 
 	case WEBKIT_LOAD_FINISHED:
 	case WEBKIT_LOAD_FAILED:
-		webkit_browser_tab_label_set_loading(label, FALSE);
-		break;
-
 	default:
-		break;
+		return FALSE;
 	}
+
+	return FALSE;
+}
+
+#ifdef USE_WEBKIT2
+static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
+		WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	gdouble progress =
+		webkit_web_view_get_estimated_load_progress(webkit);
+
+	if (progress == 1.0)
+		progress = 0.0;
+
+	gtk_entry_set_progress_fraction(priv->entry, progress);
+}
+#else
+static void on_notify_load_status(WebKitWebView *webkit, GParamSpec *pspec,
+		WebKitBrowserTabLabel *label)
+{
+	gboolean loading = webkit_web_view_is_loading(webkit);
+
+	webkit_browser_tab_label_set_loading(label, loading);
 }
 
 static void on_notify_load_status_global(WebKitWebView *webkit,
 		GParamSpec *pspec, WebKitBrowser *browser)
 {
-	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
-	switch (status) {
-	case WEBKIT_LOAD_COMMITTED:
+	if (webkit_web_view_is_loading(webkit)) {
 		gtk_toggle_tool_button_set_active(priv->toggle, false);
-		break;
-
-	case WEBKIT_LOAD_FINISHED:
-	case WEBKIT_LOAD_FAILED:
+		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
+					      "stop");
+	} else {
+		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
+					      "go-jump");
 		gtk_entry_set_progress_fraction(priv->entry, 0.0);
-		break;
-
-	default:
-		break;
 	}
 }
 
-static void on_notify_progres(WebKitWebView *webkit, GParamSpec *pspec,
+static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 		WebKitBrowser *browser)
 {
-
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
-	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
-	gdouble progress = webkit_web_view_get_progress(webkit);
+	gdouble progress = 0.0;
 
-	switch (status) {
-	case WEBKIT_LOAD_FINISHED:
-	case WEBKIT_LOAD_FAILED:
-		progress = 0.0;
-		break;
-	default:
-		break;
-	}
+	if (webkit_web_view_is_loading(webkit))
+		progress = webkit_web_view_get_progress(webkit);
+
 	gtk_entry_set_progress_fraction(priv->entry, progress);
 }
+#endif
 
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 {
@@ -235,8 +303,12 @@ static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 
 	page = gtk_notebook_get_current_page(priv->notebook);
 	widget = gtk_notebook_get_nth_page(priv->notebook, page);
+#if GTK_CHECK_VERSION(3, 0, 0)
+	view = WEBKIT_WEB_VIEW(widget);
+#else
 	widget = gtk_bin_get_child(GTK_BIN(widget));
 	view = WEBKIT_WEB_VIEW(widget);
+#endif
 
 	return view;
 }
@@ -295,9 +367,9 @@ static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
 
-	gtk_toggle_tool_button_set_active(priv->toggle, true);
+	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
-	if (!GTK_WIDGET_HAS_FOCUS(widget)) {
+	if (!gtk_widget_has_focus(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
 		gtk_widget_grab_focus(widget);
 		return TRUE;
@@ -310,11 +382,17 @@ static void on_go_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	WebKitBrowserPrivate *priv;
+	WebKitWebView *webkit;
 	const gchar *uri;
 
+	webkit = webkit_browser_get_current_view(browser);
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	uri = gtk_entry_get_text(priv->entry);
-	webkit_browser_load_uri(browser, uri);
+
+	if (!webkit_web_view_is_loading(webkit))
+		webkit_browser_load_uri(browser, uri);
+	else
+		webkit_web_view_stop_loading(webkit);
 }
 
 static void on_keyboard_clicked(GtkWidget *widget, gpointer data)
@@ -330,6 +408,36 @@ static void on_exit_clicked(GtkWidget *widget, gpointer data)
 	GtkWidget *window = GTK_WIDGET(data);
 
 	gtk_widget_destroy(window);
+}
+
+static void webkit_browser_view_stop(GtkWidget *widget, gpointer data)
+{
+	WebKitWebView *view;
+
+#if GTK_CHECK_VERSION(3, 0, 0)
+	view = WEBKIT_WEB_VIEW(widget);
+#else
+	widget = gtk_bin_get_child(GTK_BIN(widget));
+	view = WEBKIT_WEB_VIEW(widget);
+#endif
+
+	/* FIXME: disconnect notify::progress signal handler instead? */
+	webkit_web_view_stop_loading(view);
+}
+
+static gboolean on_destroy(GtkWidget *widget, gpointer data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(widget);
+
+	/*
+	 * Stop load operations on all WebKitWebView widgets because they may
+	 * keep sending events to the URI entry progress bar, which may go
+	 * away earlier.
+	 */
+	gtk_container_foreach(GTK_CONTAINER(priv->notebook),
+			      webkit_browser_view_stop, NULL);
+
+	return FALSE;
 }
 
 static void webkit_browser_realize(GtkWidget *widget)
@@ -384,18 +492,67 @@ static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
 {
 	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 
-	if(pages == WEBKIT_BROWSER_MAX_PAGES) {
-		gtk_widget_set_sensitive(priv->addTab, false);
-		gtk_widget_set_sensitive(priv->delTab, true);
+	if (pages == WEBKIT_BROWSER_MAX_PAGES) {
+		gtk_widget_set_sensitive(priv->add_tab, FALSE);
+		gtk_widget_set_sensitive(priv->del_tab, TRUE);
 	} else if (pages == WEBKIT_BROWSER_MIN_PAGES) {
-		gtk_widget_set_sensitive(priv->addTab, true);
-		gtk_widget_set_sensitive(priv->delTab, false);
+		gtk_widget_set_sensitive(priv->add_tab, TRUE);
+		gtk_widget_set_sensitive(priv->del_tab, FALSE);
 	} else {
-		gtk_widget_set_sensitive(priv->addTab, true);
-		gtk_widget_set_sensitive(priv->delTab, true);
+		gtk_widget_set_sensitive(priv->add_tab, TRUE);
+		gtk_widget_set_sensitive(priv->del_tab, TRUE);
 	}
 }
 
+#ifdef USE_WEBKIT2
+static gboolean on_download_created_destination(WebKitDownload *download,
+	gchar *destination, gpointer data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	WebKitBrowser *browser = (WebKitBrowser *)data;
+	gint page;
+
+	g_debug("download started");
+	page = webkit_browser_append_page_with_pdf(browser, download);
+	if (page >= 0)
+		gtk_notebook_set_current_page(priv->notebook, page);
+
+	return TRUE;
+}
+
+static void webkit_download_started(WebKitWebContext *context,
+	WebKitDownload *download, gpointer user_data)
+{
+	const gchar *template = "download-XXXXXX";
+	gchar *filename = NULL;
+	GError *error = NULL;
+	gchar *uri;
+	gint fd;
+
+	fd = g_file_open_tmp(template, &filename, &error);
+	if (fd < 0) {
+		g_debug("g_file_open_tmp(): %s", error->message);
+		g_error_free(error);
+		return;
+	}
+
+	close(fd);
+
+	g_print("Webkit download started! Loading to: %s\n", filename);
+
+	uri = g_strdup_printf("file://%s", filename);
+	g_debug("downloading to %s", filename);
+
+	g_signal_connect(G_OBJECT(download), "created-destination",
+			G_CALLBACK(on_download_created_destination), user_data);
+	webkit_download_set_destination(download, uri);
+
+	unlink(filename);
+	g_free(filename);
+	g_free(uri);
+	return;
+}
+#else
 static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpointer data)
 {
 	WebKitDownloadStatus status = webkit_download_get_status(download);
@@ -439,7 +596,8 @@ static void on_download_status(WebKitDownload *download, GParamSpec *pspec, gpoi
 	}
 }
 
-static gboolean on_download_requested(WebKitWebView *webkit, WebKitDownload *download, gpointer data)
+static gboolean on_download_requested(WebKitWebView *webkit,
+		WebKitDownload *download, gpointer data)
 {
 	const gchar *template = "download-XXXXXX";
 	gchar *filename = NULL;
@@ -467,18 +625,7 @@ static gboolean on_download_requested(WebKitWebView *webkit, WebKitDownload *dow
 	g_free(uri);
 	return TRUE;
 }
-
-static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *frame,
-		WebKitNetworkRequest *request, const gchar *mimetype,
-		WebKitWebPolicyDecision *decision, gpointer data)
-{
-	if (g_str_equal(mimetype, "application/pdf")) {
-		webkit_web_policy_decision_download(decision);
-		return TRUE;
-	}
-
-	return FALSE;
-}
+#endif
 
 static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 {
@@ -492,6 +639,19 @@ static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 		/* Allow only one tab when tabbar is hidden */
 		if (pages < 1)
 			return TRUE;
+	}
+
+	return FALSE;
+}
+
+#ifndef USE_WEBKIT2
+static gboolean on_mime_type_requested(WebKitWebView *webkit, WebKitWebFrame *frame,
+		WebKitNetworkRequest *request, const gchar *mimetype,
+		WebKitWebPolicyDecision *decision, gpointer data)
+{
+	if (g_str_equal(mimetype, "application/pdf")) {
+		webkit_web_policy_decision_download(decision);
+		return TRUE;
 	}
 
 	return FALSE;
@@ -511,6 +671,37 @@ static gboolean on_new_window_requested(WebKitWebView *webkit,
 
 	return TRUE;
 }
+#else
+static gboolean webkit_decide_policy(WebKitWebView *web_view,
+				     WebKitPolicyDecision *decision,
+				     WebKitPolicyDecisionType type,
+				     gpointer user_data)
+{
+	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
+
+	if (type == WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION) {
+		if (!webkit_browser_can_open_tab(browser))
+			webkit_policy_decision_ignore(decision);
+		else
+			webkit_policy_decision_use(decision);
+	} else if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE) {
+		WebKitResponsePolicyDecision *response_policy =
+			WEBKIT_RESPONSE_POLICY_DECISION(decision);
+		WebKitURIResponse *response =
+			webkit_response_policy_decision_get_response(response_policy);
+		const gchar *mimetype =	webkit_uri_response_get_mime_type(response);
+
+		if (g_str_equal(mimetype, "application/pdf")) {
+			webkit_policy_decision_download(decision);
+		} else if (g_ascii_strncasecmp(mimetype, "application/", 12)
+				== 0) {
+			webkit_policy_decision_ignore(decision);
+		}
+	}
+
+	return TRUE;
+}
+#endif
 
 static gboolean on_web_view_ready(WebKitWebView *webkit, gpointer user_data)
 {
@@ -518,9 +709,12 @@ static gboolean on_web_view_ready(WebKitWebView *webkit, gpointer user_data)
 
 	return FALSE;
 }
-
-static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
-		WebKitWebFrame *frame, gpointer user_data)
+#if USE_WEBKIT2
+static WebKitWebView *on_create_web_view(WebKitWebView *web_view,
+#else
+static WebKitWebView *on_create_web_view(WebKitWebView *web_view, WebKitWebFrame *frame,
+#endif
+	gpointer user_data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(user_data);
 	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
@@ -539,32 +733,76 @@ static WebKitWebView *on_create_web_view(WebKitWebView *webkit,
 	return WEBKIT_WEB_VIEW(new);
 }
 
-static void webkit_browser_set_user_agent(WebKitWebView *webkit)
+#ifdef USE_WEBKIT2
+static gchar *webkit_web_view_get_user_agent(WebKitWebView *webkit)
+{
+	WebKitSettings *settings;
+	const gchar *user_agent;
+
+	settings = webkit_web_view_get_settings(webkit);
+	user_agent = webkit_settings_get_user_agent(settings);
+
+	return g_strdup(user_agent);
+}
+
+static void webkit_web_view_set_user_agent(WebKitWebView *webkit,
+					   const gchar *user_agent)
+{
+	WebKitSettings *settings;
+
+	settings = webkit_web_view_get_settings(webkit);
+	webkit_settings_set_user_agent(settings, user_agent);
+}
+#else
+static gchar *webkit_web_view_get_user_agent(WebKitWebView *webkit)
 {
 	WebKitWebSettings *settings;
-	gchar *user_agent;
-	gchar *processor;
+	const gchar *user_agent;
 
-	settings = webkit_web_settings_new();
-	user_agent = g_strdup(webkit_web_settings_get_user_agent(settings));
+	settings = webkit_web_view_get_settings(webkit);
+	user_agent = webkit_web_settings_get_user_agent(settings);
 
-	/* if armv7l is set as processor, we simply remove it,
-	 * as some sites load mobile page versions for any arm
-	 * device */
-	processor = g_strstr_len(user_agent, -1, " armv7l");
-	if(processor) {
-		gchar *processor_end = processor + 7;
-		memmove(processor, processor_end, strlen(processor_end)+1);
+	return g_strdup(user_agent);
+}
+
+static void webkit_web_view_set_user_agent(WebKitWebView *webkit,
+					   const gchar *user_agent)
+{
+	WebKitWebSettings *settings;
+
+	settings = webkit_web_view_get_settings(webkit);
+	g_object_set(G_OBJECT(settings), "user-agent", user_agent, NULL);
+}
+#endif
+
+static void webkit_browser_set_user_agent(WebKitWebView *webkit)
+{
+	gchar *user_agent, *ptr;
+
+	user_agent = webkit_web_view_get_user_agent(webkit);
+
+	/*
+	 * If armv7l is set as processor we simply remove it. This is an ugly
+	 * workaround for some sites that redirect to mobile versions of the
+	 * page for *any* ARM device.
+	 */
+	ptr = g_strstr_len(user_agent, -1, " armv7l");
+	if (ptr) {
+		gsize length = strlen(ptr + 7) + 1;
+
+		memmove(ptr, ptr + 7, length);
 	}
 
-	g_object_set(G_OBJECT(settings), "user-agent", user_agent, NULL);
-	webkit_web_view_set_settings (WEBKIT_WEB_VIEW(webkit), settings);
+	webkit_web_view_set_user_agent(webkit, user_agent);
 	g_free(user_agent);
 }
 
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+#ifdef USE_WEBKIT2
+	WebKitWebContext *context = webkit_web_context_get_default();
+#endif
 	GtkWidget *webkit;
 	GtkWidget *label;
 	GtkWidget *view;
@@ -576,14 +814,18 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	/* create WebKit browser */
 	webkit = webkit_web_view_new();
 	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit));
+	gtk_widget_set_double_buffered(webkit, TRUE);
 
 	/* TODO: Support GtkDragView with scrollbar */
+#if !GTK_CHECK_VERSION(3, 0, 0)
 	view = katze_scrolled_new(NULL, NULL);
 	g_object_set(G_OBJECT(view), "drag-scrolling", TRUE, NULL);
 	gtk_rc_parse_string(style_large);
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show(view);
-
+#else
+	view = webkit;
+#endif
 	if (!hidden)
 		gtk_widget_show(webkit);
 
@@ -592,25 +834,36 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 
 	page = gtk_notebook_append_page(priv->notebook, view, label);
 
+#if USE_WEBKIT2
+	g_signal_connect(G_OBJECT(webkit), "decide-policy",
+			G_CALLBACK(webkit_decide_policy), browser);
+	g_signal_connect(G_OBJECT(context), "download-started",
+			G_CALLBACK(webkit_download_started), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::estimated-load-progress",
+			G_CALLBACK(on_notify_progress), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::create",
+			G_CALLBACK(on_create_web_view), browser);
+#else
 	g_signal_connect(G_OBJECT(webkit), "mime-type-policy-decision-requested",
 			G_CALLBACK(on_mime_type_requested), NULL);
 	g_signal_connect(G_OBJECT(webkit), "download-requested",
 			G_CALLBACK(on_download_requested), browser);
 	g_signal_connect(G_OBJECT(webkit), "new-window-policy-decision-requested",
 			G_CALLBACK(on_new_window_requested), browser);
-	g_signal_connect(G_OBJECT(webkit), "create-web-view",
-			G_CALLBACK(on_create_web_view), browser);
-
-	if (hidden)
-		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
-				G_CALLBACK(on_web_view_ready), webkit);
-
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status_global), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::progress",
-			G_CALLBACK(on_notify_progres), browser);
+			G_CALLBACK(on_notify_progress), browser);
+	g_signal_connect(G_OBJECT(webkit), "create-web-view",
+			G_CALLBACK(on_create_web_view), browser);
+#endif
+
+	if (hidden)
+		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
+				G_CALLBACK(on_web_view_ready), webkit);
+
 	g_signal_connect(G_OBJECT(webkit), "notify::title",
 			G_CALLBACK(on_notify_title), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
@@ -668,7 +921,7 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 	if (page >= 0) {
 		gtk_notebook_set_current_page(priv->notebook, page);
 		gtk_widget_grab_focus(GTK_WIDGET(priv->entry));
-		gtk_toggle_tool_button_set_active(priv->toggle, true);
+		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
 		webkit_browser_update_tab_controls(priv);
 	}
@@ -718,23 +971,47 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 		guint index, gpointer data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	const gchar *uri, *icon;
 	WebKitWebView *webkit;
+#ifndef USE_WEBKIT2
 	WebKitWebFrame *frame;
+#endif
 	GtkWidget *widget;
-	const gchar *uri;
 
-	if (GTK_IS_BIN(page)) {
+#if GTK_CHECK_VERSION(3, 0, 0)
+	if (WEBKIT_IS_WEB_VIEW(page)) {
 		/* the notebook page contains a WebKitWebView */
+		widget = page;
+#else
+	if (GTK_IS_BIN(page)) {
+		/* the notebook page contains a KatzeScrolled */
 		widget = gtk_bin_get_child(GTK_BIN(page));
+#endif
+
 		webkit = WEBKIT_WEB_VIEW(widget);
+
+#ifndef USE_WEBKIT2
 		frame = webkit_web_view_get_main_frame(webkit);
+#endif
 
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->back), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->forward), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->entry), TRUE);
 		gtk_widget_set_sensitive(GTK_WIDGET(priv->reload), TRUE);
 
+		if (!webkit_web_view_is_loading(webkit))
+			icon = "go-jump";
+		else
+			icon = "stop";
+
+		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
+					      icon);
+
+#ifdef USE_WEBKIT2
+		uri = webkit_web_view_get_uri(webkit) ?: "";
+#else
 		uri = webkit_web_frame_get_uri(frame) ?: "";
+#endif
 		gtk_entry_set_text(priv->entry, uri);
 	} else {
 		/* the notebook page contains a GtkPdfView */
@@ -838,24 +1115,28 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 	g_signal_connect(G_OBJECT(notebook), "switch-page",
 			G_CALLBACK(on_page_switched), browser);
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+#else
 	hbox = gtk_hbox_new(FALSE, 0);
+#endif
 
-	priv->addTab = gtk_button_new();
+	priv->add_tab = gtk_button_new();
 	image = gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON);
-	gtk_container_add(GTK_CONTAINER(priv->addTab), image);
-	g_signal_connect(G_OBJECT(priv->addTab), "clicked",
+	gtk_container_add(GTK_CONTAINER(priv->add_tab), image);
+	g_signal_connect(G_OBJECT(priv->add_tab), "clicked",
 			G_CALLBACK(on_add_tab_clicked), browser);
-	gtk_box_pack_start(GTK_BOX(hbox), priv->addTab, FALSE, FALSE, 0);
-	gtk_widget_show_all(priv->addTab);
+	gtk_box_pack_start(GTK_BOX(hbox), priv->add_tab, FALSE, FALSE, 0);
+	gtk_widget_show_all(priv->add_tab);
 
-	priv->delTab = gtk_button_new();
+	priv->del_tab = gtk_button_new();
 	image = gtk_image_new_from_stock(GTK_STOCK_REMOVE,
 			GTK_ICON_SIZE_BUTTON);
-	gtk_container_add(GTK_CONTAINER(priv->delTab), image);
-	g_signal_connect(G_OBJECT(priv->delTab), "clicked",
+	gtk_container_add(GTK_CONTAINER(priv->del_tab), image);
+	g_signal_connect(G_OBJECT(priv->del_tab), "clicked",
 			G_CALLBACK(on_del_tab_clicked), browser);
-	gtk_box_pack_start(GTK_BOX(hbox), priv->delTab, FALSE, FALSE, 10);
-	gtk_widget_show_all(priv->delTab);
+	gtk_box_pack_start(GTK_BOX(hbox), priv->del_tab, FALSE, FALSE, 10);
+	gtk_widget_show_all(priv->del_tab);
 
 	gtk_notebook_set_action_widget(priv->notebook, hbox, GTK_PACK_END);
 	gtk_widget_show(hbox);
@@ -869,12 +1150,16 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 static void webkit_browser_init(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+#ifndef USE_WEBKIT2
 	SoupSession *session = webkit_get_default_session();
+#endif
+	WebKitWebView *webkit;
 	GtkOskLayout *layout;
 	GtkWidget *notebook;
 	GtkWidget *toolbar;
 	GtkWidget *vbox;
 
+#ifndef USE_WEBKIT2
 	/* enable cookies */
 	priv->cookie = soup_cookie_jar_new();
 	soup_session_add_feature(session, SOUP_SESSION_FEATURE(priv->cookie));
@@ -889,6 +1174,12 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	/* enable proxy support */
 	soup_session_add_feature_by_type(session,
 			SOUP_TYPE_PROXY_RESOLVER_DEFAULT);
+#else
+	/*
+	 * WebKit2 automatically enables the default proxy resolver and stores
+	 * cookies in memory unless told otherwise.
+	 */
+#endif
 
 	toolbar = webkit_browser_create_toolbar(browser);
 	gtk_widget_show(toolbar);
@@ -915,6 +1206,17 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
 
 	webkit_browser_update_tab_controls(priv);
+
+	/*
+	 * Make the browser widget grab the focus. Otherwise Gtk+ will focus
+	 * the toolbar by default, which isn't very useful for an application
+	 * designed for touchscreen use.
+	 */
+	webkit = webkit_browser_get_current_view(browser);
+	gtk_widget_grab_focus(GTK_WIDGET(webkit));
+
+	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
+			 NULL);
 }
 
 static void webkit_browser_class_init(WebKitBrowserClass *class)

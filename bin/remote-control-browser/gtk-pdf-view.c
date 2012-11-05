@@ -285,7 +285,11 @@ static void gtk_pdf_view_init(GtkPdfView *self)
 
 	canvas = gtk_drawing_area_new();
 	gtk_widget_set_app_paintable(canvas, TRUE);
+#if GTK_CHECK_VERSION(2, 91, 0)
+	g_signal_connect(G_OBJECT(canvas), "draw",
+#else
 	g_signal_connect(G_OBJECT(canvas), "expose-event",
+#endif
 			G_CALLBACK(on_canvas_expose), self);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(window),
 			canvas);
@@ -398,6 +402,19 @@ static void gtk_pdf_view_class_init(GtkPdfViewClass *class)
 	g_type_class_add_private(class, sizeof(GtkPdfViewPrivate));
 }
 
+#ifdef USE_WEBKIT2
+static void on_download_finished(WebKitDownload *download, gpointer data)
+{
+	const gchar *uri = webkit_download_get_destination(download);
+	const gchar *filename = uri + strlen("file://");
+	GtkPdfView *view = GTK_PDF_VIEW(data);
+
+	g_debug("download finished");
+	gtk_pdf_view_load_uri(view, uri);
+	g_debug("removing file %s", filename);
+	unlink(filename);
+}
+#else
 static void on_download_status(WebKitDownload *download, GParamSpec *pspec,
 		gpointer data)
 {
@@ -438,11 +455,16 @@ static void on_download_status(WebKitDownload *download, GParamSpec *pspec,
 		unlink(filename);
 	}
 }
+#endif
 
 GtkWidget *gtk_pdf_view_new(WebKitDownload *download)
 {
 	GtkWidget *widget = g_object_new(GTK_TYPE_PDF_VIEW, NULL);
+#ifdef USE_WEBKIT2
+	g_signal_connect(download, "finished", G_CALLBACK(on_download_finished), widget);
+#else
 	g_signal_connect(download, "notify::status", G_CALLBACK(on_download_status), widget);
+#endif
 	return widget;
 }
 

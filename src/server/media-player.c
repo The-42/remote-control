@@ -91,6 +91,21 @@ int32_t RPC_IMPL(media_player_get_stream)(void *priv, char **url)
 	return media_player_get_uri(player, url);
 }
 
+int32_t RPC_IMPL(media_player_set_crop)(void *priv, uint16_t left,
+			uint16_t right, uint16_t top, uint16_t bottom)
+{
+	struct media_player *player = remote_control_get_media_player(priv);
+	int32_t ret;
+
+	g_debug("> %s(priv=%p, left=%u, right=%u, top=%u, bottom=%u)", __func__,
+			priv, left, right, top, bottom);
+
+	ret = media_player_set_crop(player, left, right, top, bottom);
+
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
 int32_t RPC_IMPL(media_player_set_output_window)(void *priv, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
 	struct media_player *player = remote_control_get_media_player(priv);

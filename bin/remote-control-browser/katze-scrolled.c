@@ -1071,8 +1071,12 @@ katze_scrolled_set_drag_scrolling (KatzeScrolled* scrolled,
             priv->previous_time = 0;
         }
 
-        gdk_window_hide (priv->vertical_scrollbar_window);
-        gdk_window_hide (priv->horizontal_scrollbar_window);
+        if (priv->vertical_scrollbar_window)
+            gdk_window_hide (priv->vertical_scrollbar_window);
+
+        if (priv->horizontal_scrollbar_window)
+            gdk_window_hide (priv->horizontal_scrollbar_window);
+
         if (priv->hide_scrollbars_timeout_id)
         {
             g_source_remove (priv->hide_scrollbars_timeout_id);

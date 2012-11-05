@@ -11,7 +11,16 @@
  *			-o alert-dead-lock alert-dead-lock.c
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#ifdef USE_WEBKIT2
+#include <webkit2/webkit2.h>
+#else
 #include <webkit/webkit.h>
+#endif
+
 #include <gtk/gtk.h>
 
 static const char test_html[] =
@@ -44,8 +53,12 @@ int main(int argc, char *argv[])
 	webkit = webkit_web_view_new();
 	gtk_container_add(GTK_CONTAINER(window), webkit);
 
+#ifdef USE_WEBKIT2
+	webkit_web_view_load_html(WEBKIT_WEB_VIEW(webkit), test_html, NULL);
+#else
 	webkit_web_view_load_html_string(WEBKIT_WEB_VIEW(webkit),
 			test_html, NULL);
+#endif
 
 	gtk_widget_show_all(window);
 

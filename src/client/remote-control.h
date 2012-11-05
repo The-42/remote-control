@@ -160,6 +160,8 @@ remote_public int remote_media_player_stop(void *priv);
 remote_public int remote_media_player_is_running(void *priv, bool *running);
 remote_public int remote_media_player_get_stream(void *priv, char **url);
 remote_public int remote_media_player_set_stream(void *priv, const char *url);
+remote_public int remote_media_player_set_crop(void *priv, uint16_t left, uint16_t right,
+		uint16_t top, uint16_t bottom);
 remote_public int remote_media_player_set_output_window(void *priv,
 		uint16_t x, uint16_t y, uint16_t width, uint16_t height);
 remote_public int remote_media_player_pause(void *priv);

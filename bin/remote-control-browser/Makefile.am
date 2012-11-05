@@ -1,10 +1,9 @@
-INCLUDES = -I$(top_srcdir)/src/common
-
 bin_PROGRAMS = \
 	remote-control-browser
 
 remote_control_browser_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
+	-I$(top_srcdir)/src/common \
 	-I$(top_srcdir)/bin/utils \
 	@POPPLER_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
@@ -14,8 +13,6 @@ remote_control_browser_CPPFLAGS = \
 remote_control_browser_SOURCES = \
 	gtk-drag-view.c \
 	gtk-drag-view.h \
-	katze-scrolled.c \
-	katze-scrolled.h \
 	gtk-pdf-view.c \
 	gtk-pdf-view.h \
 	main.c \
@@ -23,6 +20,12 @@ remote_control_browser_SOURCES = \
 	webkit-browser.h \
 	webkit-browser-tab-label.c \
 	webkit-browser-tab-label.h
+
+if !ENABLE_WEBKIT2
+remote_control_browser_SOURCES += \
+	katze-scrolled.c \
+	katze-scrolled.h
+endif
 
 remote_control_browser_LDADD = \
 	../../src/common/libcommon.la \

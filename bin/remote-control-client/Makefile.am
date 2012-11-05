@@ -1,9 +1,9 @@
-INCLUDES = -I ../../src/client -I $(srcdir)/../../src/client
-
 bin_PROGRAMS = \
 	remote-control-client
 
 remote_control_client_CFLAGS = \
+	-I ../../src/client \
+	-I $(srcdir)/../../src/client \
 	-DLOCALEBASEDIR=\""$(datadir)/locale"\" \
 	-DGETTEXT_PACKAGE=\"$(PACKAGE)\" \
 	@READLINE_CFLAGS@

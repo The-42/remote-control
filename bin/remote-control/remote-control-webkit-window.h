@@ -9,7 +9,6 @@
 #ifndef REMOTE_CONTROL_WEBKIT_WINDOW_H
 #define REMOTE_CONTROL_WEBKIT_WINDOW_H 1
 
-#include <webkit/webkit.h>
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS

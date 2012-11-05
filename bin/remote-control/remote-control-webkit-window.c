@@ -10,6 +10,12 @@
 #  include "config.h"
 #endif
 
+#ifdef USE_WEBKIT2
+#include <webkit2/webkit2.h>
+#else
+#include <webkit/webkit.h>
+#endif
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +40,9 @@ struct _RemoteControlWebkitWindowPrivate {
 	gboolean hide_cursor;
 	gboolean inspector;
 	/* used only when inspector enabled */
+#ifndef USE_WEBKIT2
 	WebKitWebInspector *webkit_inspector;
+#endif
 	WebKitWebView *webkit_inspector_view;
 	GtkExpander *expander;
 	GtkVBox *vbox;
@@ -148,6 +156,39 @@ static void webkit_finalize(GObject *object)
 }
 
 #ifdef ENABLE_JAVASCRIPT
+#ifdef USE_WEBKIT2
+static void webkit_on_load_changed(WebKitWebView *webkit,
+	WebKitLoadEvent load_event, gpointer data)
+{
+	RemoteControlWebkitWindow *window = REMOTE_CONTROL_WEBKIT_WINDOW(data);
+	RemoteControlWebkitWindowPrivate *priv =
+	                REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(window);
+
+	switch (load_event) {
+	case WEBKIT_LOAD_COMMITTED:
+	{
+		struct javascript_userdata user;
+		JSGlobalContextRef context;
+		int err;
+
+		user.loop =  priv->loop;
+		user.window = window;
+
+		context = webkit_web_view_get_javascript_global_context(webkit);
+		g_assert(context != NULL);
+
+		err = javascript_register(context, &user);
+		if (err < 0) {
+			g_debug("failed to register JavaScript API: %s",
+					g_strerror(-err));
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+#else
 static void webkit_on_notify_load_status(WebKitWebView *webkit,
                                          GParamSpec *pspec, gpointer data)
 {
@@ -176,6 +217,7 @@ static void webkit_on_notify_load_status(WebKitWebView *webkit,
 		}
 	}
 }
+#endif
 #endif
 
 static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowClass *klass)
@@ -210,6 +252,38 @@ static void on_realize(GtkWidget *widget, gpointer user_data)
 	g_object_set(widget, "hide-cursor", true, NULL);
 }
 
+#ifdef USE_WEBKIT2
+static gboolean webkit_decide_policy (WebKitWebView *web_view,
+	WebKitPolicyDecision *decision, WebKitPolicyDecisionType type,
+	gpointer user_data)
+{
+	RemoteControlWebkitWindow *self = REMOTE_CONTROL_WEBKIT_WINDOW(user_data);
+	RemoteControlWebkitWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+
+	if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
+		WebKitNavigationPolicyDecision *navigation_decision =
+			WEBKIT_NAVIGATION_POLICY_DECISION (decision);
+		WebKitURIRequest *request =
+			webkit_navigation_policy_decision_get_request(navigation_decision);
+		const gchar *s;
+		GURI *uri;
+
+		s = webkit_uri_request_get_uri(request);
+		uri = g_uri_new(s);
+
+		if (priv->uri && !g_uri_same_origin(uri, priv->uri))
+			webkit_policy_decision_ignore(decision);
+		else
+			webkit_policy_decision_use(decision);
+
+		g_object_unref(uri);
+	}
+
+	return TRUE;
+}
+#else
 static gboolean navigation_policy(WebKitWebView *webkit,
 		WebKitWebFrame *frame, WebKitNetworkRequest *request,
 		WebKitWebNavigationAction *action,
@@ -236,16 +310,23 @@ static gboolean navigation_policy(WebKitWebView *webkit,
 	g_object_unref(uri);
 	return TRUE;
 }
+#endif
 
 static gboolean remote_control_webkit_reload(gpointer user_data)
 {
-	webkit_web_frame_reload(WEBKIT_WEB_FRAME(user_data));
+	webkit_web_view_reload(WEBKIT_WEB_VIEW(user_data));
 	return FALSE;
 }
 
+#ifdef USE_WEBKIT2
+static gboolean webkit_handle_load_failed(WebKitWebView *webkit,
+	WebKitLoadEvent load_event, gchar *uri, GError *error,
+	gpointer user_data)
+#else
 static gboolean webkit_handle_load_error(WebKitWebView *webkit,
 		WebKitWebFrame *frame, const gchar *uri, GError *error,
 		gpointer user_data)
+#endif
 {
 	gboolean need_reload = FALSE;
 
@@ -254,7 +335,11 @@ static gboolean webkit_handle_load_error(WebKitWebView *webkit,
 			error->code, error->message, uri);
 
 	if (error->domain == WEBKIT_POLICY_ERROR) {
+#ifdef USE_WEBKIT2
+		if (error->code == WEBKIT_POLICY_ERROR_CANNOT_SHOW_URI)
+#else
 		if (error->code == WEBKIT_POLICY_ERROR_CANNOT_SHOW_URL)
+#endif
 			need_reload = TRUE;
 	}
 
@@ -264,12 +349,13 @@ static gboolean webkit_handle_load_error(WebKitWebView *webkit,
 	if (need_reload) {
 		g_debug("%s(): scheduling reload of %s...", __func__, uri);
 		g_timeout_add_seconds(WEBKIT_RELOAD_TIMEOUT,
-				remote_control_webkit_reload, frame);
+				remote_control_webkit_reload, webkit);
 	}
 
 	return FALSE;
 }
 
+#ifndef USE_WEBKIT2
 static void remote_control_webkit_expander_callback (
 		GObject *object, GParamSpec *param_spec,
 		RemoteControlWebkitWindow *self)
@@ -286,6 +372,7 @@ static void remote_control_webkit_expander_callback (
 		webkit_web_inspector_show (priv->webkit_inspector);
 	}
 }
+#endif
 
 static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self)
 {
@@ -293,10 +380,14 @@ static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self
 	GtkWindow *window = GTK_WINDOW(self);
 
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
-	GtkWidget *view;
 
 	g_print("construct view\n");
-	if(priv->inspector) {
+#ifdef USE_WEBKIT2
+	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
+#else
+	if (priv->inspector) {
+		GtkWidget *view;
+
 		view = gtk_scrolled_window_new(NULL, NULL);
 		gtk_container_add(GTK_CONTAINER(view), GTK_WIDGET(priv->webkit));
 		gtk_widget_show(view);
@@ -306,7 +397,11 @@ static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self
 		g_object_set (G_OBJECT(settings), "enable-developer-extras", TRUE,
 					  NULL);
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+		priv->vbox = GTK_VBOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+#else
 		priv->vbox = GTK_VBOX(gtk_vbox_new(false, 0));
+#endif
 
 		priv->expander = GTK_EXPANDER(gtk_expander_new("Inspector"));
 		g_signal_connect (priv->expander, "notify::expanded",
@@ -334,6 +429,7 @@ static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self
 	} else {
 		gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(priv->webkit));
 	}
+#endif
 }
 
 static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
@@ -356,7 +452,9 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 
 	gtk_widget_set_size_request(GTK_WIDGET(window), cx, cy);
 
+#ifndef USE_WEBKIT2
 	soup_session_set_proxy(webkit_get_default_session());
+#endif
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 #ifdef ENABLE_JAVASCRIPT
@@ -364,14 +462,27 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	 * Add a callback to listen for load-status property changes. This is
 	 * used to register the JavaScript binding within the frame.
 	 */
+#ifdef USE_WEBKIT2
+	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-changed",
+		G_CALLBACK(webkit_on_load_changed), self);
+#else
 	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-status",
 		G_CALLBACK(webkit_on_notify_load_status), self);
 #endif
+#endif // ENABLE_JAVASCRIPT
+
+#ifdef USE_WEBKIT2
+	g_signal_connect(G_OBJECT(priv->webkit), "decide-policy",
+			G_CALLBACK(webkit_decide_policy), self);
+	g_signal_connect(G_OBJECT(priv->webkit), "load-failed",
+			G_CALLBACK(webkit_handle_load_failed), self);
+#else
 	g_signal_connect(G_OBJECT(priv->webkit),
 			"navigation-policy-decision-requested",
 			G_CALLBACK(navigation_policy), self);
 	g_signal_connect(G_OBJECT(priv->webkit), "load-error",
 			G_CALLBACK(webkit_handle_load_error), self);
+#endif
 }
 
 GtkWidget *remote_control_webkit_window_new(GMainLoop *loop, gboolean inspector)
@@ -380,6 +491,7 @@ GtkWidget *remote_control_webkit_window_new(GMainLoop *loop, gboolean inspector)
 						"inspector", inspector, NULL);
 }
 
+#ifndef USE_WEBKIT2
 static WebKitWebView* remote_control_webkit_inspector_create (
 		gpointer inspector, WebKitWebView* web_view,
 		gpointer data)
@@ -411,6 +523,7 @@ static gboolean remote_control_webkit_show_inpector (
 
 	return TRUE;
 }
+#endif
 
 gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 		const gchar *uri)
@@ -420,6 +533,7 @@ gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
 	webkit_web_view_load_uri(priv->webkit, uri);
 
+#ifndef USE_WEBKIT2
 	if (priv->inspector) {
 		priv->webkit_inspector =
 			webkit_web_view_get_inspector (WEBKIT_WEB_VIEW(priv->webkit));
@@ -433,6 +547,7 @@ gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 						  G_CALLBACK(remote_control_webkit_show_inpector),
 						  self);
 	}
+#endif
 
 	if (priv->uri)
 		g_object_unref(priv->uri);

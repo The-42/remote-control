@@ -86,6 +86,22 @@ int remote_media_player_set_stream(void *priv, const char *url)
 }
 
 remote_public
+int remote_media_player_set_crop(void *priv, uint16_t left, uint16_t right,
+		uint16_t top, uint16_t bottom)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(media_player_set_crop)(rpc, &ret, left, right, top,
+			bottom);
+	if (err < 0)
+		return err;
+
+	return ret;
+}
+
+remote_public
 int remote_media_player_set_output_window(void *priv, uint16_t x, uint16_t y,
 		uint16_t width, uint16_t height)
 {
