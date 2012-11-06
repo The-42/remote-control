@@ -103,6 +103,13 @@
 								the K, M or G unit respectively.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>pages</varname></term>
+							<listitem><para>
+								The maximum number of pages that can be opened concurrently.
+								By default, the maximum number of pages is restricted to 8.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>

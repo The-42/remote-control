@@ -51,6 +51,7 @@ enum {
 	PROP_ACCEPT_LANGUAGE,
 	PROP_URI,
 	PROP_NOEXIT,
+	PROP_MAX_PAGES,
 };
 
 struct _WebKitBrowserPrivate {
@@ -73,6 +74,7 @@ struct _WebKitBrowserPrivate {
 	gchar *uri;
 	GtkWidget *add_tab;
 	GtkWidget *del_tab;
+	guint max_pages;
 
 #ifdef USE_WEBKIT2
 	gchar **languages;
@@ -126,6 +128,21 @@ static void webkit_browser_set_accept_language(WebKitBrowser *browser,
 }
 #endif
 
+static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
+{
+	gint pages = gtk_notebook_get_n_pages(priv->notebook);
+
+	if (pages == priv->max_pages)
+		gtk_widget_set_sensitive(priv->add_tab, FALSE);
+	else
+		gtk_widget_set_sensitive(priv->add_tab, TRUE);
+
+	if (pages == WEBKIT_BROWSER_MIN_PAGES)
+		gtk_widget_set_sensitive(priv->del_tab, FALSE);
+	else
+		gtk_widget_set_sensitive(priv->del_tab, TRUE);
+}
+
 static void webkit_browser_get_property(GObject *object, guint prop_id,
 		GValue *value, GParamSpec *pspec)
 {
@@ -157,6 +174,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 
 	case PROP_NOEXIT:
 		g_value_set_boolean(value, priv->noexit);
+		break;
+
+	case PROP_MAX_PAGES:
+		g_value_set_uint(value, priv->max_pages);
 		break;
 
 	default:
@@ -208,6 +229,11 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			gtk_widget_hide(GTK_WIDGET(priv->exit));
 		else
 			gtk_widget_show(GTK_WIDGET(priv->exit));
+		break;
+
+	case PROP_MAX_PAGES:
+		priv->max_pages = g_value_get_uint(value);
+		webkit_browser_update_tab_controls(priv);
 		break;
 
 	default:
@@ -488,22 +514,6 @@ static void on_notify_loading(GObject *object, GParamSpec *pspec,
 static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title, gboolean hidden);
 static gint webkit_browser_append_page_with_pdf(WebKitBrowser *browser, WebKitDownload *download);
 
-static void webkit_browser_update_tab_controls(WebKitBrowserPrivate *priv)
-{
-	gint pages = gtk_notebook_get_n_pages(priv->notebook);
-
-	if (pages == WEBKIT_BROWSER_MAX_PAGES) {
-		gtk_widget_set_sensitive(priv->add_tab, FALSE);
-		gtk_widget_set_sensitive(priv->del_tab, TRUE);
-	} else if (pages == WEBKIT_BROWSER_MIN_PAGES) {
-		gtk_widget_set_sensitive(priv->add_tab, TRUE);
-		gtk_widget_set_sensitive(priv->del_tab, FALSE);
-	} else {
-		gtk_widget_set_sensitive(priv->add_tab, TRUE);
-		gtk_widget_set_sensitive(priv->del_tab, TRUE);
-	}
-}
-
 #ifdef USE_WEBKIT2
 static gboolean on_download_created_destination(WebKitDownload *download,
 	gchar *destination, gpointer data)
@@ -633,7 +643,13 @@ static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
 	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 
 	if (gtk_notebook_get_show_tabs(priv->notebook)) {
-		if (pages < WEBKIT_BROWSER_MAX_PAGES)
+		/*
+		 * The max-pages property is set only after the initialization
+		 * of the widget, but this function may be called earlier when
+		 * adding an initial WebKitWebView. In that case, max_pages
+		 * will be 0, so account for this special case.
+		 */
+		if (!priv->max_pages || pages < priv->max_pages)
 			return TRUE;
 	} else {
 		/* Allow only one tab when tabbar is hidden */
@@ -1263,6 +1279,15 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 			g_param_spec_boolean("no-exit", "No Exit",
 				"Disable exit button", FALSE,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_MAX_PAGES,
+			g_param_spec_uint("max-pages",
+					  "Maximum number of pages",
+					  "Maximum number of pages",
+					  1, 255, WEBKIT_BROWSER_MAX_PAGES,
+					  G_PARAM_READWRITE |
+					  G_PARAM_CONSTRUCT |
+					  G_PARAM_STATIC_STRINGS));
 }
 
 GtkWidget *webkit_browser_new(const gchar *geometry)

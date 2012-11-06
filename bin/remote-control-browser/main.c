@@ -243,6 +243,14 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "accept-language", language, NULL);
 	g_object_set(browser, "no-exit", noexit, NULL);
 
+	if (conf && g_key_file_has_key(conf, "limits", "pages", NULL)) {
+		gint max_pages = g_key_file_get_integer(conf, "limits", "pages",
+							NULL);
+
+		if (max_pages > 0)
+			g_object_set(browser, "max-pages", max_pages, NULL);
+	}
+
 	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
 			loop);
 	g_signal_connect(G_OBJECT(browser), "realize", G_CALLBACK(on_realize),
