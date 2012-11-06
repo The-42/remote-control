@@ -8,15 +8,19 @@ edit = $(SED) 's|[@]PACKAGE[@]|$(PACKAGE)|' $< > $@
 %.xml: %.xml.in
 	$(AM_V_GEN)$(edit)
 
-BUILT_SOURCES = remote-control.conf.xml
+BUILT_SOURCES = \
+	browser.conf.xml \
+	remote-control.conf.xml
 
 %.5: %.xml
 	$(AM_V_GEN)$(XSLTPROC) -o $@ $(XSLTPROC_FLAGS) $(XSLTPROC_STYLESHEET) $<
 
 man_MANS = \
+	browser.conf.5 \
 	remote-control.conf.5
 
 EXTRA_DIST = \
+	browser.xml.in \
 	remote-control.conf.xml.in
 
 CLEANFILES = \

@@ -1,0 +1,104 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+			  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+
+<refentry id="browser.conf">
+	<refentryinfo>
+		<title>browser.conf</title>
+		<productname>@PACKAGE@</productname>
+		<authorgroup>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Thierry</firstname>
+				<surname>Reding</surname>
+				<email>thierry.reding@avionic-design.de</email>
+			</author>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Soeren</firstname>
+				<surname>Grunewald</surname>
+				<email>soeren.grunewald@avionic-design.de</email>
+			</author>
+			<author>
+				<contrib>Developer</contrib>
+				<firstname>Julian</firstname>
+				<surname>Scheel</surname>
+				<email>julian.scheel@avionic-design.de</email>
+			</author>
+		</authorgroup>
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>browser.conf</refentrytitle>
+		<manvolnum>5</manvolnum>
+	</refmeta>
+
+	<refnamediv>
+		<refname>browser.conf</refname>
+		<refpurpose>remote-control-browser configuration file</refpurpose>
+	</refnamediv>
+
+	<refsynopsisdiv>
+		<para><filename>browser.conf</filename></para>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			remote-control-browser reads its configuration only on startup.
+		</para>
+		<variablelist>
+			<varlistentry>
+				<term><filename>/etc/browser.conf</filename></term>
+				<listitem><para>
+					Is the main configuration file.
+				</para></listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>Syntax</title>
+		<para>
+			The configuration file syntax is a simple, text-based,
+			key-value syntax based on the .ini file format.
+		</para>
+		<para>
+			Configuration data is composed of groups, where each
+			group configures one specific software component. The
+			following groups are supported:
+		</para>
+		<variablelist>
+			<varlistentry>
+				<term><varname>watchdog</varname> - software watchdog configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>timeout</varname></term>
+							<listitem><para>
+								Specifies the watchdog timeout (in milliseconds). If the
+								program stops pinging the watchdog, the watchdog will
+								terminate the program after this interval. If all goes well,
+								the watchdog will be pinged three times during this interval
+								to ensure that if one of the pings is delayed for a little
+								it will not cause the watchdog to terminate the
+								remote-control-browser process.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>Example</title>
+		<programlisting>[watchdog]
+timeout = 13000
+		</programlisting>
+	</refsect1>
+</refentry>
+
+<!-- vim: set ts=2 sts=2 sw=2: -->
