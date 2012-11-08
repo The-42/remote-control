@@ -82,6 +82,7 @@ typedef enum {
 
 struct media_player {
 	GstElement *pipeline;
+	guint busid;         /* see gst_bus_add_watch */
 	GdkWindow *window;   /* the window to use for output */
 	XID xid;             /* the id of the x window */
 	enum media_player_state state;
@@ -799,6 +800,8 @@ static int player_destroy_pipeline(struct media_player *player)
 		gst_element_set_state(player->pipeline, GST_STATE_NULL);
 		gst_object_unref(player->pipeline);
 		player->pipeline = NULL;
+		g_source_remove(player->busid);
+		player->busid = 0;
 	}
 	if (player->xid)
 		player->xid = 0;
@@ -867,7 +870,10 @@ static int player_create_software_pipeline(struct media_player *player, const gc
 	/* setup message handling */
 	bus = gst_pipeline_get_bus(GST_PIPELINE(player->pipeline));
 	if (bus) {
-		gst_bus_add_watch(bus, (GstBusFunc)player_gst_bus_event, player);
+		/* we need to store the busid, so we can remove it from the
+		 * source again, otherwise we generate an fd leak */
+		player->busid = gst_bus_add_watch(bus,
+				(GstBusFunc)player_gst_bus_event, player);
 
 #if GST_CHECK_VERSION(1, 0, 0)
 		gst_bus_set_sync_handler(bus,
