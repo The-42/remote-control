@@ -362,6 +362,7 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 			if (v4l2src) {
 				g_object_set(v4l2src, "brightness", 25, NULL);
 				g_object_set(v4l2src, "saturation", 125, NULL);
+				gst_object_unref(v4l2src);
 			}
 		}
 		break;
