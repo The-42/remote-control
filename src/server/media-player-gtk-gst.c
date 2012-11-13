@@ -360,8 +360,8 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 			v4l2src = gst_bin_get_by_name(GST_BIN(player->pipeline),
 				"v4l2src");
 			if (v4l2src) {
-				g_object_set(v4l2src, "brightness", 25, NULL);
-				g_object_set(v4l2src, "saturation", 125, NULL);
+				g_object_set(v4l2src, "brightness", 25,
+						"saturation", 125, NULL);
 				gst_object_unref(v4l2src);
 			}
 		}
