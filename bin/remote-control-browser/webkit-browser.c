@@ -635,6 +635,13 @@ static gboolean on_download_requested(WebKitWebView *webkit,
 	g_free(uri);
 	return TRUE;
 }
+
+static gboolean on_run_file_chooser(WebKitWebView *webkit,
+				    WebKitFileChooserRequest *request,
+				    gpointer data)
+{
+	return TRUE;
+}
 #endif
 
 static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
@@ -874,6 +881,8 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(on_notify_progress), browser);
 	g_signal_connect(G_OBJECT(webkit), "create-web-view",
 			G_CALLBACK(on_create_web_view), browser);
+	g_signal_connect(G_OBJECT(webkit), "run-file-chooser",
+			G_CALLBACK(on_run_file_chooser), browser);
 #endif
 
 	if (hidden)
