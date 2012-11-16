@@ -200,6 +200,7 @@ struct sound_manager;
 int sound_manager_create(struct sound_manager **managerp);
 int sound_manager_free(struct sound_manager *manager);
 int sound_manager_play(struct sound_manager *manager, const char *uri);
+int sound_manager_stop(struct sound_manager *manager);
 
 /**
  * smartcard

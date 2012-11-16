@@ -123,3 +123,15 @@ int sound_manager_play(struct sound_manager *manager, const char *uri)
 
 	return 0;
 }
+
+int sound_manager_stop(struct sound_manager *manager)
+{
+	if (!manager) {
+		g_warning("%s(%p): manager uri invalid", __func__, manager);
+		return -EINVAL;
+	}
+
+	gst_element_set_state (manager->play, GST_STATE_NULL);
+
+	return 0;
+}

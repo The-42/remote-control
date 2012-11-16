@@ -814,6 +814,28 @@ const struct cli_command_info cmd_sound_play _command_ = {
 };
 
 /*
+ * "sound-stop" command
+ */
+static int exec_sound_stop(struct cli *cli, int argc, char *argv[])
+{
+	int err;
+
+	err = remote_sound_stop(cli->client);
+	if (err < 0)
+		printf("%s\n", strerror(-err));
+
+	return err;
+}
+
+const struct cli_command_info cmd_sound_stop _command_ = {
+	.name = "sound-stop",
+	.summary = "stop sound playback",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_sound_stop,
+};
+
+/*
  * "modem-call" command
  */
 static int exec_modem_call(struct cli *cli, int argc, char *argv[])

@@ -27,3 +27,8 @@ int sound_manager_play(struct sound_manager *manager, const char *uri)
 {
 	return -ENOSYS;
 }
+
+int sound_manager_stop(struct sound_manager *manager)
+{
+	return -ENOSYS;
+}

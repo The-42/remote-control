@@ -28,3 +28,17 @@ int remote_sound_play(void *priv, const char *url)
 
 	return ret;
 }
+
+remote_public
+int remote_sound_stop(void *priv)
+{
+	struct rpc_client *rpc = rpc_client_from_priv(priv);
+	int32_t ret;
+	int err;
+
+	err = RPC_STUB(sound_stop)(rpc, &ret);
+	if (err < 0)
+		return err;
+
+	return ret;
+}

@@ -36,3 +36,9 @@ int32_t RPC_IMPL(sound_play)(void *priv, const char *uri)
 	struct sound_manager *sound = remote_control_get_sound_manager(priv);
 	return sound_manager_play(sound, uri);
 }
+
+int32_t RPC_IMPL(sound_stop)(void *priv)
+{
+	struct sound_manager *sound = remote_control_get_sound_manager(priv);
+	return sound_manager_stop(sound);
+}
