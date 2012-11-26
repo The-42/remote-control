@@ -10,10 +10,12 @@
 #  include "config.h"
 #endif
 
+#include <glib.h>
+
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int audio_create(struct audio **audiop, struct rpc_server *server)
+int audio_create(struct audio **audiop, struct rpc_server *server, GKeyFile *config)
 {
 	return 0;
 }
