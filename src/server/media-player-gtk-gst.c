@@ -284,13 +284,14 @@ static void set_webkit_appsrc_rank(guint rank)
 /**
  *FIXME: this is a very ugly hack, which should be removed immediately
  *	 the only reason for having it is extreme pressure from the
- *	 management, to get analog stick working */
+ *	 management, to get analog stick working
+ */
 static int player_start_alsa_loop(struct media_player *player)
 {
 	const gchar *command_line = "/usr/bin/alsaloop -C hw:1 -P default -S 4 -w -A 2 -r 48000 -t 50000";
+	GError *error = NULL;
 	gchar **argv = NULL;
 	gint argc;
-	GError *error = NULL;
 
 	if (player->loop_pid != 0)
 		return -EBUSY;
