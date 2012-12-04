@@ -29,11 +29,8 @@ static void linphone_global_state_changed_cb(LinphoneCore *core,
 {
 	const char *name = linphone_global_state_to_string(state);
 
-	if (message)
-		g_debug("voip-linphone: global state changed to %s: %s",
-				name, message);
-	else
-		g_debug("voip-linphone: global state changed to %s", name);
+	g_debug("voip-linphone: global state changed to %s: %s",
+				name, message ?: "");
 }
 
 static void linphone_registration_state_changed_cb(LinphoneCore *core,
@@ -42,12 +39,8 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core,
 {
 	const char *name = linphone_registration_state_to_string(state);
 
-	if (message)
-		g_debug("voip-linphone: registration state on proxy %p "
-				"changed to %s: %s", proxy, name, message);
-	else
-		g_debug("voip-linphone: registration state on proxy %p "
-				"changed to %s", proxy, name);
+	g_debug("voip-linphone: registration state on proxy %p "
+		"changed to %s: %s", proxy, name, message ?: "");
 }
 
 static void linphone_call_state_changed_cb(LinphoneCore *core,
@@ -64,11 +57,8 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 
 	name = linphone_call_state_to_string(state);
 
-	if (message)
-		g_debug("voip-linphone: call state changed to %s: %s", name,
-				message);
-	else
-		g_debug("voip-linphone: call state changed to %s", name);
+	g_debug("voip-linphone: call state changed to %s: %s", name,
+			message ?: "");
 
 	memset(&event, 0, sizeof(event));
 	event.source = EVENT_SOURCE_VOIP;
