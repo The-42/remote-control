@@ -296,18 +296,18 @@ static int player_start_alsa_loop(struct media_player *player)
 	if (player->loop_pid != 0)
 		return -EBUSY;
 
-	g_printf("Spawning alsa loopback process.");
+	g_debug("Spawning alsa loopback process.");
 	if (!g_shell_parse_argv(command_line, &argc, &argv, &error)) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to parse "
-				"command-line: %s", error->message);
+		g_warning("failed to parse command-line: %s",
+			error->message);
 		g_error_free(error);
 		return -EACCES;
 	}
 
 	if (!g_spawn_async(NULL, argv, NULL, 0, NULL,
 				NULL, &player->loop_pid, &error)) {
-		g_printf("failed to execute "
-				"child process: %s", error->message);
+		g_warning("failed to execute child process: %s",
+			error->message);
 		g_error_free(error);
 		return -EACCES;
 	}
@@ -317,10 +317,9 @@ static int player_start_alsa_loop(struct media_player *player)
 
 static int player_stop_alsa_loop(struct media_player *player)
 {
-	g_printf("Stop alsa loopback process with pid %d\n",
-		player->loop_pid);
 	if (player->loop_pid != 0) {
-		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Terminating alsa loopback process.");
+		g_debug("Stop alsa loopback process with pid %d",
+			player->loop_pid);
 		kill(player->loop_pid, SIGTERM);
 		player->loop_pid = 0;
 	}
@@ -339,7 +338,7 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 	if (GST_MESSAGE_SRC(message) != GST_OBJECT(player->pipeline))
 		return;
 
-	g_printf("   Element %s changed state from %s to %s (pending=%s)\n",
+	g_debug("   Element %s changed state from %s to %s (pending=%s)\n",
 		GST_OBJECT_NAME(message->src),
 		gst_element_state_get_name(old_state),
 		gst_element_state_get_name(new_state),
@@ -348,16 +347,13 @@ static void handle_message_state_change(struct media_player *player, GstMessage 
 	switch (new_state) {
 	case GST_STATE_PLAYING: {
 		set_webkit_appsrc_rank(GST_RANK_PRIMARY + 100);
-		g_printf("new state playing\n");
 		if (player->pipeline_type == PIPELINE_PLAYBIN)
 			player_check_audio_tracks(player->pipeline, player);
 		else if (player->pipeline_type == PIPELINE_V4L_VIDEO ||
 			player->pipeline_type == PIPELINE_V4L_RADIO) {
 			GstElement *v4l2src;
 
-			g_printf("start alsa loop\n");
 			player_start_alsa_loop(player);
-
 			v4l2src = gst_bin_get_by_name(GST_BIN(player->pipeline),
 				"v4l2src");
 			if (v4l2src) {
@@ -383,7 +379,7 @@ static int handle_message_error(struct media_player *player, GstMessage *message
 			 err->code, GST_OBJECT_NAME (message->src), err->message);
 	if (!g_ascii_strncasecmp(GST_OBJECT_NAME (message->src), "source", 6) || err->domain == GST_STREAM_ERROR) {
 		/* try to restart the pipeline */
-                g_printf("Try to recover to playing state after error.\n");
+                g_debug("Try to recover to playing state after error.\n");
 		gst_element_set_state(player->pipeline, GST_STATE_READY);
 		gst_element_set_state(player->pipeline, GST_STATE_PLAYING);
 	}
@@ -512,7 +508,6 @@ static gboolean player_set_x_window_id(struct media_player *player,
 		player->xid = (XID)g_value_get_ulong(value);
 	}
 
-	g_printf(" < %s()", __func__);
 	return player->xid != 0;
 }
 
@@ -743,7 +738,7 @@ static GstBusSyncReply player_gst_bus_sync_handler(GstBus *bus,
 		break;
 
 	default:
-		g_printf("   ignore: %s\n",
+		g_debug("   ignore: %s",
 		         gst_message_type_get_name(type));
 		break;
 	}
