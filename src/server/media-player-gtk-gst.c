@@ -593,40 +593,33 @@ static int player_window_update(struct media_player *player)
 static gboolean player_element_message_sync(GstBus *bus, GstMessage *msg,
                                             struct media_player *player)
 {
+#if GST_CHECK_VERSION(1, 0, 0)
+	const GstStructure *structure = gst_message_get_structure(msg);
+	const char *property_name = "prepare-window-handle";
+#else
+	const GstStructure *structure = msg->structure;
+	const char *property_name = "prepare-xwindow-id";
+#endif
 	gboolean ret = FALSE;
 	const gchar* name;
 
-#if GST_CHECK_VERSION(1, 0, 0)
-	const GstStructure *structure = gst_message_get_structure(msg);
+	if (!structure)
+		goto out;
+
 	name = gst_structure_get_name(structure);
-#else
-	if (!msg->structure)
-		return FALSE;
+	if (!name)
+		goto out;
 
-	name = gst_structure_get_name(msg->structure);
-#endif
-
-
-	g_print("player_element_message_sync\n");
-#if GST_CHECK_VERSION(1, 0, 0)
-	if (g_strcmp0(name, "prepare-window-handle") == 0) {
-		g_debug("    prepare-window-handle");
-#else
-	if (g_strcmp0(name, "prepare-xwindow-id") == 0) {
-		g_debug("    prepare-xwindow-id");
-#endif
+	if (g_strcmp0(name, property_name) == 0) {
+		g_debug("    %s", property_name);
 		ret = player_set_x_overlay(player);
-	}
-	else if (g_strcmp0(name, "have-xwindow-id") == 0) {
+	} else if (g_strcmp0(name, "have-xwindow-id") == 0) {
 		g_debug("    have-xwindow-id");
-#if GST_CHECK_VERSION(1, 0, 0)
-		ret = player_set_x_window_id(player,
-			gst_structure_get_value(structure, "xwindow-id"));
-#else
-		ret = player_set_x_window_id(player,
-			gst_structure_get_value(msg->structure, "xwindow-id"));
-#endif
+		ret = player_set_x_window_id(player, gst_structure_get_value(structure,
+					"xwindow-id"));
 	}
+
+out:
 	return ret;
 }
 
