@@ -613,7 +613,11 @@ int voip_terminate(struct voip *voip)
 	if (!voip)
 		return -EINVAL;
 
-	err = linphone_core_terminate_call(voip->core, NULL);
+	/*
+	 * We only support one call at a time, so we can always
+	 * terminate all calls.
+	 */
+	err = linphone_core_terminate_all_calls(voip->core);
 	if (err < 0)
 		return err;
 
