@@ -309,9 +309,11 @@ static int player_start_alsa_loop(struct media_player *player)
 		g_warning("failed to execute child process: %s",
 			error->message);
 		g_error_free(error);
+		g_strfreev(argv);
 		return -EACCES;
 	}
 
+	g_strfreev(argv);
 	return 0;
 }
 
