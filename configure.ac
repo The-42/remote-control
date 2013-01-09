@@ -20,7 +20,6 @@ AM_NLS
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5 gio-2.0)
 PKG_CHECK_MODULES(GLADE, libglade-2.0)
 PKG_CHECK_MODULES(GTKOSK, gtkosk)
-PKG_CHECK_MODULES(ALSA, alsa)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(POPPLER, poppler-glib)
 PKG_CHECK_MODULES(GUDEV, gudev-1.0)
@@ -75,17 +74,16 @@ PKG_CHECK_MODULES(WEBKIT, $REQUIRED_WEBKIT)
 enable_audio_alsa=no
 
 AC_ARG_WITH(audio_backend,
-	[AS_HELP_STRING([--with-audio-backend=@<:@none/alsa@:>@],
+	[AS_HELP_STRING([--with-audio-backend=@<:@none/alsa/pulse@:>@],
 		[Use the specified audio (UCM) backend. [default=none]])
 	], [], [with_audio_backend=none])
 
 AS_CASE([$with_audio_backend],
 	[none], [],
-	[alsa], [enable_audio_alsa=yes],
-	[AC_MSG_ERROR([Invalid audio backend: must be none or alsa])]
+	[alsa], [PKG_CHECK_MODULES(ALSA, alsa, [enable_audio_alsa=yes])],
+	[pulse], [PKG_CHECK_MODULES(PULSE, [libpulse >= 3.0 libpulse-mainloop-glib >= 3.0], [enable_audio_pulse=yes])],
+	[AC_MSG_ERROR([Invalid audio backend: must be none, alsa or pulse])]
 )
-
-AS_IF([test "x$enable_audio_alsa" = "xyes"], [PKG_CHECK_MODULES(ALSA, alsa)])
 
 #
 # backlight backend
@@ -310,6 +308,7 @@ AS_IF([test "x$enable_watchdog" = "xyes"], [
 # define automake conditionals according to select backends
 #
 AM_CONDITIONAL(ENABLE_AUDIO_ALSA, [test "x$enable_audio_alsa" = "xyes"])
+AM_CONDITIONAL(ENABLE_AUDIO_PULSE, [test "x$enable_audio_pulse" = "xyes"])
 AM_CONDITIONAL(ENABLE_MIXER_ALSA, [test "x$enable_mixer_alsa" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_DPMS, [test "x$enable_backlight_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "xyes"])

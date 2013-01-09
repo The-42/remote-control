@@ -52,11 +52,17 @@ nodist_libremote_control_la_SOURCES = \
 
 if ENABLE_AUDIO_ALSA
 libremote_control_la_CFLAGS += @ALSA_CFLAGS@
-libremote_control_la_SOURCES += audio-alsa.c
 libremote_control_la_LIBADD += @ALSA_LIBS@
+libremote_control_la_SOURCES += audio-alsa.c
+else
+if ENABLE_AUDIO_PULSE
+libremote_control_la_CFLAGS += @PULSE_CFLAGS@
+libremote_control_la_LIBADD += @PULSE_LIBS@
+libremote_control_la_SOURCES += audio-pulse.c
 else
 libremote_control_la_SOURCES += audio-null.c
-endif
+endif # ENABLE_AUDIO_PULSE
+endif #ENABLE_AUDIO_ALSA
 
 if ENABLE_MIXER_ALSA
 libremote_control_la_CFLAGS += @ALSA_CFLAGS@
