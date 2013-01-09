@@ -428,6 +428,11 @@ struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc);
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 
 /**
+ * USB Handset
+ */
+int usb_handset_create(struct remote_control *rc);
+
+/**
  * utilities
  */
 unsigned int if_lookup_default(void);
