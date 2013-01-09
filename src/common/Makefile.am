@@ -11,14 +11,22 @@ libcommon_la_SOURCES = \
 	gkeyfile.h \
 	glogging.c \
 	glogging.h \
+	guri.c \
+	guri.h
+
+if ENABLE_BACKLIGHT_SYSFS
+libcommon_la_SOURCES += \
 	gsysfs.c \
 	gsysfs.h \
 	gsysfsbacklight.c \
-	gsysfsbacklight.h \
+	gsysfsbacklight.h
+endif
+
+if ENABLE_GPIO_SYSFS
+libcommon_la_SOURCES += \
 	gsysfsgpio.c \
-	gsysfsgpio.h \
-	guri.c \
-	guri.h
+	gsysfsgpio.h
+endif
 
 libcommon_la_LIBADD = \
 	@GUDEV_LIBS@
