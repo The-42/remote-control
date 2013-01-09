@@ -14,7 +14,9 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#ifdef HAVE_ALSA
 #include <alsa/asoundlib.h>
+#endif
 
 #define pr_fmt(fmt) "log: " fmt
 
@@ -24,6 +26,7 @@
 static void (*log_exit)(void *data) = NULL;
 static void *log_data = NULL;
 
+#ifdef HAVE_ALSA
 static void alsa_error_handler(const char *file, int line, const char *function,
 			       int err, const char *fmt, ...)
 {
@@ -39,6 +42,7 @@ static void alsa_error_handler(const char *file, int line, const char *function,
 
 	g_free(buffer);
 }
+#endif
 
 /*
  * stdio backend
@@ -169,7 +173,9 @@ static void remote_control_syslog_exit(void *data)
 void remote_control_log_early_init(void)
 {
 	g_log_set_default_handler(remote_control_stdio_log_handler, NULL);
+#ifdef HAVE_ALSA
 	snd_lib_error_set_handler(alsa_error_handler);
+#endif
 }
 
 int remote_control_log_init(GKeyFile *conf)
