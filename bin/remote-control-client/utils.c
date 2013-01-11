@@ -83,6 +83,20 @@ enum remote_audio_state parse_audio_state(const char *state)
 {
 	enum remote_audio_state ret = REMOTE_AUDIO_STATE_UNKNOWN;
 	unsigned int i;
+	int value;
+
+	if (!state)
+		goto out;
+
+	if (sscanf(state, "%d", &value) != 1)
+		goto out;
+
+	for (i = 0; i < ARRAY_SIZE(audio_state_map); i++) {
+		if (audio_state_map[i].id == value) {
+			ret = audio_state_map[i].id;
+			goto out;
+		}
+	}
 
 	for (i = 0; i < ARRAY_SIZE(audio_state_map); i++) {
 		if (strcasecmp(audio_state_map[i].name, state) == 0) {
@@ -91,6 +105,7 @@ enum remote_audio_state parse_audio_state(const char *state)
 		}
 	}
 
+out:
 	return ret;
 }
 
@@ -120,7 +135,8 @@ void audio_state_print_names()
 	unsigned int i;
 
 	for (i = 1; i < ARRAY_SIZE(audio_state_map); i++) {
-		printf("   %s\n", audio_state_map[i].name);
+		printf("   %.02d: %s\n", audio_state_map[i].id,
+			audio_state_map[i].name);
 	}
 }
 
