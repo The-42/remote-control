@@ -212,15 +212,11 @@ static GSource *input_source_new(JSContextRef context)
 		GUdevDevice *parent;
 		const gchar *name;
 
-		parent = g_udev_device_get_parent(device);
 		name = g_udev_device_get_name(device);
-
-		if (!g_pattern_match_string(event, name))
+		if (!name || !g_pattern_match_string(event, name))
 			continue;
 
 		parent = g_udev_device_get_parent(device);
-		name = g_udev_device_get_name(parent);
-
 		name = g_udev_device_get_sysfs_attr(parent, "name");
 
 		if (g_str_equal(name, "sx8634")) {
@@ -233,12 +229,12 @@ static GSource *input_source_new(JSContextRef context)
 					g_debug("failed to use %s: %s",
 							filename,
 							g_strerror(-err));
-					continue;
+				} else {
+					g_debug("using %s", filename);
 				}
-
-				g_debug("using %s", filename);
 			}
 		}
+		g_object_unref(parent);
 	}
 
 	g_pattern_spec_free(event);
@@ -321,7 +317,7 @@ int javascript_register_input_class(void)
 }
 
 int javascript_register_input(JSContextRef js, JSObjectRef parent,
-                              const char *name, void *user_data)
+			      const char *name, void *user_data)
 {
 	GMainLoop *loop = user_data;
 	JSValueRef exception;
