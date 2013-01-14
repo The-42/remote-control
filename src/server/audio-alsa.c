@@ -18,9 +18,18 @@
 
 #define AUDIO_ALSA_DEBUG 0
 
+struct soundcard {
+	gchar *name;
+	int index;
+	snd_mixer_t *mixer;
+};
+
 struct audio {
 	snd_use_case_mgr_t *ucm;
 	enum audio_state state;
+
+	gint index;
+	GList *cards;
 };
 
 int audio_get_state(struct audio *audio, enum audio_state *statep);
@@ -134,77 +143,228 @@ static const struct ucm_state ucm_states[] = {
 	},
 };
 
-static int control_set_volume(const char *control, long volume)
+static const char *audio_state_to_control(struct audio *audio)
 {
-	const char *card = "default";
-	snd_mixer_selem_id_t *sid;
-	snd_mixer_elem_t* elem;
-	snd_mixer_t *handle;
-	int err;
+	const char *control = NULL;
 
-	/*
-	 * FIXME: this is a dirty hack for medica.
-	 */
-	err = snd_mixer_open(&handle, 0);
-	err = snd_mixer_attach(handle, card);
-	err = snd_mixer_selem_register(handle, NULL, NULL);
-	err = snd_mixer_load(handle);
+	switch (audio->state) {
+	case AUDIO_STATE_HIFI_PLAYBACK_SPEAKER:
+	case AUDIO_STATE_VOICECALL_SPEAKER:
+	case AUDIO_STATE_VOICECALL_IP_SPEAKER:
+	case AUDIO_STATE_LINEIN_SPEAKER:
+		control = "Speaker";
+		break;
+
+	case AUDIO_STATE_VOICECALL_HANDSET:
+	case AUDIO_STATE_VOICECALL_IP_HANDSET:
+		control = "Line Out";
+		break;
+
+	case AUDIO_STATE_HIFI_PLAYBACK_HEADSET:
+	case AUDIO_STATE_VOICECALL_HEADSET:
+	case AUDIO_STATE_VOICECALL_IP_HEADSET:
+	case AUDIO_STATE_LINEIN_HEADSET:
+		control = "Headphone";
+		break;
+
+	default:
+		control = "Master";
+	}
+	return control;
+}
+
+static void soundcard_mixer_close(struct soundcard *card);
+static int soundcard_mixer_open(struct soundcard *card);
+
+static inline snd_mixer_elem_t* soundcard_get_control(struct soundcard *card,
+						      const char *control)
+{
+	snd_mixer_selem_id_t *sid;
 
 	snd_mixer_selem_id_alloca(&sid);
 	snd_mixer_selem_id_set_index(sid, 0);
 	snd_mixer_selem_id_set_name(sid, control);
 
-	elem = snd_mixer_find_selem(handle, sid);
-	if (elem) {
-		long min, max;
-		snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
-		volume = ((volume * (max - min)) / 255) + min;
-		err = snd_mixer_selem_set_playback_volume_all(elem, volume);
+	return snd_mixer_find_selem(card->mixer, sid);
+}
+
+static int soundcard_control_set_volume(struct soundcard *card,
+					const char *control, long volume)
+{
+	snd_mixer_elem_t* elem;
+	long min, max;
+	int err;
+
+	err = soundcard_mixer_open(card);
+	if (err < 0)
+		return err;
+
+	elem = soundcard_get_control(card, control);
+	if (!elem) {
+		soundcard_mixer_close(card);
+		return -ENODEV;
 	}
 
-	snd_mixer_close(handle);
+	err = snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+	volume = ((volume * (max - min)) / 255) + min;
+	err = snd_mixer_selem_set_playback_volume_all(elem, volume);
+
+	soundcard_mixer_close(card);
 	return err;
 }
 
-static int control_get_volume(const char *control, long *volumep)
+static int soundcard_control_get_volume(struct soundcard *card,
+					const char *control, long *volumep)
 {
-	const char *card = "default";
-	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t* elem;
-	snd_mixer_t *handle;
+	long min, max;
 	long volume;
 	int err;
 
-	/*
-	 * FIXME: this is a dirty hack for medica.
-	 */
-	err = snd_mixer_open(&handle, 0);
-	err = snd_mixer_attach(handle, card);
-	err = snd_mixer_selem_register(handle, NULL, NULL);
-	err = snd_mixer_load(handle);
+	elem = soundcard_get_control(card, control);
+	if (!elem)
+		return -ENODEV;
 
-	snd_mixer_selem_id_alloca(&sid);
-	snd_mixer_selem_id_set_index(sid, 0);
-	snd_mixer_selem_id_set_name(sid, control);
+	snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+	/* since we set both, we can query only one side */
+	err = snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_FRONT_LEFT, &volume);
+	volume = ((volume + min) * 255) / (max - min);
+	*volumep = volume;
 
-	elem = snd_mixer_find_selem(handle, sid);
-	if (elem) {
-		long min, max;
-		snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
-		/* since we set both, we can query only one side */
-		err = snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_FRONT_LEFT, &volume);
-		volume = ((volume + min) * 255) / (max - min);
-		*volumep = volume;
+	return err;
+}
+
+static gboolean soundcard_has_control(struct soundcard *card,
+				      const char *control)
+{
+	snd_mixer_elem_t* elem;
+
+	elem = soundcard_get_control(card, control);
+	if (!elem)
+		return false;
+
+	return true;
+}
+
+static void soundcard_mixer_close(struct soundcard *card)
+{
+	char device[16];
+
+	if (!card || !card->mixer)
+		return;
+
+	snprintf(device, sizeof(device), "hw:%d", card->index);
+	snd_mixer_detach(card->mixer, device);
+	snd_mixer_close(card->mixer);
+	card->mixer = NULL;
+}
+
+static int soundcard_mixer_open(struct soundcard *card)
+{
+	char device[16];
+	int err;
+
+	err = snd_mixer_open(&card->mixer, 0);
+	if (err < 0)
+		goto out;
+
+	snprintf(device, sizeof(device), "hw:%d", card->index);
+
+	err = snd_mixer_attach(card->mixer, device);
+	if (err < 0)
+		goto close;
+
+	err = snd_mixer_selem_register(card->mixer, NULL, NULL);
+	if (err < 0)
+		goto detach;
+
+	err = snd_mixer_load(card->mixer);
+	if (err < 0)
+		goto detach;
+
+	return 0;
+
+detach:
+	snd_mixer_detach(card->mixer, device);
+close:
+	snd_mixer_close(card->mixer);
+	card->mixer = NULL;
+out:
+	return err;
+}
+
+static struct soundcard *soundcard_new(const char *name, int index)
+{
+	struct soundcard *card;
+
+	card = g_new0(struct soundcard, 1);
+	if (!card)
+		return NULL;
+
+	card->index = index;
+	card->name = g_strdup(name);
+	return card;
+}
+
+static void soundcard_free(struct soundcard *card)
+{
+	if (!card)
+		return;
+
+	soundcard_mixer_close(card);
+	card->index = -1;
+	g_free(card->name);
+	card->name = NULL;
+	g_free(card);
+}
+
+static int audio_find_cards(struct audio *audio)
+{
+	snd_ctl_card_info_t *info;
+	struct soundcard *card;
+	int number = -1;
+	snd_ctl_t *ctl;
+	char dev[16];
+	int err;
+
+	snd_ctl_card_info_alloca(&info);
+
+	while (true) {
+		err = snd_card_next(&number);
+		if (err < 0) {
+			g_warning("audio-alsa-ucm: unable to enumerate sound cards");
+			break;
+		}
+
+		if (number < 0)
+			break;
+
+		sprintf(dev, "hw:%d", number);
+		err = snd_ctl_open(&ctl, dev, 0);
+		if (err < 0) {
+			g_debug("audio-alsa-ucm: unable to open %s", dev);
+			continue;
+		}
+
+		err = snd_ctl_card_info(ctl, info);
+		snd_ctl_close(ctl);
+		if (err < 0)
+			continue;
+
+		card = soundcard_new(snd_ctl_card_info_get_name(info), number);
+		if (card) {
+			g_debug("audio-alsa-ucm: soundcard %s created (%s)",
+				card->name, snd_ctl_card_info_get_driver(info));
+			audio->cards = g_list_append(audio->cards, card);
+		}
 	}
 
-	snd_mixer_close(handle);
-	return err;
+	return g_list_length(audio->cards) > 0 ? 0 : -ENODEV;
 }
 
 int audio_create(struct audio **audiop, struct rpc_server *server)
 {
-	/* TODO: do not hardcode the card name here! */
-	static const char card_name[] = "tegrawm8903";
+	struct soundcard *card;
 	struct audio *audio;
 	int err;
 
@@ -212,24 +372,33 @@ int audio_create(struct audio **audiop, struct rpc_server *server)
 	if (!audio)
 		return -ENOMEM;
 
-	err = snd_use_case_mgr_open(&audio->ucm, card_name);
+	err = audio_find_cards(audio);
+	if (err < 0) {
+		g_warning("audio-alsa-ucm: No card found, %d", err);
+		g_free(audio);
+		return err;
+	}
+
+	card = g_list_nth(audio->cards, audio->index)->data;
+
+	err = snd_use_case_mgr_open(&audio->ucm, card->name);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to open use-case-manager: "
-				"%s", snd_strerror(err));
-		g_free(audio);
+			  "%s", snd_strerror(err));
+		audio_free(audio);
 		return -ENODEV;
 	}
 
 	err = snd_use_case_mgr_reload(audio->ucm);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to reload: %s",
-				snd_strerror(err));
+			  snd_strerror(err));
 	}
 
 	err = snd_use_case_mgr_reset(audio->ucm);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to reset: %s",
-				snd_strerror(err));
+			  snd_strerror(err));
 	}
 
 	if (AUDIO_ALSA_DEBUG)
@@ -249,14 +418,16 @@ int audio_free(struct audio *audio)
 	err = snd_use_case_mgr_reset(audio->ucm);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to reset UCM: %s",
-				snd_strerror(err));
+			  snd_strerror(err));
 	}
 
 	err = snd_use_case_mgr_close(audio->ucm);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to close UCM: %s",
-				snd_strerror(err));
+			  snd_strerror(err));
 	}
+
+	g_list_free_full(audio->cards, (GDestroyNotify)soundcard_free);
 
 	g_free(audio);
 	return 0;
@@ -272,44 +443,40 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 		return -EINVAL;
 
 	s = &ucm_states[state];
+	g_debug("audio-alsa-ucm: set state to %d", state);
 
-	g_debug("ucm: set state to %d", state);
-
-	/* FIXME: we want to change this in favor of a more generic API
-	 * that would allow the frontend to enable and disable devices
-	 * explicitly. */
+	/* FIXME: we wan't to change this in favor of a more generic API
+	 *        that would allow the frontend to enable and disable devices
+	 *        explicitly. */
 	/* first disable the previous state */
 	if (audio_get_state (audio, &prev_state) == 0 &&
-	    strcmp(ucm_states[prev_state].device, SND_USE_CASE_DEV_NONE) != 0)
-	{
+	    strcmp(ucm_states[prev_state].device, SND_USE_CASE_DEV_NONE) != 0) {
 		err = snd_use_case_set(audio->ucm, "_disdev",
-		                       ucm_states[prev_state].device);
+				       ucm_states[prev_state].device);
 		if (err < 0) {
 			g_warning("audio-alsa-ucm: failed to disable device %s: %s",
-				ucm_states[prev_state].device, snd_strerror(err));
+				  ucm_states[prev_state].device, snd_strerror(err));
 		}
 	}
 
-	g_debug("ucm: set verb %s", s->verb);
+	g_debug("audio-alsa-ucm: set verb %s", s->verb);
 	err = snd_use_case_set(audio->ucm, "_verb", s->verb);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to set use-case %s: %s",
-				s->verb, snd_strerror(err));
+			  s->verb, snd_strerror(err));
 		return err;
 	}
 
 	if (strcmp(s->device, SND_USE_CASE_DEV_NONE) != 0) {
 		err = snd_use_case_set(audio->ucm, "_enadev", s->device);
-
 		if (err < 0) {
 			g_warning("audio-alsa-ucm: failed to enable device %s: %s",
-					s->device, snd_strerror(err));
+				  s->device, snd_strerror(err));
 			return err;
 		}
 	}
 
 	audio->state = state;
-
 	return 0;
 }
 
@@ -324,74 +491,44 @@ int audio_get_state(struct audio *audio, enum audio_state *statep)
 
 int audio_set_volume(struct audio *audio, uint8_t volume)
 {
-	int ret;
+	struct soundcard *card;
+	const char *control;
 
-	/*
-	 * TODO: Find a way to obtain which volume control to use from the
-	 *       ALSA UCM.
-	 */
+	control = audio_state_to_control(audio);
+	if (!control)
+		return -EBADFD;
 
-	switch (audio->state) {
-	case AUDIO_STATE_HIFI_PLAYBACK_SPEAKER:
-	case AUDIO_STATE_VOICECALL_SPEAKER:
-	case AUDIO_STATE_VOICECALL_IP_SPEAKER:
-		ret = control_set_volume("Speaker", volume);
-		break;
+	card = g_list_nth(audio->cards, audio->index)->data;
+	if (!card)
+		return -EBADFD;
 
-	case AUDIO_STATE_VOICECALL_HANDSET:
-	case AUDIO_STATE_VOICECALL_IP_HANDSET:
-		ret = control_set_volume("Line Out", volume);
-		break;
-
-	case AUDIO_STATE_HIFI_PLAYBACK_HEADSET:
-	case AUDIO_STATE_VOICECALL_HEADSET:
-	case AUDIO_STATE_VOICECALL_IP_HEADSET:
-		ret = control_set_volume("Headphone", volume);
-		break;
-
-	default:
-		ret = -EBADFD;
-		break;
-	}
-
-	return ret;
+	return soundcard_control_set_volume(card, control, volume);
 }
 
 int audio_get_volume(struct audio *audio, uint8_t *volumep)
 {
+	struct soundcard *card;
+	const char *control;
 	long volume = 0;
 	int ret;
 
-	/*
-	 * TODO: Find a way to obtain which volume control to use from the
-	 *       ALSA UCM.
-	 */
+	if (!volumep)
+		return -EINVAL;
 
-	switch (audio->state) {
-	case AUDIO_STATE_HIFI_PLAYBACK_SPEAKER:
-	case AUDIO_STATE_VOICECALL_SPEAKER:
-	case AUDIO_STATE_VOICECALL_IP_SPEAKER:
-		ret = control_get_volume("Speaker", &volume);
-		break;
+	control = audio_state_to_control(audio);
+	if (!control)
+		return -EBADFD;
 
-	case AUDIO_STATE_VOICECALL_HANDSET:
-	case AUDIO_STATE_VOICECALL_IP_HANDSET:
-		ret = control_get_volume("Line Out", &volume);
-		break;
+	card = g_list_nth(audio->cards, audio->index)->data;
+	if (!card)
+		return -EBADFD;
 
-	case AUDIO_STATE_HIFI_PLAYBACK_HEADSET:
-	case AUDIO_STATE_VOICECALL_HEADSET:
-	case AUDIO_STATE_VOICECALL_IP_HEADSET:
-		ret = control_get_volume("Headphone", &volume);
-		break;
-
-	default:
-		ret = -EBADFD;
-		break;
-	}
+	ret = soundcard_control_get_volume(card, control, &volume);
+	if (ret < 0)
+		return ret;
 
 	*volumep = volume;
-	return ret;
+	return 0;
 }
 
 int audio_set_speakers_enable(struct audio *audio, bool enable)
