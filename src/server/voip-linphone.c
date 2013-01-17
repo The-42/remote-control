@@ -289,6 +289,21 @@ static void voip_disable_codec(struct voip *voip, const char *mime_type)
 	}
 }
 
+static int voip_set_soundcard(struct voip *voip, const gchar *card_name)
+{
+	int err;
+
+	err = linphone_core_set_playback_device(voip->core, card_name);
+	if (err < 0)
+		g_warning("voip-linphone: failed to set playback device");
+
+	err = linphone_core_set_capture_device(voip->core, card_name);
+	if (err < 0)
+		g_warning("voip-linphone: failed to set capture device");
+
+	return err;
+}
+
 int voip_create(struct voip **voipp, struct rpc_server *server,
 		GKeyFile *config)
 {
@@ -376,6 +391,13 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 		gboolean enable = g_key_file_get_boolean(config, "linphone",
 		                                         "keep-alive", NULL);
 		linphone_core_enable_keep_alive(voip->core, enable);
+	}
+
+	if (g_key_file_has_key(config, "linphone", "soundcard", NULL)) {
+		gchar *card = g_key_file_get_string(config, "linphone",
+						    "soundcard", NULL);
+		voip_set_soundcard(voip, card);
+		g_free(card);
 	}
 
 	/*

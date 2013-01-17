@@ -293,6 +293,13 @@
 								to the specified value.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>soundcard</varname></term>
+							<listitem><para>
+								Forces linphone to use the specified soundcard to for
+								playback,capture and ring.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
@@ -508,6 +515,9 @@ echo-cancellation = true
 registration-expiry = 600
 keep-alive = false
 qos-dscp = 31
+;soundcard = PulseAudio: default
+;soundcard = ALSA: USB AUDIO  CODEC
+soundcard = ALSA: default device
 
 [media-player]
 preferred-languages = de;en
