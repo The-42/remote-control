@@ -30,7 +30,8 @@ GSource *voip_get_source(struct voip *voip)
 }
 
 int voip_login(struct voip *voip, const char *host, uint16_t port,
-		const char *username, const char *password)
+	       const char *username, const char *password,
+	       enum voip_transport transport)
 {
 	return -ENOSYS;
 }

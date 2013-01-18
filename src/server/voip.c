@@ -15,6 +15,25 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+static const char *voip_transport_name(enum voip_transport transport)
+{
+	switch (transport) {
+	case VOIP_TRANSPORT_UDP:
+		return "UDP";
+
+	case VOIP_TRANSPORT_TCP:
+		return "TCP";
+
+	case VOIP_TRANSPORT_TLS:
+		return "TLS";
+
+	default:
+		break;
+	}
+
+	return "unknown";
+}
+
 int32_t RPC_IMPL(voip_get_version)(void *priv, uint32_t *version)
 {
 	int32_t ret = -ENOSYS;
@@ -73,16 +92,33 @@ struct RPC_TYPE(voip_login_options) {
 
 int32_t RPC_IMPL(voip_login)(void *priv, struct rpc_buffer *options)
 {
+	struct RPC_TYPE(voip_login_options) *account = options->rx_buf;
 	struct voip *voip = remote_control_get_voip(priv);
-	struct RPC_TYPE(voip_login_options) *account;
+	enum voip_transport transport;
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, options=%p)", __func__, priv, options);
-	account = options->rx_buf;
+
+	transport = account->transport;
+
+	if (account->transport >= VOIP_TRANSPORT_MAX) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	transport = account->transport;
+
+	g_debug("  account:");
+	g_debug("    server: %s", account->server2);
+	g_debug("    port: %u", 5060);
+	g_debug("    username: %s", account->username2);
+	g_debug("    password: %s", account->password2);
+	g_debug("    transport: %s", voip_transport_name(transport));
 
 	ret = voip_login(voip, account->server2, 5060, account->username2,
-			account->password2);
+			 account->password2, transport);
 
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }

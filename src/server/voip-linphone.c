@@ -419,9 +419,11 @@ static int is_valid_string(const char* str)
 }
 
 int voip_login(struct voip *voip, const char *host, uint16_t port,
-		const char *username, const char *password)
+	       const char *username, const char *password,
+	       enum voip_transport transport)
 {
 	LinphoneProxyConfig *proxy;
+	LCSipTransports transports;
 	const char *domain = host;
 	LinphoneAddress *address;
 	bool use_default = true;
@@ -433,6 +435,28 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 
 	if (!voip)
 		return -EINVAL;
+
+	memset(&transports, 0, sizeof(transports));
+
+	switch (transport) {
+	case VOIP_TRANSPORT_UDP:
+		transports.udp_port = port;
+		break;
+
+	case VOIP_TRANSPORT_TCP:
+		transports.tcp_port = port;
+		break;
+
+	case VOIP_TRANSPORT_TLS:
+		transports.tls_port = port;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	if (linphone_core_set_sip_transports(voip->core, &transports) < 0)
+		g_debug("voip-linphone: failed to set transports");
 
 	if (!port || !is_valid_string(host) || !is_valid_string(username) ||
 	    !is_valid_string(password))

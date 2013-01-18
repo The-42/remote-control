@@ -251,6 +251,13 @@ int modem_manager_get_state(struct modem_manager *manager, enum modem_state *sta
 /**
  * Voice-over-IP
  */
+enum voip_transport {
+	VOIP_TRANSPORT_UDP,
+	VOIP_TRANSPORT_TCP,
+	VOIP_TRANSPORT_TLS,
+	VOIP_TRANSPORT_MAX,
+};
+
 enum voip_state {
 	VOIP_STATE_LOGGED_OUT,
 	VOIP_STATE_LOGGED_IN,
@@ -263,7 +270,8 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 int voip_free(struct voip *voip);
 GSource *voip_get_source(struct voip *voip);
 int voip_login(struct voip *voip, const char *server, uint16_t port,
-		const char *username, const char *password);
+	       const char *username, const char *password,
+	       enum voip_transport transport);
 int voip_logout(struct voip *voip);
 int voip_call(struct voip *voip, const char *url);
 int voip_accept(struct voip *voip, char **caller);
