@@ -286,6 +286,13 @@
 								connections open in firewall setups.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>qos-dscp</varname></term>
+							<listitem><para>
+								Forces linphone to set the DSCP field of outgoing RTP packets
+								to the specified value.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
@@ -485,6 +492,7 @@ disable-codecs = speex;g722
 echo-cancellation = true
 registration-expiry = 600
 keep-alive = false
+qos-dscp = 31
 
 [media-player]
 preferred-languages = de;en

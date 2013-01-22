@@ -388,6 +388,17 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 		linphone_core_enable_keep_alive(voip->core, enable);
 	}
 
+	/*
+	 * FIXME: This should be removed, the configuration should be done
+	 *        via linphone's own config file. And it is only possible with
+	 *        a patched linphone version.
+	 */
+	if (g_key_file_has_key(config, "linphone", "qos-dscp", NULL)) {
+		int dscp = g_key_file_get_integer(config, "linphone",
+						  "qos-dscp", NULL);
+		linphone_core_set_rtp_dscp(voip->core, dscp);
+	}
+
 	*voipp = voip;
 	return 0;
 }
