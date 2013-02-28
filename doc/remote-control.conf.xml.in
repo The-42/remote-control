@@ -260,8 +260,15 @@
 							<term><varname>disable-codecs</varname></term>
 							<listitem><para>
 								Specifies a list of codecs to disable, separated by
-								semi-colons (;). By default all codecs are enabled.
-							</para></listitem>
+								semi-colons (;).
+								</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>enable-codecs</varname></term>
+							<listitem><para>
+								Specifies a list of codecs to be enabled, separated by
+								semi-colons (;).
+								</para></listitem>
 						</varlistentry>
 						<varlistentry>
 							<term><varname>echo-cancellation</varname></term>
@@ -511,6 +518,7 @@ timeout = 13000
 
 [linphone]
 disable-codecs = speex;g722
+enable-codecs = g729
 echo-cancellation = true
 registration-expiry = 600
 keep-alive = false

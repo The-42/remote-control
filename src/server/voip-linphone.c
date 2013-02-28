@@ -271,7 +271,8 @@ static gboolean voip_timeout(gpointer user_data)
 	return TRUE;
 }
 
-static void voip_disable_codec(struct voip *voip, const char *mime_type)
+static void voip_codec_enable(struct voip *voip, const char *mime_type,
+			      gboolean enable)
 {
 	const MSList *codecs;
 	const MSList *node;
@@ -281,11 +282,13 @@ static void voip_disable_codec(struct voip *voip, const char *mime_type)
 	for (node = codecs; node; node = ms_list_next(node)) {
 		PayloadType *pt = node->data;
 
-		if (g_ascii_strcasecmp(pt->mime_type, mime_type) == 0) {
-			linphone_core_enable_payload_type(voip->core, pt, 0);
-			g_debug("voip-linphone: disabling payload type: %s, "
-				"%d Hz", pt->mime_type, pt->clock_rate);
-		}
+		if (g_ascii_strcasecmp(pt->mime_type, mime_type) != 0)
+			continue;
+
+		linphone_core_enable_payload_type(voip->core, pt, enable);
+		g_debug("voip-linphone: %s payload type: %s, %d Hz",
+			enable ? "enabling" : "disabling",
+			pt->mime_type, pt->clock_rate);
 	}
 }
 
@@ -343,7 +346,17 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 		gchar **codec;
 
 		for (codec = codecs; *codec; codec++)
-			voip_disable_codec(voip, *codec);
+			voip_codec_enable(voip, *codec, false);
+
+		g_strfreev(codecs);
+	}
+	codecs = g_key_file_get_string_list(config, "linphone",
+			"enable-codecs", NULL, NULL);
+	if (codecs) {
+		gchar **codec;
+
+		for (codec = codecs; *codec; codec++)
+			voip_codec_enable(voip, *codec, true);
 
 		g_strfreev(codecs);
 	}
