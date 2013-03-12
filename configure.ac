@@ -130,6 +130,7 @@ AS_CASE([$with_smartcard_backend],
 #
 enable_libvlc=no
 enable_gst=no
+gst_version=unknown
 
 AC_ARG_WITH(video_backend,
 	[AS_HELP_STRING([--with-video-backend=@<:@none/libvlc/gst@:>@],
@@ -143,10 +144,20 @@ AC_ARG_WITH(video_backend,
 AS_CASE([$with_video_backend],
 	[none], [],
 	[libvlc], [PKG_CHECK_MODULES(LIBVLC, libvlc, [enable_libvlc=yes])],
-	[gst], [PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-plugins-base-0.10 gstreamer-interfaces-0.10, [enable_gst=yes])],
-	[gst-1.0], [PKG_CHECK_MODULES(GST, gstreamer-1.0 gstreamer-plugins-base-1.0 gstreamer-video-1.0, [enable_gst=yes])],
-	[AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
+	[gst], [
+		PKG_CHECK_MODULES(GST, [gstreamer-1.0
+					gstreamer-plugins-base-1.0
+					gstreamer-video-1.0],
+				       [gst_version=1.0 enable_gst=yes],[
+			PKG_CHECK_MODULES(GST, [gstreamer-0.10
+						gstreamer-plugins-base-0.10
+						gstreamer-interfaces-0.10],
+					       [gst_version=1.0 enable_gst=yes],
+				[AC_MSG_ERROR([Unable to find gstreamer packages.])])
+			])
+	], [AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
+
 dnl FIXME: This is not the way to go, try to do this in AC_CASE[gst]
 if test "x$enable_gst" = "xyes"; then
 	PKG_CHECK_MODULES([XRANDR], [xrandr >= 1.3 xrender x11 xproto >= 7.0.17],
@@ -386,15 +397,17 @@ AC_OUTPUT([
 	tests/Makefile
 ])
 
-echo "
+AS_ECHO("
 remote-control was configured with the following options:
 
 Features:
   readline support:          $use_readline
   Audio (UCM) Backend:       $with_audio_backend
-  Backlight Backend:         $with_backlight_backend
-  Video Backend:             $with_video_backend
-  SmartCard/RFID Backend:    $with_smartcard_backend
+  Backlight Backend:         $with_backlight_backend")
+AS_IF([test "x$enable_gst" = "xyes"],
+	[AS_ECHO("  Video Backend:             $with_video_backend ($gst_version)")],
+	[AS_ECHO("  Video Backend:             $with_video_backend")])
+AS_ECHO("  SmartCard/RFID Backend:    $with_smartcard_backend
   VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
   Modem Backend:             $with_modem_backend
@@ -405,7 +418,7 @@ Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
   WebKit Version:            $with_webkit
-  JavaScript Binding:        $enable_javascript"
+  JavaScript Binding:        $enable_javascript")
 
 AS_IF([test "x$enable_javascript" = "xyes"], [
 	AS_ECHO("    IR Input Support:        $enable_javascript_ir")
