@@ -642,6 +642,30 @@ static gboolean on_run_file_chooser(WebKitWebView *webkit,
 {
 	return TRUE;
 }
+
+static gboolean on_webview_button_press_event(GtkWidget *widget,
+					      GdkEvent  *event,
+					      gpointer   data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	WebKitHitTestResult *result;
+	guint context = 0;
+
+	result = webkit_web_view_get_hit_test_result(WEBKIT_WEB_VIEW(widget), &event->button);
+	g_assert(result);
+	g_object_get(result, "context", &context, NULL);
+	g_object_unref(result);
+
+	if (context == 0)
+		return FALSE
+
+	if (context & WEBKIT_HIT_TEST_RESULT_CONTEXT_EDITABLE)
+		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
+	else
+		gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
+
+	return FALSE;
+}
 #endif
 
 static gboolean webkit_browser_can_open_tab(WebKitBrowser *browser)
@@ -889,6 +913,8 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
 				G_CALLBACK(on_web_view_ready), webkit);
 
+	g_signal_connect(G_OBJECT(webkit), "button-press-event",
+			G_CALLBACK(on_webview_button_press_event), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::title",
 			G_CALLBACK(on_notify_title), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
