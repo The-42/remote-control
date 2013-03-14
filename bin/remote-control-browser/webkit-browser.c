@@ -657,7 +657,7 @@ static gboolean on_webview_button_press_event(GtkWidget *widget,
 	g_object_unref(result);
 
 	if (context == 0)
-		return FALSE
+		return FALSE;
 
 	if (context & WEBKIT_HIT_TEST_RESULT_CONTEXT_EDITABLE)
 		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
