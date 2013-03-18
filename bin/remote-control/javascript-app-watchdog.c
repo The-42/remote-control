@@ -67,6 +67,10 @@ static JSValueRef app_watchdog_function_start(
 	}
 
 	priv->interval = JSValueToNumber(context, argv[0], exception);
+
+	if (priv->timeout_source != NULL)
+		g_source_destroy(priv->timeout_source);
+
 	priv->timeout_source = g_timeout_source_new_seconds(priv->interval);
 	if (!priv->timeout_source) {
 		javascript_set_exception_text(context, exception,
