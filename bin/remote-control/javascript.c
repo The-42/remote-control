@@ -96,21 +96,21 @@ static int javascript_register_classes(void)
 
 	err = javascript_register_input_class();
 	if (err < 0) {
-		g_warning("%s: failed to register cursor class: %s",
+		g_warning("%s: failed to register input class: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}
 
 	err = javascript_register_ir_class();
 	if (err < 0) {
-		g_warning("%s: failed to register cursor class: %s",
+		g_warning("%s: failed to register js-ir class: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}
 
 	err = javascript_register_lcd_class();
 	if (err < 0) {
-		g_warning("%s: failed to register cursor class: %s",
+		g_warning("%s: failed to register js-lcd class: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}

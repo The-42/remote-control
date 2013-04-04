@@ -160,7 +160,7 @@ static int ir_report(struct ir *ir, struct ir_message *message)
 			ir->thisptr, G_N_ELEMENTS(arguments), arguments,
 			&exception);
 	if (exception) {
-		g_warning("%s: exception in callback", __func__);
+		g_warning("js-irkey: exception in callback");
 		print_exception(ir->context, exception);
 		ret = -EFAULT;
 	}
@@ -200,12 +200,12 @@ static gboolean ir_source_dispatch(GSource *source, GSourceFunc callback,
 
 	got = read_all(poll->fd, buf, sizeof(buf), 100);
 	if (got < 0) {
-		g_warning("%s: read failed: %zd", __func__, got);
+		g_warning("js-irkey: read failed: %zd", got);
 		goto fail;
 	}
 
 	if (got != sizeof(struct ir_message)) {
-		g_warning("%s: invalid length", __func__);
+		g_warning("js-irkey: invalid length");
 		goto fail;
 	}
 
@@ -217,15 +217,15 @@ static gboolean ir_source_dispatch(GSource *source, GSourceFunc callback,
 	case HEADER_PROTOCOL_LG:
 		err = ir_report(ir, msg);
 		if (err < 0) {
-			g_warning("%s: ir_report(): %s", __func__,
-				g_strerror(-err));
+			g_warning("js-irkey: ir_report() failed: %s",
+				  g_strerror(-err));
 			goto fail;
 		}
 		break;
 
 	default:
-		g_warning("%s: unsupported protocol: %.2x",
-			__func__, msg->header);
+		g_warning("js-irkey: unsupported protocol: %.2x",
+			  msg->header);
 		break;
 	}
 
@@ -262,7 +262,7 @@ static int open_tty(const char *tty, int *fd)
 
 	ret = open(tty, O_RDWR | O_NOCTTY, 0);
 	if (ret == -1) {
-		g_debug("%s: failed to open device: [%s]", __func__, tty);
+		g_debug("js-irkey: failed to open device: [%s]", tty);
 		return -errno;
 	}
 
@@ -270,8 +270,8 @@ static int open_tty(const char *tty, int *fd)
 
 	ret = tcgetattr(*fd, &attr);
 	if (ret != 0) {
-		g_warning("%s: failed to get TTY settings: %s",
-			__func__, g_strerror(errno));
+		g_warning("js-irkey: failed to get TTY settings on %s: %s",
+			  tty, g_strerror(errno));
 		return -errno;
 	}
 
@@ -282,15 +282,15 @@ static int open_tty(const char *tty, int *fd)
 
 	ret = tcsetattr(*fd, TCSANOW, &attr);
 	if (ret < 0) {
-		g_warning("%s: failed to set TTY settings: %s",
-			__func__, g_strerror(errno));
+		g_warning("js-irkey: failed to set TTY settings on %s: %s",
+			  tty, g_strerror(errno));
 		return -errno;
 	}
 
 	ret = tcflush(*fd, TCIFLUSH);
 	if (ret < 0) {
-		g_warning("%s: failed to flush TTY: %s",
-			__func__, g_strerror(errno));
+		g_warning("js-irkey: failed to flush TTY on %s: %s",
+			  tty, g_strerror(errno));
 	}
 
 	return 0;
@@ -329,7 +329,7 @@ static GSource *ir_source_new(JSContextRef context)
 
 	source = g_source_new(&ir_source_funcs, sizeof(*ir));
 	if (!source) {
-		g_warning("%s: failed to allocate memory", __func__);
+		g_warning("js-irkey: failed to allocate memory");
 		return NULL;
 	}
 
@@ -342,18 +342,18 @@ static GSource *ir_source_new(JSContextRef context)
 		if (ret < 0) {
 			if (ret == -ENOENT)
 				continue;
-			g_warning("%s: failed to open TTY: %s", __func__,
-				g_strerror(-ret));
+			g_warning("js-irkey: failed to open TTY: %s",
+				  g_strerror(-ret));
 			goto cleanup;
 		}
-		g_debug("%s: using port [%s]", __func__, ttys[i]);
+		g_debug("js-irkey: using port [%s]", ttys[i]);
 		break;
 	}
 
 	ret = ir_setup_poll(ir, fd);
 	if (ret < 0) {
-		g_warning("%s: failed to create polling fd: %s", __func__,
-			g_strerror(-ret));
+		g_warning("js-irkey: failed to create polling fd: %s",
+			  g_strerror(-ret));
 		goto cleanup;
 	}
 
@@ -402,7 +402,7 @@ static bool ir_set_onevent(JSContextRef context, JSObjectRef object,
 
 	priv->callback = JSValueToObject(context, value, exception);
 	if (!priv->callback) {
-		g_warning("%s: failed to assign callback", __func__);
+		g_warning("js-irkey: failed to assign callback");
 		return false;
 	}
 
@@ -432,7 +432,7 @@ int javascript_register_ir_class(void)
 {
 	ir_class = JSClassCreate(&ir_classdef);
 	if (!ir_class) {
-		g_warning("%s: failed to create IR class", __func__);
+		g_warning("js-irkey: failed to create IR class");
 		return -ENOMEM;
 	}
 

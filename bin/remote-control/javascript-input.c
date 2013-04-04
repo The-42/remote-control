@@ -96,13 +96,13 @@ static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 		if (poll->revents & G_IO_IN) {
 			err = read(poll->fd, &event, sizeof(event));
 			if (err < 0) {
-				g_debug("read(): %s", g_strerror(errno));
+				g_debug("js-input: read(): %s", g_strerror(errno));
 				continue;
 			}
 
 			err = input_report(input, &event);
 			if (err < 0) {
-				g_debug("input_report(): %s",
+				g_debug("js-input: input_report(): %s",
 						g_strerror(-err));
 				continue;
 			}
@@ -176,7 +176,7 @@ static GSource *input_source_new(JSContextRef context)
 
 	source = g_source_new(&input_source_funcs, sizeof(*input));
 	if (!source) {
-		g_debug("failed to allocate memory");
+		g_debug("js-input: failed to allocate memory");
 		return NULL;
 	}
 
@@ -186,7 +186,7 @@ static GSource *input_source_new(JSContextRef context)
 
 	input->client = g_udev_client_new(subsystems);
 	if (!input->client) {
-		g_debug("failed to create UDEV client");
+		g_debug("js-input: failed to create UDEV client");
 		g_object_unref(source);
 		return NULL;
 	}
@@ -195,7 +195,7 @@ static GSource *input_source_new(JSContextRef context)
 
 	enumerate = g_udev_enumerator_new(input->client);
 	if (!enumerate) {
-		g_debug("failed to create enumerator");
+		g_debug("js-input: failed to create enumerator");
 		g_object_unref(input->client);
 		g_object_unref(source);
 		return NULL;
@@ -226,11 +226,11 @@ static GSource *input_source_new(JSContextRef context)
 			if (filename) {
 				int err = input_add_device(input, filename);
 				if (err < 0) {
-					g_debug("failed to use %s: %s",
+					g_debug("js-input: failed to use %s: %s",
 							filename,
 							g_strerror(-err));
 				} else {
-					g_debug("using %s", filename);
+					g_debug("js-input: added %s", filename);
 				}
 			}
 		}
@@ -309,7 +309,7 @@ int javascript_register_input_class(void)
 {
 	input_class = JSClassCreate(&input_classdef);
 	if (!input_class) {
-		g_debug("failed to create Input class");
+		g_debug("js-input: failed to create Input class");
 		return -ENOMEM;
 	}
 
