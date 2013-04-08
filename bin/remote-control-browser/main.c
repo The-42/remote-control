@@ -31,6 +31,7 @@ static gchar *language = NULL;
 static gboolean cursor = FALSE;
 static gboolean noexit = FALSE;
 static gchar *user_agent = NULL;
+static gboolean adblock = FALSE;
 static glong max_pages = 0;
 
 static GOptionEntry entries[] = {
@@ -64,6 +65,9 @@ static GOptionEntry entries[] = {
 	}, {
 		"max-pages", 'p', 0, G_OPTION_ARG_INT, &max_pages,
 		"The max numbers of pages", NULL
+	}, {
+		"adblock", 'a', 0, G_OPTION_ARG_NONE, &adblock,
+		"Use adblocker", NULL
 	}, {
 		NULL
 	}
@@ -266,6 +270,7 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "accept-language", language, NULL);
 	g_object_set(browser, "no-exit", noexit, NULL);
 	g_object_set(browser, "user-agent", user_agent, NULL);
+	g_object_set(browser, "adblock", adblock, NULL);
 
 	if (max_pages > 0)
 		g_object_set(browser, "max-pages", max_pages, NULL);

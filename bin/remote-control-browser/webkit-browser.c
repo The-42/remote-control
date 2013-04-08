@@ -32,6 +32,7 @@
 #include "utils.h"
 #include "guri.h"
 #include "jshooks.h"
+#include "adblock.h"
 
 static const gchar style_large[] = \
 	"style \"scrollbar-large\" { GtkScrollbar::slider-width = 48 }\n" \
@@ -54,6 +55,7 @@ enum {
 	PROP_NOEXIT,
 	PROP_USER_AGENT,
 	PROP_MAX_PAGES,
+	PROP_ADBLOCK,
 };
 
 struct _WebKitBrowserPrivate {
@@ -78,6 +80,7 @@ struct _WebKitBrowserPrivate {
 	GtkWidget *del_tab;
 	guint max_pages;
 	gchar *user_agent;
+	gboolean adblock;
 
 #ifdef USE_WEBKIT2
 	gchar **languages;
@@ -190,6 +193,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_uint(value, priv->max_pages);
 		break;
 
+	case PROP_ADBLOCK:
+		g_value_set_boolean(value, priv->adblock);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -258,6 +265,13 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			priv->user_agent);
 		break;
 
+	case PROP_ADBLOCK:
+		priv->adblock = g_value_get_boolean(value);
+		if (priv->adblock) {
+			adblock_activate_cb(browser);
+			adblock_add_tab_cb(webkit_browser_get_web_view(browser));
+		}
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -268,6 +282,8 @@ static void webkit_browser_finalize(GObject *object)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
 
+	if (priv->adblock)
+		adblock_deactivate_cb(WEBKIT_BROWSER(object));
 	g_free(priv->geometry);
 	g_free(priv->user_agent);
 
@@ -1004,6 +1020,9 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
 			G_CALLBACK(on_notify_uri), browser);
 
+	if (priv->adblock)
+		adblock_add_tab_cb(WEBKIT_WEB_VIEW(webkit));
+
 	return page;
 }
 
@@ -1065,6 +1084,7 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 	gint page;
 
@@ -1074,6 +1094,9 @@ static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 
 		webkit_browser_update_tab_controls(priv);
 	}
+
+	if (priv->adblock)
+		adblock_remove_tab_cb(webkit_browser_get_current_view(browser));
 }
 
 static void on_size_allocate(GtkNotebook *notebook, GdkRectangle *allocation,
@@ -1408,6 +1431,12 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 					  G_PARAM_CONSTRUCT |
 					  G_PARAM_STATIC_STRINGS));
 
+	g_object_class_install_property(object, PROP_ADBLOCK,
+			g_param_spec_boolean("adblock", "Adblocker",
+				"Enable or disable the Adblocker",
+				TRUE,
+				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
 	g_object_class_install_property(object, PROP_USER_AGENT,
 			g_param_spec_string("user-agent",
 				"User-Agent string",
@@ -1450,4 +1479,17 @@ gchar *webkit_browser_get_uri(WebKitBrowser *browser)
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
 	return g_strdup(priv->uri);
+}
+
+GtkNotebook*
+webkit_browser_get_tabs (WebKitBrowser* browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	return priv->notebook;
+}
+
+WebKitWebView *webkit_browser_get_web_view (WebKitBrowser *browser)
+{
+	return webkit_browser_get_current_view(browser);
 }

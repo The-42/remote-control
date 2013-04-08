@@ -16,6 +16,8 @@ remote_control_browser_SOURCES = \
 	gtk-drag-view.h \
 	gtk-pdf-view.c \
 	gtk-pdf-view.h \
+	adblock.c \
+	adblock.h \
 	main.c \
 	jshooks.c \
 	jshooks.h \
