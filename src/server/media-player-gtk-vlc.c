@@ -221,7 +221,11 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 			libvlc_media_add_option(player->media, ":input-slave=alsa://hw:1");
 			libvlc_video_set_deinterlace(player->player, NULL);
 		} else {
+#if defined(__arm__)
+			libvlc_video_set_deinterlace(player->player, NULL);
+#else
 			libvlc_video_set_deinterlace(player->player, "linear");
+#endif
 		}
 
 		g_strfreev(split_uri);
