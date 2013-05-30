@@ -6,7 +6,8 @@ remote_control_client_CFLAGS = \
 	-I $(srcdir)/../../src/client \
 	-DLOCALEBASEDIR=\""$(datadir)/locale"\" \
 	-DGETTEXT_PACKAGE=\"$(PACKAGE)\" \
-	@READLINE_CFLAGS@
+	@READLINE_CFLAGS@ \
+	@LIBRPC_CFLAGS@
 
 remote_control_client_SOURCES = \
 	remote-control-client.h \
@@ -17,7 +18,8 @@ remote_control_client_SOURCES = \
 remote_control_client_LDADD = \
 	../../src/client/libremote-control.la \
 	remote-control-client.lds \
-	@READLINE_LIBS@
+	@READLINE_LIBS@ \
+	@LIBRPC_LIBS@
 
 BUILT_SOURCES = \
 	remote-control-client.lds

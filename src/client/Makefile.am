@@ -11,6 +11,7 @@ pkgconfig_DATA = remote-control.pc
 
 libremote_control_la_CPPFLAGS = \
 	@VISIBILITY_CFLAGS@ \
+	@LIBRPC_CFLAGS@ \
 	@GLIB_CFLAGS@
 
 libremote_control_la_SOURCES = \
