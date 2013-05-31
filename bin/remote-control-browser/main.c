@@ -33,6 +33,7 @@ static gchar *language = NULL;
 static gboolean cursor = FALSE;
 static gboolean noexit = FALSE;
 static gchar *user_agent = NULL;
+static glong max_pages = 0;
 
 static GOptionEntry entries[] = {
 	{
@@ -62,6 +63,9 @@ static GOptionEntry entries[] = {
 	}, {
 		"user-agent", 'u', 0, G_OPTION_ARG_STRING, &user_agent,
 		"User-Agent string", NULL
+	}, {
+		"max-pages", 'p', 0, G_OPTION_ARG_INT, &max_pages,
+		"The max numbers of pages", NULL
 	}, {
 		NULL
 	}
@@ -177,6 +181,14 @@ GKeyFile *load_configuration(const gchar *filename, GError **error)
 		}
 	}
 
+	if (g_key_file_has_group(keyfile, "limits")) {
+		if (g_key_file_has_key(keyfile, "limits", "pages", NULL)) {
+			max_pages = g_key_file_get_integer(keyfile, "limits",
+					"pages", NULL);
+			g_clear_error(error);
+		}
+	}
+
 	if (g_key_file_has_group(keyfile, "localization")) {
 		if (!language && g_key_file_has_key(keyfile, "localization",
 						    "languages", error)) {
@@ -257,13 +269,8 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "no-exit", noexit, NULL);
 	g_object_set(browser, "user-agent", user_agent, NULL);
 
-	if (conf && g_key_file_has_key(conf, "limits", "pages", NULL)) {
-		gint max_pages = g_key_file_get_integer(conf, "limits", "pages",
-							NULL);
-
-		if (max_pages > 0)
-			g_object_set(browser, "max-pages", max_pages, NULL);
-	}
+	if (max_pages > 0)
+		g_object_set(browser, "max-pages", max_pages, NULL);
 
 	g_signal_connect(G_OBJECT(browser), "destroy", G_CALLBACK(on_destroy),
 			loop);
