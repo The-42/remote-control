@@ -82,6 +82,10 @@ static inline int javascript_register_app_watchdog(JSContextRef js,
 }
 #endif
 
+int javascript_register_monitor_class(void);
+int javascript_register_monitor(JSContextRef js, JSObjectRef parent,
+                                const char *name, void *user_data);
+
 int javascript_register(JSGlobalContextRef js,
                         struct javascript_userdata *user_data);
 

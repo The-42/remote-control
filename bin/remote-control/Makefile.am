@@ -38,7 +38,8 @@ remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
 	javascript-cursor.c \
-	javascript-input.c
+	javascript-input.c \
+	javascript-monitor.c
 
 remote_control_LDADD += \
 	@GUDEV_LIBS@
