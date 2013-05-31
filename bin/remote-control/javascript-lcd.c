@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -59,7 +60,7 @@ static const struct lcd_command lg_tv_commands[] = {
 	{ COMMAND_VOLUME_SET,    5, "kf 1 %02x\r" },
 };
 
-
+#ifdef DEBUG
 static void hexdump(uint8_t *buf, size_t len)
 {
 	const size_t rowsize = 16;
@@ -92,6 +93,9 @@ static void hexdump(uint8_t *buf, size_t len)
 		fprintf(fp, " |\n");
 	}
 }
+#else
+#define hexdump(b,l)
+#endif
 
 static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 {
@@ -142,6 +146,7 @@ static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 	return pos;
 }
 
+#ifdef CHECK_DATA
 static int parse_response(guint8 *buffer, guint length)
 {
 	const char *message = (const char*)buffer;
@@ -154,6 +159,7 @@ static int parse_response(guint8 *buffer, guint length)
 
 	return -ENOSYS;
 }
+#endif
 
 static void print_exception(JSContextRef context, JSValueRef exception)
 {
@@ -444,7 +450,8 @@ static int lcd_send_command(struct lcd *lcd, int command, int value)
 		g_debug("< %s(): write: EIO", __func__);
 		return -EIO;
 	}
-#if 0
+
+#ifdef CHECK_DATA
 	ret = read_all(poll->fd, buf, cmd->length * 2, DEFAULT_READ_TIMEOUT);
 	if (ret < 0) {
 		g_debug("< %s(): read_all: EIO", __func__);
