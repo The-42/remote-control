@@ -51,6 +51,7 @@ enum {
 	PROP_ACCEPT_LANGUAGE,
 	PROP_URI,
 	PROP_NOEXIT,
+	PROP_USER_AGENT,
 	PROP_MAX_PAGES,
 };
 
@@ -75,6 +76,7 @@ struct _WebKitBrowserPrivate {
 	GtkWidget *add_tab;
 	GtkWidget *del_tab;
 	guint max_pages;
+	gchar *user_agent;
 
 #ifdef USE_WEBKIT2
 	gchar **languages;
@@ -172,6 +174,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_string(value, priv->uri);
 		break;
 
+	case PROP_USER_AGENT:
+		g_value_set_string(value, priv->user_agent);
+		break;
+
 	case PROP_NOEXIT:
 		g_value_set_boolean(value, priv->noexit);
 		break;
@@ -185,6 +191,9 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		break;
 	}
 }
+
+static void webkit_browser_set_user_agent(WebKitWebView *webkit, const gchar *str);
+static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser);
 
 static void webkit_browser_set_property(GObject *object, guint prop_id,
 		const GValue *value, GParamSpec *pspec)
@@ -236,6 +245,15 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		webkit_browser_update_tab_controls(priv);
 		break;
 
+	case PROP_USER_AGENT:
+		if (priv->user_agent)
+			g_free(priv->user_agent);
+		priv->user_agent = g_value_dup_string(value);
+		/* update the current page */
+		webkit_browser_set_user_agent(webkit_browser_get_current_view(browser),
+			priv->user_agent);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -247,6 +265,7 @@ static void webkit_browser_finalize(GObject *object)
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
 
 	g_free(priv->geometry);
+	g_free(priv->user_agent);
 
 	G_OBJECT_CLASS(webkit_browser_parent_class)->finalize(object);
 }
@@ -548,7 +567,7 @@ static void webkit_download_started(WebKitWebContext *context,
 
 	close(fd);
 
-	g_print("Webkit download started! Loading to: %s\n", filename);
+	g_debug("Webkit download started! Loading to: %s", filename);
 
 	uri = g_strdup_printf("file://%s", filename);
 	g_debug("downloading to %s", filename);
@@ -822,9 +841,14 @@ static void webkit_web_view_set_user_agent(WebKitWebView *webkit,
 }
 #endif
 
-static void webkit_browser_set_user_agent(WebKitWebView *webkit)
+static void webkit_browser_set_user_agent(WebKitWebView *webkit, const gchar *str)
 {
 	gchar *user_agent, *ptr;
+
+	if (str) {
+		webkit_web_view_set_user_agent(webkit, str);
+		return;
+	}
 
 	user_agent = webkit_web_view_get_user_agent(webkit);
 
@@ -860,7 +884,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 
 	/* create WebKit browser */
 	webkit = webkit_web_view_new();
-	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit));
+	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit), priv->user_agent);
 	gtk_widget_set_double_buffered(webkit, TRUE);
 
 	/* TODO: Support GtkDragView with scrollbar */
@@ -1323,6 +1347,13 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 					  G_PARAM_READWRITE |
 					  G_PARAM_CONSTRUCT |
 					  G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_USER_AGENT,
+			g_param_spec_string("user-agent",
+				"User-Agent string",
+				"User-Agent string",
+				NULL,
+				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 GtkWidget *webkit_browser_new(const gchar *geometry)

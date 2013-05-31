@@ -113,6 +113,20 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>browser</varname> - Browser settings</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>user-agent</varname></term>
+							<listitem><para>
+								This allows to override the user-agent string to be send to
+								the web-server during page requests.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -123,6 +137,9 @@ timeout = 13000
 
 [limits]
 memory = 512M
+
+[browser]
+user-agent = Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405
 		</programlisting>
 	</refsect1>
 </refentry>

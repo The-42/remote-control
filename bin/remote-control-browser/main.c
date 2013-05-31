@@ -32,6 +32,7 @@ static gboolean kiosk = FALSE;
 static gchar *language = NULL;
 static gboolean cursor = FALSE;
 static gboolean noexit = FALSE;
+static gchar *user_agent = NULL;
 
 static GOptionEntry entries[] = {
 	{
@@ -58,8 +59,12 @@ static GOptionEntry entries[] = {
 	}, {
 		"no-exit", 'E', 0, G_OPTION_ARG_NONE, &noexit,
 		"No exit button", NULL
-	},
-	{ NULL }
+	}, {
+		"user-agent", 'u', 0, G_OPTION_ARG_STRING, &user_agent,
+		"User-Agent string", NULL
+	}, {
+		NULL
+	}
 };
 
 static void on_destroy(GtkWidget *widget, gpointer data)
@@ -164,6 +169,14 @@ GKeyFile *load_configuration(const gchar *filename, GError **error)
 	if (!keyfile)
 		return NULL;
 
+	if (g_key_file_has_group(keyfile, "browser")) {
+		if (!user_agent) {
+			user_agent = g_key_file_get_string(keyfile, "browser",
+					"user-agent", error);
+			g_clear_error(error);
+		}
+	}
+
 	if (g_key_file_has_group(keyfile, "localization")) {
 		if (!language && g_key_file_has_key(keyfile, "localization",
 						    "languages", error)) {
@@ -242,6 +255,7 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "controls", !kiosk, NULL);
 	g_object_set(browser, "accept-language", language, NULL);
 	g_object_set(browser, "no-exit", noexit, NULL);
+	g_object_set(browser, "user-agent", user_agent, NULL);
 
 	if (conf && g_key_file_has_key(conf, "limits", "pages", NULL)) {
 		gint max_pages = g_key_file_get_integer(conf, "limits", "pages",
