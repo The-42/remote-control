@@ -297,9 +297,10 @@ GtkWidget *create_rdp_window(GKeyFile *conf, GMainLoop *loop, int argc,
 GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
 		char *argv[])
 {
+	gboolean check_origin = true;
+	gboolean inspector = false;
 	GtkWidget *window = NULL;
 	const gchar *uri = NULL;
-	gboolean inspector = false;
 
 	uri = g_key_file_get_value(conf, "browser", "uri", NULL);
 	if (!uri && (argc > 0))
@@ -319,6 +320,9 @@ GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
 		gtk_window_fullscreen(GTK_WINDOW(window));
 		gtk_widget_show_all(window);
 	}
+
+	check_origin = g_key_file_get_boolean(conf, "browser", "check-origin", NULL);
+	g_object_set(window, "check-origin", check_origin, NULL);
 
 	return window;
 }

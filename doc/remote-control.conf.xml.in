@@ -129,6 +129,13 @@
 							</para></listitem>
 						</varlistentry>
 						<varlistentry>
+							<term><varname>check-origin</varname></term>
+							<listitem><para>
+								Enable or disable origin check. Disabling this check,
+								will allow cross-site access.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
 							<term><varname>inspector</varname></term>
 							<listitem><para>
 								Setting this variable to <literal>true</literal> will enable
@@ -511,6 +518,7 @@
 		<title>Example</title>
 		<programlisting>[browser]
 uri = http://www.google.com/ncr
+check-origin = true
 inspector = false
 
 [watchdog]

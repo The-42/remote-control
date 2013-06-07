@@ -38,6 +38,7 @@ struct _RemoteControlWebkitWindowPrivate {
 	GMainLoop *loop;
 	GURI *uri;
 	gboolean hide_cursor;
+	gboolean check_origin;
 	gboolean inspector;
 	/* used only when inspector enabled */
 #ifndef USE_WEBKIT2
@@ -53,7 +54,8 @@ enum {
 	PROP_LOOP,
 	PROP_CONTEXT,
 	PROP_CURSOR,
-	PROP_INSPECTOR
+	PROP_INSPECTOR,
+	PROP_CHECK_ORIGIN
 };
 
 static gboolean webkit_cursor_is_visible(GtkWidget *widget)
@@ -109,6 +111,10 @@ static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 		g_value_set_boolean(value, priv->inspector);
 		break;
 
+	case PROP_CHECK_ORIGIN:
+		g_value_set_boolean(value, priv->check_origin);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -136,6 +142,10 @@ static void webkit_set_property(GObject *object, guint prop_id,
 	case PROP_INSPECTOR:
 		priv->inspector = g_value_get_boolean(value);
 		remote_control_webkit_construct_view(window);
+		break;
+
+	case PROP_CHECK_ORIGIN:
+		priv->check_origin = g_value_get_boolean(value);
 		break;
 
 	default:
@@ -245,6 +255,12 @@ static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowCla
 				"Enable this to show an inspector widget.", false,
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 				G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_CHECK_ORIGIN,
+			g_param_spec_boolean("check-origin", "uri origin check",
+				"Enable or disable uri origin check", true,
+				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+				G_PARAM_STATIC_STRINGS));
 }
 
 static void on_realize(GtkWidget *widget, gpointer user_data)
@@ -273,7 +289,7 @@ static gboolean webkit_decide_policy (WebKitWebView *web_view,
 		s = webkit_uri_request_get_uri(request);
 		uri = g_uri_new(s);
 
-		if (priv->uri && !g_uri_same_origin(uri, priv->uri))
+		if (priv->uri && priv->check_origin && !g_uri_same_origin(uri, priv->uri))
 			webkit_policy_decision_ignore(decision);
 		else
 			webkit_policy_decision_use(decision);
@@ -299,7 +315,7 @@ static gboolean navigation_policy(WebKitWebView *webkit,
 	uri = g_uri_new(s);
 
 	if (frame == webkit_web_view_get_main_frame(webkit)) {
-		if (priv->uri && !g_uri_same_origin(uri, priv->uri))
+		if (priv->uri && priv->check_origin && !g_uri_same_origin(uri, priv->uri))
 			webkit_web_policy_decision_ignore(decision);
 		else
 			webkit_web_policy_decision_use(decision);
