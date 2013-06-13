@@ -227,6 +227,21 @@ AS_CASE([$with_modem_backend],
 	[AC_MSG_ERROR([Invalid modem backend: must be none or libmodem])]
 )
 
+with_libalsaloop=no
+
+AS_IF([test "x$enable_libmodem" = "xyes"],
+	[AC_ARG_ENABLE([alsaloop],
+		[AS_HELP_STRING([--enable-alsaloop],
+			[Enable loop support using libalsaloop [default=no]])],
+			[with_libalsaloop="$enableval"], [with_libalsaloop=no])
+
+	AS_IF([test "x$with_libalsaloop" = "xyes"], [
+		PKG_CHECK_MODULES([ALSALOOP], [libalsaloop],
+			[AC_DEFINE([ENABLE_ALSALOOP], [1],
+				[Enable libalsaloop support])])
+	])
+])
+
 #
 # Handset backend
 #
@@ -355,6 +370,7 @@ AM_CONDITIONAL(ENABLE_JAVASCRIPT_APP_WATCHDOG, [test "x$enable_javascript_app_wa
 AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_gtk" = "x3.0"])
 AM_CONDITIONAL(ENABLE_LIBTNJ3324, [test "x$with_libtnj3324" = "xyes"])
+AM_CONDITIONAL(ENABLE_ALSALOOP, [test "x$with_libalsaloop" = "xyes"])
 
 #
 # check for required files and packages
@@ -428,8 +444,10 @@ AS_IF([test "x$with_video_backend" = "xlibvlc"],
 AS_ECHO("  SmartCard/RFID Backend:    $with_smartcard_backend
   VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
-  Modem Backend:             $with_modem_backend
-  Handset Backend:           $with_handset_backend
+  Modem Backend:             $with_modem_backend")
+AS_IF([test "x$with_modem_backend" = "xlibmodem"],
+	[AS_ECHO("     ALSA Loop Support:      $with_libalsaloop")])
+AS_ECHO("  Handset Backend:           $with_handset_backend
   GPIO Backend:              $with_gpio_backend
 
 Options:

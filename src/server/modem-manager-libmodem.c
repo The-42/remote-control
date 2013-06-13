@@ -18,6 +18,11 @@
 #include <modem.h>
 #include <unistd.h>
 
+#ifdef ENABLE_ALSALOOP
+#include "find-device.h"
+#include "rc-alsaloop.h"
+#endif
+
 struct modem_desc {
 	char *device;
 	unsigned long flags;
@@ -34,7 +39,19 @@ struct modem_manager {
 	enum modem_state state;
 	unsigned long flags;
 	gchar *number;
+#ifdef ENABLE_ALSALOOP
+	gboolean usb_handset;
+	struct alsaloop *alsaloop;
+#endif
 };
+
+#ifdef ENABLE_ALSALOOP
+struct loop_desc {
+	int verbose;
+	char *handset; /* usb handset vendor string description */
+	struct alsaloop_conf conf[ALSALOOP_LOOPS];
+};
+#endif
 
 static int modem_ring(struct modem *modem, void *data)
 {
@@ -125,6 +142,13 @@ static void modem_source_finalize(GSource *source)
 {
 	struct modem_manager *manager = (struct modem_manager *)source;
 
+#ifdef ENABLE_ALSALOOP
+	if (manager->alsaloop) {
+		g_debug("modem-libmodem: finalize alsa loopback");
+		alsaloop_finalize(manager->alsaloop);
+		manager->alsaloop = NULL;
+	}
+#endif
 	modem_call_free(manager->call);
 	modem_close(manager->modem);
 	g_free(manager->number);
@@ -209,6 +233,113 @@ static int modem_manager_probe(struct modem_manager *manager)
 	return (i < G_N_ELEMENTS(modem_table)) ? 0 : -ENODEV;
 }
 
+#ifdef ENABLE_ALSALOOP
+static gchar *key_file_value_default(GKeyFile *config,
+                                     const gchar *group, const gchar *key,
+                                     const gchar *value, GError **perror)
+{
+	GError *error = NULL;
+	gchar *val;
+
+	val = g_key_file_get_value(config, group, key, &error);
+	if (error && (error->code == G_KEY_FILE_ERROR_KEY_NOT_FOUND ||
+	              error->code == G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
+		g_key_file_set_value(config, group, key, value);
+		g_clear_error(&error);
+
+		val = g_key_file_get_value(config, group, key, &error);
+	}
+
+	*perror = error;
+	return val;
+}
+
+static int modem_alsaloop_load_config(GKeyFile *config,
+                                      struct loop_desc *desc)
+{
+	static const char *def_handset =
+		"BurrBrown from Texas Instruments USB AUDIO  CODEC";
+
+	const struct alsaloop_conf def[ALSALOOP_LOOPS] = {
+		{
+			.play = "default",
+			.capt = "hw:1,0",
+			.channels = "1"
+		}, {
+			.play = "hw:1,0",
+			.capt = "plughw:0,0",
+			.channels = "1"
+		}
+	};
+
+	struct alsaloop_conf aloop[ALSALOOP_LOOPS];
+	GError *error = NULL;
+	const gchar *var;
+	char varname[32];
+	int i;
+
+	g_debug("modem-libmodem: try to load alsaloop settings");
+
+	desc->verbose = g_key_file_get_integer(config, "alsaloop", "verbose",
+					 &error);
+	if (error) {
+		g_clear_error(&error);
+		desc->verbose = 0;
+	}
+
+	desc->handset = key_file_value_default(config, "alsaloop", "handset",
+					       def_handset, &error);
+	if (error) {
+		var = "handset";
+		goto out;
+	}
+	g_debug("   handset=%s", desc->handset);
+
+	for (i = 0; i < ALSALOOP_LOOPS; i++) {
+		snprintf(varname, sizeof(varname), "loop.%d.play", i);
+		aloop[i].play = key_file_value_default(config, "alsaloop",
+						       varname, def[i].play,
+						       &error);
+		if (error) {
+			var = varname;
+			goto out;
+		}
+
+		snprintf(varname, sizeof(varname), "loop.%d.capt", i);
+		aloop[i].capt = key_file_value_default(config, "alsaloop",
+						       varname, def[i].capt,
+						       &error);
+		if (error) {
+			var = varname;
+			goto out;
+		}
+
+		snprintf(varname, sizeof(varname), "loop.%d.channels", i);
+		aloop[i].channels = key_file_value_default(config, "alsaloop",
+							   varname,
+							   def[i].channels,
+							   &error);
+		if (error) {
+			var = varname;
+			goto out;
+		}
+	}
+
+	for (i = 0; i < ALSALOOP_LOOPS; i++) {
+		g_debug("   aloop[%d]: playback=%s capture=%s channels=%s",
+		        i, aloop[i].play, aloop[i].capt, aloop[i].channels);
+		desc->conf[i] = aloop[i];
+	}
+
+	return 0;
+
+out:
+	g_debug("modem-libmodem: alsaloop: %s: %s", var, error->message);
+	g_clear_error(&error);
+	return -EIO;
+}
+#endif
+
 static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 {
 	GError *error = NULL;
@@ -271,6 +402,7 @@ static int modem_manager_open(struct modem_manager *manager, GKeyFile *config)
 {
 	gboolean need_probe = TRUE;
 	struct modem_desc desc;
+	struct loop_desc loop;
 	int ret;
 
 	ret = modem_manager_load_config(config, &desc);
@@ -289,6 +421,30 @@ static int modem_manager_open(struct modem_manager *manager, GKeyFile *config)
 		g_debug("modem-libmodem: probing for device...");
 		ret = modem_manager_probe(manager);
 	}
+
+#ifdef ENABLE_ALSALOOP
+	manager->usb_handset = false;
+	manager->alsaloop = NULL;
+
+	if (modem_alsaloop_load_config(config, &loop) == 0) {
+		if (find_input_devices(loop.handset, NULL, NULL) > 0) {
+			int i;
+
+			g_debug("modem-manager-libmodem: found handset: %s", loop.handset);
+			manager->usb_handset = true;
+
+			ret = alsaloop_create(&manager->alsaloop);
+			if (ret < 0) {
+				g_debug("modem-libmodem: alsaloop_create failed: %d", ret);
+				return ret;
+			}
+
+			manager->alsaloop->verbose = loop.verbose;
+			for (i = 0; i < ALSALOOP_LOOPS; i++)
+				manager->alsaloop->conf[i] = loop.conf[i];
+		}
+	}
+#endif
 
 	return ret;
 }
@@ -375,6 +531,14 @@ int modem_manager_shutdown(struct modem_manager *manager)
 	return modem_manager_reset_modem(manager);
 }
 
+#ifdef ENABLE_ALSALOOP
+static void on_loop_error(void *user)
+{
+	struct modem_manager *manager = user;
+	modem_manager_terminate(manager);
+}
+#endif
+
 int modem_manager_call(struct modem_manager *manager, const char *number)
 {
 	int err;
@@ -405,6 +569,20 @@ int modem_manager_call(struct modem_manager *manager, const char *number)
 	}
 
 	manager->state = MODEM_STATE_ACTIVE;
+
+#ifdef ENABLE_ALSALOOP
+	if (manager->alsaloop) {
+		g_debug("modem-libmodem: connecting alsa loopback");
+		err = alsaloop_connect(manager->alsaloop);
+		if (err < 0)
+			g_warning("modem-libmodem: alsaloop_create failed: %s",
+				  g_strerror(-err));
+		else
+			alsaloop_set_error_handler(manager->alsaloop,
+						   on_loop_error, manager);
+	}
+#endif
+
 	return 0;
 }
 
@@ -438,6 +616,20 @@ int modem_manager_accept(struct modem_manager *manager)
 	}
 
 	manager->state = MODEM_STATE_ACTIVE;
+
+#ifdef ENABLE_ALSALOOP
+	if (manager->alsaloop) {
+		g_debug("modem-libmodem: connecting alsa loopback");
+		err = alsaloop_connect(manager->alsaloop);
+		if (err < 0)
+			g_warning("modem-libmodem: alsaloop_create failed: %s",
+				  g_strerror(-err));
+		else
+			alsaloop_set_error_handler(manager->alsaloop,
+						   on_loop_error, manager);
+	}
+#endif
+
 	return 0;
 }
 
@@ -454,6 +646,13 @@ int modem_manager_terminate(struct modem_manager *manager)
 		g_debug("modem-libmodem: no call to terminate");
 		return -EBADF;
 	}
+
+#ifdef ENABLE_ALSALOOP
+	if (manager->alsaloop) {
+		g_debug("modem-libmodem: disconnecting alsa loopback");
+		alsaloop_disconnect(manager->alsaloop);
+	}
+#endif
 
 	if (manager->state == MODEM_STATE_RINGING) {
 		g_debug("modem-libmodem: refusing incoming call");
