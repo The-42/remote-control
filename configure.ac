@@ -340,10 +340,10 @@ AS_IF([test "x$enable_gpio_gpiodev" = "xyes"],
 
 AC_CHECK_HEADER([readline/readline.h])
 AC_CHECK_LIB([readline], [readline], [use_readline=yes], [use_readline=no])
-if test "x$use_readline" = "xyes"; then
+AS_IF([test "x$use_readline" = "xyes"], [
 	READLINE_CFLAGS="-DUSE_READLINE"
 	READLINE_LIBS="-lreadline"
-fi
+])
 AC_SUBST(READLINE_CFLAGS)
 AC_SUBST(READLINE_LIBS)
 
@@ -360,9 +360,7 @@ AC_ARG_ENABLE([werror],
 		[Treat warnings as errors (default: disabled)])],
 		[enable_werror="$enableval"],
 		[enable_werror=no])
-if test "x$enable_werror" = "xyes"; then
-	CFLAGS="$CFLAGS -Werror"
-fi
+AS_IF([test "x$enable_werror" = "xyes"], [CFLAGS="$CFLAGS -Werror"])
 
 COMMANDS_ALIGN=32
 AC_DEFINE_UNQUOTED([COMMANDS_ALIGN], [$COMMANDS_ALIGN],
