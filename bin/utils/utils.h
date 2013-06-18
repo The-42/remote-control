@@ -24,7 +24,12 @@ struct watchdog;
 struct watchdog *watchdog_new(GKeyFile *conf, GError **error);
 void watchdog_unref(struct watchdog *watchdog);
 void watchdog_attach(struct watchdog *watchdog, GMainContext *context);
-void watchdog_set_message(struct watchdog *watchdog, const gchar *fmt, ...);
+/*
+ * @watchdog The watchdog to trigger.
+ * @message Debug info to have a hint to the last action. The string is
+ *          limited to 64 characters.
+ */
+void watchdog_set_message(struct watchdog *watchdog, const gchar *message);
 
 G_END_DECLS
 

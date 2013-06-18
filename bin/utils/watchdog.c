@@ -103,18 +103,15 @@ void watchdog_attach(struct watchdog *watchdog, GMainContext *context)
 	}
 }
 
-void watchdog_set_message(struct watchdog *watchdog, const gchar *fmt, ...)
+void watchdog_set_message(struct watchdog *watchdog, const gchar *message)
 {
-	va_list ap;
-
 	if (!watchdog)
 		return;
 
-	g_free(watchdog->message);
+	if (watchdog->message)
+		g_free(watchdog->message);
 
-	va_start(ap, fmt);
-	watchdog->message = g_strdup_vprintf(fmt, ap);
-	va_end(ap);
+	watchdog->message = g_strndup(message, 64);
 }
 #else
 struct watchdog *watchdog_new(GKeyFile *conf, GError **error)
@@ -130,7 +127,7 @@ void watchdog_attach(struct watchdog *watchdog, GMainContext *context)
 {
 }
 
-void watchdog_set_message(struct watchdog *watchdog, const gchar *fmt, ...)
+void watchdog_set_message(struct watchdog *watchdog, const gchar *message)
 {
 }
 #endif
