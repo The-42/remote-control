@@ -187,86 +187,100 @@ int media_player_set_output_window(struct media_player *player,
 
 int media_player_set_uri(struct media_player *player, const char *uri)
 {
+	const gchar *scheme;
+	gchar **split_uri;
+	gchar *location;
+	gchar **option;
+	GURI *url;
+
 	g_return_val_if_fail(player != NULL, -EINVAL);
+	g_return_val_if_fail(uri != NULL, -EINVAL);
 
-	if (player->media)
+	if (player->media) {
 		libvlc_media_release(player->media);
+		player->media = NULL;
+	}
 
-	if (uri) {
-		/*
-		 * URI is of format:
-		 * URI option_1 option_x option_n
-		 * split it at " " delimiter, to set options
-		 */
-		gchar **split_uri = g_strsplit(uri, " ", 0);
-		gchar *location = split_uri[0];
-		gchar **option = &split_uri[0];
+	/*
+	 * URI is of format:
+	 * URI option_1 option_x option_n
+	 * split it at " " delimiter, to set options
+	 */
+	split_uri = g_strsplit(uri, " ", 0);
+	location = split_uri[0];
 
-		GURI *url = g_uri_new(location);
-		const gchar *scheme;
+	url = g_uri_new(location);
+	if (!url) {
+		g_strfreev(split_uri);
+		return -ENOMEM;
+	}
 
-		scheme = g_uri_get_scheme(url);
-		if (!scheme) {
-			g_strfreev(split_uri);
-			g_object_unref(url);
-			return -EINVAL;
-		}
-
-		if (g_str_equal(scheme, "udp")) {
-			const gchar *host = g_uri_get_host(url);
-			GInetAddress *address = g_inet_address_new_from_string(host);
-			if (g_inet_address_get_is_multicast(address)) {
-				/*
-				 * HACK: Set user to empty string to force the
-				 *       insertion of the @ separator.
-				 */
-				g_uri_set_user(url, "");
-			}
-
-			location = g_uri_to_string(url);
-			g_object_unref(address);
-		}
-
-		gdk_window_hide(player->window);
-		player->media = libvlc_media_new_location(player->vlc, location);
-
-		if (location != split_uri[0])
-			g_free(location);
-
-		/*
-		 * set media options, passed by the uri
-		 */
-		while (++option && *option) {
-#ifdef ENABLE_LIBTNJ3324
-			if (g_str_equal(scheme, "v4l2") &&
-			    g_str_has_prefix(*option ,":frequency=")) {
-				const gchar *value = g_strrstr(*option, "=") + 1;
-				float freq = (float)g_ascii_strtoll(value, NULL, 10) / 1000;
-
-				g_debug("   select tnj3324 input frequency = %.02f\n", freq);
-				tnj3324_set_frequency(&player->tnj3324, freq);
-				continue;
-			}
-#endif
-			libvlc_media_add_option(player->media, *option);
-		}
-
-		if (g_str_equal(scheme, "v4l2")) {
-			/* TODO: autodetect the V4L2 and ALSA devices */
-			libvlc_media_add_option(player->media, ":v4l2-dev=/dev/video0");
-			libvlc_media_add_option(player->media, ":input-slave=alsa://hw:1");
-			libvlc_video_set_deinterlace(player->player, NULL);
-		} else {
-#if defined(__arm__)
-			libvlc_video_set_deinterlace(player->player, NULL);
-#else
-			libvlc_video_set_deinterlace(player->player, "linear");
-#endif
-		}
-
+	scheme = g_uri_get_scheme(url);
+	if (!scheme) {
+		g_warning("media-player: %s is not a valid uri", uri);
 		g_strfreev(split_uri);
 		g_object_unref(url);
+		return -EINVAL;
 	}
+
+	if (g_str_equal(scheme, "udp")) {
+		const gchar *host = g_uri_get_host(url);
+		GInetAddress *address = g_inet_address_new_from_string(host);
+		if (g_inet_address_get_is_multicast(address)) {
+			/*
+			 * HACK: Set user to empty string to force the
+			 *       insertion of the @ separator.
+			 */
+			g_uri_set_user(url, "");
+		}
+
+		location = g_uri_to_string(url);
+		g_object_unref(address);
+	}
+
+	gdk_window_hide(player->window);
+	player->media = libvlc_media_new_location(player->vlc, location);
+
+	if (location != split_uri[0]) {
+		g_free(location);
+		location = NULL;
+	}
+
+	/*
+	 * set media options, passed by the uri
+	 */
+	option = &split_uri[0];
+	while (++option && *option) {
+#ifdef ENABLE_LIBTNJ3324
+		if (g_str_equal(scheme, "v4l2") &&
+		    g_str_has_prefix(*option ,":frequency=")) {
+			const gchar *value = g_strrstr(*option, "=") + 1;
+			float freq = (float)g_ascii_strtoll(value, NULL, 10) / 1000;
+
+			g_debug("   select tnj3324 input frequency = %.02f\n", freq);
+			tnj3324_set_frequency(&player->tnj3324, freq);
+			continue;
+		}
+#endif
+		libvlc_media_add_option(player->media, *option);
+	}
+
+	if (g_str_equal(scheme, "v4l2")) {
+		/* TODO: autodetect the V4L2 and ALSA devices */
+		libvlc_media_add_option(player->media, ":v4l2-dev=/dev/video0");
+		/* FIXME: this will not work with usb handset */
+		libvlc_media_add_option(player->media, ":input-slave=alsa://hw:1");
+		libvlc_video_set_deinterlace(player->player, NULL);
+	} else {
+#if defined(__arm__)
+		libvlc_video_set_deinterlace(player->player, NULL);
+#else
+		libvlc_video_set_deinterlace(player->player, "linear");
+#endif
+	}
+
+	g_strfreev(split_uri);
+	g_object_unref(url);
 
 	return 0;
 }
