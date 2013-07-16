@@ -5,6 +5,8 @@ libcommon_la_CPPFLAGS = \
 	@GUDEV_CFLAGS@
 
 libcommon_la_SOURCES = \
+	find-device-udev.c \
+	find-device.h \
 	gdevicetree.c \
 	gdevicetree.h \
 	gkeyfile.c \

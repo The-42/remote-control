@@ -15,13 +15,12 @@
 #include <unistd.h>
 
 #include <linux/input.h>
-#include <gudev/gudev.h>
 
 #include "javascript.h"
+#include "find-device.h"
 
 struct input {
 	GSource source;
-	GUdevClient *client;
 	GList *devices;
 
 	JSContextRef context;
@@ -127,7 +126,6 @@ static void input_source_finalize(GSource *source)
 	struct input *input = (struct input *)source;
 
 	g_list_free_full(input->devices, free_poll);
-	g_object_unref(input->client);
 }
 
 static GSourceFuncs input_source_funcs = {
@@ -137,8 +135,9 @@ static GSourceFuncs input_source_funcs = {
 	.finalize = input_source_finalize,
 };
 
-static int input_add_device(struct input *input, const gchar *filename)
+static int input_add_device(gpointer user, const gchar *filename)
 {
+	struct input *input = user;
 	GPollFD *poll;
 	int fd;
 
@@ -166,13 +165,8 @@ static int input_add_device(struct input *input, const gchar *filename)
 
 static GSource *input_source_new(JSContextRef context)
 {
-	const gchar * const subsystems[] = { "input", NULL };
-	GUdevEnumerator *enumerate;
-	GSource *source = NULL;
-	GPatternSpec *event;
 	struct input *input;
-	GList *devices;
-	GList *node;
+	GSource *source;
 
 	source = g_source_new(&input_source_funcs, sizeof(*input));
 	if (!source) {
@@ -183,62 +177,10 @@ static GSource *input_source_new(JSContextRef context)
 	input = (struct input *)source;
 	input->context = context;
 	input->callback = NULL;
-
-	input->client = g_udev_client_new(subsystems);
-	if (!input->client) {
-		g_debug("js-input: failed to create UDEV client");
-		g_object_unref(source);
-		return NULL;
-	}
-
 	input->devices = NULL;
 
-	enumerate = g_udev_enumerator_new(input->client);
-	if (!enumerate) {
-		g_debug("js-input: failed to create enumerator");
-		g_object_unref(input->client);
-		g_object_unref(source);
-		return NULL;
-	}
-
-	g_udev_enumerator_add_match_subsystem(enumerate, "input");
-
-	event = g_pattern_spec_new("event*");
-
-	devices = g_udev_enumerator_execute(enumerate);
-
-	for (node = g_list_first(devices); node; node = node->next) {
-		GUdevDevice *device = node->data;
-		GUdevDevice *parent;
-		const gchar *name;
-
-		name = g_udev_device_get_name(device);
-		if (!name || !g_pattern_match_string(event, name))
-			continue;
-
-		parent = g_udev_device_get_parent(device);
-		name = g_udev_device_get_sysfs_attr(parent, "name");
-
-		if (g_str_equal(name, "sx8634")) {
-			const gchar *filename;
-
-			filename = g_udev_device_get_device_file(device);
-			if (filename) {
-				int err = input_add_device(input, filename);
-				if (err < 0) {
-					g_debug("js-input: failed to use %s: %s",
-							filename,
-							g_strerror(-err));
-				} else {
-					g_debug("js-input: added %s", filename);
-				}
-			}
-		}
-		g_object_unref(parent);
-	}
-
-	g_pattern_spec_free(event);
-	g_object_unref(enumerate);
+	if (find_input_devices("sx8634", input_add_device, input) < 1)
+		g_debug("js-input: no sx8634 device found");
 
 	return source;
 }

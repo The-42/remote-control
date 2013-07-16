@@ -10,25 +10,23 @@
 #  include "config.h"
 #endif
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <netdb.h>
 #include <glib.h>
 
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#include "find-device.h"
+
 #include <linux/input.h>
-#include <gudev/gudev.h>
 
 #define KEY_CODE_MUTE 113
 
 struct usb_handset {
 	GSource source;
-	GUdevClient *client;
 	GList *devices;
 	struct event_manager *events;
 };
@@ -124,7 +122,6 @@ static void usb_handset_finalize(GSource *source)
 	struct usb_handset *input = (struct usb_handset *)source;
 
 	g_list_free_full(input->devices, free_poll);
-	g_object_unref(input->client);
 }
 
 static GSourceFuncs input_source_funcs = {
@@ -134,8 +131,9 @@ static GSourceFuncs input_source_funcs = {
 	.finalize = usb_handset_finalize,
 };
 
-static int usb_handset_add_device(struct usb_handset *input, const gchar *filename)
+static int usb_handset_add_device(gpointer user, const gchar *filename)
 {
+	struct usb_handset *input = user;
 	GPollFD *poll;
 	int fd;
 
@@ -163,13 +161,8 @@ static int usb_handset_add_device(struct usb_handset *input, const gchar *filena
 
 static GSource *usb_handset_new(struct remote_control *rc)
 {
-	const gchar * const subsystems[] = { "input", NULL };
-	GUdevEnumerator *enumerate;
 	struct usb_handset *input;
-	GSource *source = NULL;
-	GPatternSpec *event;
-	GList *devices;
-	GList *node;
+	GSource *source;
 
 	source = g_source_new(&input_source_funcs, sizeof(*input));
 	if (!source) {
@@ -178,62 +171,11 @@ static GSource *usb_handset_new(struct remote_control *rc)
 	}
 
 	input = (struct usb_handset *)source;
-
-	input->client = g_udev_client_new(subsystems);
-	if (!input->client) {
-		g_debug("usb-handset: failed to create UDEV client");
-		g_object_unref(source);
-		return NULL;
-	}
-
-	input->devices = NULL;
 	input->events = remote_control_get_event_manager(rc);
+	input->devices = NULL;
 
-	enumerate = g_udev_enumerator_new(input->client);
-	if (!enumerate) {
-		g_debug("usb-handset: failed to create enumerator");
-		g_object_unref(input->client);
-		g_object_unref(source);
-		return NULL;
-	}
-
-	g_udev_enumerator_add_match_subsystem(enumerate, "input");
-
-	event = g_pattern_spec_new("event*");
-	devices = g_udev_enumerator_execute(enumerate);
-
-	for (node = g_list_first(devices); node; node = node->next) {
-		GUdevDevice *device = node->data;
-		GUdevDevice *parent;
-		const gchar *name;
-
-		name = g_udev_device_get_name(device);
-		if (!name || !g_pattern_match_string(event, name))
-			continue;
-
-		parent = g_udev_device_get_parent(device);
-		name = g_udev_device_get_sysfs_attr(parent, "name");
-
-		if (g_str_equal(name, "BurrBrown from Texas Instruments USB AUDIO  CODEC")) {
-			const gchar *filename;
-			g_debug("usb-handset: using device:  %s", name);
-			filename = g_udev_device_get_device_file(device);
-			if (filename) {
-				int err = usb_handset_add_device(input, filename);
-				if (err < 0) {
-					g_warning("usb-handset: failed to use %s: %s",
-							filename,
-							g_strerror(-err));
-				} else {
-					g_debug("usb-handset: added %s", filename);
-				}
-			}
-		}
-		g_object_unref(parent);
-	}
-
-	g_pattern_spec_free(event);
-	g_object_unref(enumerate);
+	find_input_devices("BurrBrown from Texas Instruments USB AUDIO  CODEC",
+			   usb_handset_add_device, input);
 
 	return source;
 }
