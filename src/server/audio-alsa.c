@@ -234,18 +234,6 @@ static int soundcard_control_get_volume(struct soundcard *card,
 	return err;
 }
 
-static gboolean soundcard_has_control(struct soundcard *card,
-				      const char *control)
-{
-	snd_mixer_elem_t* elem;
-
-	elem = soundcard_get_control(card, control);
-	if (!elem)
-		return false;
-
-	return true;
-}
-
 static void soundcard_mixer_close(struct soundcard *card)
 {
 	char device[16];
