@@ -27,12 +27,7 @@ struct app_watchdog {
 
 static gboolean app_watchdog_timeout(gpointer data)
 {
-	struct app_watchdog *priv = data; 
-
-	g_warning("%s: It seems the user interface is stalled, reload it.",
-		__func__);
-	remote_control_webkit_window_reload(priv->window);
-
+	g_error("WATCHDOG: It seems the user interface is stalled, restarting");
 	return FALSE;
 }
 
