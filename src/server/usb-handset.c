@@ -207,15 +207,11 @@ static GSource *usb_handset_new(struct remote_control *rc)
 		GUdevDevice *parent;
 		const gchar *name;
 
-		parent = g_udev_device_get_parent(device);
 		name = g_udev_device_get_name(device);
-
-		if (!g_pattern_match_string(event, name))
+		if (!name || !g_pattern_match_string(event, name))
 			continue;
 
 		parent = g_udev_device_get_parent(device);
-		name = g_udev_device_get_name(parent);
-
 		name = g_udev_device_get_sysfs_attr(parent, "name");
 
 		if (g_str_equal(name, "BurrBrown from Texas Instruments USB AUDIO  CODEC")) {
@@ -233,6 +229,7 @@ static GSource *usb_handset_new(struct remote_control *rc)
 				}
 			}
 		}
+		g_object_unref(parent);
 	}
 
 	g_pattern_spec_free(event);
