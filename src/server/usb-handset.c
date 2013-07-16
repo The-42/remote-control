@@ -50,7 +50,7 @@ static int usb_handset_report(struct usb_handset *input, struct input_event *in_
 
 		err = event_manager_report(input->events, &event);
 		if (err < 0)
-			g_debug("USB-Hook: failed to report event: %s",
+			g_debug("usb-handset: failed to report event: %s",
 				g_strerror(-err));
 	}
 	return 0;
@@ -93,13 +93,13 @@ static gboolean usb_handset_dispatch(GSource *source, GSourceFunc callback,
 		if (poll->revents & G_IO_IN) {
 			err = read(poll->fd, &event, sizeof(event));
 			if (err < 0) {
-				g_debug("read(): %s", g_strerror(errno));
+				g_debug("usb-handset: read(): %s", g_strerror(errno));
 				continue;
 			}
 
 			err = usb_handset_report(input, &event);
 			if (err < 0) {
-				g_debug("input_report(): %s",
+				g_debug("usb-handset: input_report(): %s",
 						g_strerror(-err));
 				continue;
 			}
@@ -165,15 +165,15 @@ static GSource *usb_handset_new(struct remote_control *rc)
 {
 	const gchar * const subsystems[] = { "input", NULL };
 	GUdevEnumerator *enumerate;
+	struct usb_handset *input;
 	GSource *source = NULL;
 	GPatternSpec *event;
-	struct usb_handset *input;
 	GList *devices;
 	GList *node;
 
 	source = g_source_new(&input_source_funcs, sizeof(*input));
 	if (!source) {
-		g_debug("failed to allocate memory");
+		g_debug("usb-handset: failed to allocate memory");
 		return NULL;
 	}
 
@@ -181,7 +181,7 @@ static GSource *usb_handset_new(struct remote_control *rc)
 
 	input->client = g_udev_client_new(subsystems);
 	if (!input->client) {
-		g_debug("failed to create UDEV client");
+		g_debug("usb-handset: failed to create UDEV client");
 		g_object_unref(source);
 		return NULL;
 	}
@@ -191,7 +191,7 @@ static GSource *usb_handset_new(struct remote_control *rc)
 
 	enumerate = g_udev_enumerator_new(input->client);
 	if (!enumerate) {
-		g_debug("failed to create enumerator");
+		g_debug("usb-handset: failed to create enumerator");
 		g_object_unref(input->client);
 		g_object_unref(source);
 		return NULL;
@@ -200,7 +200,6 @@ static GSource *usb_handset_new(struct remote_control *rc)
 	g_udev_enumerator_add_match_subsystem(enumerate, "input");
 
 	event = g_pattern_spec_new("event*");
-
 	devices = g_udev_enumerator_execute(enumerate);
 
 	for (node = g_list_first(devices); node; node = node->next) {
@@ -219,21 +218,19 @@ static GSource *usb_handset_new(struct remote_control *rc)
 
 		name = g_udev_device_get_sysfs_attr(parent, "name");
 
-		g_debug("device:  %s", name);
 		if (g_str_equal(name, "BurrBrown from Texas Instruments USB AUDIO  CODEC")) {
 			const gchar *filename;
-			g_debug("using device:  %s", name);
+			g_debug("usb-handset: using device:  %s", name);
 			filename = g_udev_device_get_device_file(device);
 			if (filename) {
 				int err = usb_handset_add_device(input, filename);
 				if (err < 0) {
-					g_debug("failed to use %s: %s",
+					g_warning("usb-handset: failed to use %s: %s",
 							filename,
 							g_strerror(-err));
-					continue;
+				} else {
+					g_debug("usb-handset: added %s", filename);
 				}
-
-				g_debug("using %s", filename);
 			}
 		}
 	}
