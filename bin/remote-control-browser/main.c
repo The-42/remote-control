@@ -100,7 +100,7 @@ static void on_uri_notify(GObject *object, GParamSpec *spec, gpointer data)
 
 	message = webkit_browser_get_uri(WEBKIT_BROWSER(object));
 	g_debug("watchdog: new message: %s", message);
-	watchdog_set_message(watchdog, message);
+	watchdog_set_message(watchdog, g_strdelimit(message, "%", '#'));
 	g_free(message);
 }
 
