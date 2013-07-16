@@ -16,7 +16,12 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#include "find-device.h"
+
 #define AUDIO_ALSA_DEBUG 0
+#define AUDIO_USE_DEVICE_PREFIX "BurrBrown from Texas Instruments "
+#define AUDIO_USB_DEVICE_NAME "USB AUDIO  CODEC"
+#define AUDIO_USB_DEVICE_FULL_NAME AUDIO_USE_DEVICE_PREFIX AUDIO_USB_DEVICE_NAME
 
 struct soundcard {
 	gchar *name;
@@ -30,6 +35,8 @@ struct audio {
 
 	gint index;
 	GList *cards;
+
+	gboolean usb_handset;
 };
 
 int audio_get_state(struct audio *audio, enum audio_state *statep);
@@ -306,6 +313,27 @@ static void soundcard_free(struct soundcard *card)
 	g_free(card);
 }
 
+static gint card_compare_name(gconstpointer a, gconstpointer b)
+{
+	const struct soundcard *card = a;
+	const char *name = b;
+
+	return g_strcmp0(card->name, name);
+}
+
+static struct soundcard *audio_get_card_by_name(struct audio *audio,
+						const char *name)
+{
+	struct soundcard *card = NULL;
+	GList *node;
+
+	node = g_list_find_custom(audio->cards, name, card_compare_name);
+	if (node)
+		card = node->data;
+
+	return card;
+}
+
 static int audio_find_cards(struct audio *audio)
 {
 	snd_ctl_card_info_t *info;
@@ -354,7 +382,7 @@ int audio_create(struct audio **audiop, struct rpc_server *server)
 {
 	struct soundcard *card;
 	struct audio *audio;
-	int err;
+	int err, ret;
 
 	audio = g_new0(struct audio, 1);
 	if (!audio)
@@ -391,6 +419,13 @@ int audio_create(struct audio **audiop, struct rpc_server *server)
 
 	if (AUDIO_ALSA_DEBUG)
 		alsa_ucm_dump_verbs(audio);
+
+	ret = find_input_devices(AUDIO_USB_DEVICE_FULL_NAME, NULL, NULL);
+	if (ret > 0) {
+		g_debug("audio-alsa-ucm: found usb handset");
+		audio->usb_handset = true;
+	} else
+		audio->usb_handset = false;
 
 	*audiop = audio;
 	return 0;
@@ -477,6 +512,14 @@ int audio_get_state(struct audio *audio, enum audio_state *statep)
 	return 0;
 }
 
+static gboolean audio_is_handset_selected(struct audio *audio)
+{
+	if (audio->state == AUDIO_STATE_VOICECALL_HANDSET ||
+	    audio->state == AUDIO_STATE_VOICECALL_IP_HANDSET)
+		return true;
+	return false;
+}
+
 int audio_set_volume(struct audio *audio, uint8_t volume)
 {
 	struct soundcard *card;
@@ -489,6 +532,27 @@ int audio_set_volume(struct audio *audio, uint8_t volume)
 	card = g_list_nth(audio->cards, audio->index)->data;
 	if (!card)
 		return -EBADFD;
+
+	/*
+	 * When USB handset is used, we have a second soundcard, so we need
+	 * to change the control we would use. This solution is kind of a of
+	 * hack but i have no better idea how to solve this issue right now.
+	 */
+	if (audio->usb_handset && audio_is_handset_selected(audio) &&
+	    g_list_length(audio->cards) > 1) {
+		struct soundcard *usb;
+
+		usb = audio_get_card_by_name(audio, AUDIO_USB_DEVICE_NAME);
+		if (!usb) {
+			g_warning("audio-alsa-ucm: usb handset not found");
+			return -ENODEV;
+		}
+
+		card = usb;
+		control = "PCM";
+		g_debug("   overriding handset: card=%s control=%s",
+			card->name, control);
+	}
 
 	return soundcard_control_set_volume(card, control, volume);
 }
@@ -510,6 +574,27 @@ int audio_get_volume(struct audio *audio, uint8_t *volumep)
 	card = g_list_nth(audio->cards, audio->index)->data;
 	if (!card)
 		return -EBADFD;
+
+	/*
+	 * When USB handset is used, we have a second soundcard, so we need
+	 * to change the control we would use. This solution is kind of a of
+	 * hack but i have no better idea how to solve this issue right now.
+	 */
+	if (audio->usb_handset && audio_is_handset_selected(audio) &&
+	    g_list_length(audio->cards) > 1) {
+		struct soundcard *usb;
+
+		usb = audio_get_card_by_name(audio, AUDIO_USB_DEVICE_NAME);
+		if (!usb) {
+			g_warning("audio-alsa-ucm: usb handset not found");
+			return -ENODEV;
+		}
+
+		card = usb;
+		control = "PCM";
+		g_debug("   overriding handset: card=%s control=%s",
+			card->name, control);
+	}
 
 	ret = soundcard_control_get_volume(card, control, &volume);
 	if (ret < 0)
