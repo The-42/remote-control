@@ -198,8 +198,8 @@ static inline snd_mixer_elem_t* soundcard_get_control(struct soundcard *card,
 static int soundcard_control_set_volume(struct soundcard *card,
 					const char *control, long volume)
 {
+	long min = 0, max = 0, vol;
 	snd_mixer_elem_t* elem;
-	long min, max;
 	int err;
 
 	err = soundcard_mixer_open(card);
@@ -213,11 +213,22 @@ static int soundcard_control_set_volume(struct soundcard *card,
 	}
 
 	err = snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
-	volume = ((volume * (max - min)) / 255) + min;
-	err = snd_mixer_selem_set_playback_volume_all(elem, volume);
+	if (err < 0)
+		return err;
+
+	vol = ((volume * (max - min)) / 255) + min;
+
+	err = snd_mixer_selem_set_playback_volume_all(elem, vol);
+	if (err < 0)
+		return err;
+
+	/* FIXME: for some unknown reason the control is muted
+	 *        before setting the volume. */
+	if (vol > 0)
+		snd_mixer_selem_set_playback_switch_all(elem, 1);
 
 	soundcard_mixer_close(card);
-	return err;
+	return 0;
 }
 
 static int soundcard_control_get_volume(struct soundcard *card,
