@@ -335,7 +335,7 @@ ssize_t net_recv_sync(struct net *net, void *buffer, size_t size);
  */
 struct lldp_monitor;
 
-int lldp_monitor_create(struct lldp_monitor **monitorp);
+int lldp_monitor_create(struct lldp_monitor **monitorp, GKeyFile *config);
 GSource *lldp_monitor_get_source(struct lldp_monitor *monitor);
 ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 		size_t size);

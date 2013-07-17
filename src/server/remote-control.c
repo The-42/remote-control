@@ -384,7 +384,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = lldp_monitor_create(&rc->lldp);
+	err = lldp_monitor_create(&rc->lldp, config);
 	if (err < 0) {
 		g_error("lldp_monitor_create(): %s", strerror(-err));
 		return err;

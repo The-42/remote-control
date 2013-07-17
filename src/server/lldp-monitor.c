@@ -116,13 +116,14 @@ static GSourceFuncs lldp_monitor_source_funcs = {
 	.finalize = lldp_monitor_source_finalize,
 };
 
-int lldp_monitor_create(struct lldp_monitor **monitorp)
+int lldp_monitor_create(struct lldp_monitor **monitorp, GKeyFile *config)
 {
 	struct lldp_monitor *monitor;
 	char ifname[IF_NAMESIZE];
 	struct packet_mreq req;
 	struct sockaddr_ll sa;
 	GSource *source;
+	gchar *value;
 	int err;
 
 	if (!monitorp)
@@ -140,10 +141,19 @@ int lldp_monitor_create(struct lldp_monitor **monitorp)
 		goto free;
 	}
 
-	monitor->ifindex = if_lookup_default();
+	value = g_key_file_get_string(config, "lldp", "interface", NULL);
+	if (value) {
+		g_debug("lldp: requested %s", value);
+		monitor->ifindex = if_nametoindex(value);
+		g_free(value);
+	}
+
 	if (monitor->ifindex == 0) {
-		err = -ENODEV;
-		goto freedata;
+		monitor->ifindex = if_lookup_default();
+		if (monitor->ifindex == 0) {
+			err = -ENODEV;
+			goto freedata;
+		}
 	}
 
 	if_indextoname(monitor->ifindex, ifname);

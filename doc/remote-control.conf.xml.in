@@ -475,6 +475,21 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>lldp</varname> - configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>interface</varname></term>
+							<listitem><para>
+								Specifies the interface to be used for lldp queries.
+								If not specified the interface with the default route
+								is used.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -509,6 +524,9 @@ expose = 32;33;34;35
 [smartcard]
 power-gpio = gpiochip192:1:0x1
 device = /dev/i2c-1:0x50
+
+[lldp]
+interfaces = eth0
 </programlisting>
 	</refsect1>
 </refentry>
