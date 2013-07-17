@@ -399,6 +399,7 @@ int voip_free(struct voip *voip)
 		return -EINVAL;
 
 	linphone_core_terminate_all_calls(voip->core);
+	voip_logout(voip);
 	linphone_core_destroy(voip->core);
 	g_free(voip->contact);
 	g_free(voip);
