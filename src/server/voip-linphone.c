@@ -299,10 +299,14 @@ static int voip_set_soundcard(struct voip *voip, const gchar *card_name)
 	err = linphone_core_set_playback_device(voip->core, card_name);
 	if (err < 0)
 		g_warning("voip-linphone: failed to set playback device");
+	else
+		g_debug("voip-linphone: set playback device to: %s", card_name);
 
 	err = linphone_core_set_capture_device(voip->core, card_name);
 	if (err < 0)
 		g_warning("voip-linphone: failed to set capture device");
+	else
+		g_debug("voip-linphone: set capture device to: %s", card_name);
 
 	return err;
 }
