@@ -11,6 +11,7 @@
 #endif
 
 #include <errno.h>
+#include <signal.h>
 
 #include "javascript.h"
 
@@ -27,7 +28,8 @@ struct app_watchdog {
 
 static gboolean app_watchdog_timeout(gpointer data)
 {
-	g_error("WATCHDOG: It seems the user interface is stalled, restarting");
+	g_critical("WATCHDOG: It seems the user interface is stalled, restarting");
+	raise(SIGTERM);
 	return FALSE;
 }
 
