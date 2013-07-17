@@ -68,7 +68,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 		/* reject incoming calls if a call is already active */
 		if (!linphone_core_in_call(core)) {
 			g_debug("voip-linphone: busy, rejecting call\n");
-			linphone_core_terminate_call(core, call);
+			linphone_core_decline_call(core, call, LinphoneReasonDeclined);
 			return;
 		}
 
