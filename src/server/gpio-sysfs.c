@@ -19,6 +19,10 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#include "find-device.h"
+
+#define USB_HANDSET_NAME "BurrBrown from Texas Instruments USB AUDIO  CODEC"
+
 #define SYSFS_GPIO_PATH "/sys/class/gpio"
 static const char GPIO_GROUP[] = "gpio";
 
@@ -283,6 +287,7 @@ free:
 int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *events,
                      GKeyFile *config)
 {
+	guint active_mask = (guint)-1;
 	struct gpio_backend *backend;
 	GSource *source;
 	char *syspath;
@@ -312,7 +317,19 @@ int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *ev
 	}
 	free(syspath);
 
+	/* remove the hook from active mask, when usb handset is avaliable */
+	if (find_input_devices(USB_HANDSET_NAME, NULL, NULL)) {
+		g_debug("gpio-sysfs: found usb-handset, disabling HOOK event");
+		active_mask &= ~(1 << GPIO_HANDSET);
+	}
+
 	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
+		if (!(active_mask & (1 << gpio_list[i].gpio))) {
+			g_debug("gpio-sysfs: skipping gpio %s init",
+				gpio_list[i].name);
+			continue;
+		}
+
 		err = initialize_gpio(gpio_list[i].gpio, source);
 		if (err < 0) {
 			g_debug("gpio-sysfs: could not initialize gpio %s",
