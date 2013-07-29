@@ -114,6 +114,8 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 	int32_t ret = 0;
 	gint argc = 0;
 
+	g_return_val_if_fail(command_line != NULL, -EINVAL);
+
 	task = g_new0(struct task, 1);
 	if (!task)
 		return -ENOMEM;
@@ -138,7 +140,8 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 
 	if (!g_shell_parse_argv(command_line, &argc, &argv, &error)) {
 		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to parse "
-				"command-line: %s", error->message);
+				"command-line: %s",
+				error ? error->message : "(unknown error)");
 		g_error_free(error);
 		ret = -EACCES;
 		goto free;
@@ -147,7 +150,8 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 	if (!g_spawn_async(NULL, argv, envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL,
 				NULL, &task->real_pid, &error)) {
 		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "failed to execute "
-				"child process: %s", error->message);
+				"child process: %s",
+				error ? error->message : "(unknown error)");
 		g_error_free(error);
 		ret = -EACCES;
 		goto free;
