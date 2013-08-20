@@ -210,6 +210,16 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 			*info = 8; /* VOIP_EVT_MISSEDCALL */
 			break;
 
+		case EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA");
+			*info = 10; /* undefined under windows ce */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_EARLYMEDIA:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_EARLYMEDIA");
+			*info = 11; /* undefined under windows ce */
+			break;
+
 		default:
 			ret = -ENXIO;
 			break;
