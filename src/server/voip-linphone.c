@@ -43,6 +43,30 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core,
 		"changed to %s: %s", proxy, name, message ?: "");
 }
 
+static void voip_update_contact(struct voip *voip, LinphoneCall *call)
+{
+	const LinphoneAddress *address;
+	const char *contact;
+
+	if (voip->contact) {
+		g_free(voip->contact);
+		voip->contact = NULL;
+	}
+
+	address = linphone_call_get_remote_address(call);
+	if (!address)
+		return;
+
+	contact = linphone_address_get_display_name(address);
+	if (!contact)
+		contact = linphone_address_get_username(address);
+
+	if (!contact)
+		return;
+
+	voip->contact = g_strdup(contact);
+}
+
 static void linphone_call_state_changed_cb(LinphoneCore *core,
 		LinphoneCall *call, LinphoneCallState state,
 		const char *message)
@@ -50,7 +74,6 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 	struct remote_control *rc = linphone_core_get_user_data(core);
 	struct event_manager *manager = remote_control_get_event_manager(rc);
 	struct voip *voip = remote_control_get_voip(rc);
-	const LinphoneAddress *address;
 	struct event event;
 	const char *name;
 	int err;
@@ -74,45 +97,15 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 
 		event.voip.state = EVENT_VOIP_STATE_INCOMING;
 
-		err = event_manager_report(manager, &event);
-		if (err < 0)
-			g_debug("voip-linphone: failed to report event: %s",
-				g_strerror(-err));
-
-		if (voip->contact) {
-			g_free(voip->contact);
-			voip->contact = NULL;
-		}
-
-		address = linphone_call_get_remote_address(call);
-		if (address) {
-			const char *name;
-
-			name = linphone_address_get_display_name(address);
-			if (!name)
-				name = linphone_address_get_username(address);
-
-			if (name)
-				voip->contact = g_strdup(name);
-		}
+		voip_update_contact(voip, call);
 		break;
 
 	case LinphoneCallConnected:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_CONNECTED;
-
-		err = event_manager_report(manager, &event);
-		if (err < 0)
-			g_debug("voip-linphone: failed to report event: %s",
-				g_strerror(-err));
 		break;
 
 	case LinphoneCallEnd:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_DISCONNECTED;
-
-		err = event_manager_report(manager, &event);
-		if (err < 0)
-			g_debug("voip-linphone: failed to report event: %s",
-				g_strerror(-err));
 		break;
 
 	case LinphoneCallIncomingEarlyMedia:
@@ -125,25 +118,21 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 
 	case LinphoneCallOutgoingProgress:
 		event.voip.state = EVENT_VOIP_STATE_OUTGOING;
-
-		err = event_manager_report(manager, &event);
-		if (err < 0)
-			g_debug("voip-linphone: failed to report event: %s",
-				g_strerror(-err));
 		break;
 
 	case LinphoneCallError:
 		event.voip.state = EVENT_VOIP_STATE_OUTGOING_DISCONNECTED;
-
-		err = event_manager_report(manager, &event);
-		if (err < 0)
-			g_debug("voip-linphone: failed to report event: %s",
-				g_strerror(-err));
 		break;
 
 	default:
-		break;
+		g_debug("voip-linphone: unhandled event: %s", name);
+		return;
 	}
+
+	err = event_manager_report(manager, &event);
+	if (err < 0)
+		g_debug("voip-linphone: failed to report event %s: %s",
+			name, g_strerror(-err));
 }
 
 static void linphone_notify_presence_recv_cb(LinphoneCore *core,
