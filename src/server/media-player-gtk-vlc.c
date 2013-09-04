@@ -26,6 +26,10 @@
 #include "remote-control.h"
 #include "guri.h"
 
+struct options {
+	gint64 buffer_duration;
+};
+
 struct media_player {
 	enum media_player_state state;
 	GdkWindow *window;
@@ -38,6 +42,8 @@ struct media_player {
 #ifdef ENABLE_LIBTNJ3324
 	struct tnj3324_t tnj3324;
 #endif
+
+	struct options opts;
 };
 
 static gboolean hide_window(gpointer data)
@@ -92,9 +98,10 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 	GdkRegion *region;
 #endif
 #ifdef ENABLE_LIBTNJ3324
-	GError *err = NULL;
 	int i2cbus;
 #endif
+	GError *err = NULL;
+	gint64 duration;
 	XID xid;
 
 	if (!playerp)
@@ -148,6 +155,14 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 	tnj3324_init(&player->tnj3324, i2cbus);
 #endif
 
+	duration = g_key_file_get_int64(config, "media-player",
+	                                "buffer-duration", &err);
+	if (err) {
+		g_clear_error(&err);
+		duration = -1;
+	}
+	player->opts.buffer_duration = duration;
+
 	*playerp = player;
 	return 0;
 }
@@ -189,6 +204,7 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 {
 	const gchar *scheme;
 	gchar **split_uri;
+	gint64 duration;
 	gchar *location;
 	gchar **option;
 	GURI *url;
@@ -246,6 +262,7 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		location = NULL;
 	}
 
+	duration = player->opts.buffer_duration;
 	/*
 	 * set media options, passed by the uri
 	 */
@@ -262,7 +279,20 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 			continue;
 		}
 #endif
-		libvlc_media_add_option(player->media, *option);
+		/* uri option overrides config entry */
+		if (g_str_has_prefix(*option, ":network-caching=")) {
+			const gchar *value = g_strrstr(*option, "=") + 1;
+			duration = (gint64)g_ascii_strtoll(value, NULL, 10);
+		} else
+			libvlc_media_add_option(player->media, *option);
+	}
+
+	if (duration != -1) {
+		char opt[32];
+		snprintf(opt, sizeof(opt), ":network-caching=%" G_GINT64_FORMAT,
+			 duration);
+		libvlc_media_add_option(player->media, opt);
+		g_debug("   appended option: %s", opt);
 	}
 
 	if (g_str_equal(scheme, "v4l2")) {
