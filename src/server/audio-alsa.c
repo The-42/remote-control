@@ -240,9 +240,15 @@ static int soundcard_control_get_volume(struct soundcard *card,
 	long volume;
 	int err;
 
+	err = soundcard_mixer_open(card);
+	if (err < 0)
+		return err;
+
 	elem = soundcard_get_control(card, control);
-	if (!elem)
+	if (!elem) {
+		soundcard_mixer_close(card);
 		return -ENODEV;
+	}
 
 	snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
 	/* since we set both, we can query only one side */
@@ -250,6 +256,7 @@ static int soundcard_control_get_volume(struct soundcard *card,
 	volume = ((volume + min) * 255) / (max - min);
 	*volumep = volume;
 
+	soundcard_mixer_close(card);
 	return err;
 }
 
