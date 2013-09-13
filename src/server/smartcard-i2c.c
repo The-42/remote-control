@@ -67,7 +67,7 @@ int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
 	if (!smartcard)
 		return -ENOMEM;
 
-	memset(smartcard, 0, sizeof(smartcard));
+	memset(smartcard, 0, sizeof(*smartcard));
 
 	device = g_key_file_get_string(config, "smartcard", "device", &error);
 	if (!device) {
