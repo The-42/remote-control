@@ -43,8 +43,9 @@ int main(int argc, char *argv[])
 		g_printerr("usage: %s filename [directory...]\n", argv[0]);
 		return 1;
 	}
-
+#if !GLIB_CHECK_VERSION(2, 35, 0)
 	g_type_init();
+#endif
 
 	conf = g_key_file_new();
 	if (!conf) {
