@@ -210,6 +210,10 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 			*info = 8; /* VOIP_EVT_MISSEDCALL */
 			break;
 
+		case EVENT_VOIP_STATE_ERROR_USER_BUSY:
+			*info = 9; /* VOIP_EVT_OUT_RINGING -> used as user busy*/
+			break;
+
 		case EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA:
 			g_debug("    EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA");
 			*info = 10; /* undefined under windows ce */
