@@ -22,7 +22,36 @@ struct sound_manager {
 	libvlc_media_player_t *player;
 	libvlc_event_manager_t *evman;
 	libvlc_media_t *media;
+	struct audio *audio;
 };
+
+#if defined(__arm__)
+static void sound_manager_update_alsa_device(struct sound_manager *manager)
+{
+	enum audio_state state = AUDIO_STATE_INACTIVE;
+	const char* device = "default";
+
+	if (audio_get_state(manager->audio, &state) < 0) {
+		g_warning("sound-manager: failed to recieve audio state");
+		return;
+	}
+
+	switch (state) {
+	case AUDIO_STATE_VOICECALL_HANDSET:
+	case AUDIO_STATE_VOICECALL_IP_HANDSET:
+		device = "handset";
+		break;
+
+	default:
+		/* restore default */
+		break;
+	}
+
+	libvlc_audio_output_device_set(manager->player, "alsa", device);
+}
+#else
+#define sound_manager_update_alsa_device(x)
+#endif
 
 int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 {
@@ -40,6 +69,7 @@ int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 	manager->vlc = libvlc_new(argc, argv);
 	manager->player = libvlc_media_player_new(manager->vlc);
 	libvlc_audio_set_volume(manager->player, LIBVLC_AUDIO_VOLUME_MAX);
+	manager->audio = audio;
 
 	*managerp = manager;
 	return 0;
@@ -66,6 +96,8 @@ int sound_manager_play(struct sound_manager *manager, const char *uri)
 		libvlc_media_release(manager->media);
 		manager->media = NULL;
 	}
+
+	sound_manager_update_alsa_device(manager);
 
 	manager->media = libvlc_media_new_location(manager->vlc, uri);
 	libvlc_media_player_set_media(manager->player, manager->media);
