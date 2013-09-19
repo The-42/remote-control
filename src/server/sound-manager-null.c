@@ -13,7 +13,7 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int sound_manager_create(struct sound_manager **managerp)
+int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 {
 	return 0;
 }

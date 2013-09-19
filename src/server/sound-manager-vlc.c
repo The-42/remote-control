@@ -24,7 +24,7 @@ struct sound_manager {
 	libvlc_media_t *media;
 };
 
-int sound_manager_create(struct sound_manager **managerp)
+int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 {
 	const char *const argv[] = { "--file-caching", "0", NULL };
 	struct sound_manager *manager;

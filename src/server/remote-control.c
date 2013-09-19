@@ -330,15 +330,15 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = sound_manager_create(&rc->sound);
-	if (err < 0) {
-		g_error("sound_manager_create(): %s", strerror(-err));
-		return err;
-	}
-
 	err = audio_create(&rc->audio, server, config);
 	if (err < 0) {
 		g_error("audio_create(): %s", strerror(-err));
+		return err;
+	}
+
+	err = sound_manager_create(&rc->sound, rc->audio);
+	if (err < 0) {
+		g_error("sound_manager_create(): %s", strerror(-err));
 		return err;
 	}
 
