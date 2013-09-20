@@ -63,7 +63,7 @@ static int modem_ring(struct modem *modem, void *data)
 	err = event_manager_report(events, &event);
 	if (err < 0)
 		g_debug("modem-libmodem: failed to report event: %s",
-				strerror(-err));
+				g_strerror(-err));
 
 	return err;
 }
@@ -110,7 +110,7 @@ static gboolean modem_source_dispatch(GSource *source, GSourceFunc callback,
 	if (err < 0) {
 		if (err != -ETIMEDOUT)
 			g_debug("modem-libmodem: modem_process(): %s",
-					strerror(-err));
+					g_strerror(-err));
 
 		return TRUE;
 	}
@@ -353,7 +353,7 @@ static int modem_manager_reset_modem(struct modem_manager *manager)
 	err = modem_reset(manager->modem);
 	if (err < 0) {
 		g_critical("modem-libmodem: failed to reset modem: %s",
-				strerror(-err));
+				g_strerror(-err));
 		return err;
 	}
 
