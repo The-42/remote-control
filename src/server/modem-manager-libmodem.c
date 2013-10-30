@@ -400,9 +400,11 @@ out:
 
 static int modem_manager_open(struct modem_manager *manager, GKeyFile *config)
 {
+#ifdef ENABLE_ALSALOOP
+	struct loop_desc loop;
+#endif
 	gboolean need_probe = TRUE;
 	struct modem_desc desc;
-	struct loop_desc loop;
 	int ret;
 
 	ret = modem_manager_load_config(config, &desc);
