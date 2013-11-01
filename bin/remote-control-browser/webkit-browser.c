@@ -98,6 +98,9 @@ static void webkit_browser_set_accept_language(WebKitBrowser *browser,
 	WebKitWebContext *context = webkit_web_context_get_default();
 	gchar **languages;
 
+	if (!language)
+		return;
+
 	languages = g_strsplit(language, ";", 0);
 
 	webkit_web_context_set_preferred_languages(context,
