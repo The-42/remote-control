@@ -368,7 +368,7 @@ AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_LCD, [test "x$enable_javascript_lcd" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_APP_WATCHDOG, [test "x$enable_javascript_app_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
-AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_gtk" = "x3.0"])
+AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_webkit" = "x2.0"])
 AM_CONDITIONAL(ENABLE_LIBTNJ3324, [test "x$with_libtnj3324" = "xyes"])
 AM_CONDITIONAL(ENABLE_ALSALOOP, [test "x$with_libalsaloop" = "xyes"])
 

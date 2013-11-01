@@ -15,8 +15,6 @@
 #include <errno.h>
 
 #include <sys/resource.h>
-
-#include <webkit/webkit.h>
 #include <gtk/gtk.h>
 
 #include "webkit-browser.h"

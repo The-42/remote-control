@@ -270,6 +270,7 @@ static void webkit_browser_finalize(GObject *object)
 	G_OBJECT_CLASS(webkit_browser_parent_class)->finalize(object);
 }
 
+#ifndef USE_WEBKIT2 /* Webkit2 provides this function */
 static gboolean webkit_web_view_is_loading(WebKitWebView *webkit)
 {
 	WebKitLoadStatus status = webkit_web_view_get_load_status(webkit);
@@ -287,6 +288,7 @@ static gboolean webkit_web_view_is_loading(WebKitWebView *webkit)
 
 	return FALSE;
 }
+#endif
 
 #ifdef USE_WEBKIT2
 static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
@@ -931,14 +933,14 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(on_create_web_view), browser);
 	g_signal_connect(G_OBJECT(webkit), "run-file-chooser",
 			G_CALLBACK(on_run_file_chooser), browser);
+	g_signal_connect(G_OBJECT(webkit), "button-press-event",
+			G_CALLBACK(on_webview_button_press_event), browser);
 #endif
 
 	if (hidden)
 		g_signal_connect(G_OBJECT(webkit), "web-view-ready",
 				G_CALLBACK(on_web_view_ready), webkit);
 
-	g_signal_connect(G_OBJECT(webkit), "button-press-event",
-			G_CALLBACK(on_webview_button_press_event), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::title",
 			G_CALLBACK(on_notify_title), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
