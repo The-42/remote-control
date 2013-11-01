@@ -22,16 +22,15 @@
 #include "utils.h"
 
 static const gchar default_configfile[] = SYSCONF_DIR "/browser.conf";
-
 static const gchar *configfile = default_configfile;
+static gchar *user_agent = NULL;
+static gboolean adblock = FALSE;
+static gboolean cursor = FALSE;
+static gboolean noexit = FALSE;
 static gchar *geometry = NULL;
 static gboolean noosk = FALSE;
 static gboolean kiosk = FALSE;
 static gchar *language = NULL;
-static gboolean cursor = FALSE;
-static gboolean noexit = FALSE;
-static gchar *user_agent = NULL;
-static gboolean adblock = FALSE;
 static glong max_pages = 0;
 
 static GOptionEntry entries[] = {
