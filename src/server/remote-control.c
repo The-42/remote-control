@@ -259,13 +259,38 @@ static GSourceFuncs remote_control_source_funcs = {
 	.finalize = remote_control_source_finalize,
 };
 
+static int socket_enable_keepalive(int socket, gboolean enable)
+{
+	int optval = enable ? 1 : 0;
+
+	return setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, &optval,
+			 sizeof(optval));
+}
+
+static gboolean config_get_socket_keepalive(GKeyFile *config)
+{
+	GError *error = NULL;
+	gboolean enable;
+
+	g_return_val_if_fail(config != NULL, false);
+
+	enable = g_key_file_get_boolean(config, "general",
+					"rpc-socket-keepalive", &error);
+	if (error != NULL) {
+		g_clear_error(&error);
+		enable = false;
+	}
+
+	return enable;
+}
+
 int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 {
 	struct rpc_server *server;
 	struct remote_control *rc;
 	struct rpc_source *src;
 	GSource *source;
-	int err;
+	int err, socket;
 
 	if (!rcp)
 		return -EINVAL;
@@ -299,14 +324,21 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	src = (struct rpc_source *)source;
 	src->rc = rc;
 
-	err = rpc_server_get_listen_socket(server);
+	socket = rpc_server_get_listen_socket(server);
+	if (socket < 0) {
+		g_error("rpc_server_get_listen(): %s", g_strerror(-socket));
+		return socket;
+	}
+
+	err = socket_enable_keepalive(socket,
+				      config_get_socket_keepalive(config));
 	if (err < 0) {
-		g_error("rpc_server_get_listen(): %s", strerror(-err));
+		g_critical("socket_enable_keepalive(): %s", g_strerror(-err));
 		return err;
 	}
 
 	src->poll_listen.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-	src->poll_listen.fd = err;
+	src->poll_listen.fd = socket;
 
 	g_source_add_poll(source, &src->poll_listen);
 	g_source_add_child_source(rc->source, source);

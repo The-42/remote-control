@@ -511,6 +511,22 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>general</varname> - configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>rpc-socket-keepalive</varname></term>
+							<listitem><para>
+								Specifies if the socket used for the RPC connection should use
+								TCP Keep-Alive mechanism or not (See RFC1122 for details and
+								/proc/sys/net/ipv4/tcp_keepalive_* for the timeouts).
+								The socket is created with the system default.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
@@ -553,6 +569,9 @@ device = /dev/i2c-1:0x50
 
 [lldp]
 interfaces = eth0
+
+[general]
+rpc-socket-keepalive = false
 </programlisting>
 	</refsect1>
 </refentry>
