@@ -103,10 +103,46 @@ int task_manager_free(struct task_manager *manager)
 	return 0;
 }
 
+static int create_environment(gchar ***envpp)
+{
+	static const struct {
+		const gchar *name;
+		const gchar *def;
+	} environment[] = {
+		{ "DISPLAY", ":0" },
+		{ "HOME", "/tmp" },
+		{ "http_proxy", NULL }
+	};
+	gchar **envp;
+	int i,j;
+
+	if (!envpp || *envpp != NULL)
+		return -EINVAL;
+
+	envp = g_new0(gchar *, G_N_ELEMENTS(environment) + 1);
+	if (!envp)
+		return -ENOMEM;
+
+	for (j = 0, i = 0; i < G_N_ELEMENTS(environment); i++) {
+		const char *env = g_getenv(environment[i].name);
+		/* skip this one, if we have no value and no default has
+		 * been specified. */
+		if (!env && environment[i].def == NULL)
+			continue;
+
+		envp[j++] = g_strdup_printf("%s=%s", environment[i].name,
+					    env ?: environment[i].def);
+	}
+
+	envp[j] = NULL;
+	*envpp = envp;
+
+	return j;
+}
+
 int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
-	const gchar *display;
 	GError *error = NULL;
 	gchar **argv = NULL;
 	gchar **envp = NULL;
@@ -122,21 +158,10 @@ int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 
 	task->pid = task_manager_get_next_pid(manager);
 
-	display = g_getenv("DISPLAY");
-	if (display) {
-		const char *proxy = g_getenv("http_proxy");
-		const char *home = g_getenv("HOME");
-		envp = g_new0(char *, 4);
-		if (!envp) {
-			ret = -ENOMEM;
-			goto free;
-		}
-
-		envp[0] = g_strdup_printf("DISPLAY=%s", display);
-		envp[1] = g_strdup_printf("HOME=%s", home ? home : "/tmp");
-		envp[2] = proxy ? g_strdup_printf("http_proxy=%s", proxy) : NULL;
-		envp[3] = NULL;
-	}
+	ret = create_environment(&envp);
+	if (ret < 0)
+		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to prepare "
+				"environment: %s", g_strerror(-ret));
 
 	if (!g_shell_parse_argv(command_line, &argc, &argv, &error)) {
 		g_log(G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "failed to parse "
