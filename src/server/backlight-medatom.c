@@ -30,12 +30,61 @@
 struct backlight {
 	GSysfsBacklight *sysfs;
 	Display *display;
+	int restore;
 	int fd;
 
 	int (*release)(struct backlight *backlight);
 	int (*set)(struct backlight *backlight, unsigned int brightness);
 	int (*get)(struct backlight *backlight);
+	int (*enable)(struct backlight *backlight, bool enable);
 };
+
+static int backlight_dpms_release(struct backlight *backlight)
+{
+	if (backlight->display)
+		XCloseDisplay(backlight->display);
+
+	return 0;
+}
+
+static int backlight_dpms_enable(struct backlight *backlight, bool enable)
+{
+	CARD16 mode = enable ? DPMSModeOn : DPMSModeOff;
+	Status ret;
+
+	ret = DPMSForceLevel(backlight->display, mode);
+	XFlush(backlight->display);
+
+	return ret ? 0 : -EIO;
+}
+
+static int backlight_dpms_set(struct backlight *backlight,
+			      unsigned int brightness)
+{
+	return backlight_dpms_enable(backlight, (brightness > BACKLIGHT_MIN));
+}
+
+static int backlight_dpms_get(struct backlight *backlight)
+{
+	CARD16 level = DPMSModeOff;
+	BOOL state = False;
+
+	if (!DPMSInfo(backlight->display, &level, &state))
+		return -ENOTSUP;
+
+	switch (level) {
+	case DPMSModeOn:
+		return BACKLIGHT_MAX;
+
+	case DPMSModeStandby:
+	case DPMSModeSuspend:
+	case DPMSModeOff:
+		return BACKLIGHT_MIN;
+
+	default:
+		return -EIO;
+	}
+}
 
 static int backlight_dpms_probe(struct backlight *backlight)
 {
@@ -55,13 +104,12 @@ static int backlight_dpms_probe(struct backlight *backlight)
 		return -ENOTSUP;
 	}
 
-	return 0;
-}
+	backlight->release = backlight_dpms_release;
+	backlight->set = backlight_dpms_set;
+	backlight->get = backlight_dpms_get;
+	backlight->enable = backlight_dpms_enable;
 
-static int backlight_dpms_release(struct backlight *backlight)
-{
-	if (backlight->display)
-		XCloseDisplay(backlight->display);
+	g_debug("backlight-dpms: using DPMS v%d.%d", major, minor);
 
 	return 0;
 }
@@ -133,6 +181,21 @@ static int backlight_i2c_get(struct backlight *backlight)
 	return value;
 }
 
+static int backlight_i2c_enable(struct backlight *backlight, bool enable)
+{
+	uint8_t command[2] = { 0xb1, 0x00 };
+	int err;
+
+	if (enable)
+		command[1] = 0xff;
+
+	err = write(backlight->fd, command, sizeof(command));
+	if (err < 0)
+		return -errno;
+
+	return 0;
+}
+
 static int i2c_probe_device(int fd, unsigned int slave)
 {
 	int err;
@@ -152,17 +215,17 @@ static int i2c_probe_bus(int fd)
 	unsigned int i;
 	int err;
 
-	g_debug("backlight: probing slaves...");
+	g_debug("backlight-i2c: probing slaves...");
 
 	for (i = 0x03; i <= 0x77; i++) {
 		err = i2c_probe_device(fd, i);
 		if (err < 0)
 			continue;
 
-		g_debug("backlight:   found: %#02x", i);
+		g_debug("backlight-i2c: found: %#02x", i);
 	}
 
-	g_debug("backlight: done");
+	g_debug("backlight-i2c: done");
 
 	return 0;
 }
@@ -204,8 +267,9 @@ static int backlight_i2c_probe(struct backlight *backlight)
 	backlight->release = backlight_i2c_release;
 	backlight->set = backlight_i2c_set;
 	backlight->get = backlight_i2c_get;
+	backlight->enable = backlight_i2c_enable;
 
-	g_debug("backlight: using I2C bus %s, slave %#x", device, slave);
+	g_debug("backlight-i2c: using I2C bus %s, slave %#x", device, slave);
 	g_object_unref(gmbus);
 
 	return 0;
@@ -233,10 +297,15 @@ static int backlight_sysfs_set(struct backlight *backlight,
 	guint value, max;
 
 	max = g_sysfs_backlight_get_max_brightness(bl);
-	value = (brightness * max) / 255;
+	g_return_val_if_fail(max != 0, -EIO);
+
+	/* Because max can be significantly larger than the actual backlight
+	 * value. So we round up here, to avoid a constant decrease of value.
+	 */
+	value = (brightness * max + 254) / 255;
 
 	if (!g_sysfs_backlight_set_brightness(bl, value, &error)) {
-		g_debug("backlight: failed to set brightness: %s",
+		g_debug("backlight-sysfs: failed to set brightness: %s",
 			error->message);
 		g_clear_error(&error);
 		return -EIO;
@@ -252,16 +321,37 @@ static int backlight_sysfs_get(struct backlight *backlight)
 	guint value, max;
 
 	max = g_sysfs_backlight_get_max_brightness(bl);
+	g_return_val_if_fail(max != 0, -EIO);
 
 	value = g_sysfs_backlight_get_brightness(bl, &error);
 	if (error) {
-		g_debug("backlight: failed to get brightness: %s",
+		g_debug("backlight-sysfs: failed to get brightness: %s",
 			error->message);
 		g_clear_error(&error);
 		return -EIO;
 	}
 
 	return (value * 255) / max;
+}
+
+static int backlight_sysfs_enable(struct backlight *backlight, bool enable)
+{
+	GSysfsBacklight *bl = backlight->sysfs;
+	GError *error = NULL;
+
+	if (enable)
+		g_sysfs_backlight_enable(bl, &error);
+	else
+		g_sysfs_backlight_disable(bl, &error);
+
+	if (error) {
+		g_warning("backlight-sysfs: failed to %sable backlight: %s",
+			  enable ? "en" : "dis", error->message);
+		g_clear_error(&error);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int backlight_sysfs_probe(struct backlight *backlight)
@@ -284,8 +374,8 @@ static int backlight_sysfs_probe(struct backlight *backlight)
 
 	backlight->sysfs = g_sysfs_backlight_new("intel_backlight", &error);
 	if (!backlight->sysfs) {
-		g_debug("backlight: failed to create sysfs backlight: %s",
-			error->message);
+		g_debug("backlight-sysfs: failed to create sysfs backlight:"
+			" %s", error->message);
 		g_clear_error(&error);
 		return -ENODEV;
 	}
@@ -293,12 +383,17 @@ static int backlight_sysfs_probe(struct backlight *backlight)
 	backlight->release = backlight_sysfs_release;
 	backlight->set = backlight_sysfs_set;
 	backlight->get = backlight_sysfs_get;
+	backlight->enable = backlight_sysfs_enable;
+
+	backlight->restore = backlight_sysfs_get(backlight);
+	if (backlight->restore < 0)
+		backlight->restore = 0xff;
 
 	g_object_get(backlight->sysfs, "device", &device, "max-brightness",
 		     &max_brightness, NULL);
 	path = g_udev_device_get_sysfs_path(device);
 
-	g_debug("backlight: using %s, maximum brightness %u", path,
+	g_debug("backlight: using sysfs %s, maximum brightness %u", path,
 		max_brightness);
 
 	g_object_unref(device);
@@ -310,20 +405,19 @@ static int backlight_probe(struct backlight *backlight)
 {
 	int err;
 
-	err = backlight_dpms_probe(backlight);
-	if (err < 0)
-		return err;
-
 	err = backlight_sysfs_probe(backlight);
-	if (err < 0) {
-		err = backlight_i2c_probe(backlight);
-		if (err < 0) {
-			backlight_dpms_release(backlight);
-			return err;
-		}
-	}
+	if (!err)
+		return 0;
 
-	return 0;
+	err = backlight_i2c_probe(backlight);
+	if (!err)
+		return 0;
+
+	err = backlight_dpms_probe(backlight);
+	if (!err)
+		return 0;
+
+	return err;
 }
 
 int backlight_create(struct backlight **backlightp)
@@ -360,10 +454,6 @@ int backlight_free(struct backlight *backlight)
 	if (err < 0)
 		return err;
 
-	err = backlight_dpms_release(backlight);
-	if (err < 0)
-		return err;
-
 	g_free(backlight);
 
 	return 0;
@@ -371,15 +461,10 @@ int backlight_free(struct backlight *backlight)
 
 int backlight_enable(struct backlight *backlight, bool enable)
 {
-	CARD8 mode = enable ? DPMSModeOn : DPMSModeOff;
-
 	if (!backlight)
 		return -EINVAL;
 
-	DPMSForceLevel(backlight->display, mode);
-	XFlush(backlight->display);
-
-	return 0;
+	return backlight->enable(backlight, enable);
 }
 
 int backlight_set(struct backlight *backlight, unsigned int brightness)
