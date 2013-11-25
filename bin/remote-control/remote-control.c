@@ -22,6 +22,8 @@
 #include <glib-unix.h>
 #include <gio/gio.h>
 
+#include <gudev/gudev.h>
+
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
@@ -548,9 +550,24 @@ static void stop_remote_control(struct remote_control_data *rcd)
 	g_free(rcd);
 }
 
+static void on_udev_event(GUdevClient *client, gchar *action,
+			  GUdevDevice *udevice, gpointer user_data)
+{
+	const char *caps = g_udev_device_get_property(udevice, "PRODUCT");
+	/* Because we only configure the system (linphone audio-settings, see udev)
+	 * to either usb-handset or classic handet on startup. We need to restart
+	 * remote-control whenever somebody (dis)connects the usb-handset. */
+	if (caps == NULL || !g_str_has_prefix(caps, "8bb/29c6"))
+		return;
+
+	if (g_strcmp0(action, "add") == 0 || g_strcmp0(action, "remove") == 0)
+		g_error("Handset %s detected, restarting", action);
+}
+
 int main(int argc, char *argv[])
 {
 	const gchar *default_config_file = SYSCONF_DIR "/remote-control.conf";
+	const gchar *const subsystems[] = { "usb/usb_interface", NULL };
 	gchar *config_file = NULL;
 	gboolean version = FALSE;
 	GOptionEntry entries[] = {
@@ -563,6 +580,7 @@ int main(int argc, char *argv[])
 	struct remote_control_data *rcd;
 	GMainContext *context = NULL;
 	struct watchdog *watchdog;
+	GUdevClient* udev_client;
 	GOptionContext *options;
 	GError *error = NULL;
 	GtkWidget *window;
@@ -696,6 +714,13 @@ int main(int argc, char *argv[])
 		watchdog_attach(watchdog, context);
 	}
 
+	udev_client = g_udev_client_new(subsystems);
+	if (udev_client) {
+		g_signal_connect(udev_client, "uevent",
+				 G_CALLBACK(on_udev_event), NULL);
+	} else
+		g_warning("init: failed to create udev client");
+
 	g_main_loop_run(loop);
 
 	watchdog_unref(watchdog);
@@ -703,6 +728,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_DBUS
 	g_bus_unown_name(owner);
 #endif
+	g_object_unref(udev_client);
 	g_main_loop_unref(loop);
 	g_key_file_free(conf);
 	remote_control_log_exit();
