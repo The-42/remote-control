@@ -22,7 +22,15 @@ libcommon_la_SOURCES += \
 	gsysfs.h \
 	gsysfsbacklight.c \
 	gsysfsbacklight.h
-endif
+else
+if ENABLE_BACKLIGHT_MEDATOM
+libcommon_la_SOURCES += \
+	gsysfs.c \
+	gsysfs.h \
+	gsysfsbacklight.c \
+	gsysfsbacklight.h
+endif #  ENABLE_BACKLIGHT_MEDATOM
+endif # ENABLE_BACKLIGHT_SYSFS
 
 if ENABLE_GPIO_SYSFS
 libcommon_la_SOURCES += \
