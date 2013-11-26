@@ -105,8 +105,6 @@ AS_CASE([$with_backlight_backend],
 	[AC_MSG_ERROR([Invalid backlight backend: must be none, dpms, medatom or sysfs])]
 )
 
-AS_IF([test "x$enable_backlight_medatom" = "xyes"], [PKG_CHECK_MODULES(GUDEV, gudev-1.0)])
-
 #
 # SmartCard backend
 #
