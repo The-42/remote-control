@@ -31,6 +31,7 @@
 #include "gtk-pdf-view.h"
 #include "utils.h"
 #include "guri.h"
+#include "jshooks.h"
 
 static const gchar style_large[] = \
 	"style \"scrollbar-large\" { GtkScrollbar::slider-width = 48 }\n" \
@@ -343,6 +344,58 @@ static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 	gtk_entry_set_progress_fraction(priv->entry, progress);
 }
 #endif
+
+static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec)
+{
+	/* This callback is explicitly connected to notify::load_status
+	 * since only then it can be made sure the code below is
+	 * executed exactly once per page (provided the actual load
+	 * status is checked). The alternative document-load-finished
+	 * seems to get fired per subframe and applet - which is a
+	 * nightmare on a page like youtube.
+	 */
+
+	WebKitWebFrame *web_frame = webkit_web_view_get_main_frame(web_view);
+	WebKitLoadStatus status = webkit_web_view_get_load_status(web_view);
+	const gchar *uri = webkit_web_view_get_uri(web_view);
+	JSGlobalContextRef js_context;
+	gchar **jshooks = NULL;
+	GError *err = NULL;
+	gchar *jscript;
+	gchar *jspath;
+	uint idx = 0;
+
+	/* It may make sense to generate an index of all JS-hook files
+	 * on startup to prevent any latencies at this point. However,
+	 * if those files do not resist on the SD-card or in flash, the
+	 * benefit may be negligible. Reading an existing file is more
+	 * costly anyway.
+	 */
+
+	if (status == WEBKIT_LOAD_FIRST_VISUALLY_NON_EMPTY_LAYOUT)
+		jshooks = jshooks_determine_hooklist(uri, "pre");
+	else if (status == WEBKIT_LOAD_FINISHED)
+		jshooks = jshooks_determine_hooklist(uri, "post");
+
+	while (jshooks && jshooks[idx]) {
+		jspath = g_strconcat(PKG_DATA_DIR, "/jshooks/", jshooks[idx], NULL);
+
+		if (g_file_test(jspath, G_FILE_TEST_EXISTS)) {
+			if (g_file_get_contents (jspath, &jscript, NULL, &err)) {
+				js_context = webkit_web_frame_get_global_context(web_frame);
+				jshooks_execute_jscript(js_context, jscript, jshooks[idx]);
+			} else {
+				g_warning("jshooks: failed to load jshook from %s -- %s",
+						jspath, err->message);
+				g_clear_error(&err);
+			}
+		}
+		g_free(jspath);
+		++idx;
+	}
+
+	g_strfreev(jshooks);
+}
 
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 {
@@ -926,6 +979,8 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(on_download_requested), browser);
 	g_signal_connect(G_OBJECT(webkit), "new-window-policy-decision-requested",
 			G_CALLBACK(on_new_window_requested), browser);
+	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
+			G_CALLBACK(on_page_load), NULL);
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",

@@ -3,6 +3,7 @@ bin_PROGRAMS = \
 
 remote_control_browser_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
+	-DPKG_DATA_DIR=\"$(pkgdatadir)\" \
 	-I$(top_srcdir)/src/common \
 	-I$(top_srcdir)/bin/utils \
 	@POPPLER_CFLAGS@ \
@@ -16,6 +17,8 @@ remote_control_browser_SOURCES = \
 	gtk-pdf-view.c \
 	gtk-pdf-view.h \
 	main.c \
+	jshooks.c \
+	jshooks.h \
 	webkit-browser.c \
 	webkit-browser.h \
 	webkit-browser-tab-label.c \
@@ -34,3 +37,10 @@ remote_control_browser_LDADD = \
 	@WEBKIT_LIBS@ \
 	@GTKOSK_LIBS@ \
 	@GTK_LIBS@
+
+jshooksdir = $(pkgdatadir)/jshooks
+jshooks_DATA = \
+	jshooks/post-example.com.js
+
+EXTRA_DIST = \
+	$(jshooks_DATA)
