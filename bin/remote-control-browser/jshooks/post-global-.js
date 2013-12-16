@@ -194,6 +194,13 @@
 				static_has_videos--;
 		}
 
+		/* butt-ugly hack, do not remove youtube embeds for now, else YT script will die */
+		if (/^https?:\/\/www\.youtube.com\/watch\?/.test(window.location.href) ||
+			/^https?:\/\/www\.youtube.com\/user\/\w+\?/.test(window.location.href)) {
+			console.log('will not remove youtube embeds.');
+			return;
+		}
+
 		while (swfembeds.length) {
 			el = swfembeds.pop();
 			d = _create_flash_subst();

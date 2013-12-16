@@ -44,7 +44,8 @@ jshooksdir = $(pkgdatadir)/jshooks
 jshooks_DATA = \
 	jshooks/post-global-.js \
 	jshooks/pre-global-.js \
-	jshooks/post-vimeo.com.js
+	jshooks/post-vimeo.com.js \
+	jshooks/post-youtube.com.js
 
 EXTRA_DIST = \
 	$(jshooks_DATA)
