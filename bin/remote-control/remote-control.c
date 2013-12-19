@@ -554,14 +554,21 @@ static void on_udev_event(GUdevClient *client, gchar *action,
 			  GUdevDevice *udevice, gpointer user_data)
 {
 	const char *caps = g_udev_device_get_property(udevice, "PRODUCT");
-	/* Because we only configure the system (linphone audio-settings, see udev)
-	 * to either usb-handset or classic handet on startup. We need to restart
-	 * remote-control whenever somebody (dis)connects the usb-handset. */
+	/* Because we only configure the system (linphone audio-settings, see
+	 * udev) to either usb-handset or classic handset on startup. We need
+	 * to restart remote-control whenever somebody connects the
+	 * usb-handset. */
 	if (caps == NULL || !g_str_has_prefix(caps, "8bb/29c6"))
 		return;
-
-	if (g_strcmp0(action, "add") == 0 || g_strcmp0(action, "remove") == 0)
+	/* In real life it only makes sense to restart remote-control if a
+	 * device is added. On removal a device usually is no longer present
+	 * and can thus be ignored. Additionally a restart in progress from
+	 * removal could lead to missing subsequent add events if a headset
+	 * is changed fast enough. */
+	if (g_strcmp0(action, "add") == 0)
 		g_error("Handset %s detected, restarting", action);
+	else
+		g_critical("Handset %s detected", action);
 }
 
 int main(int argc, char *argv[])
