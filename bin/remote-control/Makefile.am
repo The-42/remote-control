@@ -9,6 +9,7 @@ remote_control_CPPFLAGS = \
 	@GLIB_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
+	@GUDEV_CFLAGS@ \
 	@ALSA_CFLAGS@ \
 	@GTK_CFLAGS@
 
@@ -28,21 +29,16 @@ remote_control_LDADD = \
 	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \
 	@WEBKIT_LIBS@ \
+	@GUDEV_LIBS@ \
 	@ALSA_LIBS@
 
 if ENABLE_JAVASCRIPT
-remote_control_CPPFLAGS += \
-	@GUDEV_CFLAGS@
-
 remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
 	javascript-cursor.c \
 	javascript-input.c \
 	javascript-monitor.c
-
-remote_control_LDADD += \
-	@GUDEV_LIBS@
 
 if ENABLE_JAVASCRIPT_IR
 remote_control_SOURCES += \
