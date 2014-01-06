@@ -41,8 +41,7 @@ remote_control_browser_LDADD = \
 	@GTK_LIBS@
 
 jshooksdir = $(pkgdatadir)/jshooks
-jshooks_DATA = \
-	jshooks/post-example.com.js
+jshooks_DATA =
 
 EXTRA_DIST = \
 	$(jshooks_DATA)
