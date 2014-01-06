@@ -42,12 +42,17 @@
 
 	 /* Available parameters:
 	  * 	avdglobal_list_available_codecs
+	  * 	avdglobal_detect_videos
 	  */
 
 	function init()
 	{
 		if (document.URL.indexOf('avdglobal_list_available_codecs') != -1)
 			list_available_codecs();
+		if (document.URL.indexOf('avdglobal_detect_flash') != -1) {
+			document.addEventListener('DOMNodeInserted', detect_videos, false);
+			detect_videos(null, null);
+		}
 	}
 
 	function list_available_codecs()
@@ -148,6 +153,94 @@
 		console.log(str);
 	}
 
+	function detect_videos(evt, docroot)
+	{
+		var logstring = '';
+		var flashurls = [];
+		var ifrmurls = [];
+		var flpath;
+		var objs;
+		var vids;
+		var ifrs;
+		var embs;
+		var doc;
+
+		if (evt && (!evt.target || !evt.target.tagName))
+			return;
+
+		if (evt)
+			logstring += '\nInserted element: ' + evt.target.tagName;
+		else if (docroot)
+			logstring += '\nCall from iframe: ' + docroot.URL;
+		else
+			logstring += '\nPlain call.';
+
+		doc = docroot || document;
+
+		/* flash objects */
+		objs = doc.getElementsByTagName('object');
+		for (var i = 0; i < objs.length; i++) {
+			flpath = objs[i].getAttribute('data');
+			if ((/\.swf\b/).test(flpath))
+				flashurls.push(flpath);
+		}
+
+		if (flashurls.length) {
+			logstring += '\n' + flashurls.length + ' flash object' +
+				(flashurls.length > 1 ? 's' : '') + ' found:';
+			for (var i = 0; i < flashurls.length; i++)
+				logstring += '\n\t' + (i + 1) + ': ' + flashurls[i];
+		} else {
+			logstring += '\nno relevant objects found.';
+		}
+
+		/* iframes */
+		ifrs = doc.getElementsByTagName('iframe');
+		for (var i = 0; i < ifrs.length; i++) {
+			if (ifrs[i].src && !_strbegins(ifrs[i].src, 'javascript:'))
+				ifrmurls.push(ifrs[i].src);
+			else if (ifrs[i].srcdoc && !_strbegins(ifrs[i].srcdoc, 'javascript:'))
+				ifrmurls.push(ifrs[i].srcdoc);
+
+			var idoc = ifrs[i].contentDocument || ifrs[i].contentWindow.document;
+			if (idoc)
+				detect_videos(null, idoc);
+		}
+
+		if (ifrmurls.length) {
+			logstring += '\n' + ifrmurls.length + ' iframe' +
+				(ifrmurls.length > 1 ? 's' : '') + ' found:';
+			for (var i = 0; i < ifrmurls.length; i++)
+				logstring += '\n\t' + (i + 1) + ': ' + ifrmurls[i];
+		} else {
+			logstring += '\nno relevant iframes found.';
+		}
+
+		/* videos */
+		vids = doc.getElementsByTagName('video');
+		if (!vids.length) {
+			logstring += '\nno videos found.';
+		} else {
+			logstring += '\n' + vids.length + ' video' +
+				(vids.length > 1 ? 's' : '') + ' found:';
+			for (var i = 0; i < vids.length; i++)
+				logstring += '\n\t' + (i + 1) + ': ' + vids[i].src;
+		}
+
+		/* embeds */
+		embs = doc.getElementsByTagName('embed');
+		if (!embs.length) {
+			logstring += '\nno embeds found.';
+		} else {
+			logstring += '\n' + embs.length + ' embed' +
+				(embs.length > 1 ? 's' : '') + ' found:';
+			for (var i = 0; i < embs.length; i++)
+				logstring += '\n\t' + (i + 1) + ': ' + embs[i].src;
+		}
+
+		console.log(logstring);
+	}
+
 	function _align_widths(arr)
 	{
 		var max_length = 0;
@@ -164,6 +257,14 @@
 
 		return arr;
 	}
+
+	function _strbegins(str, substr)
+	{
+		return str.slice(0, substr.length) == substr;
+	}
+
+	if (!window.console)
+		window.console = { log: function() {} };
 
 	init();
 })();
