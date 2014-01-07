@@ -1,5 +1,40 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.9.0 (2014-01-13)
 ==========================
+* remote-control-browser
+ - Tab control button fixes
+ - mime type request handling fixes
+ - Add webkit2 API compatibility
+ - Add Gtk+ 3.0 compatibility
+ - Automatically display gtkosk for textfields
+ - Allow custom user-agent settings
+ - Allow tab-count limitation through config
+ - Add easylist based adblocker (blacklisting)
+
+* remote-control
+ - media-player-gtk-gst:
+   + Improve pipeline handling
+   + Add v4l support
+   + Add cropping support
+   + Fix memory leaks
+   + Style cleanup
+ - media-player-gtk-vlc:
+   + Add tnj3324 tuner support
+   + Make buffer duration configurable
+ - Add javascript support for RS232 LCD-TV control
+ - gpio-sysfs: Configurable through remote-control.conf
+ - Add javascript application watchdog
+ - Add javascript reload helper
+ - Add javascript memory monitor API
+ - Configurable smartcard backends
+ - linphone
+   + Reworked expiration time support
+   + Allow disabling keep-alive ping
+   + Logout fixes
+   + End calls with terminate_all
+   + Make audio device configurable
+   + Add voip events
+ - Add USB handset support
+ - Add preliminary pulseaudio support
 
 Release 0.8.2 (2012-04-25)
 ==========================
