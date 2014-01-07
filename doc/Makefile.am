@@ -20,7 +20,7 @@ man_MANS = \
 	remote-control.conf.5
 
 EXTRA_DIST = \
-	browser.xml.in \
+	browser.conf.xml.in \
 	remote-control.conf.xml.in
 
 CLEANFILES = \
