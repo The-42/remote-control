@@ -67,8 +67,8 @@ adblock_build_js(const gchar* uri)
 	GString* subdomain;
 	gchar** subdomains;
 	const gchar* style;
+	const gchar* host;
 	int blockscnt = 0;
-	GString* host;
 	GString* code;
 	int cnt = 0;
 	GURI *guri;
@@ -461,7 +461,7 @@ gboolean uri_is_http(const gchar* uri)
 
 static gboolean uri_is_blank(const gchar* uri)
 {
-	return !(uri && (uri[0] != "") && !g_str_has_prefix (uri, "about:"));
+	return !(uri && (uri[0] != 0) && !g_str_has_prefix (uri, "about:"));
 }
 
 static void
@@ -476,7 +476,7 @@ adblock_resource_request_starting_cb(WebKitWebView*         web_view,
 	const gchar* req_uri;
 	const char *page_uri;
 	GList* blocked_uris;
-	gchar* path;
+	const gchar* path;
 	GURI *guri;
 
 	page_uri = webkit_web_view_get_uri(web_view);
