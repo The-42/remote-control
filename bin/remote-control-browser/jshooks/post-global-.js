@@ -49,7 +49,7 @@
 	{
 		if (document.URL.indexOf('avdglobal_list_available_codecs') != -1)
 			list_available_codecs();
-		if (document.URL.indexOf('avdglobal_detect_flash') != -1) {
+		if (document.URL.indexOf('avdglobal_detect_videos') != -1) {
 			document.addEventListener('DOMNodeInserted', detect_videos, false);
 			detect_videos(null, null);
 		}
