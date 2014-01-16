@@ -50,12 +50,21 @@
 	  * 	avdglobal_detect_videos
 	  */
 
+	var avdglobal_detect_videos = 0;
+	var static_has_videos = 0;
+	var swfobjects = [];
+	var swfembeds = [];
+
 	function init()
 	{
-		if (document.URL.indexOf('avdglobal_detect_videos') != -1) {
-			document.addEventListener('DOMNodeInserted', detect_videos, false);
-			detect_videos(null, null);
+		if (document.URL.indexOf('avdglobal_detect_videos') == -1) {
+			avdglobal_detect_videos = 1;
 		}
+
+		document.addEventListener('DOMNodeInserted', _trigger_pagechange, false);
+		detect_videos(null, null);
+		if (swfobjects.length || swfembeds.length)
+			block_flash();
 	}
 
 	function detect_videos(evt, docroot)
@@ -68,17 +77,11 @@
 		var vids;
 		var ifrs;
 		var embs;
+		var sum;
 		var doc;
 
 		if (evt && (!evt.target || !evt.target.tagName))
 			return;
-
-		if (evt)
-			logstring += '\nInserted element: ' + evt.target.tagName;
-		else if (docroot)
-			logstring += '\nCall from iframe: ' + docroot.URL;
-		else
-			logstring += '\nPlain call.';
 
 		doc = docroot || document;
 
@@ -86,64 +89,166 @@
 		objs = doc.getElementsByTagName('object');
 		for (var i = 0; i < objs.length; i++) {
 			flpath = objs[i].getAttribute('data');
-			if ((/\.swf\b/).test(flpath))
+			if ((/\.swf\b/).test(flpath)) {
 				flashurls.push(flpath);
-		}
-
-		if (flashurls.length) {
-			logstring += '\n' + flashurls.length + ' flash object' +
-				(flashurls.length > 1 ? 's' : '') + ' found:';
-			for (var i = 0; i < flashurls.length; i++)
-				logstring += '\n\t' + (i + 1) + ': ' + flashurls[i];
-		} else {
-			logstring += '\nno relevant objects found.';
+				swfobjects.push(objs[i]);
+			}
 		}
 
 		/* iframes */
 		ifrs = doc.getElementsByTagName('iframe');
 		for (var i = 0; i < ifrs.length; i++) {
-			if (ifrs[i].src && !_strbegins(ifrs[i].src, 'javascript:'))
-				ifrmurls.push(ifrs[i].src);
-			else if (ifrs[i].srcdoc && !_strbegins(ifrs[i].srcdoc, 'javascript:'))
-				ifrmurls.push(ifrs[i].srcdoc);
+			var isrc = ifrs[i].src || ifrs[i].srcdoc;
+			if (isrc && !_strbegins(isrc, 'javascript:') && !_strbegins(document.URL, isrc))
+				ifrmurls.push(isrc);
 
 			var idoc = ifrs[i].contentDocument || ifrs[i].contentWindow.document;
 			if (idoc)
 				detect_videos(null, idoc);
 		}
 
+		/* videos */
+		vids = doc.getElementsByTagName('video');
+
+		/* embeds */
+		embs = doc.getElementsByTagName('embed');
+		for (var i = 0; i < embs.length; i++) {
+			if (embs[i].hasAttribute('type') && /flash/.test(embs[i].type))
+				swfembeds.push(embs[i]);
+		}
+
+		sum = flashurls.length + ifrmurls.length + vids.length + embs.length;
+
+		if (!evt && docroot)
+			static_has_videos += sum;
+		else
+			static_has_videos = sum;
+
+		if (!avdglobal_detect_videos)
+			return;
+
+		/* Logging part */
+		if (evt)
+			logstring += '\nInserted element: ' + evt.target.tagName;
+		else if (docroot)
+			logstring += '\nCall from iframe: ' + _shorten(docroot.URL);
+		else
+			logstring += '\nPlain call.';
+
+		if (flashurls.length) {
+			logstring += '\n' + flashurls.length + ' flash object' +
+				(flashurls.length > 1 ? 's' : '') + ' found:';
+			for (var i = 0; i < flashurls.length; i++)
+				logstring += '\n\t' + _num(i + 1) + ': ' + _shorten(flashurls[i]);
+		} else {
+			logstring += '\nno relevant objects found.';
+		}
+
 		if (ifrmurls.length) {
 			logstring += '\n' + ifrmurls.length + ' iframe' +
 				(ifrmurls.length > 1 ? 's' : '') + ' found:';
 			for (var i = 0; i < ifrmurls.length; i++)
-				logstring += '\n\t' + (i + 1) + ': ' + ifrmurls[i];
+				logstring += '\n\t' + _num(i + 1) + ': ' + _shorten(ifrmurls[i]);
 		} else {
 			logstring += '\nno relevant iframes found.';
 		}
 
-		/* videos */
-		vids = doc.getElementsByTagName('video');
 		if (!vids.length) {
 			logstring += '\nno videos found.';
 		} else {
 			logstring += '\n' + vids.length + ' video' +
 				(vids.length > 1 ? 's' : '') + ' found:';
 			for (var i = 0; i < vids.length; i++)
-				logstring += '\n\t' + (i + 1) + ': ' + vids[i].src;
+				logstring += '\n\t' + _num(i + 1) + ': ' + _shorten(vids[i].src);
 		}
 
-		/* embeds */
-		embs = doc.getElementsByTagName('embed');
 		if (!embs.length) {
 			logstring += '\nno embeds found.';
 		} else {
 			logstring += '\n' + embs.length + ' embed' +
 				(embs.length > 1 ? 's' : '') + ' found:';
 			for (var i = 0; i < embs.length; i++)
-				logstring += '\n\t' + (i + 1) + ': ' + embs[i].src;
+				logstring += '\n\t' + _num(i + 1) + ': ' + _shorten(embs[i].src);
 		}
 
+		logstring += '\n' + sum + ' in this instance, ' +
+			static_has_videos + ' total.';
+
 		console.log(logstring);
+	}
+
+	function block_flash()
+	{
+		var el;
+		var d;
+
+		if (!(swfobjects.length || swfembeds.length))
+			return;
+
+		while (swfobjects.length) {
+			el = swfobjects.pop();
+			d = _create_flash_subst();
+			d.style.height = el.offsetHeight + 'px';
+			d.style.width = el.offsetWidth + 'px';
+			if (el.parentNode.replaceChild(d, el))
+				static_has_videos--;
+		}
+
+		while (swfembeds.length) {
+			el = swfembeds.pop();
+			d = _create_flash_subst();
+			d.style.height = el.offsetHeight + 'px';
+			d.style.width = el.offsetWidth + 'px';
+			if (el.parentNode.replaceChild(d, el))
+				static_has_videos--;
+		}
+	}
+
+	function _create_flash_subst()
+	{
+		var d = document.createElement('div');
+		var p = document.createElement('p');
+
+		p.textContent = 'Sorry mate, flash is not available.';
+		p.style.display = 'inline-block';
+		p.style.fontSize = '250%';
+
+		d.className = 'avd-flash-subst';
+		d.style.cssText = 'background-image:' +
+			'-webkit-gradient(' +
+			'linear,' +
+			'left top,' +
+			'right top,' +
+			'color-stop(0, #add8e6),' +
+			'color-stop(.5, #42abba),' +
+			'color-stop(1, #add8e6)' +
+			');'
+		d.style.textAlign = 'center';
+		d.style.verticalAlign = 'middle';
+		d.style.display = 'table-cell';
+		d.appendChild(p);
+
+		return d;
+	}
+
+	function _trigger_pagechange(evt)
+	{
+		detect_videos(evt, null);
+		if (swfobjects.length || swfembeds.length)
+			block_flash();
+	}
+
+	function _num(x)
+	{
+		return (x < 10 ? ' ' : '') + x;
+	}
+
+	function _shorten(str)
+	{
+		if (str.length > 120)
+			return (str.slice(0, 80) + '...' + str.slice(-37));
+
+		return str;
 	}
 
 	function _strbegins(str, substr)
