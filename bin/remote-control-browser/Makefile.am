@@ -42,7 +42,8 @@ remote_control_browser_LDADD = \
 
 jshooksdir = $(pkgdatadir)/jshooks
 jshooks_DATA = \
-	jshooks/post-global-.js
+	jshooks/post-global-.js \
+	jshooks/pre-global-.js
 
 EXTRA_DIST = \
 	$(jshooks_DATA)
