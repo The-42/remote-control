@@ -61,10 +61,6 @@ gchar **jshooks_determine_hooklist(const gchar *uri, const gchar *prefix)
 	gchar *fqdn;
 	gchar *fdot;
 
-	g_snprintf(hookname, sizeof(hookname), "%s-%s.js",
-				prefix, JSHOOKS_GLOBAL_FILENAME);
-	hooklist[idx++] = g_strndup(hookname, sizeof(hookname));
-
 	fqdn = get_fqdn_from_uri(uri);
 	if (!fqdn) {
 		g_warning("%s: FQDN extraction failed! URI was: %s",
@@ -93,6 +89,10 @@ gchar **jshooks_determine_hooklist(const gchar *uri, const gchar *prefix)
 	}
 
 	g_snprintf(hookname, sizeof(hookname), "%s-%s.js", prefix, fqdn_start);
+	hooklist[idx++] = g_strndup(hookname, sizeof(hookname));
+
+	g_snprintf(hookname, sizeof(hookname), "%s-%s.js",
+				prefix, JSHOOKS_GLOBAL_FILENAME);
 	hooklist[idx++] = g_strndup(hookname, sizeof(hookname));
 
 	g_free(fdot);
