@@ -56,6 +56,7 @@ enum {
 	PROP_USER_AGENT,
 	PROP_MAX_PAGES,
 	PROP_ADBLOCK,
+	PROP_USER_AGENT_OVERRIDES,
 };
 
 struct _WebKitBrowserPrivate {
@@ -81,6 +82,7 @@ struct _WebKitBrowserPrivate {
 	guint max_pages;
 	gchar *user_agent;
 	gboolean adblock;
+	GData *user_agent_overrides;
 
 #ifdef USE_WEBKIT2
 	gchar **languages;
@@ -197,6 +199,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_boolean(value, priv->adblock);
 		break;
 
+	case PROP_USER_AGENT_OVERRIDES:
+		g_value_set_pointer(value, priv->user_agent_overrides);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -204,6 +210,7 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 }
 
 static void webkit_browser_set_user_agent(WebKitWebView *webkit, const gchar *str);
+static gchar *webkit_web_view_get_user_agent(WebKitWebView *webkit);
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser);
 
 static void webkit_browser_set_property(GObject *object, guint prop_id,
@@ -263,6 +270,10 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		/* update the current page */
 		webkit_browser_set_user_agent(webkit_browser_get_current_view(browser),
 			priv->user_agent);
+		break;
+
+	case PROP_USER_AGENT_OVERRIDES:
+		priv->user_agent_overrides = g_value_get_pointer(value);
 		break;
 
 	case PROP_ADBLOCK:
@@ -361,7 +372,53 @@ static void on_notify_progress(WebKitWebView *webkit, GParamSpec *pspec,
 }
 #endif
 
-static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec)
+static void apply_user_agent_override(GQuark key_id, gpointer data,
+		gpointer user_data)
+{
+	WebKitBrowser *browser = WEBKIT_BROWSER(user_data);
+	WebKitBrowserPrivate *priv;
+	WebKitWebView *web_view;
+
+	web_view = webkit_browser_get_current_view(browser);
+	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	const gchar *uri = webkit_web_view_get_uri(web_view);
+	GMatchInfo *match_info;
+	GRegex *domain_regex;
+
+	domain_regex = g_regex_new(g_quark_to_string(key_id), G_REGEX_OPTIMIZE,
+					0, NULL);
+
+	g_regex_match(domain_regex, uri, 0, &match_info);
+	if (g_match_info_matches(match_info)) {
+		g_warning("Apply domain-specific user-agent: %s\n",
+				(gchar*)data);
+		webkit_browser_set_user_agent(web_view, (gchar*)data);
+	} else {
+		/* reset user agent to default */
+		webkit_browser_set_user_agent(web_view, priv->user_agent);
+	}
+}
+
+static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+
+	/* if no custom default user agent is set, we need to store the
+	 * previous agent as default */
+	if (priv->user_agent == NULL || priv->user_agent[0] == '\0') {
+		g_free(priv->user_agent);
+		priv->user_agent =
+			strdup(webkit_web_view_get_user_agent(web_view));
+	}
+
+	if (priv->user_agent_overrides != NULL)
+		g_datalist_foreach(&priv->user_agent_overrides,
+					apply_user_agent_override, browser);
+}
+
+static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
+		WebKitBrowser *browser)
 {
 	/* This callback is explicitly connected to notify::load_status
 	 * since only then it can be made sure the code below is
@@ -392,6 +449,8 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec)
 		jshooks = jshooks_determine_hooklist(uri, "pre");
 	else if (status == WEBKIT_LOAD_FINISHED)
 		jshooks = jshooks_determine_hooklist(uri, "post");
+	else if (status == WEBKIT_LOAD_COMMITTED)
+		user_agent_update(web_view, browser);
 
 	while (jshooks && jshooks[idx]) {
 		jspath = g_strconcat(PKG_DATA_DIR, "/jshooks/", jshooks[idx], NULL);
@@ -996,7 +1055,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	g_signal_connect(G_OBJECT(webkit), "new-window-policy-decision-requested",
 			G_CALLBACK(on_new_window_requested), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
-			G_CALLBACK(on_page_load), NULL);
+			G_CALLBACK(on_page_load), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
 			G_CALLBACK(on_notify_load_status), label);
 	g_signal_connect(G_OBJECT(webkit), "notify::load-status",
@@ -1443,6 +1502,12 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 				"User-Agent string",
 				NULL,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_USER_AGENT_OVERRIDES,
+			g_param_spec_pointer("user-agent-overrides",
+				"User-Agent override list",
+				"User-Agent override list",
+				G_PARAM_READWRITE));
 }
 
 GtkWidget *webkit_browser_new(const gchar *geometry)

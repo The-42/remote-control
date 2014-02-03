@@ -23,6 +23,7 @@
 
 static const gchar default_configfile[] = SYSCONF_DIR "/browser.conf";
 static const gchar *configfile = default_configfile;
+static GData *user_agent_overrides = NULL;
 static gchar *user_agent = NULL;
 static gboolean adblock = FALSE;
 static gboolean cursor = FALSE;
@@ -204,6 +205,26 @@ GKeyFile *load_configuration(const gchar *filename, GError **error)
 		g_clear_error(error);
 	}
 
+	if (g_key_file_has_group(keyfile, "user-agent-overrides")) {
+		gchar **keys;
+		gchar **key;
+
+		if (!user_agent_overrides)
+			g_datalist_init(&user_agent_overrides);
+
+		keys = g_key_file_get_keys(keyfile, "user-agent-overrides",
+					NULL, NULL);
+		for (key = keys; *key != NULL; key++) {
+			gchar *value = g_key_file_get_string(keyfile,
+						"user-agent-overrides",
+						*key, NULL);
+			g_datalist_id_set_data_full(&user_agent_overrides,
+					g_quark_from_string(*key),
+					value, g_free);
+		}
+		g_strfreev(keys);
+	}
+
 	return keyfile;
 }
 
@@ -270,6 +291,8 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "no-exit", noexit, NULL);
 	g_object_set(browser, "user-agent", user_agent, NULL);
 	g_object_set(browser, "adblock", adblock, NULL);
+	g_object_set(browser, "user-agent-overrides", user_agent_overrides,
+			NULL);
 
 	if (max_pages > 0)
 		g_object_set(browser, "max-pages", max_pages, NULL);
@@ -291,6 +314,11 @@ int main(int argc, char *argv[])
 
 	if (conf)
 		g_key_file_free(conf);
+
+	if (user_agent_overrides) {
+		g_datalist_clear(&user_agent_overrides);
+		g_free(user_agent_overrides);
+	}
 
 	return 0;
 }

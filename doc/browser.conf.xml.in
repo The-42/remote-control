@@ -127,6 +127,38 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term>
+					<varname>user-agent-overrides</varname> - domain specific user-agent
+					overrides
+				</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>domain-regexp</varname></term>
+							<listitem>
+								<para>
+									Specify a user-agent string that is applied for every domain
+									that matches the regular expression given as key. For example,
+									to force Google Mail into the static html mode, the following
+									can be used.
+								</para>
+								<programlisting>
+.*mail\.google\.com\/.* = WebkitGTK 0.10.2 / Give me Basic HTML
+								</programlisting>
+								<para>
+									An arbitrary number of override rules can be listed in this
+									section. Be aware that a long list can have a significant
+									impact on the browser performance. The given rules are parsed
+									from top to bottom, while the last match is elected. Therefore
+									rules have to be ordered from most generic to most specific to
+									be mactched in a sane way.
+								</para>
+							</listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
