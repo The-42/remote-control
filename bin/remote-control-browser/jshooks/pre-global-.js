@@ -160,7 +160,7 @@
 	var html5_player_css =
 		'#video-container {' +
 		'	position: relative;' +
-		'	display: inline-block' +
+		'	display: inline-block;' +
 		'}' +
 		'#video-controls {' +
 		'	position: absolute;' +
@@ -168,9 +168,8 @@
 		'	left: 0;' +
 		'	right: 0;' +
 		'	padding: 10px;' +
-		'	opacity: 0;' +
+		'	opacity: 0.9;' +
 		'	white-space: nowrap' +
-		'	-webkit-transition: opacity .3s;' +
 		'	z-index: 42042;' +
 		'	background-image: -webkit-gradient(' +
 		'		linear,' +
@@ -186,7 +185,6 @@
 		'	height: 100%;' +
 		'	content: "";' +
 		'}' +
-		'#video-container:hover #video-controls { opacity: .9; }' +
 		'button, #video-time {' +
 		'	background: rgba(0,0,0,.5);' +
 		'	border: 0;' +
@@ -204,6 +202,7 @@
 		'	display: block;' +
 		'	overflow: hidden;' +
 		'	padding: 5px;' +
+		'	width: 50%;' +
 		'}' +
 		'#video-controls .lefthand { float: left; }' +
 		'#video-controls .righthand { float: right; }' +
@@ -236,7 +235,38 @@
 		'	);' +
 		'}' +
 		'#seek-bar { width: 100%; }' +
-		'#volume-bar { width: 20%; }';
+		'#volume-bar { width: 20%; }' +
+		'#video-container #avd-html5-layer {' +
+		'	background: rgba(0, 0, 0, .5);' +
+		'	position: absolute;' +
+		'	top: 0px;' +
+		'	left: 0px;' +
+		'	cursor: pointer;' +
+		'}' +
+		'#video-container #avd-html5-play-outer {' +
+		'	width: 100px; ' +
+		'	height: 100px;' +
+		'	border-radius: 50px;' +
+		'	box-shadow: 0 0 15px 15px #888;' +
+		'	background-image:-webkit-gradient(' +
+		'		linear,' +
+		'		left top,' +
+		'		right bottom,' +
+		'		color-stop(0, #fefefe),' +
+		'		color-stop(1, #a1a1a1)' +
+		'	);' +
+		'	position: relative;' +
+		'}' +
+		'#video-container #play-inner {' +
+		'	width: 0;' +
+		'	height: 0;' +
+		'	border-top: 42px solid transparent;' +
+		'	border-left: 75px solid rgba(0, 150, 183, .4);' +
+		'	border-bottom: 42px solid transparent;' +
+		'	position: relative;' +
+		'	left: 24px;' +
+		'	top: 8px;' +
+		'}';
 
 	/* HTML5 video element */
 	function _makeVideoPlayer()
@@ -262,18 +292,29 @@
 			return tstr;
 		}
 
+		function resize()
+		{
+			var playouter = document.getElementById('avd-html5-play-outer');
+			var playlayer = document.getElementById('avd-html5-layer');
+			var video = document.getElementById('avd-html5-video');
+			var h = video.clientHeight;
+			var w = video.clientWidth;
+			console.log('video.resize() called: h = ' + h + ', w = ' + w);
+
+			playlayer.style.height = h + 'px';
+			playlayer.style.width = w + 'px';
+			playouter.style.left = Math.round(w / 2 - 50) + 'px';
+			playouter.style.top = Math.round(h / 2 - 50) + 'px';
+			playlayer.style.display = '';
+		}
+
 		var video = document.createElement('video');
 		video.id = 'avd-html5-video';
 		video.controls = '';
 		video.preload = '';
 		video.autoplay = '';
 		video.textContent = 'No can has HTML5, dude.';
-
-		var playpause = document.createElement('button');
-		playpause.id = 'play-pause';
-		playpause.className = 'play lefthand';
-		playpause.type = 'button';
-		playpause.textContent = 'Play';
+		video.resize = resize;
 
 		var seekbar = document.createElement('input');
 		seekbar.id = 'seek-bar';
@@ -304,10 +345,20 @@
 		volumebar.step = 0.1;
 		volumebar.value = 1;
 
+		var playinner = document.createElement('div');
+		playinner.id = 'play-inner';
+
+		var playouter = document.createElement('div');
+		playouter.id = 'avd-html5-play-outer';
+		playouter.appendChild(playinner);
+
+		var playlayer = document.createElement('div');
+		playlayer.id = 'avd-html5-layer';
+		playlayer.appendChild(playouter);
+
 		var allspan = document.createElement('span');
 		allspan.id = 'video-controls-span';
 		/* mind the order, floats first! */
-		allspan.appendChild(playpause);
 		allspan.appendChild(volumebar);
 		allspan.appendChild(mute);
 		allspan.appendChild(videotime);
@@ -316,24 +367,20 @@
 		var pcontrols = document.createElement('div');
 		pcontrols.id = 'video-controls';
 		pcontrols.appendChild(allspan);
-		pcontrols.allowFullScreen = true;
 
 		var container = document.createElement('div');
 		container.id = 'video-container';
 		container.appendChild(video);
+		container.appendChild(playlayer);
 		container.appendChild(pcontrols);
 
 		/* control callbacks */
-		playpause.addEventListener('click', function() {
+		playlayer.addEventListener('click', function (e) {
+			var playlayer = document.getElementById('avd-html5-layer');
 			var video = document.getElementById('avd-html5-video');
 
-			if (video.paused == true) {
-				video.play();
-				playpause.textContent = 'Pause';
-			} else {
-				video.pause();
-				playpause.textContent = 'Play';
-			}
+			playlayer.style.display = 'None';
+			video.play();
 		});
 
 		mute.addEventListener('click', function() {
@@ -393,18 +440,23 @@
 		});
 
 		video.addEventListener('play', function () {
-			if (document.contains(this))
-				this.play();
-			else
-				this.src = '';
+			var playlayer = document.getElementById('avd-html5-layer');
+
+			playlayer.style.display = 'None';
+		});
+
+		video.addEventListener('pause', function () {
+			var playlayer = document.getElementById('avd-html5-layer');
+
+			playlayer.style.display = '';
 		});
 
 		video.addEventListener('emptied', function() {
-			var seekbar = document.getElementById('seek-bar');
-			var videotime = document.getElementById('video-time');
-			var playpause = document.getElementById('play-pause');
+			var playlayer = document.getElementById('avd-html5-layer');
+			var videotime = video.getElementById('video-time');
+			var seekbar = video.getElementById('seek-bar');
 
-			playpause.textContent = 'Play';
+			playlayer.style.display = '';
 			seekbar.value = 0;
 			videotime.textContent = secondsToTimeString(0) +
 					' / ' + secondsToTimeString(video.duration);

@@ -187,6 +187,7 @@
 			own_vid.src = stream.url;
 			own_vid.style.height = stream.height + 'px';
 			own_vid.style.width = stream.width + 'px';
+			own_vid.resize();
 			log('Playing link: ' + stream.url);
 		}
 	}
