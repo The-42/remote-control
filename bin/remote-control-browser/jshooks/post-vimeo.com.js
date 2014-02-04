@@ -191,7 +191,7 @@
 		}
 	}
 
-	if (/vimeo.com($|\/$|\/\d|\/page:\d)/.test(window.location.href)) {
+	if (/vimeo.com($|\/$|\/\?|\/\d|\/page:\d)/.test(window.location.href)) {
 		document.addEventListener('DOMNodeInserted',
 			function (evt) {
 				if (evt.target.className === 'player_container') {
