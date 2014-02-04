@@ -64,11 +64,11 @@
 		var q = [];
 		/* only show resolutions below 720p */
 		var p = [
-		/* WebM / MP4 regular */
-		'44', '43', '18',
-		/* WebM / MP4 3D */
-		'85', '82', '101', '100', '83',
-		/* WebM / MP4 silent */
+		/* MP4 regular */
+		'18',
+		/* MP4 3D */
+		'85', '82', '83',
+		/* MP4 silent */
 		'135', '134', '133', '160',
 		/* 3GP */
 		'36', '17', '13'];
