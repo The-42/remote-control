@@ -124,6 +124,15 @@
 								the web-server during page requests.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>jshooks</varname></term>
+							<listitem><para>
+								Enable or disable JavaScript hooks. If this option is not
+								explicitly set, the JavaScript hooks are enabled by default.
+								Set to <varname>true</varname> to activate or
+								<varname>false</varname> to deactivate.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>

@@ -57,6 +57,7 @@ enum {
 	PROP_MAX_PAGES,
 	PROP_ADBLOCK,
 	PROP_USER_AGENT_OVERRIDES,
+	PROP_JSHOOKS,
 };
 
 struct _WebKitBrowserPrivate {
@@ -83,6 +84,7 @@ struct _WebKitBrowserPrivate {
 	gchar *user_agent;
 	gboolean adblock;
 	GData *user_agent_overrides;
+	gboolean jshooks;
 
 #ifdef USE_WEBKIT2
 	gchar **languages;
@@ -203,6 +205,10 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_pointer(value, priv->user_agent_overrides);
 		break;
 
+	case PROP_JSHOOKS:
+		g_value_set_boolean(value, priv->jshooks);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -283,6 +289,11 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			adblock_add_tab_cb(webkit_browser_get_web_view(browser));
 		}
 		break;
+
+	case PROP_JSHOOKS:
+		priv->jshooks = g_value_get_boolean(value);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -430,6 +441,7 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 
 	WebKitWebFrame *web_frame = webkit_web_view_get_main_frame(web_view);
 	WebKitLoadStatus status = webkit_web_view_get_load_status(web_view);
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	const gchar *uri = webkit_web_view_get_uri(web_view);
 	JSGlobalContextRef js_context;
 	gchar **jshooks = NULL;
@@ -437,6 +449,13 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 	gchar *jscript;
 	gchar *jspath;
 	uint idx = 0;
+
+	if (status == WEBKIT_LOAD_COMMITTED)
+		user_agent_update(web_view, browser);
+
+	/* Check if jshooks are enabled before evaluating them */
+	if (!priv->jshooks)
+		return;
 
 	/* It may make sense to generate an index of all JS-hook files
 	 * on startup to prevent any latencies at this point. However,
@@ -449,8 +468,6 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 		jshooks = jshooks_determine_hooklist(uri, "pre");
 	else if (status == WEBKIT_LOAD_FINISHED)
 		jshooks = jshooks_determine_hooklist(uri, "post");
-	else if (status == WEBKIT_LOAD_COMMITTED)
-		user_agent_update(web_view, browser);
 
 	while (jshooks && jshooks[idx]) {
 		jspath = g_strconcat(PKG_DATA_DIR, "/jshooks/", jshooks[idx], NULL);
@@ -1508,6 +1525,13 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 				"User-Agent override list",
 				"User-Agent override list",
 				G_PARAM_READWRITE));
+
+	g_object_class_install_property(object, PROP_JSHOOKS,
+			g_param_spec_boolean("jshooks", "JavaScript hooks",
+				"Enable JavaScripts hooks for site filtering",
+				TRUE,
+				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
 }
 
 GtkWidget *webkit_browser_new(const gchar *geometry)

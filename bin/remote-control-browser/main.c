@@ -24,6 +24,7 @@
 static const gchar default_configfile[] = SYSCONF_DIR "/browser.conf";
 static const gchar *configfile = default_configfile;
 static GData *user_agent_overrides = NULL;
+static gboolean disable_jshooks = FALSE;
 static gchar *user_agent = NULL;
 static gboolean adblock = FALSE;
 static gboolean cursor = FALSE;
@@ -68,6 +69,9 @@ static GOptionEntry entries[] = {
 	}, {
 		"adblock", 'a', 0, G_OPTION_ARG_NONE, &adblock,
 		"Use adblocker", NULL
+	}, {
+		"disable jshooks", 'j', 0, G_OPTION_ARG_NONE, &disable_jshooks,
+		"Do not use JavaScript hook scripts", NULL
 	}, {
 		NULL
 	}
@@ -181,6 +185,11 @@ GKeyFile *load_configuration(const gchar *filename, GError **error)
 					"user-agent", error);
 			g_clear_error(error);
 		}
+
+		if (!disable_jshooks) {
+			disable_jshooks = !g_key_file_get_boolean(keyfile,
+					"browser", "jshooks", NULL);
+		}
 	}
 
 	if (g_key_file_has_group(keyfile, "limits")) {
@@ -291,6 +300,7 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "no-exit", noexit, NULL);
 	g_object_set(browser, "user-agent", user_agent, NULL);
 	g_object_set(browser, "adblock", adblock, NULL);
+	g_object_set(browser, "jshooks", !disable_jshooks, NULL);
 	g_object_set(browser, "user-agent-overrides", user_agent_overrides,
 			NULL);
 
