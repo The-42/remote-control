@@ -250,7 +250,7 @@
 			var day = Math.floor(s / (24 * 3600));
 			var hrs = Math.floor(s / 3600) % 24;
 			var min = Math.floor(s / 60) % 60;
-			var sec = s % 60;
+			var sec = Math.floor(s % 60);
 			var tstr = '';
 			if (day)
 				tstr += day + 'd ';
