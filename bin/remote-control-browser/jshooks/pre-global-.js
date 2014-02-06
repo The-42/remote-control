@@ -428,8 +428,6 @@
 		});
 
 		video.addEventListener('click', function (e) {
-			var viddiv = document.getElementById('video-controls');
-
 			if (this.paused || this.ended) {
 				this.play();
 				this.webkitEnterFullscreen();
