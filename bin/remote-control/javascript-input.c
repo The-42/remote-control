@@ -16,12 +16,15 @@
 
 #include <linux/input.h>
 
+#include <gudev/gudev.h>
+
 #include "javascript.h"
 #include "find-device.h"
 
 struct input {
 	GSource source;
 	GList *devices;
+	GUdevClient* udev_client;
 
 	JSContextRef context;
 	JSObjectRef callback;
@@ -74,25 +77,51 @@ static gboolean input_source_check(GSource *source)
 	for (node = g_list_first(input->devices); node; node = node->next) {
 		GPollFD *poll = node->data;
 
-		if (poll->revents & G_IO_IN)
+		if (poll->revents & (G_IO_IN | G_IO_ERR | G_IO_HUP))
 			return TRUE;
 	}
 
 	return FALSE;
 }
 
+static void free_poll(gpointer data)
+{
+	GPollFD *poll = data;
+	close(poll->fd);
+	g_free(poll);
+}
+
+static int input_remove_device(gpointer user, GPollFD *poll)
+{
+	struct input *input = user;
+	int err;
+
+	g_return_val_if_fail(input != NULL, -EINVAL);
+	g_return_val_if_fail(poll != NULL, -EINVAL);
+
+	g_source_remove_poll((GSource*)input, poll);
+	input->devices = g_list_remove(input->devices, poll);
+	free_poll(poll);
+
+	return 0;
+}
+
 static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 		gpointer user_data)
 {
 	struct input *input = (struct input *)source;
-	GList *node;
+	GList *node, *next;
 
-	for (node = g_list_first(input->devices); node; node = node->next) {
+	for (node = g_list_first(input->devices); node; node = next) {
 		GPollFD *poll = node->data;
 		struct input_event event;
 		ssize_t err;
 
-		if (poll->revents & G_IO_IN) {
+		next = node->next;
+		if (poll->revents & (G_IO_ERR | G_IO_HUP)) {
+			g_debug("js-input: input device error, closing device.");
+			input_remove_device(input, poll);
+		} else if (poll->revents & G_IO_IN) {
 			err = read(poll->fd, &event, sizeof(event));
 			if (err < 0) {
 				g_debug("js-input: read(): %s", g_strerror(errno));
@@ -114,16 +143,12 @@ static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 	return TRUE;
 }
 
-static void free_poll(gpointer data)
-{
-	GPollFD *poll = data;
-	close(poll->fd);
-	g_free(poll);
-}
-
 static void input_source_finalize(GSource *source)
 {
 	struct input *input = (struct input *)source;
+
+	if (input->udev_client)
+		g_object_unref(input->udev_client);
 
 	g_list_free_full(input->devices, free_poll);
 }
@@ -163,8 +188,39 @@ static int input_add_device(gpointer user, const gchar *filename)
 	return 0;
 }
 
+static void input_on_udev_event(GUdevClient *client, gchar *action,
+			  GUdevDevice *udevice, gpointer user_data)
+{
+	struct input *input = user_data;
+	const char *filename;
+	GUdevDevice *parent;
+	const char *pname;
+	const char *name;
+
+	if (g_strcmp0(action, "add"))
+		return;
+
+	name = g_udev_device_get_name(udevice);
+	if (!g_str_has_prefix(name, "event"))
+		return;
+
+	parent = g_udev_device_get_parent(udevice);
+	if (!parent)
+		return;
+
+	pname = g_udev_device_get_sysfs_attr(parent, "name");
+	if (!g_strcmp0(pname, "sx8634")) {
+		filename = g_udev_device_get_device_file(udevice);
+		input_add_device(input, filename);
+	}
+
+	g_object_unref(parent);
+	g_debug("js-input: Device added %s (parent %s)\n", name, pname);
+}
+
 static GSource *input_source_new(JSContextRef context)
 {
+	const gchar *const subsystems[] = { "input", NULL };
 	struct input *input;
 	GSource *source;
 
@@ -178,6 +234,13 @@ static GSource *input_source_new(JSContextRef context)
 	input->context = context;
 	input->callback = NULL;
 	input->devices = NULL;
+
+	input->udev_client = g_udev_client_new(subsystems);
+	if (input->udev_client)
+		g_signal_connect(input->udev_client, "uevent",
+				 G_CALLBACK(input_on_udev_event), input);
+	else
+		g_warning("js-input: failed to create udev client");
 
 	if (find_input_devices("sx8634", input_add_device, input) < 1)
 		g_debug("js-input: no sx8634 device found");
