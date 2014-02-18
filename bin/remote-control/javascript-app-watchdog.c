@@ -74,7 +74,7 @@ static JSValueRef app_watchdog_function_start(
 			"watchdog timeout source could not be created.");
 		return JSValueMakeBoolean(context, FALSE);
 	}
-	
+
 	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
 		priv, NULL);
 	g_source_attach(priv->timeout_source, priv->main_context);
@@ -127,11 +127,11 @@ static JSValueRef app_watchdog_function_trigger(
 			"watchdog timeout source could not be created.");
 		return JSValueMakeBoolean(context, FALSE);
 	}
-	
+
 	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
 		priv, NULL);
 	g_source_attach(priv->timeout_source, priv->main_context);
-	
+
 	return 0;
 }
 
@@ -198,7 +198,7 @@ int javascript_register_app_watchdog_class(void)
 	return 0;
 }
 
-int javascript_register_app_watchdog(JSContextRef js, 
+int javascript_register_app_watchdog(JSContextRef js,
 	JSObjectRef parent, const char *name, void *user_data)
 {
 	JSValueRef exception = NULL;
