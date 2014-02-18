@@ -157,6 +157,8 @@ static void app_watchdog_finalize(JSObjectRef object)
 	struct app_watchdog *watchdog = JSObjectGetPrivate(object);
 	if(watchdog->timeout_source != NULL)
 		g_source_destroy(watchdog->timeout_source);
+
+	g_free(watchdog);
 }
 
 static const JSStaticFunction app_watchdog_functions[] = {
