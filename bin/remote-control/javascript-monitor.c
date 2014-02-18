@@ -70,6 +70,8 @@ static struct monitor *monitor_new(JSContextRef context,
 
 static void monitor_finalize(JSObjectRef object)
 {
+	struct monitor *monitor = JSObjectGetPrivate(object);
+	g_free(monitor);
 }
 
 static const JSStaticFunction monitor_functions[] = {
