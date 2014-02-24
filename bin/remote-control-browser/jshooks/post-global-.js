@@ -218,14 +218,16 @@
 
 		p.textContent = 'Sorry mate, flash is not available.';
 		p.style.display = 'inline-block';
-		p.style.fontSize = '250%';
+		p.style.color = '#FFFFFF';
+		p.style.fontSize = '200%';
+		p.style.lineHeight = '150%';
 
 		d.className = 'avd-flash-subst';
 		d.style.cssText = 'background-image:' +
 			'-webkit-gradient(' +
 			'linear,' +
 			'left top,' +
-			'right top,' +
+			'right bottom,' +
 			'color-stop(0, #add8e6),' +
 			'color-stop(.5, #42abba),' +
 			'color-stop(1, #add8e6)' +
