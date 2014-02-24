@@ -204,7 +204,7 @@
 			yt_player.parentNode.replaceChild(own_vid.parentNode, yt_player);
 		}
 
-		own_vid.style.display = '';
+		own_vid.parentNode.style.display = '';
 		own_vid.parentNode.className += 'player-width player-height off-screen-target watch-content player-api';
 		own_vid.resize();
 

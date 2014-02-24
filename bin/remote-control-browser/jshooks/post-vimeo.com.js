@@ -183,7 +183,7 @@
 		stream = getSrcLink(datalink);
 
 		if (own_vid && stream) {
-			own_vid.style.display = '';
+			own_vid.parentNode.style.display = '';
 			own_vid.src = stream.url;
 			own_vid.style.height = stream.height + 'px';
 			own_vid.style.width = stream.width + 'px';

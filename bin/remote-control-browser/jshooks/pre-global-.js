@@ -54,7 +54,7 @@
 			list_available_codecs();
 
 		var own_vid = _makeVideoPlayer();
-		own_vid.style.display = 'None';
+		own_vid.parentNode.style.display = 'None';
 		document.body.appendChild(own_vid.parentNode);
 		_insert_css();
 	}
