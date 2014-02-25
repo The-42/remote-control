@@ -68,7 +68,7 @@ static void *alsaloop_thread(void *ptr)
 cleanup:
 	for (i = 0; i < G_N_ELEMENTS(loops); i++) {
 		if (loops[i] != NULL)
-			aloop_context_destroy(loops[i]);
+			aloop_loop_destroy(loops[i]);
 	}
 	return (void *)ret;
 }
