@@ -350,6 +350,8 @@ struct task_manager;
 
 int task_manager_create(struct task_manager **managerp);
 int task_manager_free(struct task_manager *manager);
+int32_t task_manager_exec(void *priv, const char *command_line);
+int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig);
 
 /**
  * tuner

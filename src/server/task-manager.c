@@ -140,7 +140,7 @@ static int create_environment(gchar ***envpp)
 	return j;
 }
 
-int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
+int32_t task_manager_exec(void *priv, const char *command_line)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
 	GError *error = NULL;
@@ -199,7 +199,12 @@ out:
 	return ret;
 }
 
-int32_t RPC_IMPL(task_manager_kill)(void *priv, int32_t pid, int32_t sig)
+int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
+{
+	return task_manager_exec(priv, command_line);
+}
+
+int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
 	GList *tasks = manager->tasks;
@@ -221,4 +226,9 @@ int32_t RPC_IMPL(task_manager_kill)(void *priv, int32_t pid, int32_t sig)
 	}
 
 	return ret;
+}
+
+int32_t RPC_IMPL(task_manager_kill)(void *priv, int32_t pid, int32_t sig)
+{
+	return task_manager_kill(priv, pid, sig);
 }
