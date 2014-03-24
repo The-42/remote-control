@@ -11,9 +11,11 @@
 
 #include <JavaScriptCore/JavaScript.h>
 #include "remote-control-webkit-window.h"
+#include "remote-control-data.h"
 
 struct javascript_userdata {
 	RemoteControlWebkitWindow *window;
+	struct remote_control_data *rcd;
 	GMainLoop *loop;
 };
 

@@ -11,6 +11,8 @@
 
 #include <gtk/gtk.h>
 
+#include "remote-control-data.h"
+
 G_BEGIN_DECLS
 
 #define REMOTE_CONTROL_TYPE_WEBKIT_WINDOW            (remote_control_webkit_window_get_type())
@@ -34,7 +36,8 @@ struct _RemoteControlWebkitWindowClass {
 
 GType remote_control_webkit_window_get_type(void);
 
-GtkWidget *remote_control_webkit_window_new(GMainLoop *loop, gboolean inspector);
+GtkWidget *remote_control_webkit_window_new(GMainLoop *loop,
+		struct remote_control_data *rcd, gboolean inspector);
 gboolean remote_control_webkit_window_load(RemoteControlWebkitWindow *self,
 		const gchar *uri);
 gboolean remote_control_webkit_window_reload(RemoteControlWebkitWindow *self);

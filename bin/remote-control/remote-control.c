@@ -296,8 +296,8 @@ GtkWidget *create_rdp_window(GKeyFile *conf, GMainLoop *loop, int argc,
 	return window;
 }
 
-GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
-		char *argv[])
+GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop,
+		struct remote_control_data *rcd, int argc, char *argv[])
 {
 	gboolean check_origin = true;
 	gboolean inspector = false;
@@ -314,7 +314,7 @@ GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
 		RemoteControlWebkitWindow *webkit;
 
 		g_print("start with inspector: %s\n", inspector ? "enabled" : "disabled");
-		window = remote_control_webkit_window_new(loop, inspector);
+		window = remote_control_webkit_window_new(loop, rcd, inspector);
 
 		webkit = REMOTE_CONTROL_WEBKIT_WINDOW(window);
 		remote_control_webkit_window_load(webkit, uri);
@@ -329,11 +329,11 @@ GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop, int argc,
 	return window;
 }
 
-GtkWidget *create_window(GKeyFile *conf, GMainLoop *loop, int argc,
-		char *argv[])
+GtkWidget *create_window(GKeyFile *conf, GMainLoop *loop,
+		struct remote_control_data *rcd, int argc, char *argv[])
 {
 	if (g_key_file_has_group(conf, "browser"))
-		return create_browser_window(conf, loop, argc, argv);
+		return create_browser_window(conf, loop, rcd, argc, argv);
 
 	if (g_key_file_has_group(conf, "rdp"))
 		return create_rdp_window(conf, loop, argc, argv);
@@ -476,12 +476,6 @@ static GKeyFile *remote_control_load_configuration(const gchar *filename,
 	return conf;
 }
 
-struct remote_control_data {
-	GKeyFile *config;
-	GMainLoop *loop;
-	GThread *thread;
-};
-
 static gpointer remote_control_thread(gpointer data)
 {
 	struct remote_control_data *rcd = data;
@@ -504,6 +498,8 @@ static gpointer remote_control_thread(gpointer data)
 		g_error("remote_control_create(): %s", strerror(-err));
 		return NULL;
 	}
+
+	rcd->rc = rc;
 
 	source = remote_control_get_source(rc);
 	g_assert(source != NULL);
@@ -709,7 +705,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	window = create_window(conf, loop, argc, argv);
+	window = create_window(conf, loop, rcd, argc, argv);
 	if (window) {
 		g_signal_connect(G_OBJECT(window), "destroy",
 				G_CALLBACK(on_window_destroy), loop);

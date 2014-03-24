@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 
 #include "remote-control-webkit-window.h"
+#include "remote-control-data.h"
 #include "javascript.h"
 #include "utils.h"
 #include "guri.h"
@@ -47,6 +48,9 @@ struct _RemoteControlWebkitWindowPrivate {
 	WebKitWebView *webkit_inspector_view;
 	GtkExpander *expander;
 	GtkVBox *vbox;
+
+	/* Context to control remote control server */
+	struct remote_control_data *rcd;
 };
 
 enum {
@@ -55,7 +59,8 @@ enum {
 	PROP_CONTEXT,
 	PROP_CURSOR,
 	PROP_INSPECTOR,
-	PROP_CHECK_ORIGIN
+	PROP_CHECK_ORIGIN,
+	PROP_RCD
 };
 
 static gboolean webkit_cursor_is_visible(GtkWidget *widget)
@@ -115,6 +120,10 @@ static void webkit_get_property(GObject *object, guint prop_id, GValue *value,
 		g_value_set_boolean(value, priv->check_origin);
 		break;
 
+	case PROP_RCD:
+		g_value_set_pointer(value, priv->rcd);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -146,6 +155,10 @@ static void webkit_set_property(GObject *object, guint prop_id,
 
 	case PROP_CHECK_ORIGIN:
 		priv->check_origin = g_value_get_boolean(value);
+		break;
+
+	case PROP_RCD:
+		priv->rcd = g_value_get_pointer(value);
 		break;
 
 	default:
@@ -182,6 +195,7 @@ static void webkit_on_load_changed(WebKitWebView *webkit,
 		int err;
 
 		user.loop =  priv->loop;
+		user.rcd = priv->rcd;
 		user.window = window;
 
 		context = webkit_web_view_get_javascript_global_context(webkit);
@@ -215,6 +229,7 @@ static void webkit_on_notify_load_status(WebKitWebView *webkit,
 		int err;
 
 		user.loop =  priv->loop;
+		user.rcd = priv->rcd;
 		user.window = window;
 
 		context = webkit_web_frame_get_global_context(frame);
@@ -259,6 +274,12 @@ static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowCla
 	g_object_class_install_property(object, PROP_CHECK_ORIGIN,
 			g_param_spec_boolean("check-origin", "uri origin check",
 				"Enable or disable uri origin check", true,
+				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+				G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(object, PROP_RCD,
+			g_param_spec_pointer("rcd", "remote control data context",
+				"Provide the remote control core context to the webview.",
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 				G_PARAM_STATIC_STRINGS));
 }
@@ -501,10 +522,12 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 #endif
 }
 
-GtkWidget *remote_control_webkit_window_new(GMainLoop *loop, gboolean inspector)
+GtkWidget *remote_control_webkit_window_new(GMainLoop *loop,
+	struct remote_control_data *rcd, gboolean inspector)
 {
 	return g_object_new(REMOTE_CONTROL_TYPE_WEBKIT_WINDOW, "loop", loop,
-						"inspector", inspector, NULL);
+						"inspector", inspector,
+						"rcd", rcd, NULL);
 }
 
 #ifndef USE_WEBKIT2
