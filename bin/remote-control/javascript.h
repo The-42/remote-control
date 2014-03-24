@@ -88,6 +88,10 @@ int javascript_register_monitor_class(void);
 int javascript_register_monitor(JSContextRef js, JSObjectRef parent,
                                 const char *name, void *user_data);
 
+int javascript_register_taskmanager_class(void);
+int javascript_register_taskmanager(JSContextRef js, JSObjectRef parent,
+                                const char *name, void *user_data);
+
 int javascript_register(JSGlobalContextRef js,
                         struct javascript_userdata *user_data);
 
