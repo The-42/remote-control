@@ -81,6 +81,13 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 		return err;
 	}
 
+	err = javascript_register_taskmanager(js, object, "TaskManager", data);
+	if (err < 0) {
+		g_warning("%s: failed to register TaskManager object: %s",
+			__func__, g_strerror(-err));
+		return err;
+	}
+
 	string = JSStringCreateWithUTF8CString(name);
 	if (string) {
 		JSObjectSetProperty(js, parent, string, object, 0, &exception);
@@ -132,6 +139,13 @@ static int javascript_register_classes(void)
 	err = javascript_register_monitor_class();
 	if (err < 0) {
 		g_warning("%s: failed to register monitor class: %s",
+			__func__, g_strerror(-err));
+		return err;
+	}
+
+	err = javascript_register_taskmanager_class();
+	if (err < 0) {
+		g_warning("%s: failed to register taskmanager class: %s",
 			__func__, g_strerror(-err));
 		return err;
 	}

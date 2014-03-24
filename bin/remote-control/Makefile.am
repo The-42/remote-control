@@ -38,7 +38,8 @@ remote_control_SOURCES += \
 	javascript.h \
 	javascript-cursor.c \
 	javascript-input.c \
-	javascript-monitor.c
+	javascript-monitor.c \
+	javascript-taskmanager.c
 
 if ENABLE_JAVASCRIPT_IR
 remote_control_SOURCES += \
