@@ -25,8 +25,22 @@ static int on_input_device_found(gpointer user, GUdevDevice *device)
 {
 	struct find_input_dev *find = user;
 	const gchar *filename = g_udev_device_get_device_file(device);
-	if (filename) {
-		int err = find->callback(find->user, filename);
+	GUdevDevice *parent;
+	const gchar *name;
+
+	parent = g_udev_device_get_parent(device);
+	name = g_udev_device_get_sysfs_attr(parent, "name");
+	if (name && filename) {
+		int productId;
+		int vendorId;
+		int err;
+
+		productId = g_udev_device_get_sysfs_attr_as_int(device,
+				"productId");
+		vendorId = g_udev_device_get_sysfs_attr_as_int(device,
+				"vendorId");
+		err = find->callback(find->user, filename, name,
+				productId, vendorId);
 		if (err < 0) {
 			g_warning("probe: failed to use %s: %s",
 				filename, g_strerror(-err));

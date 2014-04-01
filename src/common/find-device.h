@@ -142,7 +142,9 @@ gint find_udev_devices(const struct udev_match *match,
  * @param name The path of the device found
  * @return     A negative value to trigger a warning
  */
-typedef int (*device_found_cb)(gpointer user, const gchar *name);
+typedef int (*device_found_cb)(gpointer user, const gchar *filename,
+			       const gchar *name, const int vendorId,
+			       const int productId);
 
 /**
  * @param devname  The name of the device.
