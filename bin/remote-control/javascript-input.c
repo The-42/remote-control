@@ -22,6 +22,7 @@
 #include "javascript.h"
 #include "find-device.h"
 
+#define MAX_INPUT_DEVICES 10
 #define INPUT_DEVICE_PREFIX  "device-"
 
 #define BITS_PER_LONG (sizeof(long) * 8)
@@ -405,6 +406,39 @@ static const JSStaticValue input_properties[] = {
 	{}
 };
 
+static JSValueRef input_get_devices(JSContextRef context,
+		JSObjectRef function, JSObjectRef object,
+		size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct input *input = JSObjectGetPrivate(object);
+	JSValueRef array_elements[MAX_INPUT_DEVICES];
+	GList *node;
+	int i = 0;
+
+	if (argc != 0) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return JSValueMakeNumber(context, -EINVAL);
+	}
+
+	if (!input) {
+		javascript_set_exception_text(context, exception,
+				"object not valid, context switched?");
+		return JSValueMakeNumber(context, -EINVAL);
+	}
+
+	for (node = g_list_first(input->devices); node && i < MAX_INPUT_DEVICES;
+			node = node->next, i++) {
+		struct device *device = node->data;
+
+		JSStringRef text = JSStringCreateWithUTF8CString(device->name);
+		array_elements[i] = JSValueMakeString(context, text);
+		JSStringRelease(text);
+	}
+
+	return JSObjectMakeArray(context, i, array_elements, NULL);
+}
+
 static JSValueRef input_get_event_name(
 	JSContextRef context, JSObjectRef function, JSObjectRef object,
 	size_t argc, const JSValueRef argv[], JSValueRef *exception)
@@ -545,6 +579,11 @@ cleanup:
 }
 
 static const JSStaticFunction input_functions[] = {
+	{
+		.name = "getDevices",
+		.callAsFunction = input_get_devices,
+		.attributes = kJSPropertyAttributeNone,
+	},
 	{
 		.name = "getEventName",
 		.callAsFunction = input_get_event_name,
