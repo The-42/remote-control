@@ -21,6 +21,14 @@
 #include "javascript.h"
 #include "find-device.h"
 
+struct device {
+	int vendorId;
+	int productId;
+	gchar *name;
+
+	GPollFD *poll;
+};
+
 struct input {
 	GSource source;
 	GList *devices;
@@ -29,6 +37,11 @@ struct input {
 	JSContextRef context;
 	JSObjectRef callback;
 	JSObjectRef this;
+};
+
+static const gchar *supported_devices[] = {
+	"sx8634",
+	NULL
 };
 
 static int input_report(struct input *input, struct input_event *event)
@@ -75,7 +88,8 @@ static gboolean input_source_check(GSource *source)
 	GList *node;
 
 	for (node = g_list_first(input->devices); node; node = node->next) {
-		GPollFD *poll = node->data;
+		struct device *device = node->data;
+		GPollFD *poll = device->poll;
 
 		if (poll->revents & (G_IO_IN | G_IO_ERR | G_IO_HUP))
 			return TRUE;
@@ -91,16 +105,26 @@ static void free_poll(gpointer data)
 	g_free(poll);
 }
 
-static int input_remove_device(gpointer user, GPollFD *poll)
+static void free_device(gpointer data)
+{
+	struct device *device = data;
+	free_poll(device->poll);
+	g_free(device->name);
+	g_free(device);
+}
+
+static int input_remove_device(gpointer user, struct device *device)
 {
 	struct input *input = user;
+	GPollFD *poll;
 
+	g_return_val_if_fail(device != NULL, -EINVAL);
 	g_return_val_if_fail(input != NULL, -EINVAL);
-	g_return_val_if_fail(poll != NULL, -EINVAL);
 
+	poll = device->poll;
 	g_source_remove_poll((GSource*)input, poll);
-	input->devices = g_list_remove(input->devices, poll);
-	free_poll(poll);
+	input->devices = g_list_remove(input->devices, device);
+	free_device(device);
 
 	return 0;
 }
@@ -112,14 +136,15 @@ static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 	GList *node, *next;
 
 	for (node = g_list_first(input->devices); node; node = next) {
-		GPollFD *poll = node->data;
+		struct device *device = node->data;
+		GPollFD *poll = device->poll;
 		struct input_event event;
 		ssize_t err;
 
 		next = node->next;
 		if (poll->revents & (G_IO_ERR | G_IO_HUP)) {
 			g_debug("js-input: input device error, closing device.");
-			input_remove_device(input, poll);
+			input_remove_device(input, device);
 		} else if (poll->revents & G_IO_IN) {
 			err = read(poll->fd, &event, sizeof(event));
 			if (err < 0) {
@@ -149,7 +174,7 @@ static void input_source_finalize(GSource *source)
 	if (input->udev_client)
 		g_object_unref(input->udev_client);
 
-	g_list_free_full(input->devices, free_poll);
+	g_list_free_full(input->devices, free_device);
 }
 
 static GSourceFuncs input_source_funcs = {
@@ -159,9 +184,11 @@ static GSourceFuncs input_source_funcs = {
 	.finalize = input_source_finalize,
 };
 
-static int input_add_device(gpointer user, const gchar *filename)
+static int input_add_device(gpointer user, const gchar *filename,
+		const gchar *name, int vendorId, int productId)
 {
 	struct input *input = user;
+	struct device *device;
 	GPollFD *poll;
 	int fd;
 
@@ -172,16 +199,28 @@ static int input_add_device(gpointer user, const gchar *filename)
 	if (fd < 0)
 		return -errno;
 
+	device = g_new0(struct device, 1);
+	if (!device) {
+		close(fd);
+		return -ENOMEM;
+
+	}
 	poll = g_new0(GPollFD, 1);
 	if (!poll) {
 		close(fd);
+		g_free(device);
 		return -ENOMEM;
 	}
 
 	poll->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
 	poll->fd = fd;
 
-	input->devices = g_list_append(input->devices, poll);
+	device->poll = poll;
+	device->name = g_strdup(name);
+	device->vendorId = vendorId;
+	device->productId = productId;
+
+	input->devices = g_list_append(input->devices, device);
 	g_source_add_poll((GSource *)input, poll);
 
 	return 0;
@@ -191,6 +230,7 @@ static void input_on_udev_event(GUdevClient *client, gchar *action,
 			  GUdevDevice *udevice, gpointer user_data)
 {
 	struct input *input = user_data;
+	const gchar **supported_name;
 	const char *filename;
 	GUdevDevice *parent;
 	const char *pname;
@@ -208,9 +248,14 @@ static void input_on_udev_event(GUdevClient *client, gchar *action,
 		return;
 
 	pname = g_udev_device_get_sysfs_attr(parent, "name");
-	if (!g_strcmp0(pname, "sx8634")) {
-		filename = g_udev_device_get_device_file(udevice);
-		input_add_device(input, filename);
+	for (supported_name = supported_devices; *supported_name != NULL; supported_name++) {
+		g_debug("js-input: Check for device %s\n", *supported_name);
+		if (!g_strcmp0(pname, *supported_name)) {
+			filename = g_udev_device_get_device_file(udevice);
+			input_add_device(input, filename, pname,
+				g_udev_device_get_sysfs_attr_as_int(parent, "vendorId"),
+				g_udev_device_get_sysfs_attr_as_int(parent, "productId"));
+		}
 	}
 
 	g_object_unref(parent);
@@ -220,6 +265,7 @@ static void input_on_udev_event(GUdevClient *client, gchar *action,
 static GSource *input_source_new(JSContextRef context)
 {
 	const gchar *const subsystems[] = { "input", NULL };
+	const gchar **supported_name;
 	struct input *input;
 	GSource *source;
 
@@ -241,8 +287,10 @@ static GSource *input_source_new(JSContextRef context)
 	else
 		g_warning("js-input: failed to create udev client");
 
-	if (find_input_devices("sx8634", input_add_device, input) < 1)
-		g_debug("js-input: no sx8634 device found");
+	for (supported_name = supported_devices; *supported_name != NULL; supported_name++) {
+		if (find_input_devices(*supported_name, input_add_device, input) < 1)
+			g_debug("js-input: no %s device found", *supported_name);
+	}
 
 	return source;
 }
