@@ -131,7 +131,8 @@ static GSourceFuncs input_source_funcs = {
 	.finalize = usb_handset_finalize,
 };
 
-static int usb_handset_add_device(gpointer user, const gchar *filename)
+static int usb_handset_add_device(gpointer user, const gchar *filename,
+		const char *name, const int productId, const int vendorId)
 {
 	struct usb_handset *input = user;
 	GPollFD *poll;
