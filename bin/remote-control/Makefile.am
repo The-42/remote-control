@@ -17,6 +17,7 @@ remote_control_SOURCES = \
 	log.c \
 	log.h \
 	remote-control.c \
+	remote-control-data.h \
 	remote-control-rdp-window.c \
 	remote-control-rdp-window.h \
 	remote-control-webkit-window.c \
