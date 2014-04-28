@@ -54,6 +54,22 @@ if ENABLE_JAVASCRIPT_APP_WATCHDOG
 remote_control_SOURCES += \
 	javascript-app-watchdog.c
 endif
+
+# javascript-input.c needs some generated tables
+$(srcdir)/javascript-input.c: \
+	javascript-input-codes.c \
+	javascript-input-properties.c
+
+# Find the path for linux/input.h
+INPUT_DEPS = $(shell printf "\x23include <linux/input.h>\n" | \
+		$(CC) $(CFLAGS) -E -M -)
+# But fallback on /dev/null if we couldn't find linux/input.h
+INPUT_H = $(or $(filter %/linux/input.h,$(INPUT_DEPS)),/dev/null)
+
+# Rule to generate the tables from linux/input.h
+javascript-input-%.c: $(srcdir)/javascript-input-%.awk
+	$(AM_V_GEN)awk -f $< $(INPUT_H) > $@ || (rm -f $@ ; false)
+
 endif # ENABLE_JAVASCRIPT
 
 if ENABLE_WATCHDOG

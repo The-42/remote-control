@@ -291,14 +291,39 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 	return true;
 }
 
+static const struct {
+	const char *name;
+	double code;
+} input_event_codes[] = {
+	/* Add the generated name to code mapping list */
+	#include "javascript-input-codes.c"
+	{}
+};
+
+static JSValueRef input_get_event_code(JSContextRef context, JSObjectRef object,
+				JSStringRef name, JSValueRef *exception)
+{
+	int i;
+
+	for (i = 0; input_event_codes[i].name; i++)
+		if (JSStringIsEqualToUTF8CString(
+				name, input_event_codes[i].name))
+			return JSValueMakeNumber(
+				context, input_event_codes[i].code);
+
+	return NULL;
+}
+
 static const JSStaticValue input_properties[] = {
 	{
 		.name = "onevent",
 		.getProperty = input_get_onevent,
 		.setProperty = input_set_onevent,
 		.attributes = kJSPropertyAttributeNone,
-	}, {
-	}
+	},
+	/* Add the generated properties list */
+	#include "javascript-input-properties.c"
+	{}
 };
 
 static const JSClassDefinition input_classdef = {
