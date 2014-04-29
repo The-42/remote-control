@@ -357,30 +357,14 @@ static const JSClassDefinition cursor_classdef = {
 	.staticFunctions = cursor_functions,
 };
 
-static JSClassRef cursor_class = NULL;
-
-int javascript_register_cursor_class(void)
+static JSObjectRef javascript_cursor_create(
+	JSContextRef js, JSClassRef class, struct javascript_userdata *data)
 {
-	cursor_class = JSClassCreate(&cursor_classdef);
-	if (!cursor_class) {
-		g_warning("%s: failed to create Cursor class", __func__);
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-
-int javascript_register_cursor(JSContextRef js, JSObjectRef parent,
-                               const char *name, void *user_data)
-{
-	JSValueRef exception = NULL;
-	JSObjectRef object;
-	JSStringRef string;
 	struct cursor *priv;
 
 	priv = g_new0(struct cursor, 1);
 	if (!priv)
-		return -ENOMEM;
+		return NULL;
 
 	priv->display = gdk_display_get_default();
 	g_assert(priv->display != NULL);
@@ -388,15 +372,14 @@ int javascript_register_cursor(JSContextRef js, JSObjectRef parent,
 	priv->screen = gdk_display_get_default_screen(priv->display);
 	g_assert(priv->screen != NULL);
 
-	priv->window = user_data;
+	priv->window = data->window;
 	g_assert(priv->window != NULL);
 	g_assert(REMOTE_CONTROL_IS_WEBKIT_WINDOW(priv->window));
 
-	object = JSObjectMake(js, cursor_class, priv);
-
-	string = JSStringCreateWithUTF8CString(name);
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-	JSStringRelease(string);
-
-	return 0;
+	return JSObjectMake(js, class, priv);
 }
+
+struct javascript_module javascript_cursor = {
+	.classdef = &cursor_classdef,
+	.create = javascript_cursor_create,
+};

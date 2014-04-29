@@ -186,37 +186,21 @@ static const JSClassDefinition app_watchdog_classdef = {
 	.staticFunctions = app_watchdog_functions,
 };
 
-static JSClassRef app_watchdog_class = NULL;
 
-int javascript_register_app_watchdog_class(void)
+static JSObjectRef javascript_app_watchdog_create(
+	JSContextRef js, JSClassRef class,
+	struct javascript_userdata *user_data)
 {
-	app_watchdog_class = JSClassCreate(&app_watchdog_classdef);
-	if (!app_watchdog_class) {
-		g_warning("%s: failed to create Watchdog class",
-			__func__);
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-
-int javascript_register_app_watchdog(JSContextRef js,
-	JSObjectRef parent, const char *name, void *user_data)
-{
-	JSValueRef exception = NULL;
-	JSObjectRef object;
-	JSStringRef string;
 	struct app_watchdog *watchdog;
 
 	watchdog = app_watchdog_new(js, user_data);
 	if (!watchdog)
-		return -ENOMEM;
+		return NULL;
 
-	object = JSObjectMake(js, app_watchdog_class, watchdog);
-
-	string = JSStringCreateWithUTF8CString(name);
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-	JSStringRelease(string);
-
-	return 0;
+	return JSObjectMake(js, class, watchdog);
 }
+
+struct javascript_module javascript_app_watchdog = {
+	.classdef = &app_watchdog_classdef,
+	.create = javascript_app_watchdog_create,
+};

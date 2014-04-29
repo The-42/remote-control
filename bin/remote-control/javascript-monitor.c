@@ -89,36 +89,20 @@ static const JSClassDefinition monitor_classdef = {
 	.staticFunctions = monitor_functions,
 };
 
-static JSClassRef monitor_class = NULL;
-
-int javascript_register_monitor_class(void)
+static JSObjectRef javascript_monitor_create(
+	JSContextRef js, JSClassRef class,
+	struct javascript_userdata *user_data)
 {
-	monitor_class = JSClassCreate(&monitor_classdef);
-	if (!monitor_class) {
-		g_warning("js-monitor: failed to create Monitor class");
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-
-int javascript_register_monitor(JSContextRef js,
-	JSObjectRef parent, const char *name, void *user_data)
-{
-	JSValueRef exception = NULL;
-	JSObjectRef object;
-	JSStringRef string;
 	struct monitor *mon;
 
 	mon = monitor_new(js, user_data);
 	if (!mon)
-		return -ENOMEM;
+		return NULL;
 
-	object = JSObjectMake(js, monitor_class, mon);
-	string = JSStringCreateWithUTF8CString(name);
-
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-
-	JSStringRelease(string);
-	return 0;
+	return JSObjectMake(js, class, mon);
 }
+
+struct javascript_module javascript_monitor = {
+	.classdef = &monitor_classdef,
+	.create = javascript_monitor_create,
+};

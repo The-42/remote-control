@@ -169,36 +169,20 @@ static const JSClassDefinition taskmanager_classdef = {
 	.staticFunctions = taskmanager_functions,
 };
 
-static JSClassRef taskmanager_class = NULL;
-
-int javascript_register_taskmanager_class(void)
+static JSObjectRef javascript_taskmanager_create(
+	JSContextRef js, JSClassRef class,
+        struct javascript_userdata *user_data)
 {
-	taskmanager_class = JSClassCreate(&taskmanager_classdef);
-	if (!taskmanager_class) {
-		g_warning("js-taskmanager: failed to create %s class",
-				taskmanager_classdef.className);
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-
-int javascript_register_taskmanager(JSContextRef js, JSObjectRef parent,
-		const char *name, void *user_data)
-{
-	JSValueRef exception = NULL;
-	JSObjectRef object;
-	JSStringRef string;
 	struct taskmanager *tm;
 
 	tm = taskmanager_new(js, user_data);
 	if (!tm)
-		return -ENOMEM;
+		return NULL;
 
-	object = JSObjectMake(js, taskmanager_class, tm);
-	string = JSStringCreateWithUTF8CString(name);
-
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-	JSStringRelease(string);
-	return 0;
+	return JSObjectMake(js, class, tm);
 }
+
+struct javascript_module javascript_taskmanager = {
+	.classdef = &taskmanager_classdef,
+	.create = javascript_taskmanager_create,
+};

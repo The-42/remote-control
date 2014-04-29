@@ -332,40 +332,22 @@ static const JSClassDefinition input_classdef = {
 	.staticValues = input_properties,
 };
 
-static JSClassRef input_class = NULL;
-
-int javascript_register_input_class(void)
+static JSObjectRef javascript_input_create(
+	JSContextRef js, JSClassRef class, struct javascript_userdata *data)
 {
-	input_class = JSClassCreate(&input_classdef);
-	if (!input_class) {
-		g_debug("js-input: failed to create Input class");
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-
-int javascript_register_input(JSContextRef js, JSObjectRef parent,
-			      const char *name, void *user_data)
-{
-	GMainLoop *loop = user_data;
-	JSValueRef exception;
-	JSObjectRef object;
-	JSStringRef string;
 	GSource *source;
 
 	source = input_source_new(js);
 	if (!source)
-		return -ENOMEM;
+		return NULL;
 
-	object = JSObjectMake(js, input_class, source);
-
-	g_source_attach(source, g_main_loop_get_context(loop));
+	g_source_attach(source, g_main_loop_get_context(data->loop));
 	g_source_unref(source);
 
-	string = JSStringCreateWithUTF8CString(name);
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-	JSStringRelease(string);
-
-	return 0;
+	return JSObjectMake(js, class, source);
 }
+
+struct javascript_module javascript_input = {
+	.classdef = &input_classdef,
+	.create = javascript_input_create,
+};

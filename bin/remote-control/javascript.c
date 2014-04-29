@@ -12,8 +12,34 @@
 
 #include <JavaScriptCore/JavaScript.h>
 #include <glib.h>
+#include <errno.h>
 
 #include "javascript.h"
+
+extern struct javascript_module javascript_cursor;
+extern struct javascript_module javascript_input;
+extern struct javascript_module javascript_cursor;
+extern struct javascript_module javascript_lcd;
+extern struct javascript_module javascript_app_watchdog;
+extern struct javascript_module javascript_monitor;
+extern struct javascript_module javascript_taskmanager;
+
+static struct javascript_module *ad_modules[] = {
+	&javascript_cursor,
+	&javascript_input,
+#ifdef ENABLE_JAVASCRIPT_IR
+	&javascript_cursor,
+#endif
+#ifdef ENABLE_JAVASCRIPT_LCD
+	&javascript_lcd,
+#endif
+#ifdef ENABLE_JAVASCRIPT_APP_WATCHDOG
+	&javascript_app_watchdog,
+#endif
+	&javascript_monitor,
+	&javascript_taskmanager,
+	NULL
+};
 
 void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
                                const char *failure)
@@ -25,67 +51,48 @@ void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
 	}
 }
 
+static int javascript_register_module(JSGlobalContextRef js,
+				JSObjectRef parent,
+				struct javascript_module *module,
+				struct javascript_userdata *data)
+{
+	JSObjectRef object;
+	JSStringRef string;
+
+	string = JSStringCreateWithUTF8CString(module->classdef->className);
+	if (!string)
+		return -ENOMEM;
+
+	object = module->create(js, module->class, data);
+	if (object)
+		JSObjectSetProperty(js, parent, string, object, 0, NULL);
+
+	JSStringRelease(string);
+	return object ? 0 : -ENODEV;
+}
+
 static int javascript_register_avionic_design(JSGlobalContextRef js,
                                               JSObjectRef parent,
                                               const char *name,
 					      struct javascript_userdata *data)
 {
-	RemoteControlWebkitWindow *window = data->window;
-	GMainLoop *loop = data->loop;
 	JSValueRef exception = NULL;
 	JSObjectRef object;
 	JSStringRef string;
-	int err;
+	int i, err;
 
 	object = JSObjectMake(js, NULL, NULL);
 
-	err = javascript_register_cursor(js, object, "Cursor", window);
-	if (err < 0) {
-		g_warning("%s: failed to register Cursor object: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_input(js, object, "Input", loop);
-	if (err < 0) {
-		g_warning("%s: failed to register Input object: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_ir(js, object, "IR", loop);
-	if (err < 0) {
-		g_warning("%s: failed to register IR object: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_lcd(js, object, "LCD", loop);
-	if (err < 0) {
-		g_warning("%s: failed to register LCD object: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_app_watchdog(js, object, "Watchdog", data);
-	if (err < 0) {
-		g_warning("%s: failed to register Watchdog object: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_monitor(js, object, "Monitor", data);
-	if (err < 0) {
-		g_warning("%s: failed to register Monitor object: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_taskmanager(js, object, "TaskManager", data);
-	if (err < 0) {
-		g_warning("%s: failed to register TaskManager object: %s",
-			__func__, g_strerror(-err));
-		return err;
+	for (i = 0; ad_modules[i]; i++) {
+		err = javascript_register_module(
+			js, object, ad_modules[i], data);
+		if (err) {
+			g_warning("%s: failed to register %s object: %s",
+				__func__, ad_modules[i]->classdef->className,
+				g_strerror(-err));
+			if (err != -ENODEV)
+				return err;
+		}
 	}
 
 	string = JSStringCreateWithUTF8CString(name);
@@ -99,55 +106,15 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 
 static int javascript_register_classes(void)
 {
-	int err;
+	int i;
 
-	err = javascript_register_cursor_class();
-	if (err < 0) {
-		g_warning("%s: failed to register cursor class: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_input_class();
-	if (err < 0) {
-		g_warning("%s: failed to register input class: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_ir_class();
-	if (err < 0) {
-		g_warning("%s: failed to register js-ir class: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_lcd_class();
-	if (err < 0) {
-		g_warning("%s: failed to register js-lcd class: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_app_watchdog_class();
-	if (err < 0) {
-		g_warning("%s: failed to register app_watchdog class: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_monitor_class();
-	if (err < 0) {
-		g_warning("%s: failed to register monitor class: %s",
-			__func__, g_strerror(-err));
-		return err;
-	}
-
-	err = javascript_register_taskmanager_class();
-	if (err < 0) {
-		g_warning("%s: failed to register taskmanager class: %s",
-			__func__, g_strerror(-err));
-		return err;
+	for (i = 0; ad_modules[i]; i++) {
+		ad_modules[i]->class = JSClassCreate(ad_modules[i]->classdef);
+		if (!ad_modules[i]->class) {
+			g_warning("%s: failed to register %s class",
+				__func__, ad_modules[i]->classdef->className);
+			return -ENOMEM;
+		}
 	}
 
 	return 0;

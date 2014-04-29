@@ -681,40 +681,22 @@ static const JSClassDefinition lcd_classdef = {
 	.staticFunctions = lcd_functions
 };
 
-static JSClassRef lcd_class = NULL;
-
-int javascript_register_lcd_class(void)
+static JSObjectRef javascript_lcd_create(
+	JSContextRef js, JSClassRef class, struct javascript_userdata *data)
 {
-	lcd_class = JSClassCreate(&lcd_classdef);
-	if (!lcd_class) {
-		g_warning("%s: failed to create lcd class", __func__);
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-
-int javascript_register_lcd(JSContextRef js, JSObjectRef parent,
-                            const char *name, void *user_data)
-{
-	GMainLoop *loop = user_data;
-	JSValueRef exception = NULL;
-	JSObjectRef object;
-	JSStringRef string;
 	GSource *source;
 
 	source = lcd_source_new(js);
 	if (!source)
-		return -ENOMEM;
+		return NULL;
 
-	object = JSObjectMake(js, lcd_class, source);
-
-	g_source_attach(source, g_main_loop_get_context(loop));
+	g_source_attach(source, g_main_loop_get_context(data->loop));
 	g_source_unref(source);
 
-	string = JSStringCreateWithUTF8CString(name);
-	JSObjectSetProperty(js, parent, string, object, 0, &exception);
-	JSStringRelease(string);
-
-	return 0;
+	return JSObjectMake(js, class, source);
 }
+
+struct javascript_module javascript_lcd = {
+	.classdef = &lcd_classdef,
+	.create = javascript_lcd_create,
+};
