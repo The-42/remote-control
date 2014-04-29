@@ -19,10 +19,6 @@ struct javascript_userdata {
 	GMainLoop *loop;
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
 				const char *failure);
 
@@ -94,9 +90,5 @@ int javascript_register_taskmanager(JSContextRef js, JSObjectRef parent,
 
 int javascript_register(JSGlobalContextRef js,
 			struct javascript_userdata *user_data);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* JAVASCRIPT_API_H */

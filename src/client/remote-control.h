@@ -113,10 +113,6 @@ typedef void (*remote_event_handler_t)(uint32_t type, void *data);
 
 struct remote_client;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 remote_public int remote_init(struct remote_client **clientp,
 		const char *hostname, const char *service);
 remote_public int remote_exit(struct remote_client *client);
@@ -249,9 +245,5 @@ remote_public int remote_tuner_set_frequency(void *priv, unsigned long frequency
 
 remote_public int remote_sound_play(void *priv, const char *url);
 remote_public int remote_sound_stop(void *priv);
-
-#ifdef __cplusplus
-};
-#endif
 
 #endif /* REMOTE_CONTROL_H */
