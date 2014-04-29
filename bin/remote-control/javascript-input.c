@@ -94,7 +94,6 @@ static void free_poll(gpointer data)
 static int input_remove_device(gpointer user, GPollFD *poll)
 {
 	struct input *input = user;
-	int err;
 
 	g_return_val_if_fail(input != NULL, -EINVAL);
 	g_return_val_if_fail(poll != NULL, -EINVAL);
