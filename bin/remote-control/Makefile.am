@@ -41,6 +41,7 @@ remote_control_SOURCES += \
 	javascript-backlight.c \
 	javascript-cursor.c \
 	javascript-input.c \
+	javascript-media-player.c \
 	javascript-monitor.c \
 	javascript-taskmanager.c
 
