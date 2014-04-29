@@ -38,6 +38,7 @@ remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
 	javascript-audio.c \
+	javascript-backlight.c \
 	javascript-cursor.c \
 	javascript-input.c \
 	javascript-monitor.c \
