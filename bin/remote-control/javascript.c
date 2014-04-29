@@ -24,6 +24,7 @@ extern struct javascript_module javascript_lcd;
 extern struct javascript_module javascript_app_watchdog;
 extern struct javascript_module javascript_monitor;
 extern struct javascript_module javascript_taskmanager;
+extern struct javascript_module javascript_audio;
 
 static struct javascript_module *ad_modules[] = {
 	&javascript_cursor,
@@ -39,6 +40,7 @@ static struct javascript_module *ad_modules[] = {
 #endif
 	&javascript_monitor,
 	&javascript_taskmanager,
+	&javascript_audio,
 	NULL
 };
 

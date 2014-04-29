@@ -37,6 +37,7 @@ if ENABLE_JAVASCRIPT
 remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
+	javascript-audio.c \
 	javascript-cursor.c \
 	javascript-input.c \
 	javascript-monitor.c \
