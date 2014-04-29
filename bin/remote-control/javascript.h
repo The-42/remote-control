@@ -24,20 +24,20 @@ extern "C" {
 #endif
 
 void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
-                               const char *failure);
+				const char *failure);
 
 int javascript_register_cursor_class(void);
 int javascript_register_cursor(JSContextRef js, JSObjectRef parent,
-                               const char *name, void *user_data);
+			const char *name, void *user_data);
 
 int javascript_register_input_class(void);
 int javascript_register_input(JSContextRef js, JSObjectRef parent,
-                              const char *name, void *user_data);
+			const char *name, void *user_data);
 
 #ifdef ENABLE_JAVASCRIPT_IR
 int javascript_register_ir_class(void);
 int javascript_register_ir(JSContextRef js, JSObjectRef parent,
-                           const char *name, void *user_data);
+			const char *name, void *user_data);
 #else
 static inline int javascript_register_ir_class(void)
 {
@@ -45,7 +45,7 @@ static inline int javascript_register_ir_class(void)
 }
 
 static inline int javascript_register_ir(JSContextRef js, JSObjectRef parent,
-                                         const char *name, void *user_data)
+					const char *name, void *user_data)
 {
 	return 0;
 }
@@ -53,7 +53,7 @@ static inline int javascript_register_ir(JSContextRef js, JSObjectRef parent,
 #ifdef ENABLE_JAVASCRIPT_LCD
 int javascript_register_lcd_class(void);
 int javascript_register_lcd(JSContextRef js, JSObjectRef parent,
-                            const char *name, void *user_data);
+			const char *name, void *user_data);
 #else
 static inline int javascript_register_lcd_class(void)
 {
@@ -61,7 +61,7 @@ static inline int javascript_register_lcd_class(void)
 }
 
 static inline int javascript_register_lcd(JSContextRef js, JSObjectRef parent,
-                                          const char *name, void *user_data)
+					const char *name, void *user_data)
 {
 	return 0;
 }
@@ -86,14 +86,14 @@ static inline int javascript_register_app_watchdog(JSContextRef js,
 
 int javascript_register_monitor_class(void);
 int javascript_register_monitor(JSContextRef js, JSObjectRef parent,
-                                const char *name, void *user_data);
+				const char *name, void *user_data);
 
 int javascript_register_taskmanager_class(void);
 int javascript_register_taskmanager(JSContextRef js, JSObjectRef parent,
-                                const char *name, void *user_data);
+				const char *name, void *user_data);
 
 int javascript_register(JSGlobalContextRef js,
-                        struct javascript_userdata *user_data);
+			struct javascript_userdata *user_data);
 
 #ifdef __cplusplus
 }
