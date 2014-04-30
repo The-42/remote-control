@@ -224,6 +224,9 @@ static int javascript_register_module(JSGlobalContextRef js,
 	JSObjectRef object;
 	JSStringRef string;
 
+	if (!module->create)
+		return 0;
+
 	string = JSStringCreateWithUTF8CString(module->classdef->className);
 	if (!string)
 		return -ENOMEM;
