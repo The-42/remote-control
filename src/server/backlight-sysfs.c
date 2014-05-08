@@ -146,8 +146,8 @@ int backlight_get(struct backlight *backlight)
 		return -EINVAL;
 
 	fd = fopen(SYSFS_PATH "/class/backlight/pwm-backlight/brightness",
-			  O_RDONLY);
-	if (fd < 0)
+			  "r");
+	if (fd == NULL)
 		return -errno;
 
 	err = fscanf (fd, "%d", &ret);
