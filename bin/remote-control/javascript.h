@@ -27,8 +27,38 @@ struct javascript_module {
 	JSClassRef		class;
 };
 
+struct javascript_enum {
+	const char *name;
+	int value;
+};
+
 void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
 				const char *failure);
+
+JSValueRef javascript_make_string(JSContextRef context, const char *cstr,
+				JSValueRef *exception);
+
+char* javascript_get_string(JSContextRef context, const JSValueRef val,
+			JSValueRef *exception);
+
+int javascript_enum_from_string(
+	JSContextRef context, const struct javascript_enum *desc,
+	JSValueRef value, int *ret, JSValueRef *exception);
+
+JSValueRef javascript_enum_to_string(
+	JSContextRef context, const struct javascript_enum *desc,
+	int val, JSValueRef *exception);
+
+int javascript_int_from_number(
+	JSContextRef context, const JSValueRef val,
+	int min, int max, int *ret, JSValueRef *exception);
+
+int javascript_int_from_unit(
+	JSContextRef context, const JSValueRef val,
+	int min, int max, int *ret, JSValueRef *exception);
+
+JSValueRef javascript_int_to_unit(
+	JSContextRef context, int val, int min, int max);
 
 int javascript_register(JSGlobalContextRef js,
 			struct javascript_userdata *user_data);

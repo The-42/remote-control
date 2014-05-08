@@ -13,6 +13,7 @@
 #include <JavaScriptCore/JavaScript.h>
 #include <glib.h>
 #include <errno.h>
+#include <math.h>
 
 #include "javascript.h"
 
@@ -41,14 +42,172 @@ static struct javascript_module *ad_modules[] = {
 	NULL
 };
 
+JSValueRef javascript_make_string(
+	JSContextRef context, const char *cstr, JSValueRef *exception)
+{
+	JSValueRef value;
+	JSStringRef str;
+
+	if (cstr == NULL)
+		return NULL;
+
+	str = JSStringCreateWithUTF8CString(cstr);
+	if (!str) {
+		javascript_set_exception_text(context, exception,
+			"failed to create string");
+		return NULL;
+	}
+
+	value = JSValueMakeString(context, str);
+	JSStringRelease(str);
+
+	return value;
+}
+
 void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
                                const char *failure)
 {
 	if (exception) {
-		JSStringRef text = JSStringCreateWithUTF8CString(failure);
-		*exception = JSValueMakeString(context, text);
-		JSStringRelease(text);
+		*exception = javascript_make_string(
+			context, failure, exception);
 	}
+}
+
+char* javascript_get_string(JSContextRef context, const JSValueRef val,
+			JSValueRef *exception)
+{
+	JSStringRef str;
+	size_t size;
+	char *buffer;
+
+	str = JSValueToStringCopy(context, val, exception);
+	if (!str)
+		return NULL;
+
+	size = JSStringGetMaximumUTF8CStringSize(str);
+	buffer = g_malloc(size);
+
+	if (buffer)
+		JSStringGetUTF8CString(str, buffer, size);
+	else
+		javascript_set_exception_text(context, exception,
+			"failed to allocated string buffer");
+
+	JSStringRelease(str);
+	return buffer;
+}
+
+int javascript_int_from_number(JSContextRef context, const JSValueRef val,
+		int min, int max, int *ret, JSValueRef *exception)
+{
+	double dval;
+
+	dval = JSValueToNumber(context, val, exception);
+	if (dval == NAN)
+		return -EINVAL;
+
+	if (!ret)
+		return 0;
+
+	if (dval < min)
+		*ret = min;
+	else if (dval > max)
+		*ret = max;
+	else
+		*ret = dval;
+
+	return 0;
+}
+
+int javascript_int_from_unit(JSContextRef context, const JSValueRef val,
+		int min, int max, int *ret, JSValueRef *exception)
+{
+	double dval;
+
+	dval = JSValueToNumber(context, val, exception);
+	if (dval == NAN)
+		return -EINVAL;
+
+	if (!ret)
+		return 0;
+
+	dval = dval * (max - min) + min;
+	if (dval < min)
+		*ret = min;
+	else if (dval > max)
+		*ret = max;
+	else
+		*ret = dval;
+
+	return 0;
+}
+
+JSValueRef javascript_int_to_unit(JSContextRef context, int val,
+		int min, int max)
+{
+	double dval = (double)(val - min) / (max - min);
+	return JSValueMakeNumber(context, dval);
+}
+
+int javascript_enum_from_string(
+	JSContextRef context, const struct javascript_enum *desc,
+	JSValueRef value, int *ret, JSValueRef *exception)
+{
+	JSStringRef str;
+	int i;
+
+	str = JSValueToStringCopy(context, value, exception);
+	if (!str)
+		return -ENOMEM;
+
+	for (i = 0; desc[i].name; i++) {
+		if (JSStringIsEqualToUTF8CString(str, desc[i].name))
+			break;
+	}
+
+	JSStringRelease(str);
+
+	if (!desc[i].name) {
+		javascript_set_exception_text(context, exception,
+					"unknown enum value");
+		return -EINVAL;
+	}
+
+	if (ret)
+		*ret = desc[i].value;
+
+	return 0;
+}
+
+JSValueRef javascript_enum_to_string(
+	JSContextRef context, const struct javascript_enum *desc,
+	int val, JSValueRef *exception)
+{
+	JSValueRef value;
+	JSStringRef str;
+	int i;
+
+	for (i = 0; desc[i].name; i++) {
+		if (desc[i].value == val)
+			break;
+	}
+
+	if (!desc[i].name) {
+		javascript_set_exception_text(context, exception,
+					"got unknown enum value");
+		return NULL;
+	}
+
+	str = JSStringCreateWithUTF8CString(desc[i].name);
+	if (!str) {
+		javascript_set_exception_text(context, exception,
+					"failed to create string");
+		return NULL;
+	}
+
+	value = JSValueMakeString(context, str);
+	JSStringRelease(str);
+	return value;
 }
 
 static int javascript_register_module(JSGlobalContextRef js,
