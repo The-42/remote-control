@@ -28,6 +28,7 @@ extern struct javascript_module javascript_audio;
 extern struct javascript_module javascript_backlight;
 extern struct javascript_module javascript_media_player;
 extern struct javascript_module javascript_modem;
+extern struct javascript_module javascript_voip;
 
 static struct javascript_module *ad_modules[] = {
 	&javascript_cursor,
@@ -47,6 +48,7 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_backlight,
 	&javascript_media_player,
 	&javascript_modem,
+	&javascript_voip,
 	NULL
 };
 
