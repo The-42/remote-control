@@ -256,9 +256,12 @@ static void input_initialize(JSContextRef context, JSObjectRef object)
 
 static void input_finalize(JSObjectRef object)
 {
-	GSource *source = JSObjectGetPrivate(object);
+	struct input *input = JSObjectGetPrivate(object);
 
-	g_source_destroy(source);
+	if (input->callback)
+		JSValueUnprotect(input->context, input->callback);
+
+	g_source_destroy(&input->source);
 }
 
 static JSValueRef input_get_onevent(JSContextRef context, JSObjectRef object,
@@ -282,11 +285,15 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 		return false;
 	}
 
+	if (input->callback)
+		JSValueUnprotect(context, input->callback);
+
 	input->callback = JSValueToObject(context, value, exception);
 	if (!input->callback) {
 		g_warning("%s: failed to assign callback", __func__);
 		return false;
 	}
+	JSValueProtect(context, input->callback);
 	return true;
 }
 
