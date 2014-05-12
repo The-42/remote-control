@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "remote-control-data.h"
 #include "remote-control.h"
@@ -21,6 +22,98 @@
 
 struct taskmanager {
 	struct remote_control_data *rcd;
+};
+
+#define SIG(s) { .name = "SIG" #s, .signo = SIG##s }
+
+static const struct {
+	const char *name;
+	int signo;
+} signal_names[] = {
+	SIG(ABRT),
+	SIG(ALRM),
+	SIG(BUS),
+	SIG(CHLD),
+	SIG(CONT),
+	SIG(FPE),
+	SIG(HUP),
+	SIG(ILL),
+	SIG(INT),
+	SIG(KILL),
+	SIG(PIPE),
+	SIG(QUIT),
+	SIG(SEGV),
+	SIG(STOP),
+	SIG(TERM),
+	SIG(TSTP),
+	SIG(TTIN),
+	SIG(TTOU),
+	SIG(USR1),
+	SIG(USR2),
+	SIG(POLL),
+	SIG(PROF),
+	SIG(SYS),
+	SIG(TRAP),
+	SIG(URG),
+	SIG(VTALRM),
+	SIG(XCPU),
+	SIG(XFSZ),
+	{}
+};
+
+static JSValueRef taskmanager_get_signal(
+	JSContextRef context, JSObjectRef object,
+	JSStringRef name, JSValueRef *exception)
+{
+	int i;
+
+	for (i = 0; signal_names[i].name; i++)
+		if (JSStringIsEqualToUTF8CString(
+				name, signal_names[i].name))
+			return JSValueMakeNumber(
+				context, signal_names[i].signo);
+
+	return NULL;
+}
+
+#define PROPERTY_SIG(s)						\
+	{							\
+		.name = "SIG" #s,				\
+		.getProperty = taskmanager_get_signal,		\
+		.attributes = kJSPropertyAttributeDontDelete |	\
+			kJSPropertyAttributeReadOnly,		\
+	}
+
+static const JSStaticValue taskmanager_properties[] = {
+	PROPERTY_SIG(ABRT),
+	PROPERTY_SIG(ALRM),
+	PROPERTY_SIG(BUS),
+	PROPERTY_SIG(CHLD),
+	PROPERTY_SIG(CONT),
+	PROPERTY_SIG(FPE),
+	PROPERTY_SIG(HUP),
+	PROPERTY_SIG(ILL),
+	PROPERTY_SIG(INT),
+	PROPERTY_SIG(KILL),
+	PROPERTY_SIG(PIPE),
+	PROPERTY_SIG(QUIT),
+	PROPERTY_SIG(SEGV),
+	PROPERTY_SIG(STOP),
+	PROPERTY_SIG(TERM),
+	PROPERTY_SIG(TSTP),
+	PROPERTY_SIG(TTIN),
+	PROPERTY_SIG(TTOU),
+	PROPERTY_SIG(USR1),
+	PROPERTY_SIG(USR2),
+	PROPERTY_SIG(POLL),
+	PROPERTY_SIG(PROF),
+	PROPERTY_SIG(SYS),
+	PROPERTY_SIG(TRAP),
+	PROPERTY_SIG(URG),
+	PROPERTY_SIG(VTALRM),
+	PROPERTY_SIG(XCPU),
+	PROPERTY_SIG(XFSZ),
+	{}
 };
 
 static JSValueRef taskmanager_function_exec(JSContextRef context,
@@ -167,6 +260,7 @@ static const JSClassDefinition taskmanager_classdef = {
 	.className = "TaskManager",
 	.finalize = taskmanager_finalize,
 	.staticFunctions = taskmanager_functions,
+	.staticValues = taskmanager_properties,
 };
 
 static JSObjectRef javascript_taskmanager_create(
