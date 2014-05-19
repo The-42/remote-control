@@ -369,6 +369,7 @@ AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_webkit" = "x2.0"])
 AM_CONDITIONAL(ENABLE_LIBTNJ3324, [test "x$with_libtnj3324" = "xyes"])
 AM_CONDITIONAL(ENABLE_ALSALOOP, [test "x$with_libalsaloop" = "xyes"])
+AM_CONDITIONAL(ENABLE_GTK3, [test "x$with_gtk" = "x3.0"])
 
 #
 # check for required files and packages

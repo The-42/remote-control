@@ -26,7 +26,7 @@ remote_control_browser_SOURCES = \
 	webkit-browser-tab-label.c \
 	webkit-browser-tab-label.h
 
-if !ENABLE_WEBKIT2
+if !ENABLE_GTK3
 remote_control_browser_SOURCES += \
 	katze-scrolled.c \
 	katze-scrolled.h
