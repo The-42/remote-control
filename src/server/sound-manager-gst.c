@@ -130,6 +130,26 @@ int sound_manager_play(struct sound_manager *manager, const char *uri)
 	return ret != GST_STATE_CHANGE_FAILURE ? 0 : -EINVAL;
 }
 
+int sound_manager_pause(struct sound_manager *manager)
+{
+	enum sound_manager_state state;
+	enum GstStateChangeReturn ret;
+	int err;
+
+	err = sound_manager_get_state(manager, &state);
+	if (err)
+		return err;
+
+	if (state == SOUND_MANAGER_PLAYING)
+		ret = gst_element_set_state(manager->play, GST_STATE_PAUSED);
+	else if (state == SOUND_MANAGER_PAUSED)
+		ret = gst_element_set_state(manager->play, GST_STATE_PLAYING);
+	else
+		ret = GST_STATE_CHANGE_SUCCESS;
+
+	return ret != GST_STATE_CHANGE_FAILURE ? 0 : -EINVAL;
+}
+
 int sound_manager_stop(struct sound_manager *manager)
 {
 	enum GstStateChangeReturn ret;

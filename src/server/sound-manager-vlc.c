@@ -104,6 +104,15 @@ int sound_manager_play(struct sound_manager *manager, const char *uri)
 	return libvlc_media_player_play(manager->player) ? -EINVAL : 0;
 }
 
+int sound_manager_pause(struct sound_manager *manager)
+{
+	if (!manager)
+		return -EINVAL;
+
+	libvlc_media_player_pause(manager->player);
+	return 0;
+}
+
 int sound_manager_stop(struct sound_manager *manager)
 {
 	if (!manager)
