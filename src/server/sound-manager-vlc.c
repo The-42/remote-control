@@ -23,6 +23,7 @@ struct sound_manager {
 	libvlc_event_manager_t *evman;
 	libvlc_media_t *media;
 	struct audio *audio;
+	enum sound_manager_state state;
 };
 
 #if defined(__arm__)
@@ -53,10 +54,33 @@ static void sound_manager_update_alsa_device(struct sound_manager *manager)
 #define sound_manager_update_alsa_device(x)
 #endif
 
+static void on_state_changed(const struct libvlc_event_t *evt, void *context)
+{
+	struct sound_manager *manager = context;
+
+	switch (evt->type) {
+	case libvlc_MediaPlayerNothingSpecial:
+	case libvlc_MediaPlayerStopped:
+	case libvlc_MediaPlayerEncounteredError:
+	case libvlc_MediaPlayerEndReached:
+		manager->state = SOUND_MANAGER_STOPPED;
+		break;
+	case libvlc_MediaPlayerOpening:
+	case libvlc_MediaPlayerBuffering:
+	case libvlc_MediaPlayerPlaying:
+		manager->state = SOUND_MANAGER_PLAYING;
+		break;
+	case libvlc_MediaPlayerPaused:
+		manager->state = SOUND_MANAGER_PAUSED;
+		break;
+	}
+}
+
 int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 {
 	const char *const argv[] = { "--file-caching", "0", NULL };
 	struct sound_manager *manager;
+	libvlc_event_manager_t *evt_manager;
 	int argc = 2;
 
 	if (!managerp)
@@ -70,6 +94,25 @@ int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 	manager->player = libvlc_media_player_new(manager->vlc);
 	libvlc_audio_set_volume(manager->player, LIBVLC_AUDIO_VOLUME_MAX);
 	manager->audio = audio;
+
+	/* Attach to the events that signal a state change of the player */
+	evt_manager = libvlc_media_player_event_manager(manager->player);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerNothingSpecial,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerStopped,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerEncounteredError,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerEndReached,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerOpening,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerBuffering,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerPlaying,
+			on_state_changed, manager);
+	libvlc_event_attach(evt_manager, libvlc_MediaPlayerPaused,
+			on_state_changed, manager);
 
 	*managerp = manager;
 	return 0;
@@ -123,6 +166,18 @@ int sound_manager_stop(struct sound_manager *manager)
 		libvlc_media_release(manager->media);
 		manager->media = NULL;
 	}
+
+	return 0;
+}
+
+int sound_manager_get_state(struct sound_manager *manager,
+		enum sound_manager_state *statep)
+{
+	if (!manager)
+		return -EINVAL;
+
+	if (statep)
+		*statep = manager->state;
 
 	return 0;
 }

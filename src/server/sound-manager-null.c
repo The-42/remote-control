@@ -37,3 +37,9 @@ int sound_manager_stop(struct sound_manager *manager)
 {
 	return -ENOSYS;
 }
+
+int sound_manager_get_state(struct sound_manager *manager,
+		enum sound_manager_state *statep)
+{
+	return -ENOSYS;
+}

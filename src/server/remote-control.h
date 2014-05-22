@@ -198,6 +198,12 @@ int media_player_get_state(struct media_player *player,
 /**
  * sound manager
  */
+enum sound_manager_state {
+	SOUND_MANAGER_STOPPED,
+	SOUND_MANAGER_PLAYING,
+	SOUND_MANAGER_PAUSED,
+};
+
 struct sound_manager;
 
 int sound_manager_create(struct sound_manager **managerp, struct audio *audio);
@@ -205,6 +211,8 @@ int sound_manager_free(struct sound_manager *manager);
 int sound_manager_play(struct sound_manager *manager, const char *uri);
 int sound_manager_pause(struct sound_manager *manager);
 int sound_manager_stop(struct sound_manager *manager);
+int sound_manager_get_state(struct sound_manager *manager,
+		enum sound_manager_state *statep);
 
 /**
  * smartcard
