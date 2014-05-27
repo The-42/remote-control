@@ -290,7 +290,6 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
                                               const char *name,
 					      struct javascript_userdata *data)
 {
-	JSValueRef exception = NULL;
 	JSObjectRef object;
 	int i, err;
 
@@ -309,7 +308,7 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 	}
 
 	return javascript_object_set_property(
-		js, parent, name, object, 0, &exception);
+		js, parent, name, object, 0, NULL);
 }
 
 static int javascript_register_classes(void)
