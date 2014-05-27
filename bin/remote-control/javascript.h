@@ -83,6 +83,18 @@ int javascript_object_set_property(
 	JSPropertyAttributes attr,
 	JSValueRef *exception);
 
+int javascript_buffer_from_object(
+	JSContextRef context, JSObjectRef array,
+	char **bufferp, JSValueRef *exception);
+
+int javascript_buffer_from_value(
+	JSContextRef context, JSValueRef array,
+	char **bufferp, JSValueRef *exception);
+
+JSObjectRef javascript_buffer_to_object(
+	JSContextRef context, char *buffer, size_t size,
+	JSValueRef *exception);
+
 int javascript_register(JSGlobalContextRef js,
 			struct javascript_userdata *user_data);
 

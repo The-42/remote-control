@@ -324,6 +324,101 @@ int javascript_object_set_property(
 	return *exception == NULL ? 0 : -EINVAL;
 }
 
+int javascript_buffer_from_object(
+	JSContextRef context, JSObjectRef array,
+	char **bufferp, JSValueRef *exception)
+{
+	JSPropertyNameArrayRef props;
+	char *buffer;
+	int i, size;
+
+	props = JSObjectCopyPropertyNames(context, array);
+	if (!props) {
+		javascript_set_exception_text(context, exception,
+					"failed to get property names");
+		return -ENOMEM;
+	}
+
+	size = JSPropertyNameArrayGetCount(props);
+	if (size == 0) {
+		if (bufferp)
+			*bufferp = NULL;
+		JSPropertyNameArrayRelease(props);
+		return 0;
+	}
+
+	buffer = g_malloc(size);
+	if (!buffer) {
+		javascript_set_exception_text(context, exception,
+					"failed to allocate buffer");
+		JSPropertyNameArrayRelease(props);
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < size; i++) {
+		JSStringRef name =
+			JSPropertyNameArrayGetNameAtIndex(props, i);
+		JSValueRef value =
+			JSObjectGetProperty(context, array, name, NULL);
+		double dval = JSValueToNumber(context, value, NULL);
+		if (isnan(dval)) {
+			javascript_set_exception_text(context, exception,
+						"value isn't a number");
+			g_free(buffer);
+			JSPropertyNameArrayRelease(props);
+			return -EINVAL;
+		}
+		buffer[i] = dval;
+	}
+
+	if (bufferp)
+		*bufferp = buffer;
+	else
+		g_free(buffer);
+
+	return size;
+}
+
+int javascript_buffer_from_value(
+	JSContextRef context, JSValueRef array,
+	char **bufferp, JSValueRef *exception)
+{
+	JSObjectRef obj;
+
+	obj = JSValueToObject(context, array, exception);
+	if (!obj)
+		return -EINVAL;
+
+	return javascript_buffer_from_object(
+		context, obj, bufferp, exception);
+}
+
+JSObjectRef javascript_buffer_to_object(
+	JSContextRef context, char *buffer, size_t size,
+	JSValueRef *exception)
+{
+	JSValueRef *values = NULL;
+	JSObjectRef array;
+	int i;
+
+	if (size > 0) {
+		values = g_malloc0(size * sizeof(*values));
+		if (!values) {
+			javascript_set_exception_text(context, exception,
+						"failed to allocate values buffer");
+			return NULL;
+		}
+
+		for (i = 0; i < size; i++)
+			values[i] = JSValueMakeNumber(context, buffer[i]);
+	}
+
+	array = JSObjectMakeArray(context, size, values, exception);
+	g_free(values);
+
+	return array;
+}
+
 static int javascript_register_module(JSGlobalContextRef js,
 				JSObjectRef parent,
 				struct javascript_module *module,
