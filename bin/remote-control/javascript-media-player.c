@@ -223,6 +223,13 @@ static bool js_media_player_set_state(JSContextRef context,
 		break;
 	}
 
+	if (err != 0) {
+		char *name = javascript_get_string(context, value, NULL);
+		javascript_set_exception_text(context, exception,
+			"failed to set player state to %s", name);
+		g_free(name);
+	}
+
 	return err == 0;
 }
 
