@@ -38,8 +38,7 @@ static const struct javascript_enum audio_state_enum[] = {
 static bool js_audio_set_state(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef value, JSValueRef *exception)
 {
-	struct remote_control *rc = JSObjectGetPrivate(object);
-	struct audio *audio = remote_control_get_audio(rc);
+	struct audio *audio = JSObjectGetPrivate(object);
 	enum audio_state state;
 	int err;
 
@@ -65,8 +64,7 @@ static bool js_audio_set_state(JSContextRef context, JSObjectRef object,
 static JSValueRef js_audio_get_state(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef *exception)
 {
-	struct remote_control *rc = JSObjectGetPrivate(object);
-	struct audio *audio = remote_control_get_audio(rc);
+	struct audio *audio = JSObjectGetPrivate(object);
 	enum audio_state state;
 	int err;
 
@@ -90,8 +88,7 @@ static JSValueRef js_audio_get_state(JSContextRef context, JSObjectRef object,
 static bool js_audio_set_volume(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef value, JSValueRef *exception)
 {
-	struct remote_control *rc = JSObjectGetPrivate(object);
-	struct audio *audio = remote_control_get_audio(rc);
+	struct audio *audio = JSObjectGetPrivate(object);
 	int volume;
 	int err;
 
@@ -117,8 +114,7 @@ static bool js_audio_set_volume(JSContextRef context, JSObjectRef object,
 static JSValueRef js_audio_get_volume(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef *exception)
 {
-	struct remote_control *rc = JSObjectGetPrivate(object);
-	struct audio *audio = remote_control_get_audio(rc);
+	struct audio *audio = JSObjectGetPrivate(object);
 	uint8_t volume;
 	int err;
 
@@ -142,8 +138,7 @@ static bool js_audio_set_speakers_enable(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct remote_control *rc = JSObjectGetPrivate(object);
-	struct audio *audio = remote_control_get_audio(rc);
+	struct audio *audio = JSObjectGetPrivate(object);
 	int err;
 
 	if (!audio) {
@@ -164,8 +159,7 @@ static bool js_audio_set_speakers_enable(JSContextRef context,
 static JSValueRef js_audio_get_speakers_enable(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct remote_control *rc = JSObjectGetPrivate(object);
-	struct audio *audio = remote_control_get_audio(rc);
+	struct audio *audio = JSObjectGetPrivate(object);
 	bool enable;
 	int err;
 
@@ -216,10 +210,13 @@ static JSObjectRef javascript_audio_create(
 	JSContextRef js, JSClassRef class,
 	struct javascript_userdata *user_data)
 {
-	if (!user_data->rcd || !user_data->rcd->rc)
+	struct audio *audio;
+
+	audio = remote_control_get_audio(user_data->rcd->rc);
+	if (!audio)
 		return NULL;
 
-	return JSObjectMake(js, class, user_data->rcd->rc);
+	return JSObjectMake(js, class, audio);
 }
 
 struct javascript_module javascript_audio = {
