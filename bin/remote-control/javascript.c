@@ -19,7 +19,7 @@
 
 extern struct javascript_module javascript_cursor;
 extern struct javascript_module javascript_input;
-extern struct javascript_module javascript_cursor;
+extern struct javascript_module javascript_ir;
 extern struct javascript_module javascript_lcd;
 extern struct javascript_module javascript_app_watchdog;
 extern struct javascript_module javascript_monitor;
@@ -34,7 +34,7 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_cursor,
 	&javascript_input,
 #ifdef ENABLE_JAVASCRIPT_IR
-	&javascript_cursor,
+	&javascript_ir,
 #endif
 #ifdef ENABLE_JAVASCRIPT_LCD
 	&javascript_lcd,
