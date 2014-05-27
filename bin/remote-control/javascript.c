@@ -223,27 +223,66 @@ JSValueRef javascript_enum_to_string(
 	return value;
 }
 
+JSValueRef javascript_object_get_property(
+	JSContextRef context, JSObjectRef object,
+	const char *prop, JSValueRef *exception)
+{
+	JSValueRef value;
+	JSStringRef str;
+
+	str = JSStringCreateWithUTF8CString(prop);
+	if (!str) {
+		javascript_set_exception_text(context, exception,
+			"failed to create property name string");
+		return NULL;
+	}
+
+	value = JSObjectGetProperty(context, object, str, exception);
+	JSStringRelease(str);
+	return value;
+}
+
+int javascript_object_set_property(
+	JSContextRef context, JSObjectRef object,
+	const char *prop, JSValueRef value,
+	JSPropertyAttributes attr,
+	JSValueRef *exception)
+{
+	JSValueRef excp = NULL;
+	JSStringRef str;
+
+	str = JSStringCreateWithUTF8CString(prop);
+	if (!str) {
+		javascript_set_exception_text(context, exception,
+			"failed to create property name string");
+		return -ENOMEM;
+	}
+
+	if (!exception)
+		exception = &excp;
+
+	JSObjectSetProperty(context, object, str, value, attr, exception);
+	JSStringRelease(str);
+
+	return *exception == NULL ? 0 : -EINVAL;
+}
+
 static int javascript_register_module(JSGlobalContextRef js,
 				JSObjectRef parent,
 				struct javascript_module *module,
 				struct javascript_userdata *data)
 {
 	JSObjectRef object;
-	JSStringRef string;
 
 	if (!module->create)
 		return 0;
 
-	string = JSStringCreateWithUTF8CString(module->classdef->className);
-	if (!string)
-		return -ENOMEM;
-
 	object = module->create(js, module->class, data);
-	if (object)
-		JSObjectSetProperty(js, parent, string, object, 0, NULL);
+	if (!object)
+		return -ENODEV;
 
-	JSStringRelease(string);
-	return object ? 0 : -ENODEV;
+	return javascript_object_set_property(
+		js, parent, module->classdef->className, object, 0, NULL);
 }
 
 static int javascript_register_avionic_design(JSGlobalContextRef js,
@@ -253,7 +292,6 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 {
 	JSValueRef exception = NULL;
 	JSObjectRef object;
-	JSStringRef string;
 	int i, err;
 
 	object = JSObjectMake(js, NULL, NULL);
@@ -270,13 +308,8 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 		}
 	}
 
-	string = JSStringCreateWithUTF8CString(name);
-	if (string) {
-		JSObjectSetProperty(js, parent, string, object, 0, &exception);
-		JSStringRelease(string);
-	}
-
-	return 0;
+	return javascript_object_set_property(
+		js, parent, name, object, 0, &exception);
 }
 
 static int javascript_register_classes(void)

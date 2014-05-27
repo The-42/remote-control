@@ -61,6 +61,16 @@ int javascript_int_from_unit(
 JSValueRef javascript_int_to_unit(
 	JSContextRef context, int val, int min, int max);
 
+JSValueRef javascript_object_get_property(
+	JSContextRef context, JSObjectRef object,
+	const char *prop, JSValueRef *exception);
+
+int javascript_object_set_property(
+	JSContextRef context, JSObjectRef object,
+	const char *prop, JSValueRef value,
+	JSPropertyAttributes attr,
+	JSValueRef *exception);
+
 int javascript_register(JSGlobalContextRef js,
 			struct javascript_userdata *user_data);
 
