@@ -47,7 +47,7 @@ static JSValueRef js_media_player_get_uri(JSContextRef context,
 	}
 
 	if (uri == NULL)
-		return NULL;
+		return JSValueMakeNull(context);
 
 	value = javascript_make_string(context, uri, exception);
 	g_free(uri);
