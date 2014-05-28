@@ -209,12 +209,17 @@ int sound_manager_stop(struct sound_manager *manager);
 /**
  * smartcard
  */
+enum smartcard_type {
+	SMARTCARD_TYPE_UNKNOWN,
+	SMARTCARD_TYPE_I2C,
+};
+
 struct smartcard;
 
 int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
 		     GKeyFile *config);
 int smartcard_free(struct smartcard *smartcard);
-int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep);
+int smartcard_get_type(struct smartcard *smartcard, enum smartcard_type *typep);
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, size_t size);
 ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *buffer, size_t size);
 

@@ -15,15 +15,28 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *type)
+int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *typep)
 {
 	struct smartcard *smartcard = remote_control_get_smartcard(priv);
+	enum smartcard_type type;
 	int32_t ret;
 
-	g_debug("> %s(priv=%p, type=%p)", __func__, priv, type);
+	g_debug("> %s(priv=%p, type=%p)", __func__, priv, typep);
 
-	ret = smartcard_get_type(smartcard, type);
+	ret = smartcard_get_type(smartcard, &type);
+	if (ret < 0)
+		goto out;
 
+	switch (type) {
+	case SMARTCARD_TYPE_I2C:
+		*typep = RPC_MACRO(CARD_TYPE_I2C);
+		break;
+	default:
+		*typep = RPC_MACRO(CARD_TYPE_UNKNOWN);
+		break;
+	}
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
