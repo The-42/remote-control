@@ -101,8 +101,7 @@ int sound_manager_play(struct sound_manager *manager, const char *uri)
 
 	manager->media = libvlc_media_new_location(manager->vlc, uri);
 	libvlc_media_player_set_media(manager->player, manager->media);
-	libvlc_media_player_play(manager->player);
-	return 0;
+	return libvlc_media_player_play(manager->player) ? -EINVAL : 0;
 }
 
 int sound_manager_stop(struct sound_manager *manager)
