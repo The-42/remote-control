@@ -111,27 +111,35 @@ int sound_manager_free(struct sound_manager *manager)
 
 int sound_manager_play(struct sound_manager *manager, const char *uri)
 {
+	enum GstStateChangeReturn ret;
+
 	if (!manager || !uri) {
 		g_warning("%s(%p, %p): manager or uri invalid", __func__, manager,
 				  uri);
 		return -EINVAL;
 	}
 
-	gst_element_set_state (manager->play, GST_STATE_NULL);
-	g_object_set (G_OBJECT (manager->play), "uri", uri, NULL);
-	gst_element_set_state (manager->play, GST_STATE_PLAYING);
+	ret = gst_element_set_state(manager->play, GST_STATE_NULL);
+	if (ret == GST_STATE_CHANGE_FAILURE)
+		return -EINVAL;
 
-	return 0;
+	g_object_set (G_OBJECT (manager->play), "uri", uri, NULL);
+
+	ret = gst_element_set_state(manager->play, GST_STATE_PLAYING);
+
+	return ret != GST_STATE_CHANGE_FAILURE ? 0 : -EINVAL;
 }
 
 int sound_manager_stop(struct sound_manager *manager)
 {
+	enum GstStateChangeReturn ret;
+
 	if (!manager) {
 		g_warning("%s(%p): manager uri invalid", __func__, manager);
 		return -EINVAL;
 	}
 
-	gst_element_set_state (manager->play, GST_STATE_NULL);
+	ret = gst_element_set_state(manager->play, GST_STATE_NULL);
 
-	return 0;
+	return ret != GST_STATE_CHANGE_FAILURE ? 0 : -EINVAL;
 }
