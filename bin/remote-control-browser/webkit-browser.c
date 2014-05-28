@@ -32,9 +32,15 @@
 #include "jshooks.h"
 #include "adblock.h"
 
+#if !GTK_CHECK_VERSION(3, 0, 0)
 static const gchar style_large[] = \
 	"style \"scrollbar-large\" { GtkScrollbar::slider-width = 48 }\n" \
 	"class \"GtkScrollbar\" style \"scrollbar-large\"";
+#else
+static const gchar style_large[] = ".scrollbar { "\
+	"-GtkRange-slider-width: 80;" \
+	"}";
+#endif
 
 #define WEBKIT_BROWSER_MAX_PAGES 8
 #define WEBKIT_BROWSER_MIN_PAGES 1
@@ -482,12 +488,8 @@ static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 
 	page = gtk_notebook_get_current_page(priv->notebook);
 	widget = gtk_notebook_get_nth_page(priv->notebook, page);
-#if GTK_CHECK_VERSION(3, 0, 0)
-	view = WEBKIT_WEB_VIEW(widget);
-#else
 	widget = gtk_bin_get_child(GTK_BIN(widget));
 	view = WEBKIT_WEB_VIEW(widget);
-#endif
 
 	return view;
 }
@@ -993,6 +995,12 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 #ifdef USE_WEBKIT2
 	WebKitWebContext *context = webkit_web_context_get_default();
 #endif
+
+#if GTK_CHECK_VERSION(3, 0, 0)
+	GtkCssProvider *css_provider;
+	GdkScreen *screen;
+#endif
+
 	GtkWidget *webkit;
 	GtkWidget *label;
 	GtkWidget *view;
@@ -1014,7 +1022,17 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	gtk_container_add(GTK_CONTAINER(view), webkit);
 	gtk_widget_show(view);
 #else
-	view = webkit;
+	view = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_add(GTK_CONTAINER(view), webkit);
+	gtk_widget_show(view);
+
+	css_provider = gtk_css_provider_new();
+	gtk_css_provider_load_from_data(css_provider, style_large, -1, NULL);
+	screen = gtk_widget_get_screen(view);
+	gtk_style_context_add_provider_for_screen(screen,
+			GTK_STYLE_PROVIDER(css_provider),
+			GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_object_unref(css_provider);
 #endif
 	if (!hidden)
 		gtk_widget_show(webkit);
