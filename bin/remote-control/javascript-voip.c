@@ -31,7 +31,7 @@ static const struct javascript_enum voip_transport_enum[] = {
 	{}
 };
 
-static JSValueRef js_voip_get_state(
+static JSValueRef js_voip_get_login_state(
 	JSContextRef context, JSObjectRef object,
 	JSStringRef name, JSValueRef *exception)
 {
@@ -48,7 +48,7 @@ static JSValueRef js_voip_get_state(
 	err = voip_get_state(voip, &state);
 	if (err) {
 		javascript_set_exception_text(context, exception,
-			"failed to get VoIP state");
+			"failed to get VoIP login state");
 		return NULL;
 	}
 
@@ -82,8 +82,8 @@ static JSValueRef js_voip_get_contact(
 
 static const JSStaticValue voip_properties[] = {
 	{
-		.name = "state",
-		.getProperty = js_voip_get_state,
+		.name = "loginState",
+		.getProperty = js_voip_get_login_state,
 		.attributes = kJSPropertyAttributeDontDelete |
 			kJSPropertyAttributeReadOnly,
 	},
