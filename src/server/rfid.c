@@ -15,15 +15,28 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-int32_t RPC_IMPL(rfid_get_type)(void *priv, enum RPC_TYPE(rfid_type) *type)
+int32_t RPC_IMPL(rfid_get_type)(void *priv, enum RPC_TYPE(rfid_type) *typep)
 {
 	struct rfid *rfid = remote_control_get_rfid(priv);
+	enum rfid_type type;
 	int32_t ret;
 
-	g_debug("> %s(priv=%p, type=%p)", __func__, priv, type);
+	g_debug("> %s(priv=%p, type=%p)", __func__, priv, typep);
 
-	ret = rfid_get_type(rfid, type);
+	ret = rfid_get_type(rfid, &type);
+	if (ret < 0)
+		goto out;
 
+	switch (type) {
+	case RFID_TYPE_MIFARE_1K:
+		*typep = RPC_MACRO(RFID_TYPE_MIFARE_1K);
+		break;
+	default:
+		*typep = RPC_MACRO(RFID_TYPE_UNKNOWN);
+		break;
+	}
+
+out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
