@@ -402,8 +402,12 @@ static void lcd_initialize(JSContextRef context, JSObjectRef object)
 
 static void lcd_finalize(JSObjectRef object)
 {
-	GSource *source = JSObjectGetPrivate(object);
-	g_source_destroy(source);
+	struct lcd *lcd = JSObjectGetPrivate(object);
+
+	if (lcd->receive_cb)
+		JSValueUnprotect(lcd->context, lcd->receive_cb);
+
+	g_source_destroy(&lcd->source);
 }
 
 
@@ -654,11 +658,15 @@ static bool lcd_set_onevent(JSContextRef context, JSObjectRef object,
 		return false;
 	}
 
+	if (priv->receive_cb)
+		JSValueUnprotect(context, priv->receive_cb);
+
 	priv->receive_cb = JSValueToObject(context, value, exception);
 	if (!priv->receive_cb) {
 		g_warning("%s: failed to assign callback", __func__);
 		return false;
 	}
+	JSValueProtect(context, priv->receive_cb);
 
 	return true;
 }
