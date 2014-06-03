@@ -10,7 +10,12 @@
 #  include "config.h"
 #endif
 
+#ifdef __linux__
+#include <sys/socket.h>
+#include <linux/if.h>
+#else
 #include <net/if.h>
+#endif
 #include <net/if_arp.h>
 #include <netlink/route/link.h>
 #include <netlink/route/route.h>

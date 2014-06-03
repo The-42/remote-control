@@ -37,8 +37,12 @@
 
 #define LLDP_MAX_SIZE 1536
 
-#if defined(__linux__) && !defined(IF_NAMESIZE)
+#if defined(__linux__)
+extern unsigned int if_nametoindex (const char *__ifname) __THROW;
+extern char *if_indextoname (unsigned int __ifindex, char *__ifname) __THROW;
+#if !defined(IF_NAMESIZE)
 #define IF_NAMESIZE 32
+#endif
 #endif
 
 static const uint8_t LLDP_MULTICAST_ADDR[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e };
