@@ -282,8 +282,8 @@ static JSValueRef js_media_player_set_crop(JSContextRef context,
 			return NULL;
 		if (dval < 0)
 			args[i] = 0;
-		else if (dval > ULONG_MAX)
-			args[i] = ULONG_MAX;
+		else if (dval > UINT_MAX)
+			args[i] = UINT_MAX;
 		else
 			args[i] = dval;
 	}

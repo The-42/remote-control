@@ -433,7 +433,7 @@ static JSObjectRef javascript_ir_create(
 
 	source = ir_source_new(js);
 	if (!source)
-		return -ENOMEM;
+		return NULL;
 
 	g_source_attach(source, g_main_loop_get_context(data->loop));
 	g_source_unref(source);

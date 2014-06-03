@@ -119,12 +119,12 @@ static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 			if (errno == EINTR)
 				continue;
 
-			g_debug("   select failed: %d (%s)", num, g_strerror(errno));
+			g_debug("   select failed: %d (%s)", errno, g_strerror(errno));
 			return -errno;
 		}
 
 		if (err == 0) {
-			g_debug("   timeout, read=%d, count=%d", pos, count);
+			g_debug("   timeout, read=%zu, count=%zu", pos, count);
 			if (pos > 0)
 				return pos;
 			return -ETIMEDOUT;
@@ -135,7 +135,7 @@ static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 			if (num < 0) {
 				if (errno == EINTR)
 					continue;
-				g_debug("   read failed: %d (%s)", num, g_strerror(errno));
+				g_debug("   read failed: %d (%s)", errno, g_strerror(errno));
 				return -errno;
 			}
 
