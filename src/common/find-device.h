@@ -82,6 +82,13 @@ typedef int (*udev_device_found_cb)(gpointer user, GUdevDevice *dev);
 gint find_udev_devices(const struct udev_match *match,
 		udev_device_found_cb callback, gpointer user);
 
+/**
+ * Callback run when an input device has been found
+ *
+ * @param user The user data passed to the find function
+ * @param name The path of the device found
+ * @return     A negative value to trigger a warning
+ */
 typedef int (*device_found_cb)(gpointer user, const gchar *name);
 
 /**

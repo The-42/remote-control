@@ -14,83 +14,56 @@
 #include <string.h>
 #include <glib.h>
 
-#include <linux/input.h>
-
 #include "find-device.h"
 
+struct find_input_dev {
+	device_found_cb callback;
+	gpointer user;
+};
 
-static inline void free_list_item(gpointer data)
+static int on_input_device_found(gpointer user, GUdevDevice *device)
 {
-	GUdevDevice *device = data;
-	g_object_unref(device);
+	struct find_input_dev *find = user;
+	const gchar *filename = g_udev_device_get_device_file(device);
+	if (filename) {
+		int err = find->callback(find->user, filename);
+		if (err < 0) {
+			g_warning("probe: failed to use %s: %s",
+				filename, g_strerror(-err));
+		} else {
+			g_debug("probe: added %s", filename);
+		}
+	}
+	return 0;
 }
 
 gint find_input_devices(const gchar *devname, device_found_cb callback,
 			gpointer user)
 {
-	const gchar * const subsystems[] = { "input", NULL };
-	GUdevEnumerator *enumerate;
-	GUdevClient *client;
-	GPatternSpec *event;
-	GList *devices, *node;
-	gint found = 0;
-
-	client = g_udev_client_new(subsystems);
-	if (!client) {
-		g_debug("probe: failed to create UDEV client");
-		return -ENOMEM;
-	}
-
-	enumerate = g_udev_enumerator_new(client);
-	if (!enumerate) {
-		g_debug("probe: failed to create enumerator");
-		g_object_unref(client);
-		return -ENOMEM;
-	}
-
-	g_udev_enumerator_add_match_subsystem(enumerate, "input");
-
-	event = g_pattern_spec_new("event*");
-	devices = g_udev_enumerator_execute(enumerate);
-
-	for (node = g_list_first(devices); node; node = node->next) {
-		GUdevDevice *device = node->data;
-		GUdevDevice *parent;
-		const gchar *name;
-
-		name = g_udev_device_get_name(device);
-		if (!name || !g_pattern_match_string(event, name))
-			continue;
-
-		parent = g_udev_device_get_parent(device);
-		name = g_udev_device_get_sysfs_attr(parent, "name");
-
-		if (g_str_equal(name, devname)) {
-			const gchar *filename;
-			g_debug("probe: using device:  %s", name);
-			filename = g_udev_device_get_device_file(device);
-			if (filename) {
-				if (callback) {
-					int err = callback(user, filename);
-					if (err < 0) {
-						g_warning("probe: failed to use %s: %s",
-							  filename, g_strerror(-err));
-					} else {
-						g_debug("probe: added %s", filename);
-					}
-				}
-				found++;
-			}
-		}
-		g_object_unref(parent);
-	}
-
-	g_list_free_full(devices, free_list_item);
-	g_pattern_spec_free(event);
-	g_object_unref(enumerate);
-	g_object_unref(client);
-
-	return found;
+	struct find_input_dev find = {
+		.callback = callback,
+		.user = user,
+	};
+	struct udev_match matches[] = {
+		{
+			.type = UDEV_MATCH_SUBSYSTEM,
+			.value = "input",
+		},
+		{
+			.type = UDEV_MATCH_NAME,
+			.value = "event*",
+		},
+		{
+			.type = UDEV_MATCH_SYSFS_ATTR,
+			.key = "../name",
+			/* the strdup is needed because of the const */
+			.value = g_strdup(devname),
+		},
+		{}
+	};
+	int err = find_udev_devices(matches, on_input_device_found, &find);
+	g_free(matches[2].value);
+	return err;
 }
 
 gint find_udev_devices(const struct udev_match *match,
