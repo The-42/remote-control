@@ -116,7 +116,7 @@ int javascript_int_from_number(JSContextRef context, const JSValueRef val,
 	double dval;
 
 	dval = JSValueToNumber(context, val, exception);
-	if (dval == NAN)
+	if (isnan(dval))
 		return -EINVAL;
 
 	if (!ret)
@@ -138,7 +138,7 @@ int javascript_int_from_unit(JSContextRef context, const JSValueRef val,
 	double dval;
 
 	dval = JSValueToNumber(context, val, exception);
-	if (dval == NAN)
+	if (isnan(dval))
 		return -EINVAL;
 
 	if (!ret)

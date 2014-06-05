@@ -137,7 +137,7 @@ static bool js_media_player_set_position(JSContextRef context,
 	int err;
 
 	dval = JSValueToNumber(context, value, exception);
-	if (dval == NAN)
+	if (isnan(dval))
 		return false;
 
 	if (dval < 0) {
@@ -278,7 +278,7 @@ static JSValueRef js_media_player_set_crop(JSContextRef context,
 
 	for (i = 0; i < 4 ; i++) {
 		dval = JSValueToNumber(context, argv[i], exception);
-		if (dval == NAN)
+		if (isnan(dval))
 			return NULL;
 		if (dval < 0)
 			args[i] = 0;
@@ -323,7 +323,7 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 
 	for (i = 0; i < 4 ; i++) {
 		dval = JSValueToNumber(context, argv[i], exception);
-		if (dval == NAN)
+		if (isnan(dval))
 			return NULL;
 		if (dval < 0)
 			args[i] = 0;
