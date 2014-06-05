@@ -321,3 +321,22 @@ int javascript_register(JSGlobalContextRef context,
 
 	return 0;
 }
+
+int javascript_init(GKeyFile *config)
+{
+	int i, err;
+
+	for (i = 0; ad_modules[i]; i++) {
+		if (!ad_modules[i]->init)
+			continue;
+		err = ad_modules[i]->init(config);
+		if (err) {
+			g_debug("failed to init JS module %s: %s",
+				ad_modules[i]->classdef->className,
+				g_strerror(-err));
+			return err;
+		}
+	}
+
+	return 0;
+}

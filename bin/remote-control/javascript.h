@@ -21,6 +21,7 @@ struct javascript_userdata {
 
 struct javascript_module {
 	const JSClassDefinition	*classdef;
+	int (*init)(GKeyFile *config);
 	JSObjectRef (*create)(JSContextRef js, JSClassRef class,
 			struct javascript_userdata *data);
 
@@ -62,5 +63,7 @@ JSValueRef javascript_int_to_unit(
 
 int javascript_register(JSGlobalContextRef js,
 			struct javascript_userdata *user_data);
+
+int javascript_init(GKeyFile *config);
 
 #endif /* JAVASCRIPT_API_H */

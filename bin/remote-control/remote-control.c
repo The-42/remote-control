@@ -28,6 +28,7 @@
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
+#include "javascript.h"
 #include "gkeyfile.h"
 #include "glogging.h"
 #include "utils.h"
@@ -702,6 +703,12 @@ int main(int argc, char *argv[])
 		g_critical("failed to create control thread: %s",
 			   error->message);
 		g_clear_error(&error);
+		return EXIT_FAILURE;
+	}
+
+	err = javascript_init(conf);
+	if (err) {
+		g_critical("failed to init javascript backend");
 		return EXIT_FAILURE;
 	}
 
