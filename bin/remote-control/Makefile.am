@@ -45,7 +45,9 @@ remote_control_SOURCES += \
 	javascript-modem.c \
 	javascript-monitor.c \
 	javascript-taskmanager.c \
-	javascript-voip.c
+	javascript-voip.c \
+	javascript-output.c \
+	javascript-output-sysfs.c
 
 if ENABLE_JAVASCRIPT_IR
 remote_control_SOURCES += \
