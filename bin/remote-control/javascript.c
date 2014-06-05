@@ -74,12 +74,15 @@ JSValueRef javascript_make_string(
 	return value;
 }
 
-void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
-                               const char *failure)
+void javascript_set_exception_text(JSContextRef context,
+	JSValueRef *exception, const char *failure)
 {
 	if (exception) {
-		*exception = javascript_make_string(
-			context, failure, exception);
+		JSStringRef text = JSStringCreateWithUTF8CString(failure);
+		if (text) {
+			*exception = JSValueMakeString(context, text);
+			JSStringRelease(text);
+		}
 	}
 }
 
