@@ -60,6 +60,59 @@ struct udev_match {
 };
 
 /**
+ * Parse a string representing a udev match
+ *
+ * The syntax is similar to the one used for udev rules,
+ * the following predicates are supported:
+ *
+ *   * SUBSYSTEM == "$VALUE"
+ *   * SUBSYSTEM != "$VALUE"
+ *   * ATTR{$KEY} == "$VALUE"
+ *   * ATTR{$KEY} != "$VALUE"
+ *   * PROP{$KEY} == "$VALUE"
+ *   * KERNEL == "$VALUE"
+ *   * TAG == "$VALUE"
+ *
+ * @param str   The string to parse
+ * @param match The udev_match struct to fill
+ * @return A negative error code in case of error, 0 otherwise
+ */
+int parse_udev_match(const char *str, struct udev_match *match);
+
+/**
+ * Parse a list of strings representing udev matches
+ *
+ * See \ref parse_udev_match() for a description of the supported syntax.
+ *
+ * @param list[in]    A null terminated array of strings
+ * @param matchp[out] Return the newly allocated udev_match array.
+ *                    The array must be freed with \ref free_udev_matches()
+ * @return A negative error code in case of error, 0 otherwise
+ */
+int parse_udev_matches(char *const *list, struct udev_match **matchp);
+
+/**
+ * Release the data inside a udev_match struct
+ *
+ * @param match The match to uninit
+ */
+void uninit_udev_match(struct udev_match *match);
+
+/**
+ * Free an allocated udev_match struct
+ *
+ * @param match The match to free
+ */
+void free_udev_match(struct udev_match *match);
+
+/**
+ * Free a list of udev_match struct
+ *
+ * @param match The match to free
+ */
+void free_udev_matches(struct udev_match *match);
+
+/**
  * Callback run when an input device has been found
  *
  * @param user The user data passed to the find function
