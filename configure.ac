@@ -33,6 +33,16 @@ AS_IF([test "x$USE_NLS" = "xyes"],
 )
 
 #
+# Verbosity
+#
+if test x"$AM_DEFAULT_VERBOSITY" = x"0"; then
+	if make --help 2>&1 | grep -q no-print-directory; then
+		AM_MAKEFLAGS="$AM_MAKEFLAGS --no-print-directory"
+	fi
+fi
+AC_SUBST(AM_MAKEFLAGS)
+
+#
 # Gtk+ version
 #
 AC_ARG_WITH([gtk],
