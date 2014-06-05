@@ -1,5 +1,8 @@
 aclocal.m4
 autom4te.cache
+bin/remote-control/javascript-input-codes.c
+bin/remote-control/javascript-input-properties.c
+build-aux/*
 compile
 config.*
 configure
@@ -13,4 +16,6 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 Makefile.in
+.*.log
 .*.swp
+*.tap
