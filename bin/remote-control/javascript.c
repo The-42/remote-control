@@ -76,6 +76,56 @@ JSValueRef javascript_make_string(
 	return value;
 }
 
+JSValueRef javascript_vsprintf(
+	JSContextRef context, JSValueRef *exception,
+	const char *cstr, va_list ap)
+{
+	JSValueRef val = NULL;
+	char *buffer;
+	va_list aq;
+	int len;
+
+	va_copy(aq, ap);
+	len = vsnprintf(NULL, 0, cstr, aq);
+	va_end(aq);
+
+	if (len < 0) {
+		javascript_set_exception_text(context, exception,
+			"failed to get string buffer size");
+		return NULL;
+	} else
+		len += 1; /* count the terinator */
+
+	buffer = g_malloc(len);
+	if (!buffer) {
+		javascript_set_exception_text(context, exception,
+			"failed to get allocate buffer");
+		return NULL;
+	}
+	if (vsnprintf(buffer, len, cstr, ap) < 0)
+		javascript_set_exception_text(context, exception,
+			"failed to format string");
+	else
+		val = javascript_make_string(context, buffer, exception);
+	g_free(buffer);
+
+	return val;
+}
+
+JSValueRef javascript_sprintf(
+	JSContextRef context, JSValueRef *exception,
+	const char *cstr, ...)
+{
+	JSValueRef val;
+	va_list ap;
+
+	va_start(ap, cstr);
+	val = javascript_vsprintf(context, exception, cstr, ap);
+	va_end(ap);
+
+	return val;
+}
+
 void javascript_set_exception_text(JSContextRef context,
 	JSValueRef *exception, const char *failure)
 {

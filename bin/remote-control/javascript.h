@@ -9,6 +9,7 @@
 #ifndef JAVASCRIPT_API_H
 #define JAVASCRIPT_API_H 1
 
+#include <stdarg.h>
 #include <JavaScriptCore/JavaScript.h>
 #include "remote-control-webkit-window.h"
 #include "remote-control-data.h"
@@ -38,6 +39,13 @@ void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
 
 JSValueRef javascript_make_string(JSContextRef context, const char *cstr,
 				JSValueRef *exception);
+
+JSValueRef javascript_vsprintf(JSContextRef context, JSValueRef *exception,
+			const char *cstr, va_list ap);
+
+JSValueRef javascript_sprintf(JSContextRef context, JSValueRef *exception,
+			const char *cstr, ...)
+__attribute__((format(printf, 3, 4)));
 
 char* javascript_get_string(JSContextRef context, const JSValueRef val,
 			JSValueRef *exception);
