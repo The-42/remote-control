@@ -126,7 +126,7 @@ JSValueRef javascript_sprintf(
 	return val;
 }
 
-void javascript_set_exception_text(JSContextRef context,
+void javascript_printf_exception_text(JSContextRef context,
 	JSValueRef *exception, const char *failure, ...)
 {
 	if (exception) {

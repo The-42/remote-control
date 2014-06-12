@@ -82,7 +82,8 @@ static JSValueRef js_modem_do(
 
 	err = action(modem);
 	if (err)
-		javascript_set_exception_text(context, exception, error);
+		javascript_set_exception_text(
+			context, exception, "%s", error);
 
 	return NULL;
 }
