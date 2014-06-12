@@ -127,14 +127,15 @@ JSValueRef javascript_sprintf(
 }
 
 void javascript_set_exception_text(JSContextRef context,
-	JSValueRef *exception, const char *failure)
+	JSValueRef *exception, const char *failure, ...)
 {
 	if (exception) {
-		JSStringRef text = JSStringCreateWithUTF8CString(failure);
-		if (text) {
-			*exception = JSValueMakeString(context, text);
-			JSStringRelease(text);
-		}
+		va_list ap;
+		va_start(ap, failure);
+		/* We don't pass the exception here to avoid a loop if
+		 * javascript_vsprintf() fails. */
+		*exception = javascript_vsprintf(context, NULL, failure, ap);
+		va_end(ap);
 	}
 }
 

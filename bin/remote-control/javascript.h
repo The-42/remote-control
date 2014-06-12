@@ -35,7 +35,8 @@ struct javascript_enum {
 };
 
 void javascript_set_exception_text(JSContextRef context,JSValueRef *exception,
-				const char *failure);
+				const char *failure, ...)
+__attribute__((format(printf, 3, 4)));
 
 JSValueRef javascript_make_string(JSContextRef context, const char *cstr,
 				JSValueRef *exception);
