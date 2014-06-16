@@ -365,11 +365,13 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 /**
  * task manager
  */
+typedef void(*task_terminate_cb)(int, void*);
 struct task_manager;
 
 int task_manager_create(struct task_manager **managerp);
 int task_manager_free(struct task_manager *manager);
-int32_t task_manager_exec(void *priv, const char *command_line);
+int32_t task_manager_exec(void *priv, const char *command_line,
+		task_terminate_cb terminate_cb, void *callback_data);
 int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig);
 
 /**

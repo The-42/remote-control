@@ -159,7 +159,7 @@ static JSValueRef taskmanager_function_exec(JSContextRef context,
 		return JSValueMakeNumber(context, -EBUSY);
 	}
 
-	ret = task_manager_exec(tm->rcd->rc, command);
+	ret = task_manager_exec(tm->rcd->rc, command, NULL, NULL);
 	if (ret < 0) {
 		javascript_set_exception_text(context, exception,
 			"command could not be executed");

@@ -16,6 +16,8 @@
 #define TASK_MANAGER_PID_MIN 2
 
 struct task {
+	task_terminate_cb callback;
+	void *callback_data;
 	GPid real_pid;
 	int32_t pid;
 };
@@ -47,6 +49,8 @@ static void child_watch(GPid pid, gint status, gpointer data)
 					"exited with status %d", task->pid,
 					task->real_pid, status);
 			manager->tasks = g_list_delete_link(tasks, node);
+			if (task->callback)
+				task->callback(task->pid, task->callback_data);
 			task_free(task);
 			break;
 		}
@@ -140,7 +144,8 @@ static int create_environment(gchar ***envpp)
 	return j;
 }
 
-int32_t task_manager_exec(void *priv, const char *command_line)
+int32_t task_manager_exec(void *priv, const char *command_line,
+		task_terminate_cb terminate_cb, void *callback_data)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
 	GError *error = NULL;
@@ -156,6 +161,8 @@ int32_t task_manager_exec(void *priv, const char *command_line)
 	if (!task)
 		return -ENOMEM;
 
+	task->callback = terminate_cb;
+	task->callback_data = callback_data;
 	task->pid = task_manager_get_next_pid(manager);
 
 	ret = create_environment(&envp);
@@ -201,7 +208,7 @@ out:
 
 int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 {
-	return task_manager_exec(priv, command_line);
+	return task_manager_exec(priv, command_line, NULL, NULL);
 }
 
 int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig)
