@@ -20,8 +20,6 @@
 #include <webkit/webkit.h>
 #endif
 
-#include <gtkosk/gtkosk.h>
-
 #if !GTK_CHECK_VERSION(3, 0, 0)
 #include "katze-scrolled.h"
 #endif
@@ -70,11 +68,8 @@ struct _WebKitBrowserPrivate {
 	GtkToolItem *back;
 	GtkToolItem *forward;
 	GtkToolItem *reload;
-	GtkToggleToolButton *toggle;
 	GtkToolItem *exit;
-	GtkWidget *osk;
 	gchar *geometry;
-	gboolean keyboard;
 	gboolean controls;
 	gboolean noexit;
 	gchar *uri;
@@ -166,10 +161,6 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_GEOMETRY:
 		g_value_set_string(value, priv->geometry);
-		break;
-
-	case PROP_KEYBOARD:
-		g_value_set_boolean(value, priv->keyboard);
 		break;
 
 	case PROP_CONTROLS:
@@ -360,7 +351,6 @@ static void on_notify_load_status_global(WebKitWebView *webkit,
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
 	if (webkit_web_view_is_loading(webkit)) {
-		gtk_toggle_tool_button_set_active(priv->toggle, false);
 		gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->reload),
 					      "stop");
 	} else {
@@ -562,8 +552,6 @@ static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
 
-	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
-
 	if (!gtk_widget_has_focus(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
 		gtk_widget_grab_focus(widget);
@@ -588,14 +576,6 @@ static void on_go_clicked(GtkWidget *widget, gpointer data)
 		webkit_browser_load_uri(browser, uri);
 	else
 		webkit_web_view_stop_loading(webkit);
-}
-
-static void on_keyboard_clicked(GtkWidget *widget, gpointer data)
-{
-	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
-
-	priv->keyboard = gtk_toggle_tool_button_get_active(priv->toggle);
-	gtk_widget_set_visible(priv->osk, priv->keyboard);
 }
 
 static void on_exit_clicked(GtkWidget *widget, gpointer data)
@@ -827,11 +807,6 @@ static gboolean on_webview_button_press_event(GtkWidget *widget,
 
 	if (context == 0)
 		return FALSE;
-
-	if (context & WEBKIT_HIT_TEST_RESULT_CONTEXT_EDITABLE)
-		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
-	else
-		gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
 
 	return FALSE;
 }
@@ -1151,7 +1126,6 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 	if (page >= 0) {
 		gtk_notebook_set_current_page(priv->notebook, page);
 		gtk_widget_grab_focus(GTK_WIDGET(priv->entry));
-		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
 		webkit_browser_update_tab_controls(priv);
 	}
@@ -1313,15 +1287,6 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toolbar_insert(priv->toolbar, priv->reload, -1);
 	gtk_widget_show(GTK_WIDGET(priv->reload));
 
-	priv->toggle = GTK_TOGGLE_TOOL_BUTTON(gtk_toggle_tool_button_new());
-	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
-	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->toggle),
-			"input-keyboard");
-	g_signal_connect(G_OBJECT(priv->toggle), "toggled",
-			G_CALLBACK(on_keyboard_clicked), browser);
-	gtk_toolbar_insert(priv->toolbar, GTK_TOOL_ITEM(priv->toggle), -1);
-	gtk_widget_show(GTK_WIDGET(priv->toggle));
-
 	priv->exit = gtk_tool_button_new(NULL, NULL);
 	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->exit), "exit");
 	g_signal_connect(G_OBJECT(priv->exit), "clicked",
@@ -1388,7 +1353,6 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	SoupSession *session = webkit_get_default_session();
 #endif
 	WebKitWebView *webkit;
-	GtkOskLayout *layout;
 	GtkWidget *notebook;
 	GtkWidget *toolbar;
 	GtkWidget *vbox;
@@ -1421,12 +1385,6 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	notebook = webkit_browser_create_notebook(browser);
 	gtk_widget_show(notebook);
 
-	/* create on-screen keyboard */
-	layout = gtk_osk_layout_new(NULL);
-	priv->osk = gtk_osk_new_with_layout(layout);
-	gtk_widget_show(priv->osk);
-	g_object_unref(layout);
-
 #if GTK_CHECK_VERSION(3, 1, 6)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
@@ -1434,7 +1392,6 @@ static void webkit_browser_init(WebKitBrowser *browser)
 #endif
 	gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), priv->osk, FALSE, FALSE, 0);
 	gtk_widget_show(vbox);
 
 	gtk_container_add(GTK_CONTAINER(browser), vbox);
@@ -1469,12 +1426,6 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 	g_object_class_install_property(object, PROP_GEOMETRY,
 			g_param_spec_string("geometry", "Geometry",
 				"The window geometry.", NULL,
-				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
-	g_object_class_install_property(object, PROP_KEYBOARD,
-			g_param_spec_boolean("keyboard", "On-Screen Keyboard",
-				"Enable or disable the on-screen keyboard",
-				TRUE,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property(object, PROP_CONTROLS,

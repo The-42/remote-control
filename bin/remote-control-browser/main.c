@@ -30,7 +30,6 @@ static gboolean adblock = FALSE;
 static gboolean cursor = FALSE;
 static gboolean noexit = FALSE;
 static gchar *geometry = NULL;
-static gboolean noosk = FALSE;
 static gboolean kiosk = FALSE;
 static gchar *language = NULL;
 static glong max_pages = 0;
@@ -43,10 +42,6 @@ static GOptionEntry entries[] = {
 	{
 		"geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry,
 		"Window geometry", NULL
-	},
-	{
-		"noosk", 'o', 0, G_OPTION_ARG_NONE, &noosk,
-		"No on screen keyboard", NULL
 	},
 	{
 		"kiosk", 'k', 0, G_OPTION_ARG_NONE, &kiosk,
@@ -294,7 +289,6 @@ int main(int argc, char *argv[])
 
 	/* create and show browser window */
 	browser = webkit_browser_new(geometry);
-	g_object_set(browser, "keyboard", !noosk, NULL);
 	g_object_set(browser, "controls", !kiosk, NULL);
 	g_object_set(browser, "accept-language", language, NULL);
 	g_object_set(browser, "no-exit", noexit, NULL);

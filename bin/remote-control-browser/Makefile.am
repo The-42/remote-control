@@ -8,7 +8,6 @@ remote_control_browser_CPPFLAGS = \
 	-I$(top_srcdir)/bin/utils \
 	@POPPLER_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
-	@GTKOSK_CFLAGS@ \
 	@GTK_CFLAGS@
 
 remote_control_browser_SOURCES = \
@@ -37,7 +36,6 @@ remote_control_browser_LDADD = \
 	../utils/libutils.la \
 	@POPPLER_LIBS@ \
 	@WEBKIT_LIBS@ \
-	@GTKOSK_LIBS@ \
 	@GTK_LIBS@
 
 jshooksdir = $(pkgdatadir)/jshooks
