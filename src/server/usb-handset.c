@@ -23,13 +23,22 @@
 
 #include <linux/input.h>
 
-#define KEY_CODE_MUTE 113
-
 struct usb_handset {
 	GSource source;
 	GList *devices;
 	struct event_manager *events;
 };
+
+static int event_is_hook(struct input_event *event)
+{
+	if (event->type == EV_KEY && event->code == KEY_MUTE)
+		return 1;
+#ifdef SW_PHONE_HOOK
+	if (event->type == EV_SW && event->code == SW_PHONE_HOOK)
+		return 1;
+#endif
+	return 0;
+}
 
 static int usb_handset_report(struct usb_handset *input, struct input_event *in_event)
 {
@@ -38,7 +47,7 @@ static int usb_handset_report(struct usb_handset *input, struct input_event *in_
 
 	memset(&event, 0, sizeof(event));
 
-	if(in_event->code == KEY_CODE_MUTE) {
+	if(event_is_hook(in_event)) {
 		event.source = EVENT_SOURCE_HOOK;
 
 		if (in_event->value)
