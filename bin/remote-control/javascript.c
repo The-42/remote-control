@@ -33,6 +33,7 @@ extern struct javascript_module javascript_modem;
 extern struct javascript_module javascript_voip;
 extern struct javascript_module javascript_output;
 extern struct javascript_module javascript_smartcard;
+extern struct javascript_module javascript_fb;
 
 static struct javascript_module *ad_modules[] = {
 	&javascript_cursor,
@@ -56,6 +57,7 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_voip,
 	&javascript_output,
 	&javascript_smartcard,
+	&javascript_fb,
 	NULL
 };
 
