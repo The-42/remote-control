@@ -22,6 +22,9 @@
 
 struct taskmanager {
 	struct remote_control_data *rcd;
+
+	JSContextRef context;
+	JSObjectRef callback;
 };
 
 #define SIG(s) { .name = "SIG" #s, .signo = SIG##s }
@@ -76,6 +79,39 @@ static JSValueRef taskmanager_get_signal(
 	return NULL;
 }
 
+static JSValueRef taskmanager_get_onevent(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct taskmanager *tm = JSObjectGetPrivate(object);
+	if (!tm) {
+		g_warning("%s: object not valid, context changed?", __func__);
+		return JSValueMakeNull(context);
+	}
+
+	return tm->callback;
+}
+
+static bool taskmanager_set_onevent(JSContextRef context, JSObjectRef object,
+		JSStringRef name, JSValueRef value, JSValueRef *exception)
+{
+	struct taskmanager *tm = JSObjectGetPrivate(object);
+	if (!tm) {
+		g_warning("%s: object not valid, context changed?", __func__);
+		return false;
+	}
+
+	if (tm->callback)
+		JSValueUnprotect(context, tm->callback);
+
+	tm->callback = JSValueToObject(context, value, exception);
+	if (!tm->callback) {
+		g_warning("%s: failed to assign callback", __func__);
+		return false;
+	}
+	JSValueProtect(context, tm->callback);
+	return true;
+}
+
 #define PROPERTY_SIG(s)						\
 	{							\
 		.name = "SIG" #s,				\
@@ -85,6 +121,12 @@ static JSValueRef taskmanager_get_signal(
 	}
 
 static const JSStaticValue taskmanager_properties[] = {
+	{
+		.name = "onevent",
+		.getProperty = taskmanager_get_onevent,
+		.setProperty = taskmanager_set_onevent,
+		.attributes = kJSPropertyAttributeNone,
+	},
 	PROPERTY_SIG(ABRT),
 	PROPERTY_SIG(ALRM),
 	PROPERTY_SIG(BUS),
@@ -115,6 +157,29 @@ static const JSStaticValue taskmanager_properties[] = {
 	PROPERTY_SIG(XFSZ),
 	{}
 };
+
+static void taskmanager_terminate_cb(int pid, void *data)
+{
+	JSObjectRef object = data;
+	struct taskmanager *tm = JSObjectGetPrivate(object);
+
+	JSValueRef exception = NULL;
+	JSValueRef args[1];
+
+	if (tm->callback == NULL)
+		return;
+
+	args[0] = JSValueMakeNumber(tm->context, pid);
+
+	(void)JSObjectCallAsFunction(tm->context, tm->callback,
+			object, G_N_ELEMENTS(args), args, &exception);
+	if (exception) {
+		g_warning("%s: exception in callback", __func__);
+		return;
+	}
+
+	return;
+}
 
 static JSValueRef taskmanager_function_exec(JSContextRef context,
 		JSObjectRef function, JSObjectRef object,
@@ -159,7 +224,8 @@ static JSValueRef taskmanager_function_exec(JSContextRef context,
 		return JSValueMakeNumber(context, -EBUSY);
 	}
 
-	ret = task_manager_exec(tm->rcd->rc, command, NULL, NULL);
+	ret = task_manager_exec(tm->rcd->rc, command, taskmanager_terminate_cb,
+			object);
 	if (ret < 0) {
 		javascript_set_exception_text(context, exception,
 			"command could not be executed");
@@ -233,6 +299,7 @@ static struct taskmanager *taskmanager_new(JSContextRef context,
 		g_warning("js-taskmanger: failed to allocate memory");
 
 	tm->rcd = data->rcd;
+	tm->context = context;
 
 	return tm;
 }
