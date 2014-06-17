@@ -18,7 +18,7 @@
 #include "javascript.h"
 #include "javascript-output.h"
 
-#define CONFIG_GROUP "outputs"
+#define CONFIG_GROUP "output "
 #define MAX_OUTPUT_CHANNELS 16
 
 struct js_output_channel_set {
@@ -257,15 +257,15 @@ static const struct js_output_type* js_output_type_find(const char *name)
 char *js_output_config_get_string(
 	GKeyFile *config, const char *name, const char *key)
 {
-	char *key_name;
+	char *group_name;
 	char *value;
 
-	key_name = g_strdup_printf("%s-%s", name, key);
-	if (!key_name)
+	group_name = g_strdup_printf(CONFIG_GROUP "%s", name);
+	if (!group_name)
 		return NULL;
 
-	value = g_key_file_get_string(config, CONFIG_GROUP, key_name, NULL);
-	g_free(key_name);
+	value = g_key_file_get_string(config, group_name, key, NULL);
+	g_free(group_name);
 
 	return value;
 }
@@ -273,16 +273,16 @@ char *js_output_config_get_string(
 char **js_output_config_get_string_list(
 	GKeyFile *config, const char *name, const char *key)
 {
-	char *key_name;
+	char *group_name;
 	char **value;
 
-	key_name = g_strdup_printf("%s-%s", name, key);
-	if (!key_name)
+	group_name = g_strdup_printf(CONFIG_GROUP "%s", name);
+	if (!group_name)
 		return NULL;
 
 	value = g_key_file_get_string_list(
-		config, CONFIG_GROUP, key_name, NULL, NULL);
-	g_free(key_name);
+		config, group_name, key, NULL, NULL);
+	g_free(group_name);
 
 	return value;
 }
@@ -290,16 +290,16 @@ char **js_output_config_get_string_list(
 double js_output_config_get_double(
 	GKeyFile *config, const char *name, const char *key)
 {
-	char *key_name;
+	GError *err = NULL;
+	char *group_name;
 	double value;
-	GError *err;
 
-	key_name = g_strdup_printf("%s-%s", name, key);
-	if (!key_name)
+	group_name = g_strdup_printf(CONFIG_GROUP "%s", name);
+	if (!group_name)
 		return NAN;
 
-	value = g_key_file_get_double(config, CONFIG_GROUP, key_name, &err);
-	g_free(key_name);
+	value = g_key_file_get_double(config, group_name, key, &err);
+	g_free(group_name);
 
 	return err ? NAN : value;
 }
@@ -353,13 +353,15 @@ int js_output_init(GKeyFile *config)
 	gchar **names;
 	int i, err;
 
-	names = g_key_file_get_string_list(
-		config, CONFIG_GROUP, "names", NULL, NULL);
+	names = g_key_file_get_groups(config, NULL);
 	if (!names)
-		return 0;
+		return -ENOMEM;
 
-	for (i = 0; names[i] != NULL; i++) {
-		err = js_output_init_channel(config, names[i]);
+	for (i = 0; names[i]; i++) {
+		if (!g_str_has_prefix(names[i], CONFIG_GROUP))
+			continue;
+		err = js_output_init_channel(
+			config, names[i] + strlen(CONFIG_GROUP));
 		if (err)
 			g_warning("%s: Failed to init output %s",
 				__func__, names[i]);
