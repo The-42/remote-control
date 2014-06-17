@@ -28,6 +28,8 @@ struct modem_desc {
 	unsigned long flags;
 	unsigned int vls;
 	unsigned int atl;
+	int vgm;
+	int vgs;
 };
 
 struct modem_manager {
@@ -198,6 +200,8 @@ static int modem_manager_open_device(struct modem_manager *manager,
 	params.flags |= desc->flags;
 	params.vls = desc->vls;
 	params.atl = desc->atl;
+	params.vgm = desc->vgm;
+	params.vgs = desc->vgs;
 
 	err = modem_set_params(manager->modem, &params);
 	if (err < 0) {
@@ -215,9 +219,9 @@ static int modem_manager_open_device(struct modem_manager *manager,
 static int modem_manager_probe(struct modem_manager *manager)
 {
 	static const struct modem_desc modem_table[] = {
-		{ "/dev/ttyACM0", MODEM_FLAGS_TOGGLE_HOOK, 1, 0 },
-		{ "/dev/ttyS1", MODEM_FLAGS_DIRECT, 13, 3 },
-		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13, 3 },
+		{ "/dev/ttyACM0", MODEM_FLAGS_TOGGLE_HOOK, 1, 0, -1, -1 },
+		{ "/dev/ttyS1", MODEM_FLAGS_DIRECT, 13, 3, -1, -1 },
+		{ "/dev/ttyS0", MODEM_FLAGS_DIRECT, 13, 3, -1, -1 },
 	};
 	guint i;
 
@@ -348,6 +352,8 @@ static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 	gulong flags;
 	guint vls;
 	guint atl;
+	gint vgm;
+	gint vgs;
 
 	g_return_val_if_fail(config != NULL, -EINVAL);
 	g_return_val_if_fail(desc != NULL, -EINVAL);
@@ -381,6 +387,14 @@ static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 		goto out;
 	}
 
+	vgm = g_key_file_get_integer(config, "modem", "vgm", &error);
+	if (error)
+		vgm = MODEM_PARAM_DO_NOT_SET;
+
+	vgs = g_key_file_get_integer(config, "modem", "vgs", &error);
+	if (error)
+		vgs = MODEM_PARAM_DO_NOT_SET;
+
 	g_debug("modem-libmodem: configuration loaded: %s, flags:%lx, "
 			"VLS:%u, ATL:%u", device, flags, vls, atl);
 
@@ -388,6 +402,8 @@ static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 	desc->flags = flags;
 	desc->vls = vls;
 	desc->atl = atl;
+	desc->vgm = vgm;
+	desc->vgs = vgs;
 
 	return 0;
 

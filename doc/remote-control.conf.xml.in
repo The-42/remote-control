@@ -207,6 +207,24 @@
 								ATL command.
 							</para></listitem>
 						</varlistentry>
+						<varlistentry>
+							<term><varname>vgm</varname></term>
+							<listitem><para>
+									Microphone gain. This value is passed to the VGM
+									command and can be used to set gain/attenuation
+									if the microphone input on supporting modems.
+									Check the modem datasheet for applicable value range.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>vgs</varname></term>
+							<listitem><para>
+									Speaker gain. This value is passed to the VGS
+									command and can be used to set gain/attenuation
+									if the speaker input on supporting modems.
+									Check the modem datasheet for applicable value range.
+							</para></listitem>
+						</varlistentry>
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
