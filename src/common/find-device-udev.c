@@ -61,7 +61,8 @@ gint find_input_devices(const gchar *devname, device_found_cb callback,
 		},
 		{}
 	};
-	int err = find_udev_devices(matches, on_input_device_found, &find);
+	int err = find_udev_devices(
+		matches, callback ? on_input_device_found : NULL, &find);
 	g_free(matches[2].value);
 	return err;
 }
