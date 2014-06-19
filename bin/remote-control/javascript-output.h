@@ -11,6 +11,8 @@
 
 #include <glib.h>
 
+#define OUTPUT_GROUP "output "
+
 /** The output struct content is defined by the implementations */
 struct js_output;
 

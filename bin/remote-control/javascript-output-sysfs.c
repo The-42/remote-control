@@ -112,9 +112,11 @@ static int js_output_sysfs_create(
 	if (!config || !name || !outp)
 		return -EINVAL;
 
-	match = js_output_config_get_string_list(config, name, "match");
+	match = javascript_config_get_string_list(config, OUTPUT_GROUP, name,
+			"match");
 	if (match) {
-		attr = js_output_config_get_string(config, name, "attr");
+		attr = javascript_config_get_string(config, OUTPUT_GROUP, name,
+				"attr");
 		if (!attr) {
 			g_error("%s: Output %s doesn't have an attribute",
 				__func__, name);
@@ -130,7 +132,8 @@ static int js_output_sysfs_create(
 		g_strfreev(match);
 		match = NULL;
 	} else {
-		path = js_output_config_get_string(config, name, "path");
+		path = javascript_config_get_string(config, OUTPUT_GROUP, name,
+				"path");
 		if (!path) {
 			g_error("%s: Output %s doesn't have a path or match rule",
 				__func__, name);
@@ -139,11 +142,11 @@ static int js_output_sysfs_create(
 		}
 	}
 
-	min = js_output_config_get_double(config, name, "min");
+	min = javascript_config_get_double(config, OUTPUT_GROUP, name, "min");
 	if (isnan(min))
 		min = 0.0;
 
-	max = js_output_config_get_double(config, name, "max");
+	max = javascript_config_get_double(config, OUTPUT_GROUP, name, "max");
 	if (isnan(max))
 		max = 1.0;
 

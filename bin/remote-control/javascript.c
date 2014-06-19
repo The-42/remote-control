@@ -14,6 +14,7 @@
 #include <glib.h>
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 
 #include "javascript.h"
 
@@ -417,6 +418,85 @@ JSObjectRef javascript_buffer_to_object(
 	g_free(values);
 
 	return array;
+}
+
+char *javascript_config_get_string(GKeyFile *config, const char *group,
+		const char *name, const char *key)
+{
+	char *group_name;
+	char *value;
+
+	group_name = g_strdup_printf("%s%s", group, name);
+	if (!group_name)
+		return NULL;
+
+	value = g_key_file_get_string(config, group_name, key, NULL);
+	g_free(group_name);
+
+	return value;
+}
+
+char **javascript_config_get_string_list(GKeyFile *config, const char *group,
+		const char *name, const char *key)
+{
+	char *group_name;
+	char **value;
+
+	group_name = g_strdup_printf("%s%s", group, name);
+	if (!group_name)
+		return NULL;
+
+	value = g_key_file_get_string_list(
+		config, group_name, key, NULL, NULL);
+	g_free(group_name);
+
+	return value;
+}
+
+double javascript_config_get_double(GKeyFile *config, const char *group,
+		const char *name, const char *key)
+{
+	GError *err = NULL;
+	char *group_name;
+	double value;
+
+	group_name = g_strdup_printf("%s%s", group, name);
+	if (!group_name)
+		return NAN;
+
+	value = g_key_file_get_double(config, group_name, key, &err);
+	g_free(group_name);
+
+	return err ? NAN : value;
+}
+
+
+gchar **javascript_config_get_groups(GKeyFile *config, const char *group)
+{
+	gchar **names = NULL;
+	gchar **ret = NULL;
+	gsize num_groups;
+	int i, j = 0;
+
+	names = g_key_file_get_groups(config, &num_groups);
+	if (!names)
+		goto cleanup;
+
+	ret = g_new (gchar *, num_groups + 1);
+	if (!ret)
+		goto cleanup;
+
+
+	for (i = 0; names[i]; i++) {
+		if (!g_str_has_prefix(names[i], group))
+			continue;
+		ret[j++] = g_strdup(names[i] + strlen(group));
+	}
+	ret[j] = NULL;
+
+cleanup:
+	g_strfreev(names);
+	return ret;
 }
 
 static int javascript_register_module(JSGlobalContextRef js,

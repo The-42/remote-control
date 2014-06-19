@@ -18,7 +18,6 @@
 #include "javascript.h"
 #include "javascript-output.h"
 
-#define CONFIG_GROUP "output "
 #define MAX_OUTPUT_CHANNELS 16
 
 struct js_output_channel_set {
@@ -254,56 +253,6 @@ static const struct js_output_type* js_output_type_find(const char *name)
 	return NULL;
 }
 
-char *js_output_config_get_string(
-	GKeyFile *config, const char *name, const char *key)
-{
-	char *group_name;
-	char *value;
-
-	group_name = g_strdup_printf(CONFIG_GROUP "%s", name);
-	if (!group_name)
-		return NULL;
-
-	value = g_key_file_get_string(config, group_name, key, NULL);
-	g_free(group_name);
-
-	return value;
-}
-
-char **js_output_config_get_string_list(
-	GKeyFile *config, const char *name, const char *key)
-{
-	char *group_name;
-	char **value;
-
-	group_name = g_strdup_printf(CONFIG_GROUP "%s", name);
-	if (!group_name)
-		return NULL;
-
-	value = g_key_file_get_string_list(
-		config, group_name, key, NULL, NULL);
-	g_free(group_name);
-
-	return value;
-}
-
-double js_output_config_get_double(
-	GKeyFile *config, const char *name, const char *key)
-{
-	GError *err = NULL;
-	char *group_name;
-	double value;
-
-	group_name = g_strdup_printf(CONFIG_GROUP "%s", name);
-	if (!group_name)
-		return NAN;
-
-	value = g_key_file_get_double(config, group_name, key, &err);
-	g_free(group_name);
-
-	return err ? NAN : value;
-}
-
 int js_output_init_channel(GKeyFile *config, const char *name)
 {
 	const struct js_output_type *type;
@@ -317,7 +266,8 @@ int js_output_init_channel(GKeyFile *config, const char *name)
 		return -ENOMEM;
 	}
 
-	type_name = js_output_config_get_string(config, name, "type");
+	type_name = javascript_config_get_string(config, OUTPUT_GROUP, name,
+			"type");
 	if (!type_name) {
 		g_warning("%s: Type of output %s isn't defined",
 			__func__, name);
@@ -353,15 +303,12 @@ int js_output_init(GKeyFile *config)
 	gchar **names;
 	int i, err;
 
-	names = g_key_file_get_groups(config, NULL);
+	names = javascript_config_get_groups(config, OUTPUT_GROUP);
 	if (!names)
 		return -ENOMEM;
 
 	for (i = 0; names[i]; i++) {
-		if (!g_str_has_prefix(names[i], CONFIG_GROUP))
-			continue;
-		err = js_output_init_channel(
-			config, names[i] + strlen(CONFIG_GROUP));
+		err = js_output_init_channel(config, names[i]);
 		if (err)
 			g_warning("%s: Failed to init output %s",
 				__func__, names[i]);

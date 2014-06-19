@@ -95,6 +95,17 @@ JSObjectRef javascript_buffer_to_object(
 	JSContextRef context, char *buffer, size_t size,
 	JSValueRef *exception);
 
+char *javascript_config_get_string(GKeyFile *config, const char *group,
+	const char *name, const char *key);
+
+char **javascript_config_get_string_list(GKeyFile *config, const char *group,
+	const char *name, const char *key);
+
+double javascript_config_get_double(GKeyFile *config, const char *group,
+	const char *name, const char *key);
+
+gchar **javascript_config_get_groups(GKeyFile *config, const char *group);
+
 int javascript_register(JSGlobalContextRef js,
 			struct javascript_userdata *user_data);
 
