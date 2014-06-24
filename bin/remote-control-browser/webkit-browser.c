@@ -222,12 +222,6 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		priv->geometry = g_value_dup_string(value);
 		break;
 
-	case PROP_KEYBOARD:
-		priv->keyboard = g_value_get_boolean(value);
-		g_object_set(priv->toggle, "active", priv->keyboard, NULL);
-		gtk_widget_set_visible(priv->osk, priv->keyboard);
-		break;
-
 	case PROP_CONTROLS:
 		priv->controls = g_value_get_boolean(value);
 		if (priv->controls) {
