@@ -32,14 +32,11 @@ struct js_fb_data {
 #define JS_FB_CLEAR_CHAR                ' '
 #define JS_FB_WRITE_AGAIN_DELAY         100
 
-#define JS_FB_INVALID_OBJECT_TEXT       "object not valid, context switched?"
-#define JS_FB_INVALID_ARG_COUNT         "invalid argument count"
-#define JS_FB_INVALID_NUMBER            "argument is not a valid number"
-#define JS_FB_INVALID_FRAMEBUFFER       "framebuffer device not functional"
-#define JS_FB_FAILED_TO_SEEK            "failed to seek to position"
-#define JS_FB_FAILED_TO_WRITE           "failed to write text"
-#define JS_FB_FAILED_TO_ALLOC           "failed to alloc memory"
-#define JS_FB_FAILED_TO_BLANK           "failed to blank display"
+#define JS_FB_ERR_INVALID_FRAMEBUFFER   "framebuffer device not functional"
+#define JS_FB_ERR_FAILED_TO_SEEK        "failed to seek to position"
+#define JS_FB_ERR_FAILED_TO_WRITE       "failed to write text"
+#define JS_FB_ERR_FAILED_TO_ALLOC       "failed to alloc memory"
+#define JS_FB_ERR_FAILED_TO_BLANK       "failed to blank display"
 
 static struct js_fb_data js_fb[JS_FB_MAX];
 static unsigned js_fb_count = 0;
@@ -84,7 +81,6 @@ static int js_fb_prepare_fb(struct js_fb_data *data)
 		js_fb_reset_fb(data);
 		return ret;
 	}
-
 	if (-1 == ioctl(data->fd, FBIOGET_VSCREENINFO, &vinfo)) {
 		ret = -errno;
 		g_warning("%s: Failed to get vinfo for framebuffer %s (%d)",
@@ -109,7 +105,7 @@ static int js_fb_write_text(struct js_fb_data *fb, int x, int y,
 	if (-1 == ret) {
 		ret = -errno;
 		javascript_set_exception_text(context, exception,
-				JS_FB_FAILED_TO_SEEK);
+				JS_FB_ERR_FAILED_TO_SEEK);
 		js_fb_reset_fb(fb);
 		return ret;
 	}
@@ -117,7 +113,7 @@ static int js_fb_write_text(struct js_fb_data *fb, int x, int y,
 	if (-1 == ret) {
 		ret = -errno;
 		javascript_set_exception_text(context, exception,
-				JS_FB_FAILED_TO_WRITE);
+				JS_FB_ERR_FAILED_TO_WRITE);
 		js_fb_reset_fb(fb);
 		return ret;
 	}
@@ -132,13 +128,13 @@ static int js_fb_check_object(JSContextRef context, struct js_fb_data *fb,
 
 	if (!fb) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_INVALID_OBJECT_TEXT);
+				JS_ERR_INVALID_OBJECT_TEXT);
 		return -EINVAL;
 	}
 	ret = js_fb_prepare_fb(fb);
 	if (ret)
 		javascript_set_exception_text(context, exception,
-				JS_FB_INVALID_FRAMEBUFFER);
+				JS_FB_ERR_INVALID_FRAMEBUFFER);
 	return ret;
 }
 
@@ -221,7 +217,7 @@ static JSValueRef js_fb_set_text(JSContextRef context, JSObjectRef function,
 		if (javascript_int_from_number(context, argv[2], 0,
 				UINT16_MAX, &pos_y, exception)) {
 			javascript_set_exception_text(context, exception,
-					JS_FB_INVALID_NUMBER);
+					JS_ERR_INVALID_NUMBER);
 			goto cleanup;
 		}
 		/* no break */
@@ -229,7 +225,7 @@ static JSValueRef js_fb_set_text(JSContextRef context, JSObjectRef function,
 		if (javascript_int_from_number(context, argv[1], 0,
 				UINT16_MAX, &pos_x, exception)) {
 			javascript_set_exception_text(context, exception,
-					JS_FB_INVALID_NUMBER);
+					JS_ERR_INVALID_NUMBER);
 			goto cleanup;
 		}
 		/* no break */
@@ -240,14 +236,14 @@ static JSValueRef js_fb_set_text(JSContextRef context, JSObjectRef function,
 		break;
 	default:
 		javascript_set_exception_text(context, exception,
-				JS_FB_INVALID_ARG_COUNT);
+				JS_ERR_INVALID_ARG_COUNT);
 		goto cleanup;
 	}
 
 	count = js_fb_write_text(fb, pos_x, pos_y, text, context, exception);
 	if (strlen(text) != count) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_FAILED_TO_WRITE);
+				JS_FB_ERR_FAILED_TO_WRITE);
 		goto cleanup;
 	}
 
@@ -279,14 +275,14 @@ static JSValueRef js_fb_clear_text(JSContextRef context, JSObjectRef function,
 	/* Usage clearText() */
 	if (argc != 0) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_INVALID_ARG_COUNT);
+				JS_ERR_INVALID_ARG_COUNT);
 		goto cleanup;
 	}
 
 	fill = g_strnfill(fb->width, JS_FB_CLEAR_CHAR);
 	if (!fill) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_FAILED_TO_ALLOC);
+				JS_FB_ERR_FAILED_TO_ALLOC);
 		goto cleanup;
 	}
 
@@ -298,7 +294,7 @@ static JSValueRef js_fb_clear_text(JSContextRef context, JSObjectRef function,
 	}
 	if (failed) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_FAILED_TO_WRITE);
+				JS_FB_ERR_FAILED_TO_WRITE);
 		goto cleanup;
 	}
 
@@ -337,7 +333,7 @@ static JSValueRef js_fb_set_blank(JSContextRef context, JSObjectRef function,
 	/* Usage setBlank(true|false) or setBlank(value) */
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_INVALID_ARG_COUNT);
+				JS_ERR_INVALID_ARG_COUNT);
 		goto cleanup;
 	}
 	if (JSValueIsBoolean(context, argv[0])) {
@@ -350,7 +346,7 @@ static JSValueRef js_fb_set_blank(JSContextRef context, JSObjectRef function,
 
 	if (-1 == ioctl(fb->fd, FBIOBLANK, blank)) {
 		javascript_set_exception_text(context, exception,
-				JS_FB_FAILED_TO_BLANK);
+				JS_FB_ERR_FAILED_TO_BLANK);
 		js_fb_reset_fb(fb);
 		goto cleanup;
 	}
