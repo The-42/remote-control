@@ -231,10 +231,16 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 	case PROP_CONTROLS:
 		priv->controls = g_value_get_boolean(value);
 		if (priv->controls) {
-			gtk_widget_show(GTK_WIDGET(priv->toolbar));
+			gtk_widget_show(GTK_WIDGET(priv->back));
+			gtk_widget_show(GTK_WIDGET(priv->forward));
+			gtk_widget_show(GTK_WIDGET(priv->reload));
+			gtk_widget_show(GTK_WIDGET(priv->entry));
 			gtk_notebook_set_show_tabs(priv->notebook, TRUE);
 		} else {
-			gtk_widget_hide(GTK_WIDGET(priv->toolbar));
+			gtk_widget_hide(GTK_WIDGET(priv->back));
+			gtk_widget_hide(GTK_WIDGET(priv->forward));
+			gtk_widget_hide(GTK_WIDGET(priv->reload));
+			gtk_widget_hide(GTK_WIDGET(priv->entry));
 			gtk_notebook_set_show_tabs(priv->notebook, FALSE);
 		}
 		break;
