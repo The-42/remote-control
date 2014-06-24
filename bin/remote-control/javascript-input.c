@@ -41,6 +41,7 @@ struct input {
 
 static const gchar *supported_devices[] = {
 	"sx8634",
+	"Avionic Design Multimedia Terminal Tableau",
 	NULL
 };
 
