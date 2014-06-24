@@ -384,7 +384,7 @@ static JSValueRef ir_get_onevent(JSContextRef context, JSObjectRef object,
 	struct ir *priv = JSObjectGetPrivate(object);
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeNull(context);
 	}
 	return priv->callback;
@@ -396,7 +396,7 @@ static bool ir_set_onevent(JSContextRef context, JSObjectRef object,
 	struct ir *priv = JSObjectGetPrivate(object);
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 

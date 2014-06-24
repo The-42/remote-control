@@ -56,7 +56,7 @@ static bool js_output_set_value(
 
 	if (!channel) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return true;
 	}
 
@@ -81,7 +81,7 @@ static JSValueRef js_output_get_value(
 
 	if (!channel) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -142,7 +142,7 @@ static JSValueRef js_output_set(
 
 	if (!channel) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 

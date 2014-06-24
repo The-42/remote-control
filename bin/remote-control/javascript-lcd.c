@@ -489,13 +489,13 @@ static JSValueRef lcd_function_send(JSContextRef context,
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
@@ -543,13 +543,13 @@ static JSValueRef lcd_function_power(JSContextRef context,
 
 	if (!lcd) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
@@ -588,13 +588,13 @@ static JSValueRef lcd_function_mute(JSContextRef context,
 
 	if (!lcd) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
@@ -641,7 +641,7 @@ static JSValueRef lcd_get_onevent(JSContextRef context, JSObjectRef object,
 	struct lcd *priv = JSObjectGetPrivate(object);
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeNull(context);
 	}
 	return priv->receive_cb;
@@ -654,7 +654,7 @@ static bool lcd_set_onevent(JSContextRef context, JSObjectRef object,
 	struct lcd *priv = JSObjectGetPrivate(object);
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 

@@ -35,7 +35,7 @@ static JSValueRef js_modem_get_state(
 
 	if (!modem) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -70,13 +70,13 @@ static JSValueRef js_modem_do(
 
 	if (!modem) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc != 0) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -116,13 +116,13 @@ static JSValueRef js_modem_call(
 
 	if (!modem) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 

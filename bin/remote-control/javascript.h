@@ -14,6 +14,10 @@
 #include "remote-control-webkit-window.h"
 #include "remote-control-data.h"
 
+#define JS_ERR_INVALID_OBJECT_TEXT      "object not valid, context switched?"
+#define JS_ERR_INVALID_ARG_COUNT        "invalid argument count"
+#define JS_ERR_INVALID_NUMBER           "argument is not a valid number"
+
 struct javascript_userdata {
 	RemoteControlWebkitWindow *window;
 	struct remote_control_data *rcd;

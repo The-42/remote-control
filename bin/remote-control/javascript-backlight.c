@@ -24,7 +24,7 @@ static bool js_backlight_set_brightness(JSContextRef context, JSObjectRef object
 
 	if (!backlight) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -50,7 +50,7 @@ static JSValueRef js_backlight_get_brightness(JSContextRef context, JSObjectRef 
 
 	if (!backlight) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -74,7 +74,7 @@ static bool js_backlight_set_enable(JSContextRef context,
 
 	if (!backlight) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 

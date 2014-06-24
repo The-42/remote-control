@@ -193,13 +193,13 @@ static JSValueRef taskmanager_function_exec(JSContextRef context,
 
 	if (!tm) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeNumber(context, -EINVAL);
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeNumber(context, -EINVAL);
 	}
 
@@ -245,13 +245,13 @@ static JSValueRef taskmanager_function_kill(JSContextRef context,
 
 	if (!tm) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeNumber(context, -EINVAL);
 	}
 
 	if (argc != 2) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeNumber(context, -EINVAL);
 	}
 

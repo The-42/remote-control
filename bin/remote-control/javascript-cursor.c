@@ -76,13 +76,13 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 2) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
@@ -129,13 +129,13 @@ static JSValueRef cursor_clickat_callback(JSContextRef context,
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
 	if (argc != 2) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
@@ -191,7 +191,7 @@ static JSValueRef cursor_get_show(JSContextRef context, JSObjectRef object,
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
@@ -209,7 +209,7 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 

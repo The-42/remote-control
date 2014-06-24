@@ -41,7 +41,7 @@ static JSValueRef js_voip_get_login_state(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -66,7 +66,7 @@ static JSValueRef js_voip_get_contact(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -110,13 +110,13 @@ static JSValueRef js_voip_login(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc < 4 || argc > 5) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -165,13 +165,13 @@ static JSValueRef js_voip_logout(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc > 0) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -193,13 +193,13 @@ static JSValueRef js_voip_call(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -228,13 +228,13 @@ static JSValueRef js_voip_accept(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc > 0) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -258,13 +258,13 @@ static JSValueRef js_voip_terminate(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc > 0) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -287,13 +287,13 @@ static JSValueRef js_voip_dial(
 
 	if (!voip) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 

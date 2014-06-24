@@ -57,7 +57,7 @@ static JSValueRef js_audio_player_get_uri(
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -76,7 +76,7 @@ static bool js_audio_player_set_uri(
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -103,7 +103,7 @@ static JSValueRef js_audio_player_get_state(
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -129,7 +129,7 @@ static bool js_audio_player_set_state(
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return true;
 	}
 
@@ -244,7 +244,7 @@ static bool js_audio_set_state(JSContextRef context, JSObjectRef object,
 
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -270,7 +270,7 @@ static JSValueRef js_audio_get_state(JSContextRef context, JSObjectRef object,
 
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -294,7 +294,7 @@ static bool js_audio_set_volume(JSContextRef context, JSObjectRef object,
 
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -320,7 +320,7 @@ static JSValueRef js_audio_get_volume(JSContextRef context, JSObjectRef object,
 
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -343,7 +343,7 @@ static bool js_audio_set_speakers_enable(JSContextRef context,
 
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -365,7 +365,7 @@ static JSValueRef js_audio_get_speakers_enable(JSContextRef context,
 
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 

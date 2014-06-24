@@ -35,7 +35,7 @@ static JSValueRef js_media_player_get_uri(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -65,7 +65,7 @@ static bool js_media_player_set_uri(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -91,7 +91,7 @@ static JSValueRef js_media_player_get_duration(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -114,7 +114,7 @@ static JSValueRef js_media_player_get_position(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -163,7 +163,7 @@ static JSValueRef js_media_player_get_state(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -188,7 +188,7 @@ static bool js_media_player_set_state(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
@@ -273,13 +273,13 @@ static JSValueRef js_media_player_set_crop(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
 	if (argc != 4) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
@@ -318,13 +318,13 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 
 	if (!player) {
 		javascript_set_exception_text(context, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
 	if (argc != 4) {
 		javascript_set_exception_text(context, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
