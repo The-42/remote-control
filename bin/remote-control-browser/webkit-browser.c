@@ -1204,16 +1204,9 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 #endif
 	GtkWidget *widget;
 
-#if GTK_CHECK_VERSION(3, 0, 0)
-	if (WEBKIT_IS_WEB_VIEW(page)) {
-		/* the notebook page contains a WebKitWebView */
-		widget = page;
-#else
 	if (GTK_IS_BIN(page)) {
 		/* the notebook page contains a KatzeScrolled */
 		widget = gtk_bin_get_child(GTK_BIN(page));
-#endif
-
 		webkit = WEBKIT_WEB_VIEW(widget);
 
 #ifndef USE_WEBKIT2
