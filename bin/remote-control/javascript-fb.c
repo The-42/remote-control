@@ -11,6 +11,7 @@
 #endif
 
 #include "javascript.h"
+#include "find-device.h"
 
 #include <sys/ioctl.h>
 #include <linux/fb.h>
@@ -19,6 +20,7 @@
 #include <errno.h>
 
 struct js_fb_data {
+	struct udev_match *match;
 	char *name;
 	char *device;
 	int fd;
@@ -51,6 +53,21 @@ static void js_fb_reset_fb(struct js_fb_data *data)
 	data->stride = 0;
 }
 
+static int js_fb_on_udev_found(gpointer user, GUdevDevice *dev)
+{
+	struct js_fb_data *data = user;
+	const char *base;
+
+	base = g_udev_device_get_sysfs_path(dev);
+	if (!base)
+		return 0;
+	if (data->device)
+		g_free(data->device);
+	data->device = g_strdup(g_udev_device_get_device_file(dev));
+
+	return -1; /* stop searching */
+}
+
 static int js_fb_prepare_fb(struct js_fb_data *data)
 {
 	struct fb_var_screeninfo vinfo;
@@ -59,6 +76,10 @@ static int js_fb_prepare_fb(struct js_fb_data *data)
 
 	if (-1 != data->fd)
 		return 0; /* already initialized */
+
+	if (data->match && !find_udev_devices(data->match, js_fb_on_udev_found,
+			data))
+		return -ENOENT;
 
 	data->fd = open(data->device, O_RDWR);
 	if (-1 == data->fd) {
@@ -361,18 +382,39 @@ static const JSStaticFunction js_fb_functions[] = {
 static int js_fb_init_fb(GKeyFile *config, const char *name,
 		struct js_fb_data *data)
 {
+	char **match = NULL;
+	int ret = 0;
+
 	data->device = javascript_config_get_string(config, JS_FB_CONFIG_GROUP,
 			name, "device");
-	if (!data->device) {
-		g_warning("%s: Failed to get device for framebuffer %s",
+	match = javascript_config_get_string_list(config,
+			JS_FB_CONFIG_GROUP, name, "match");
+	if (match) {
+		ret = parse_udev_matches(match, &data->match);
+		if (ret) {
+			g_error("%s: Failed to parse match rule for framebuffer %s",
 				__func__, name);
-		return -EINVAL;
+			goto cleanup;
+		}
+	}
+	if (!data->device && !data->match) {
+		ret = -EINVAL;
+		g_warning("%s: Failed to get configuration for framebuffer %s",
+				__func__, name);
+		goto cleanup;
 	}
 	data->name = g_strdup(name);
 	data->fd = -1;
 	js_fb_reset_fb(data);
-
-	return 0;
+cleanup:
+	if (ret) {
+		g_free(data->device);
+		data->device = NULL;
+		g_free(data->match);
+		data->match = NULL;
+	}
+	g_strfreev(match);
+	return ret;
 }
 
 static int js_fb_init(GKeyFile *config)
