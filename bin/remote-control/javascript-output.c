@@ -36,9 +36,11 @@ struct js_output_channel {
 };
 
 extern const struct js_output_type js_output_sysfs;
+extern const struct js_output_type js_output_hid_led;
 
 static const struct js_output_type * const output_types[] = {
 	&js_output_sysfs,
+	&js_output_hid_led,
 	NULL,
 };
 

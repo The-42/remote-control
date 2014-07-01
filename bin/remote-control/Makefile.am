@@ -48,6 +48,7 @@ remote_control_SOURCES += \
 	javascript-taskmanager.c \
 	javascript-voip.c \
 	javascript-output.c \
+	javascript-output-hid-led.c \
 	javascript-output-sysfs.c \
 	javascript-smartcard.c
 
@@ -68,6 +69,9 @@ endif
 $(srcdir)/javascript-input.c: \
 	javascript-input-codes.c \
 	javascript-input-properties.c
+
+$(srcdir)/javascript-output-hid-led.c: \
+	javascript-input-led-codes.c
 
 # Find the path for linux/input.h
 INPUT_DEPS = $(shell printf "\x23include <linux/input.h>\n" | \
