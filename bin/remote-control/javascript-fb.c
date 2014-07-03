@@ -151,13 +151,7 @@ static JSValueRef js_fb_get_width(JSContextRef context, JSObjectRef object,
 	if (js_fb_check_object(context, fb, exception))
 		return NULL;
 
-	ret = JSValueMakeNumber(context, fb->width);
-
-	/* Workaround: Always close device here
-	 * -> always open device in js_fb_prepare_fb */
-	js_fb_reset_fb(fb);
-
-	return ret;
+	return JSValueMakeNumber(context, fb->width);
 }
 
 static JSValueRef js_fb_get_height(JSContextRef context, JSObjectRef object,
@@ -169,13 +163,7 @@ static JSValueRef js_fb_get_height(JSContextRef context, JSObjectRef object,
 	if (js_fb_check_object(context, fb, exception))
 		return NULL;
 
-	ret = JSValueMakeNumber(context, fb->height);
-
-	/* Workaround: Always close device here
-	 * -> always open device in js_fb_prepare_fb */
-	js_fb_reset_fb(fb);
-
-	return ret;
+	return JSValueMakeNumber(context, fb->height);
 }
 
 static const JSStaticValue js_fb_properties[] = {
@@ -250,10 +238,6 @@ static JSValueRef js_fb_set_text(JSContextRef context, JSObjectRef function,
 	ret = JSValueMakeBoolean(context, TRUE);
 
 cleanup:
-	/* Workaround: Always close device here
-	 * -> always open device in js_fb_prepare_fb */
-	js_fb_reset_fb(fb);
-
 	if (text)
 		g_free(text);
 	return ret;
@@ -301,10 +285,6 @@ static JSValueRef js_fb_clear_text(JSContextRef context, JSObjectRef function,
 	ret = JSValueMakeBoolean(context, TRUE);
 
 cleanup:
-	/* Workaround: Always close device here
-	 * -> always open device in js_fb_prepare_fb */
-	js_fb_reset_fb(fb);
-
 	if (fill)
 		g_free(fill);
 	return ret;
@@ -354,10 +334,6 @@ static JSValueRef js_fb_set_blank(JSContextRef context, JSObjectRef function,
 	ret = JSValueMakeBoolean(context, TRUE);
 
 cleanup:
-	/* Workaround: Always close device here
-	 * -> always open device in js_fb_prepare_fb */
-	js_fb_reset_fb(fb);
-
 	return ret;
 }
 
