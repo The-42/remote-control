@@ -146,7 +146,6 @@ static JSValueRef js_fb_get_width(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef *exception)
 {
 	struct js_fb_data *fb = JSObjectGetPrivate(object);
-	JSValueRef ret;
 
 	if (js_fb_check_object(context, fb, exception))
 		return NULL;
@@ -158,7 +157,6 @@ static JSValueRef js_fb_get_height(JSContextRef context, JSObjectRef object,
 		JSStringRef name, JSValueRef *exception)
 {
 	struct js_fb_data *fb = JSObjectGetPrivate(object);
-	JSValueRef ret;
 
 	if (js_fb_check_object(context, fb, exception))
 		return NULL;
