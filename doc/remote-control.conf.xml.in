@@ -527,6 +527,36 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>framebuffer</varname> - configuration</term>
+				<para>
+					Configuration for accessing text based framebuffers.
+					Since it is possible to configure more than one framebuffer device,
+					the section also contains the name for this configuration.
+					E.g. <literal>[framebuffer handset]</literal>
+				</para>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>device</varname></term>
+							<listitem><para>
+								Specifies the device of the framebuffer.
+								E.g. <literal>/dev/fb1</literal> for using the second framebuffer device.
+								(/dev/fb0 is typically in use by the terminal display)
+								This parameter is ignored if <varname>match</varname> is given.
+							</para></listitem>
+						</varlistentry>
+						<varlistentry>
+							<term><varname>match</varname></term>
+							<listitem><para>
+								Detect the device by the given udev search rule.
+								E.g. <literal>match = SUBSYSTEM=="graphics";ATTR{name}=="HID:ADAD:0042"</literal>
+								for configuring the avionic-design bgu-handset.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 
