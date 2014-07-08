@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <linux/input.h>
 
@@ -382,11 +383,96 @@ static const JSStaticValue input_properties[] = {
 	{}
 };
 
+static JSValueRef input_get_event_name(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	const char* prefix[2] = {};
+	int type, code;
+	int err, i, j;
+
+	if (argc < 1 || argc > 2) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+	err = javascript_int_from_number(
+		context, argv[0], 0, UINT16_MAX, &type, exception);
+	if (err)
+		return NULL;
+
+	if (argc == 1) {
+		prefix[0] = "EV_";
+		code = type; /* We lookup the type */
+	} else {
+		err = javascript_int_from_number(
+			context, argv[1], 0, UINT16_MAX, &code, exception);
+		if (err)
+			return NULL;
+
+		switch (type) {
+		case EV_SYN:
+			prefix[0] = "SYN_";
+			break;
+		case EV_KEY:
+			prefix[0] = "KEY_";
+			prefix[1] = "BTN_";
+			break;
+		case EV_REL:
+			prefix[0] = "REL_";
+			break;
+		case EV_ABS:
+			prefix[0] = "ABS_";
+			break;
+		case EV_MSC:
+			prefix[0] = "MSC_";
+			break;
+		case EV_SW:
+			prefix[0] = "SW_";
+			break;
+		case EV_LED:
+			prefix[0] = "LED_";
+			break;
+		case EV_SND:
+			prefix[0] = "SND_";
+			break;
+		case EV_REP:
+			prefix[0] = "REP_";
+			break;
+		default:
+			return JSValueMakeNull(context);
+		}
+	}
+
+	for (i = 0; input_event_codes[i].name; i++) {
+		const char *name = input_event_codes[i].name;
+		for (j = 0; prefix[j]; j++) {
+			if (!strncmp(prefix[j], name, strlen(prefix[j])) &&
+					code == input_event_codes[i].code)
+				return javascript_make_string(
+					context, name, exception);
+		}
+	}
+
+	return JSValueMakeNull(context);
+}
+
+static const JSStaticFunction input_functions[] = {
+	{
+		.name = "getEventName",
+		.callAsFunction = input_get_event_name,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{}
+};
+
 static const JSClassDefinition input_classdef = {
 	.className = "Input",
 	.initialize = input_initialize,
 	.finalize = input_finalize,
 	.staticValues = input_properties,
+	.staticFunctions = input_functions,
 };
 
 static JSObjectRef javascript_input_create(
