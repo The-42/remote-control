@@ -557,6 +557,25 @@
 					</variablelist>
 				</para></listitem>
 			</varlistentry>
+			<varlistentry>
+				<term><varname>input</varname> - configuration</term>
+				<para>
+					Configuration for the input devices.
+				</para>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>device-XXX</varname></term>
+							<listitem><para>
+								Specifies an input device that should be used. As several device might be
+								needed each <varname>device</varname> key should have a unique suffix.
+								E.g. <literal>device-touch-bar = sx8634</literal> for using all the devices
+								names <literal>sx8634</literal>
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
 		</variablelist>
 	</refsect1>
 

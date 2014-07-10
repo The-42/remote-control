@@ -40,12 +40,8 @@ struct input {
 	JSObjectRef this;
 };
 
-static const gchar *supported_devices[] = {
-	"sx8634",
-	"Avionic Design Multimedia Terminal Tableau",
-	"Avionic Design BGU Handset",
-	NULL
-};
+static const gchar **supported_devices = NULL;
+static int supported_devices_count = 0;
 
 static int input_report(struct input *input, struct input_event *event)
 {
@@ -490,7 +486,43 @@ static JSObjectRef javascript_input_create(
 	return JSObjectMake(js, class, source);
 }
 
+static int javascript_input_init(GKeyFile *config)
+{
+	gchar **keys;
+	gchar *name;
+	int i;
+
+	supported_devices = g_malloc0(sizeof(*supported_devices));
+
+	keys = g_key_file_get_keys(config, "input", NULL, NULL);
+	if (!keys)
+		return 0;
+
+	for (i = 0; keys[i]; i++) {
+		if (!g_str_has_prefix(keys[i], "device-"))
+			continue;
+		name = g_key_file_get_string(config, "input", keys[i], NULL);
+		if (!name) {
+			g_warning("%s: failed to read input config key %s",
+				__func__, keys[i]);
+			continue;
+		}
+		g_debug("%s: adding input device '%s'", __func__, name);
+		supported_devices = g_realloc_n(supported_devices,
+						supported_devices_count + 2,
+						sizeof(*supported_devices));
+		supported_devices[supported_devices_count] = name;
+		supported_devices[supported_devices_count + 1] = NULL;
+		supported_devices_count++;
+	}
+
+	g_strfreev(keys);
+
+	return 0;
+}
+
 struct javascript_module javascript_input = {
 	.classdef = &input_classdef,
+	.init = javascript_input_init,
 	.create = javascript_input_create,
 };
