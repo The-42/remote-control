@@ -15,20 +15,82 @@
 
 #include "javascript.h"
 
+static guint g_id;
+static GArray *g_watchdogs;
+G_LOCK_DEFINE (g_watchdogs_lock);
+
 struct app_watchdog {
 	RemoteControlWebkitWindow *window;
 	GMainContext *main_context;
 	GSource *timeout_source;
 	guint interval;
+	guint id;
 
 	JSContextRef context;
 	JSObjectRef callback;
 	JSObjectRef this;
 };
 
+static guint app_watchdogs_register(guint id)
+{
+	guint i, ret;
+
+	G_LOCK(g_watchdogs_lock);
+
+	if (!g_watchdogs)
+		g_watchdogs = g_array_new (FALSE, FALSE, sizeof (gint));
+	if (!g_watchdogs)
+		goto cleanup;
+
+	for (i = 0; i < g_watchdogs->len; i++)
+		if (g_array_index(g_watchdogs, guint, i) == id)
+			goto cleanup; /* already registered */
+
+	g_array_append_val(g_watchdogs, id);
+cleanup:
+	ret = g_watchdogs ? g_watchdogs->len : 0;
+	G_UNLOCK(g_watchdogs_lock);
+
+	return ret;
+}
+
+static guint app_watchdogs_unregister(guint id)
+{
+	guint i, ret;
+
+	G_LOCK(g_watchdogs_lock);
+
+	if (!g_watchdogs)
+		goto cleanup;
+
+	for (i = 0; i < g_watchdogs->len; i++) {
+		if (g_array_index(g_watchdogs, guint, i) == id) {
+			g_array_remove_index(g_watchdogs, i);
+			goto cleanup;
+		}
+	}
+cleanup:
+	ret = g_watchdogs ? g_watchdogs->len : 0;
+	if (!ret && g_watchdogs) {
+		g_array_free(g_watchdogs, TRUE);
+		g_watchdogs = NULL;
+	}
+
+	G_UNLOCK(g_watchdogs_lock);
+
+	return ret;
+}
+
 static gboolean app_watchdog_timeout(gpointer data)
 {
-	g_critical("WATCHDOG: It seems the user interface is stalled, restarting");
+	guint id = (guint)data;
+	guint count = app_watchdogs_unregister(id);
+
+	if (count)
+		g_warning("WATCHDOG #%u: %u watchdogs are still running", id, count);
+
+	g_critical("WATCHDOG #%u: It seems the user interface is stalled, restarting",
+			id);
 	raise(SIGTERM);
 	return FALSE;
 }
@@ -38,6 +100,7 @@ static JSValueRef app_watchdog_function_start(
 	size_t argc, const JSValueRef argv[], JSValueRef *exception)
 {
 	struct app_watchdog *priv = JSObjectGetPrivate(object);
+	guint count;
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
@@ -76,8 +139,11 @@ static JSValueRef app_watchdog_function_start(
 	}
 
 	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
-		priv, NULL);
+		(gpointer)priv->id, NULL);
 	g_source_attach(priv->timeout_source, priv->main_context);
+
+	count = app_watchdogs_register(priv->id);
+	g_debug("Watchdog #%u started (%u running)", priv->id, count);
 
 	return 0;
 }
@@ -87,6 +153,7 @@ static JSValueRef app_watchdog_function_stop(JSContextRef context,
 	const JSValueRef argv[], JSValueRef *exception)
 {
 	struct app_watchdog *priv = JSObjectGetPrivate(object);
+	guint count;
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
@@ -98,6 +165,9 @@ static JSValueRef app_watchdog_function_stop(JSContextRef context,
 		g_source_destroy(priv->timeout_source);
 
 	priv->timeout_source = NULL;
+
+	count = app_watchdogs_unregister(priv->id);
+	g_debug("Watchdog #%u stopped (%u remaining)", priv->id, count);
 
 	return 0;
 }
@@ -132,6 +202,8 @@ static JSValueRef app_watchdog_function_trigger(
 		priv, NULL);
 	g_source_attach(priv->timeout_source, priv->main_context);
 
+	g_debug("Watchdog #%u triggered", priv->id);
+
 	return 0;
 }
 
@@ -148,6 +220,9 @@ static struct app_watchdog *app_watchdog_new(JSContextRef context,
 
 	watchdog->main_context = g_main_loop_get_context(data->loop);
 	watchdog->window = data->window;
+	watchdog->id = ++g_id;
+
+	g_debug("Watchdog #%u created", watchdog->id);
 
 	return watchdog;
 }
@@ -155,8 +230,13 @@ static struct app_watchdog *app_watchdog_new(JSContextRef context,
 static void app_watchdog_finalize(JSObjectRef object)
 {
 	struct app_watchdog *watchdog = JSObjectGetPrivate(object);
+	guint count;
+
 	if(watchdog->timeout_source != NULL)
 		g_source_destroy(watchdog->timeout_source);
+
+	count = app_watchdogs_unregister(watchdog->id);
+	g_debug("Watchdog #%u destroyed (%u running)", watchdog->id, count);
 
 	g_free(watchdog);
 }
