@@ -22,10 +22,13 @@
 #include "javascript.h"
 #include "find-device.h"
 
+#define INPUT_DEVICE_PREFIX  "device-"
+
 struct device {
 	int vendorId;
 	int productId;
 	gchar *name;
+	gchar *alias;
 
 	GPollFD *poll;
 };
@@ -40,7 +43,12 @@ struct input {
 	JSObjectRef this;
 };
 
-static const gchar **supported_devices = NULL;
+struct alias {
+	gchar *name;
+	gchar *alias;
+};
+
+static struct alias *supported_devices = NULL;
 static int supported_devices_count = 0;
 
 static int input_report(struct input *input, struct device *device,
@@ -49,6 +57,7 @@ static int input_report(struct input *input, struct device *device,
 	JSValueRef exception = NULL;
 	JSValueRef args[5];
 	double timestamp;
+	gchar *name;
 
 	g_return_val_if_fail(input->context != NULL, -EINVAL);
 	g_return_val_if_fail(event != NULL, -EINVAL);
@@ -63,7 +72,8 @@ static int input_report(struct input *input, struct device *device,
 	args[1] = JSValueMakeNumber(input->context, event->type);
 	args[2] = JSValueMakeNumber(input->context, event->code);
 	args[3] = JSValueMakeNumber(input->context, event->value);
-	args[4] = javascript_make_string(input->context, device->name, NULL);
+	args[4] = javascript_make_string(input->context,
+			device->alias ? device->alias : device->name, NULL);
 
 	(void)JSObjectCallAsFunction(input->context, input->callback,
 			input->this, G_N_ELEMENTS(args), args, &exception);
@@ -111,6 +121,7 @@ static void free_device(gpointer data)
 	struct device *device = data;
 	free_poll(device->poll);
 	g_free(device->name);
+	g_free(device->alias);
 	g_free(device);
 }
 
@@ -188,6 +199,7 @@ static GSourceFuncs input_source_funcs = {
 static int input_add_device(gpointer user, const gchar *filename,
 		const gchar *name, int vendorId, int productId)
 {
+	const struct alias *supported_device;
 	struct input *input = user;
 	struct device *device;
 	GPollFD *poll;
@@ -221,6 +233,14 @@ static int input_add_device(gpointer user, const gchar *filename,
 	device->vendorId = vendorId;
 	device->productId = productId;
 
+	for (supported_device = supported_devices;
+			supported_device->name != NULL; supported_device++) {
+		if (!g_strcmp0(name, supported_device->name)) {
+			device->alias = g_strdup(supported_device->alias);
+			break;
+		}
+	}
+
 	input->devices = g_list_append(input->devices, device);
 	g_source_add_poll((GSource *)input, poll);
 
@@ -231,7 +251,7 @@ static void input_on_udev_event(GUdevClient *client, gchar *action,
 			  GUdevDevice *udevice, gpointer user_data)
 {
 	struct input *input = user_data;
-	const gchar **supported_name;
+	const struct alias *supported_device;
 	const char *filename;
 	GUdevDevice *parent;
 	const char *pname;
@@ -249,9 +269,9 @@ static void input_on_udev_event(GUdevClient *client, gchar *action,
 		return;
 
 	pname = g_udev_device_get_sysfs_attr(parent, "name");
-	for (supported_name = supported_devices; *supported_name != NULL; supported_name++) {
-		g_debug("js-input: Check for device %s\n", *supported_name);
-		if (!g_strcmp0(pname, *supported_name)) {
+	for (supported_device = supported_devices; supported_device->name != NULL; supported_device++) {
+		g_debug("js-input: Check for device %s\n", supported_device->name);
+		if (!g_strcmp0(pname, supported_device->name)) {
 			filename = g_udev_device_get_device_file(udevice);
 			input_add_device(input, filename, pname,
 				g_udev_device_get_sysfs_attr_as_int(parent, "vendorId"),
@@ -266,7 +286,7 @@ static void input_on_udev_event(GUdevClient *client, gchar *action,
 static GSource *input_source_new(JSContextRef context)
 {
 	const gchar *const subsystems[] = { "input", NULL };
-	const gchar **supported_name;
+	const struct alias *supported_device;
 	struct input *input;
 	GSource *source;
 
@@ -288,9 +308,9 @@ static GSource *input_source_new(JSContextRef context)
 	else
 		g_warning("js-input: failed to create udev client");
 
-	for (supported_name = supported_devices; *supported_name != NULL; supported_name++) {
-		if (find_input_devices(*supported_name, input_add_device, input) < 1)
-			g_debug("js-input: no %s device found", *supported_name);
+	for (supported_device = supported_devices; supported_device->name != NULL; supported_device++) {
+		if (find_input_devices(supported_device->name, input_add_device, input) < 1)
+			g_debug("js-input: no %s device found", supported_device->name);
 	}
 
 	return source;
@@ -501,7 +521,7 @@ static int javascript_input_init(GKeyFile *config)
 		return 0;
 
 	for (i = 0; keys[i]; i++) {
-		if (!g_str_has_prefix(keys[i], "device-"))
+		if (!g_str_has_prefix(keys[i], INPUT_DEVICE_PREFIX))
 			continue;
 		name = g_key_file_get_string(config, "input", keys[i], NULL);
 		if (!name) {
@@ -513,8 +533,10 @@ static int javascript_input_init(GKeyFile *config)
 		supported_devices = g_realloc_n(supported_devices,
 						supported_devices_count + 2,
 						sizeof(*supported_devices));
-		supported_devices[supported_devices_count] = name;
-		supported_devices[supported_devices_count + 1] = NULL;
+		supported_devices[supported_devices_count].name = name;
+		supported_devices[supported_devices_count].alias =
+				g_strdup(&keys[i][strlen(INPUT_DEVICE_PREFIX)]);
+		supported_devices[supported_devices_count + 1].name = NULL;
 		supported_devices_count++;
 	}
 
