@@ -43,10 +43,11 @@ struct input {
 static const gchar **supported_devices = NULL;
 static int supported_devices_count = 0;
 
-static int input_report(struct input *input, struct input_event *event)
+static int input_report(struct input *input, struct device *device,
+		struct input_event *event)
 {
 	JSValueRef exception = NULL;
-	JSValueRef args[4];
+	JSValueRef args[5];
 	double timestamp;
 
 	g_return_val_if_fail(input->context != NULL, -EINVAL);
@@ -62,6 +63,7 @@ static int input_report(struct input *input, struct input_event *event)
 	args[1] = JSValueMakeNumber(input->context, event->type);
 	args[2] = JSValueMakeNumber(input->context, event->code);
 	args[3] = JSValueMakeNumber(input->context, event->value);
+	args[4] = javascript_make_string(input->context, device->name, NULL);
 
 	(void)JSObjectCallAsFunction(input->context, input->callback,
 			input->this, G_N_ELEMENTS(args), args, &exception);
@@ -151,7 +153,7 @@ static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 				continue;
 			}
 
-			err = input_report(input, &event);
+			err = input_report(input, device, &event);
 			if (err < 0) {
 				g_debug("js-input: input_report(): %s",
 						g_strerror(-err));
