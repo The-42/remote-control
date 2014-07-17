@@ -383,7 +383,7 @@ static JSValueRef input_get_event_name(
 	JSContextRef context, JSObjectRef function, JSObjectRef object,
 	size_t argc, const JSValueRef argv[], JSValueRef *exception)
 {
-	const char* prefix[2] = {};
+	const char* prefix[3] = {};
 	int type, code;
 	int err, i, j;
 
