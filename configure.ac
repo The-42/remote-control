@@ -406,10 +406,10 @@ AC_SUBST(VISIBILITY_CFLAGS)
 CFLAGS="$CFLAGS -Wall"
 
 AC_ARG_ENABLE([werror],
-	[AS_HELP_STRING([--enable-werror],
-		[Treat warnings as errors (default: disabled)])],
+	[AS_HELP_STRING([--disable-werror],
+		[Do not treat warnings as errors (default: warnings are errors)])],
 		[enable_werror="$enableval"],
-		[enable_werror=no])
+		[enable_werror=yes])
 AS_IF([test "x$enable_werror" = "xyes"], [CFLAGS="$CFLAGS -Werror"])
 
 COMMANDS_ALIGN=32
