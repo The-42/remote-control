@@ -351,7 +351,11 @@ static gboolean navigation_policy(WebKitWebView *webkit,
 
 static gboolean remote_control_webkit_reload(gpointer user_data)
 {
-	webkit_web_view_reload(WEBKIT_WEB_VIEW(user_data));
+	RemoteControlWebkitWindow *self = REMOTE_CONTROL_WEBKIT_WINDOW(user_data);
+	RemoteControlWebkitWindowPrivate *priv;
+
+	priv = REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(self);
+	webkit_web_view_load_uri(priv->webkit, g_uri_to_string(priv->uri));
 	return FALSE;
 }
 
@@ -386,7 +390,7 @@ static gboolean webkit_handle_load_error(WebKitWebView *webkit,
 	if (need_reload) {
 		g_debug("%s(): scheduling reload of %s...", __func__, uri);
 		g_timeout_add_seconds(WEBKIT_RELOAD_TIMEOUT,
-				remote_control_webkit_reload, webkit);
+				remote_control_webkit_reload, user_data);
 	}
 
 	return FALSE;
