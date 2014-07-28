@@ -108,6 +108,9 @@ char **javascript_config_get_string_list(GKeyFile *config, const char *group,
 double javascript_config_get_double(GKeyFile *config, const char *group,
 	const char *name, const char *key);
 
+gint javascript_config_get_integer(GKeyFile *config, const char *group,
+	const char *name, const char *key);
+
 gchar **javascript_config_get_groups(GKeyFile *config, const char *group);
 
 int javascript_register(JSGlobalContextRef js,

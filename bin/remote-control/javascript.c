@@ -472,6 +472,23 @@ double javascript_config_get_double(GKeyFile *config, const char *group,
 	return err ? NAN : value;
 }
 
+gint javascript_config_get_integer(GKeyFile *config, const char *group,
+		const char *name, const char *key)
+{
+	GError *err = NULL;
+	char *group_name;
+	gint value;
+
+	group_name = g_strdup_printf("%s%s", group, name);
+	if (!group_name)
+		return NAN;
+
+	value = g_key_file_get_integer(config, group_name, key, &err);
+	g_free(group_name);
+
+	return err ? NAN : value;
+}
+
 
 gchar **javascript_config_get_groups(GKeyFile *config, const char *group)
 {
