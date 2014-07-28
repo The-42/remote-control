@@ -26,11 +26,31 @@ struct app_watchdog {
 	JSObjectRef this;
 };
 
+#define JS_APP_WATCHDOG "js-watchdog"
+#define JS_APP_WATCHDOG_DEFAULT_TIMEOUT "timeout"
+static guint app_watchdog_default_timeout = 0;
+
 static gboolean app_watchdog_timeout(gpointer data)
 {
 	g_critical("WATCHDOG: It seems the user interface is stalled, restarting");
 	raise(SIGTERM);
 	return FALSE;
+}
+
+static int app_watchdog_start(struct app_watchdog *priv)
+{
+	if (priv->timeout_source != NULL)
+		g_source_destroy(priv->timeout_source);
+
+	priv->timeout_source = g_timeout_source_new_seconds(priv->interval);
+	if (!priv->timeout_source)
+		return -ENOMEM;
+
+	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
+		priv, NULL);
+	g_source_attach(priv->timeout_source, priv->main_context);
+
+	return 0;
 }
 
 static JSValueRef app_watchdog_function_start(
@@ -68,16 +88,11 @@ static JSValueRef app_watchdog_function_start(
 	if (priv->timeout_source != NULL)
 		g_source_destroy(priv->timeout_source);
 
-	priv->timeout_source = g_timeout_source_new_seconds(priv->interval);
-	if (!priv->timeout_source) {
+	if (app_watchdog_start(priv) != 0) {
 		javascript_set_exception_text(context, exception,
 			"watchdog timeout source could not be created.");
 		return JSValueMakeBoolean(context, FALSE);
 	}
-
-	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
-		priv, NULL);
-	g_source_attach(priv->timeout_source, priv->main_context);
 
 	return 0;
 }
@@ -186,6 +201,13 @@ static const JSClassDefinition app_watchdog_classdef = {
 	.staticFunctions = app_watchdog_functions,
 };
 
+static int javascript_app_watchdog_init(GKeyFile *config)
+{
+	app_watchdog_default_timeout = (guint)javascript_config_get_integer(config,
+			JS_APP_WATCHDOG, "", JS_APP_WATCHDOG_DEFAULT_TIMEOUT);
+
+	return 0;
+}
 
 static JSObjectRef javascript_app_watchdog_create(
 	JSContextRef js, JSClassRef class,
@@ -197,10 +219,19 @@ static JSObjectRef javascript_app_watchdog_create(
 	if (!watchdog)
 		return NULL;
 
+	watchdog->interval = app_watchdog_default_timeout;
+	if (watchdog->interval > 0) {
+		g_debug("%s: Autostart watchdog with interval %d", __func__,
+				watchdog->interval);
+		if (app_watchdog_start(watchdog) != 0)
+			g_warning("%s: Could not autostart watchdog", __func__);
+	}
+
 	return JSObjectMake(js, class, watchdog);
 }
 
 struct javascript_module javascript_app_watchdog = {
 	.classdef = &app_watchdog_classdef,
+	.init = javascript_app_watchdog_init,
 	.create = javascript_app_watchdog_create,
 };

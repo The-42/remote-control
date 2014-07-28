@@ -231,6 +231,24 @@
 				</para></listitem>
 			</varlistentry>
 			<varlistentry>
+				<term><varname>js-watchdog</varname> - javascript watchdog configuration</term>
+				<listitem><para>
+					<variablelist>
+						<varlistentry>
+							<term><varname>timeout</varname></term>
+							<listitem><para>
+								Specifies a default timeout which is used to start
+								the javascript watchdog from the core. The loaded
+								page has to trigger it within this time to avoid a
+								restart.
+								The page can lateron stop or reconfigure the watchdog
+								via the javascript interface.
+							</para></listitem>
+						</varlistentry>
+					</variablelist>
+				</para></listitem>
+			</varlistentry>
+			<varlistentry>
 				<term><varname>logging</varname> - logging configuration</term>
 				<listitem><para>
 					<variablelist>
