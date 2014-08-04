@@ -99,8 +99,22 @@ int task_manager_create(struct task_manager **managerp)
 
 int task_manager_free(struct task_manager *manager)
 {
+	GList *tasks = manager->tasks;
+	int32_t ret = 0;
+	GList *node;
+
 	if (!manager)
 		return -EINVAL;
+
+	/* kill all child tasks */
+	for (node = g_list_first(tasks); node; node = g_list_next(node)) {
+		struct task *task = node->data;
+		ret = kill(task->real_pid, SIGTERM);
+		if (ret != 0) {
+			g_warning("Could not kill task %d (%s)", task->real_pid,
+					strerror(errno));
+		}
+	}
 
 	g_list_free_full(manager->tasks, task_free);
 	g_free(manager);
