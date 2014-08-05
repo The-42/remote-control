@@ -42,9 +42,9 @@ libremote_control_la_SOURCES = \
 	task-manager.c \
 	tuner.c \
 	tuner-v4l2.c \
+	usb-handset.c \
 	utils.c \
-	voip.c \
-	usb-handset.c
+	voip.c
 
 nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
