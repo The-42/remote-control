@@ -15,51 +15,14 @@
 
 #include "javascript.h"
 
-struct app_watchdog {
-	RemoteControlWebkitWindow *window;
-	GMainContext *main_context;
-	GSource *timeout_source;
-	guint interval;
-
-	JSContextRef context;
-	JSObjectRef callback;
-	JSObjectRef this;
-};
-
-#define JS_APP_WATCHDOG "js-watchdog"
-#define JS_APP_WATCHDOG_DEFAULT_TIMEOUT "timeout"
-static guint app_watchdog_default_timeout = 0;
-
-static gboolean app_watchdog_timeout(gpointer data)
-{
-	g_critical("WATCHDOG: It seems the user interface is stalled, restarting");
-	raise(SIGTERM);
-	return FALSE;
-}
-
-static int app_watchdog_start(struct app_watchdog *priv)
-{
-	if (priv->timeout_source != NULL)
-		g_source_destroy(priv->timeout_source);
-
-	priv->timeout_source = g_timeout_source_new_seconds(priv->interval);
-	if (!priv->timeout_source)
-		return -ENOMEM;
-
-	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
-		priv, NULL);
-	g_source_attach(priv->timeout_source, priv->main_context);
-
-	return 0;
-}
-
 static JSValueRef app_watchdog_function_start(
 	JSContextRef context, JSObjectRef function, JSObjectRef object,
 	size_t argc, const JSValueRef argv[], JSValueRef *exception)
 {
-	struct app_watchdog *priv = JSObjectGetPrivate(object);
+	struct app_watchdog *watchdog = JSObjectGetPrivate(object);
+	int ret;
 
-	if (!priv) {
+	if (!watchdog) {
 		javascript_set_exception_text(context, exception,
 			"object notvalid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
@@ -77,22 +40,10 @@ static JSValueRef app_watchdog_function_start(
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
-	if (priv->timeout_source != NULL) {
+	ret = app_watchdog_start(watchdog, JSValueToNumber(context, argv[0], NULL));
+	if (ret)
 		javascript_set_exception_text(context, exception,
-			"watchdog is already running, call stop() first.");
-		return JSValueMakeBoolean(context, FALSE);
-	}
-
-	priv->interval = JSValueToNumber(context, argv[0], exception);
-
-	if (priv->timeout_source != NULL)
-		g_source_destroy(priv->timeout_source);
-
-	if (app_watchdog_start(priv) != 0) {
-		javascript_set_exception_text(context, exception,
-			"watchdog timeout source could not be created.");
-		return JSValueMakeBoolean(context, FALSE);
-	}
+			"Failed to start watchdog");
 
 	return 0;
 }
@@ -101,18 +52,19 @@ static JSValueRef app_watchdog_function_stop(JSContextRef context,
 	JSObjectRef function, JSObjectRef object, size_t argc,
 	const JSValueRef argv[], JSValueRef *exception)
 {
-	struct app_watchdog *priv = JSObjectGetPrivate(object);
+	struct app_watchdog *watchdog = JSObjectGetPrivate(object);
+	int ret;
 
-	if (!priv) {
+	if (!watchdog) {
 		javascript_set_exception_text(context, exception,
 			"object notvalid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
-	if (priv->timeout_source != NULL)
-		g_source_destroy(priv->timeout_source);
-
-	priv->timeout_source = NULL;
+	ret = app_watchdog_stop(watchdog);
+	if (ret)
+		javascript_set_exception_text(context, exception,
+			"Failed to stop watchdog");
 
 	return 0;
 }
@@ -121,59 +73,21 @@ static JSValueRef app_watchdog_function_trigger(
 	JSContextRef context, JSObjectRef function, JSObjectRef object,
 	size_t argc, const JSValueRef argv[], JSValueRef *exception)
 {
-	struct app_watchdog *priv = JSObjectGetPrivate(object);
+	struct app_watchdog *watchdog = JSObjectGetPrivate(object);
+	int ret;
 
-	if (!priv) {
+	if (!watchdog) {
 		javascript_set_exception_text(context, exception,
 			"object notvalid, context switched?");
 		return JSValueMakeBoolean(context, FALSE);
 	}
 
-	if (priv->timeout_source == NULL) {
+	ret = app_watchdog_trigger(watchdog);
+	if (ret)
 		javascript_set_exception_text(context, exception,
-			"watchdog is not running, call start() first.");
-		return JSValueMakeBoolean(context, FALSE);
-	}
-
-	g_source_destroy(priv->timeout_source);
-	priv->timeout_source = g_timeout_source_new_seconds(priv->interval);
-	if (!priv->timeout_source) {
-		javascript_set_exception_text(context, exception,
-			"watchdog timeout source could not be created.");
-		return JSValueMakeBoolean(context, FALSE);
-	}
-
-	g_source_set_callback(priv->timeout_source, app_watchdog_timeout,
-		priv, NULL);
-	g_source_attach(priv->timeout_source, priv->main_context);
+			"Failed to trigger watchdog");
 
 	return 0;
-}
-
-static struct app_watchdog *app_watchdog_new(JSContextRef context,
-	struct javascript_userdata *data)
-{
-	struct app_watchdog *watchdog;
-
-	watchdog = g_new0(struct app_watchdog, 1);
-	if (!watchdog) {
-		g_warning("%s: failed to allocate memory", __func__);
-		return NULL;
-	}
-
-	watchdog->main_context = g_main_loop_get_context(data->loop);
-	watchdog->window = data->window;
-
-	return watchdog;
-}
-
-static void app_watchdog_finalize(JSObjectRef object)
-{
-	struct app_watchdog *watchdog = JSObjectGetPrivate(object);
-	if(watchdog->timeout_source != NULL)
-		g_source_destroy(watchdog->timeout_source);
-
-	g_free(watchdog);
 }
 
 static const JSStaticFunction app_watchdog_functions[] = {
@@ -197,17 +111,8 @@ static const JSStaticFunction app_watchdog_functions[] = {
 
 static const JSClassDefinition app_watchdog_classdef = {
 	.className = "Watchdog",
-	.finalize = app_watchdog_finalize,
 	.staticFunctions = app_watchdog_functions,
 };
-
-static int javascript_app_watchdog_init(GKeyFile *config)
-{
-	app_watchdog_default_timeout = (guint)javascript_config_get_integer(config,
-			JS_APP_WATCHDOG, "", JS_APP_WATCHDOG_DEFAULT_TIMEOUT);
-
-	return 0;
-}
 
 static JSObjectRef javascript_app_watchdog_create(
 	JSContextRef js, JSClassRef class,
@@ -215,23 +120,17 @@ static JSObjectRef javascript_app_watchdog_create(
 {
 	struct app_watchdog *watchdog;
 
-	watchdog = app_watchdog_new(js, user_data);
-	if (!watchdog)
+	if (!user_data->rcd || !user_data->rcd->rc)
 		return NULL;
 
-	watchdog->interval = app_watchdog_default_timeout;
-	if (watchdog->interval > 0) {
-		g_debug("%s: Autostart watchdog with interval %d", __func__,
-				watchdog->interval);
-		if (app_watchdog_start(watchdog) != 0)
-			g_warning("%s: Could not autostart watchdog", __func__);
-	}
+	watchdog = remote_control_get_watchdog(user_data->rcd->rc);
+	if (!watchdog)
+		return NULL;
 
 	return JSObjectMake(js, class, watchdog);
 }
 
 struct javascript_module javascript_app_watchdog = {
 	.classdef = &app_watchdog_classdef,
-	.init = javascript_app_watchdog_init,
 	.create = javascript_app_watchdog_create,
 };
