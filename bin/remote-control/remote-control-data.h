@@ -17,6 +17,9 @@ struct remote_control_data {
 	GMainLoop *loop;
 	GThread *thread;
 
+	GMutex *startup_mutex;
+	GCond *startup_cond;
+
 	struct remote_control *rc;
 };
 

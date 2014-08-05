@@ -486,6 +486,7 @@ static gpointer remote_control_thread(gpointer data)
 	GSource *source;
 	int err;
 
+	g_mutex_lock(rcd->startup_mutex);
 	context = g_main_context_new();
 	if (!context) {
 		g_error("failed to create main context");
@@ -508,6 +509,9 @@ static gpointer remote_control_thread(gpointer data)
 	g_source_attach(source, context);
 	g_source_unref(source);
 
+	g_cond_signal(rcd->startup_cond);
+	g_mutex_unlock(rcd->startup_mutex);
+
 	g_main_loop_run(rcd->loop);
 
 	g_source_destroy(source);
@@ -529,6 +533,8 @@ static struct remote_control_data *start_remote_control(GKeyFile *config,
 
 	rcd->config = config;
 
+	rcd->startup_mutex = g_mutex_new();
+	rcd->startup_cond = g_cond_new();
 	rcd->thread = g_thread_new("remote-control", remote_control_thread,
 				   rcd);
 	if (!rcd->thread) {
@@ -544,6 +550,8 @@ static void stop_remote_control(struct remote_control_data *rcd)
 {
 	g_main_loop_quit(rcd->loop);
 	g_thread_join(rcd->thread);
+	g_mutex_free(rcd->startup_mutex);
+	g_cond_free(rcd->startup_cond);
 	g_free(rcd);
 }
 
@@ -705,6 +713,11 @@ int main(int argc, char *argv[])
 		g_clear_error(&error);
 		return EXIT_FAILURE;
 	}
+
+	g_mutex_lock(rcd->startup_mutex);
+	while (!rcd->rc)
+		g_cond_wait(rcd->startup_cond, rcd->startup_mutex);
+	g_mutex_unlock(rcd->startup_mutex);
 
 	err = javascript_init(conf);
 	if (err) {
