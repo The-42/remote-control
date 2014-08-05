@@ -19,6 +19,7 @@ libremote_control_la_LIBADD = \
 	@GTK_LIBS@
 
 libremote_control_la_SOURCES = \
+	app-watchdog.c \
 	audio.c \
 	backlight.c \
 	event-manager.c \

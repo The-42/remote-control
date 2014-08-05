@@ -50,6 +50,7 @@ struct remote_control {
 	struct task_manager *task_manager;
 	struct tuner *tuner;
 	struct handset *handset;
+	struct app_watchdog *watchdog;
 
 	GSource *source;
 };
@@ -476,6 +477,12 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
+	err = app_watchdog_create(&rc->watchdog, config);
+	if (err < 0) {
+		g_error("app_watchdog_create(): %s", strerror(-err));
+		return err;
+	}
+
 	*rcp = rc;
 	return 0;
 }
@@ -586,6 +593,11 @@ struct handset *remote_control_get_handset(struct remote_control *rc)
 struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc)
 {
 	return rc ? rc->gpio : NULL;
+}
+
+struct app_watchdog *remote_control_get_watchdog(struct remote_control *rc)
+{
+	return rc ? rc->watchdog : NULL;
 }
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request)

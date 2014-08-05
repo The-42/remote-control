@@ -427,6 +427,16 @@ int gpio_backend_set_value(struct gpio_backend *backend, unsigned int gpio, int 
 int gpio_backend_get_value(struct gpio_backend *backend, unsigned int gpio);
 
 /**
+ * Application Watchdog
+ */
+struct app_watchdog;
+
+int app_watchdog_create(struct app_watchdog **watchdogp, GKeyFile *config);
+int app_watchdog_start(struct app_watchdog *watchdog, int interval);
+int app_watchdog_stop(struct app_watchdog *watchdog);
+int app_watchdog_trigger(struct app_watchdog *watchdog);
+
+/**
  * remote control
  */
 struct remote_control;
@@ -451,6 +461,7 @@ struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct tuner *remote_control_get_tuner(struct remote_control *rc);
 struct handset *remote_control_get_handset(struct remote_control *rc);
 struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc);
+struct app_watchdog *remote_control_get_watchdog(struct remote_control *rc);
 
 int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 
