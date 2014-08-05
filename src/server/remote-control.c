@@ -469,7 +469,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		g_source_add_child_source(rc->source, source);
 		g_source_unref(source);
 	}
-	
+
 	err = usb_handset_create(rc);
 	if (err < 0) {
 		g_error("usb_handset_create(): %s", strerror(-err));
