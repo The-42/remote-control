@@ -24,6 +24,11 @@
 
 #define INPUT_DEVICE_PREFIX  "device-"
 
+#define BITS_PER_LONG (sizeof(long) * 8)
+#define OFF(x) ((x) % BITS_PER_LONG)
+#define LONG(x) ((x) / BITS_PER_LONG)
+#define IS_BIT_SET(bit, array) ((array[LONG(bit)] >> OFF(bit)) & 1)
+
 struct device {
 	int vendorId;
 	int productId;
@@ -476,10 +481,79 @@ static JSValueRef input_get_event_name(
 	return JSValueMakeNull(context);
 }
 
+static JSValueRef input_get_switch_state(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct input *input = JSObjectGetPrivate(object);
+
+	unsigned long bits[1];
+	JSValueRef ret = NULL;
+	char *dev = NULL;
+	char *key = NULL;
+	int i, fd = -1;
+	int code;
+	GList *node;
+
+	if (argc != 2) { /* [Device alias|name], [Key name|code] */
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		goto cleanup;
+	}
+
+	dev = javascript_get_string(context, argv[0], exception);
+	key = javascript_get_string(context, argv[1], exception);
+
+	for (node = g_list_first(input->devices); node; node = node->next) {
+		struct device *device = node->data;
+		if (!g_strcmp0(dev, device->alias) ||
+		    !g_strcmp0(dev, device->name)) {
+			fd = device->poll->fd;
+			break;
+		}
+	}
+	if (-1 == fd) {
+		javascript_set_exception_text(context, exception,
+			"No valid device found");
+		goto cleanup;
+	}
+
+	for (i = 0; input_event_codes[i].name; i++)
+		if (!g_strcmp0(key, input_event_codes[i].name))
+			break;
+	if (!input_event_codes[i].name) {
+		int err = javascript_int_from_number(
+			context, argv[1], 0, UINT16_MAX, &code, exception);
+		if (err)
+			goto cleanup;
+	} else
+		code = (int)input_event_codes[i].code;
+
+
+	if (ioctl(fd, EVIOCGBIT(EV_SW, code + 1), bits) >= 0) {
+		if (IS_BIT_SET(code, bits)) {
+			ioctl(fd, EVIOCGSW(sizeof(bits)), bits);
+			ret = JSValueMakeNumber(context,
+					IS_BIT_SET(code, bits) ? 1 : 0);
+		}
+	}
+cleanup:
+	if (dev)
+		g_free(dev);
+	if (key)
+		g_free(key);
+	return ret;
+}
+
 static const JSStaticFunction input_functions[] = {
 	{
 		.name = "getEventName",
 		.callAsFunction = input_get_event_name,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "getSwitchState",
+		.callAsFunction = input_get_switch_state,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{}
