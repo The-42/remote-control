@@ -286,6 +286,8 @@ static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowCla
 
 static void on_realize(GtkWidget *widget, gpointer user_data)
 {
+	gdk_window_set_type_hint(gtk_widget_get_window(widget),
+			GDK_WINDOW_TYPE_HINT_DESKTOP);
 	g_object_set(widget, "hide-cursor", true, NULL);
 }
 

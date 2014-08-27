@@ -81,6 +81,8 @@ static void on_destroy(GtkWidget *widget, gpointer data)
 
 static void on_realize(GtkWidget *widget, gpointer data)
 {
+	gdk_window_set_type_hint(gtk_widget_get_window(widget),
+			GDK_WINDOW_TYPE_HINT_DESKTOP);
 	if (!cursor) {
 		GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
 		GdkWindow *window = gtk_widget_get_window(widget);
