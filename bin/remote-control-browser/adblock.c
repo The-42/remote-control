@@ -1005,6 +1005,8 @@ adblock_file_is_up_to_date(gchar* path)
 		}
 	}
 
+	fclose(file);
+
 	if (!found_meta) {
 		g_print("Adblock: no metadata found in %s (broken "
 			"download?)\n", path);
