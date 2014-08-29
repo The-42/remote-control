@@ -44,8 +44,8 @@ static GList* update_list;
 static gboolean update_done;
 
 static const gchar *filter_list[] = {
-	"https://easylist-downloads.adblockplus.org/easylist.txt",
-	"https://easylist-downloads.adblockplus.org/easyprivacy.txt",
+	"https://easylist-downloads.adblockplus.org/easylist_noelemhide.txt",
+	"https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt",
 	NULL
 };
 
