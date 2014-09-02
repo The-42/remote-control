@@ -401,9 +401,6 @@ static void apply_user_agent_override(GQuark key_id, gpointer data,
 		g_warning("Apply domain-specific user-agent: %s\n",
 				(gchar*)data);
 		webkit_browser_set_user_agent(web_view, (gchar*)data);
-	} else {
-		/* reset user agent to default */
-		webkit_browser_set_user_agent(web_view, priv->user_agent);
 	}
 }
 
@@ -421,6 +418,9 @@ static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser,
 	}
 
 	priv->user_agent_uri = uri;
+	/* reset user agent to default */
+	webkit_browser_set_user_agent(web_view, priv->user_agent);
+
 	if (priv->user_agent_overrides != NULL)
 		g_datalist_foreach(&priv->user_agent_overrides,
 					apply_user_agent_override, browser);
