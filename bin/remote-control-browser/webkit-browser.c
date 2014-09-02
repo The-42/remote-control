@@ -550,7 +550,6 @@ static void on_uri_activate(GtkWidget *widget, gpointer data)
 
 static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
 
 	if (!gtk_widget_has_focus(widget)) {
@@ -797,7 +796,6 @@ static gboolean on_webview_button_press_event(GtkWidget *widget,
 					      GdkEvent  *event,
 					      gpointer   data)
 {
-	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	WebKitHitTestResult *result;
 	guint context = 0;
 
