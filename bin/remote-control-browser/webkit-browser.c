@@ -83,6 +83,7 @@ struct _WebKitBrowserPrivate {
 	GtkWidget *del_tab;
 	guint max_pages;
 	gchar *user_agent;
+	gchar *user_agent_uri;
 	gboolean adblock;
 	GData *user_agent_overrides;
 	gboolean jshooks;
@@ -389,14 +390,13 @@ static void apply_user_agent_override(GQuark key_id, gpointer data,
 	web_view = webkit_browser_get_current_view(browser);
 	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
-	const gchar *uri = webkit_web_view_get_uri(web_view);
 	GMatchInfo *match_info;
 	GRegex *domain_regex;
 
 	domain_regex = g_regex_new(g_quark_to_string(key_id), G_REGEX_OPTIMIZE,
 					0, NULL);
 
-	g_regex_match(domain_regex, uri, 0, &match_info);
+	g_regex_match(domain_regex, priv->user_agent_uri, 0, &match_info);
 	if (g_match_info_matches(match_info)) {
 		g_warning("Apply domain-specific user-agent: %s\n",
 				(gchar*)data);
@@ -407,7 +407,8 @@ static void apply_user_agent_override(GQuark key_id, gpointer data,
 	}
 }
 
-static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser)
+static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser,
+		gchar *uri)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 
@@ -419,6 +420,7 @@ static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser)
 			strdup(webkit_web_view_get_user_agent(web_view));
 	}
 
+	priv->user_agent_uri = uri;
 	if (priv->user_agent_overrides != NULL)
 		g_datalist_foreach(&priv->user_agent_overrides,
 					apply_user_agent_override, browser);
@@ -445,9 +447,6 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 	gchar *jscript;
 	gchar *jspath;
 	uint idx = 0;
-
-	if (status == WEBKIT_LOAD_COMMITTED)
-		user_agent_update(web_view, browser);
 
 	/* Check if jshooks are enabled before evaluating them */
 	if (!priv->jshooks)
@@ -1517,6 +1516,7 @@ void webkit_browser_load_uri(WebKitBrowser *browser, const gchar *uri)
 				g_uri_set_scheme(canonical, "http");
 
 			final = g_uri_to_string(canonical);
+			user_agent_update(webkit, browser, final);
 			webkit_web_view_load_uri(webkit, final);
 			g_free(final);
 
