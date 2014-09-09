@@ -37,8 +37,9 @@ static const gchar style_large[] = \
 	"style \"scrollbar-large\" { GtkScrollbar::slider-width = 48 }\n" \
 	"class \"GtkScrollbar\" style \"scrollbar-large\"";
 #else
-static const gchar style_large[] = ".scrollbar { "\
-	"-GtkRange-slider-width: 80;" \
+static const gchar style_large[] = ".scrollbar {"\
+	"-GtkRange-slider-width: 50;" \
+	"-GtkRange-stepper-size: 50;" \
 	"}";
 #endif
 
