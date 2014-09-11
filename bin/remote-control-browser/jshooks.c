@@ -54,18 +54,22 @@ gchar **jshooks_determine_hooklist(const gchar *uri, const gchar *prefix)
 	 * If a TLD somehow went missing, the middle part is left out.
 	 */
 	gchar hookname[JSHOOKS_LENGTH_FILENAME];
-	gchar *hooklist[4] = {NULL};
+	gchar **hooklist = g_new(gchar *, 4);
 	gchar *last_dot = NULL;
 	gchar *fqdn_start;
 	uint idx = 0;
 	gchar *fqdn;
 	gchar *fdot;
 
+	if (!hooklist)
+		return NULL;
+
 	fqdn = get_fqdn_from_uri(uri);
 	if (!fqdn) {
 		g_warning("%s: FQDN extraction failed! URI was: %s",
 				MODNAME, uri);
-		return g_strdupv(hooklist);
+		hooklist[0] = NULL;
+		return hooklist;
 	}
 
 	/* strip 'www.' since this particular string doesn't have any
@@ -94,11 +98,12 @@ gchar **jshooks_determine_hooklist(const gchar *uri, const gchar *prefix)
 	g_snprintf(hookname, sizeof(hookname), "%s-%s.js",
 				prefix, JSHOOKS_GLOBAL_FILENAME);
 	hooklist[idx++] = g_strndup(hookname, sizeof(hookname));
+	hooklist[idx++] = NULL;
 
 	g_free(fdot);
 	g_free(fqdn);
 
-	return g_strdupv(hooklist);
+	return hooklist;
 }
 
 void jshooks_execute_jscript(JSContextRef js_context, gchar *content,
