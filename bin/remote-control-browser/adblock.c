@@ -78,9 +78,6 @@ adblock_build_js(const gchar* uri)
 		return NULL;
 
 	host = g_uri_get_host(guri);
-	if (!host)
-		return NULL;
-
 	subdomains = g_strsplit(host, ".", -1);
 	g_object_unref(guri);
 
