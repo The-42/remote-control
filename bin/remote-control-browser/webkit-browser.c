@@ -472,6 +472,7 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 			if (g_file_get_contents (jspath, &jscript, NULL, &err)) {
 				js_context = webkit_web_frame_get_global_context(web_frame);
 				jshooks_execute_jscript(js_context, jscript, jshooks[idx]);
+				g_free(jscript);
 			} else {
 				g_warning("jshooks: failed to load jshook from %s -- %s",
 						jspath, err->message);
