@@ -670,6 +670,7 @@ int main(int argc, char *argv[])
 		}
 	} else {
 		pr_debug("%s", error->message);
+		g_clear_error(&error);
 	}
 
 	conf = remote_control_load_configuration(config_file, dt, &error);

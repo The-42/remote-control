@@ -468,6 +468,8 @@ double javascript_config_get_double(GKeyFile *config, const char *group,
 
 	value = g_key_file_get_double(config, group_name, key, &err);
 	g_free(group_name);
+	if (err)
+		g_error_free(err);
 
 	return err ? NAN : value;
 }
@@ -485,6 +487,8 @@ gint javascript_config_get_integer(GKeyFile *config, const char *group,
 
 	value = g_key_file_get_integer(config, group_name, key, &err);
 	g_free(group_name);
+	if (err)
+		g_error_free(err);
 
 	return err ? NAN : value;
 }
