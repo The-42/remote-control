@@ -119,8 +119,9 @@ void jshooks_execute_jscript(JSContextRef js_context, gchar *content,
 	JSStringRelease(js_name);
 
 	if (err) {
-		JSStringGetUTF8CString(JSValueToStringCopy(js_context, err, NULL),
-				err_msg, sizeof(err_msg));
+		JSStringRef sr = JSValueToStringCopy(js_context, err, NULL);
+		JSStringGetUTF8CString(sr, err_msg, sizeof(err_msg));
 		g_warning("script %s failed --- %s ---", sname, err_msg);
+		JSStringRelease(sr);
 	}
 }
