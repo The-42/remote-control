@@ -403,6 +403,8 @@ static void apply_user_agent_override(GQuark key_id, gpointer data,
 				(gchar*)data);
 		webkit_browser_set_user_agent(web_view, (gchar*)data);
 	}
+	g_match_info_free(match_info);
+	g_regex_unref(domain_regex);
 }
 
 static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser,
