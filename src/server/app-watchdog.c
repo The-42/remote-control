@@ -10,21 +10,15 @@
 #  include "config.h"
 #endif
 
+#include <dbus-watchdog.h>
 #include <errno.h>
 
 #include "remote-control.h"
 
 struct app_watchdog {
-	GSource *timeout_source;
+	DBusWatchdog *dbus_watchdog;
 	guint interval;
 };
-
-static gboolean app_watchdog_timeout(gpointer data)
-{
-	g_critical("WATCHDOG: It seems the user interface is stalled, restarting");
-	raise(SIGTERM);
-	return FALSE;
-}
 
 int app_watchdog_start(struct app_watchdog *watchdog, int interval)
 {
@@ -38,16 +32,10 @@ int app_watchdog_start(struct app_watchdog *watchdog, int interval)
 	if (watchdog->interval <= 0)
 		return -EINVAL;
 
-	if (watchdog->timeout_source != NULL)
-		g_source_destroy(watchdog->timeout_source);
-
-	watchdog->timeout_source = g_timeout_source_new_seconds(watchdog->interval);
-	if (!watchdog->timeout_source)
-		return -ENOMEM;
-
-	g_source_set_callback(watchdog->timeout_source, app_watchdog_timeout,
-		watchdog, NULL);
-	g_source_attach(watchdog->timeout_source, g_main_context_default());
+	watchdog->dbus_watchdog = dbus_watchdog_new(watchdog->interval * 1000,
+			NULL);
+	if (!watchdog->dbus_watchdog)
+		return -ENODEV;
 
 	return 0;
 }
@@ -57,24 +45,28 @@ int app_watchdog_stop(struct app_watchdog *watchdog)
 	if (watchdog == NULL)
 		return -EINVAL;
 
-	if (watchdog->timeout_source != NULL)
-		g_source_destroy(watchdog->timeout_source);
+	if (watchdog->dbus_watchdog != NULL) {
+		dbus_watchdog_stop(watchdog->dbus_watchdog, NULL);
+		dbus_watchdog_unref(watchdog->dbus_watchdog);
+	}
 
-	watchdog->timeout_source = NULL;
+	watchdog->dbus_watchdog = NULL;
 
 	return 0;
 }
 
 int app_watchdog_trigger(struct app_watchdog *watchdog)
 {
-	int ret;
 	if (watchdog == NULL)
 		return -EINVAL;
 
-	if (watchdog->timeout_source == NULL)
+	if (watchdog->dbus_watchdog == NULL)
 		return -ENODEV;
 
-	return app_watchdog_start(watchdog, 0);
+	if (!dbus_watchdog_ping(watchdog->dbus_watchdog, NULL, "app-watchdog"))
+		return -ENODEV;
+
+	return 0;
 }
 
 int app_watchdog_create(struct app_watchdog **watchdogp, GKeyFile *config)

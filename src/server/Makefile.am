@@ -8,7 +8,8 @@ libremote_control_la_CFLAGS = \
 	@LIBRPC_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@GLIB_CFLAGS@ \
-	@GTK_CFLAGS@
+	@GTK_CFLAGS@ \
+	@WATCHDOG_CFLAGS@
 
 libremote_control_la_LIBADD = \
 	../common/libcommon.la \
@@ -16,7 +17,8 @@ libremote_control_la_LIBADD = \
 	@LIBRPC_LIBS@ \
 	@GUDEV_LIBS@ \
 	@GLIB_LIBS@ \
-	@GTK_LIBS@
+	@GTK_LIBS@ \
+	@WATCHDOG_LIBS@
 
 libremote_control_la_SOURCES = \
 	app-watchdog.c \
