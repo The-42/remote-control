@@ -62,7 +62,6 @@ static int input_report(struct input *input, struct device *device,
 	JSValueRef exception = NULL;
 	JSValueRef args[5];
 	double timestamp;
-	gchar *name;
 
 	g_return_val_if_fail(input->context != NULL, -EINVAL);
 	g_return_val_if_fail(event != NULL, -EINVAL);
