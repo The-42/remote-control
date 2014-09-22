@@ -483,14 +483,14 @@ gint javascript_config_get_integer(GKeyFile *config, const char *group,
 
 	group_name = g_strdup_printf("%s%s", group, name);
 	if (!group_name)
-		return NAN;
+		return 0;
 
 	value = g_key_file_get_integer(config, group_name, key, &err);
 	g_free(group_name);
 	if (err)
 		g_error_free(err);
 
-	return err ? NAN : value;
+	return err ? 0 : value;
 }
 
 
