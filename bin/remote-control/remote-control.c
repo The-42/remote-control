@@ -720,11 +720,13 @@ int main(int argc, char *argv[])
 		g_cond_wait(rcd->startup_cond, rcd->startup_mutex);
 	g_mutex_unlock(rcd->startup_mutex);
 
+#ifdef ENABLE_JAVASCRIPT
 	err = javascript_init(conf);
 	if (err) {
 		g_critical("failed to init javascript backend");
 		return EXIT_FAILURE;
 	}
+#endif
 
 	window = create_window(conf, loop, rcd, argc, argv);
 	if (window) {
