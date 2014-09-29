@@ -85,6 +85,11 @@ javascript-input-%.c: $(srcdir)/javascript-input-%.awk
 
 endif # ENABLE_JAVASCRIPT
 
+EXTRA_DIST = \
+	javascript-input-codes.awk \
+	javascript-input-led-codes.awk \
+	javascript-input-properties.awk
+
 if ENABLE_WATCHDOG
 remote_control_CPPFLAGS += @WATCHDOG_CFLAGS@
 remote_control_LDADD += @WATCHDOG_LIBS@
