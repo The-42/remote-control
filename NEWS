@@ -1,5 +1,102 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.9.6 (2014-09-29)
 ==========================
+* javascript
+ - Don't call javascript_init if javascript is not enabled
+ - Fix return code for javascript_config_get_integer
+ - Add function to get current switch state
+ - Show device alias in input callback
+ - Add helper to read int values from config
+ - Add device name to input callback
+ - Fix crash in getEventName
+ - Add MMT and BGU Handset to device list
+ - Add support for udev
+ - Support a list of input devices
+ - Use defines for some common exceptions
+ - Move config helpers to core
+ - Add helpers to convert buffers
+ - Rework the outputs config to allow multiple config files
+ - Always prefix exception text with the function name
+ - Add formating support when setting JS exception
+ - Add helpers to create formated javascript strings
+ - Signal state change errors in media-player
+ - Return NULL when no URI is set
+
+* browser
+ - Resize scrollbar and set button size
+ - Fix for assigning the user agent
+ - Set user agent before loading the page
+ - Use different filter lists in adblock
+ - Close file pointer in updater
+ - Fix youtube play button
+ - Fix page accessor in gtk3
+ - Show close button in kiosk mode
+ - Remove integrated gtkosk
+ - Remove vimeo and global jshooks
+ - Fix scrollbar with gtk-3.0
+ - Remove osk leftovers
+ - Do not build katze using GTK3
+
+* server
+ - Use dbus-watchdog service for app-watchdog
+ - Allow settings vgs and vgm for libmodem
+ - Add application watchdog
+ - Whitespace cleanup
+ - Fix Makefile ordering
+ - Add support for phone hooks events
+ - Adapt callback to new usb-handset signature
+ - Fix a crash in backlight_get()
+
+* remote-control
+ - Replace deprecated API calls.
+ - Set desktop hint
+ - Port js-app-watchdog to server-side watchdog
+ - Add watchdog autostart option
+ - Delay webkit start until remote-control thread start
+ - Fix page reload on failure
+ - Make the input device list configurable
+ - Add a JS function to resolve input event names
+ - Allow controlling input device LEDs from javascript
+ - Add a javascript API to control the VoIP engine, media player,
+   audio controls, audio playback, backlight, framebuffers, smartcard,
+   outputs and modem
+ - Protect the onevent callback from the GC
+ - Add the signal names to the TaskManager API
+ - Prepare the audio JS API to add the sound manager
+ - Allow javascript modules that only register a class
+ - Add a few generic javascript helpers
+ - Simplify the javascript modules init
+ - Add the input constants to the js API
+ - Add a global init to the javascript modules
+ - Fix the checks for NaN
+ - Protect the receive callback for lcd from the GC
+ - Prevent possible circular call
+ - Expose taskmanager callback via javascript
+ - Rename VoIP.state to VoIP.loginState
+ - Fix the IR javascript module name
+
+* build
+ - Fix -Werror configuration option
+ - Suppress path printing on non-verbosity
+ - Fix libnl build issue (again)
+ - Use an enum for the card type
+
+* task-manager
+ - Terminate all childs on finish
+ - Implement a callback for terminate events
+
+* sound-manager
+ - Add a function to query the player state
+ - Add a pause command
+ - Properly return errors on play()
+ - Properly return the state change status
+
+* common
+ - Fix some memleaks
+ - Fix find_input_devices() segfault when no callback is given
+ - Provide more information in find-device
+ - Add a parser for udev match rules
+ - Use the generic device lookup for the input device lookup
+ - Add a generic function to lookup device via udev
 
 Release 0.9.4.1 (2014-04-07)
 ===========================
