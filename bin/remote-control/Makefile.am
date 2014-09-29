@@ -46,6 +46,7 @@ remote_control_SOURCES += \
 	javascript-modem.c \
 	javascript-monitor.c \
 	javascript-output.c \
+	javascript-output.h \
 	javascript-output-hid-led.c \
 	javascript-output-sysfs.c \
 	javascript-smartcard.c \
