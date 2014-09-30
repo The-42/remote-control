@@ -1,5 +1,7 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.9.8 (2014-09-30)
 ==========================
+* build
+ - Fix creating the distribution package
 
 Release 0.9.6 (2014-09-29)
 ==========================
