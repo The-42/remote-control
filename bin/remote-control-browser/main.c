@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <sys/prctl.h>
 #include <sys/resource.h>
 #include <gtk/gtk.h>
 
@@ -244,6 +245,8 @@ int main(int argc, char *argv[])
 	gchar *uri = NULL;
 	GMainLoop *loop;
 	GKeyFile *conf;
+
+	prctl(PR_SET_PDEATHSIG, SIGTERM);
 
 	if (!ENABLE_NLS)
 		gtk_disable_setlocale();
