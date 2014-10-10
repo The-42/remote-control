@@ -28,6 +28,13 @@
 #include "utils.h"
 #include "guri.h"
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+static const gchar style_large[] = ".scrollbar {"\
+	"-GtkRange-slider-width: 50;" \
+	"-GtkRange-stepper-size: 50;" \
+	"}";
+#endif
+
 G_DEFINE_TYPE(RemoteControlWebkitWindow, remote_control_webkit_window, GTK_TYPE_WINDOW);
 
 #define REMOTE_CONTROL_WEBKIT_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), REMOTE_CONTROL_TYPE_WEBKIT_WINDOW, RemoteControlWebkitWindowPrivate))
@@ -479,6 +486,9 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 {
 	RemoteControlWebkitWindowPrivate *priv;
 	GtkWindow *window = GTK_WINDOW(self);
+#if GTK_CHECK_VERSION(3, 0, 0)
+	GtkCssProvider *css_provider;
+#endif
 	GdkScreen *screen;
 
 	gint cx;
@@ -492,6 +502,15 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	screen = gtk_window_get_screen(window);
 	cx = gdk_screen_get_width(screen);
 	cy = gdk_screen_get_height(screen);
+
+#if GTK_CHECK_VERSION(3, 0, 0)
+	css_provider = gtk_css_provider_new();
+	gtk_css_provider_load_from_data(css_provider, style_large, -1, NULL);
+	gtk_style_context_add_provider_for_screen(screen,
+			GTK_STYLE_PROVIDER(css_provider),
+			GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_object_unref(css_provider);
+#endif
 
 	gtk_widget_set_size_request(GTK_WIDGET(window), cx, cy);
 
