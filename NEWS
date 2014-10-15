@@ -1,5 +1,7 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.9.10 (2014-10-15)
 ==========================
+* browser
+ - Terminate if parent process terminates
 
 Release 0.9.8 (2014-09-30)
 ==========================
