@@ -102,6 +102,7 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 #endif
 	GError *err = NULL;
 	gint64 duration;
+	int volume;
 	XID xid;
 
 	if (!playerp)
@@ -137,6 +138,16 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 	player->player = libvlc_media_player_new(player->vlc);
 	player->evman = libvlc_media_player_event_manager(player->player);
 	libvlc_media_player_set_xwindow(player->player, xid);
+
+	volume = g_key_file_get_integer(config, "media-player", "volume", &err);
+	if (err) {
+		g_clear_error(&err);
+		volume = 100;
+	}
+	if (libvlc_audio_set_volume(player->player, volume))
+		g_warning("Failed to set VLC base volume to %d", volume);
+	else
+		g_info("Set VLC base volume to %d", volume);
 
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerPlaying,
 			on_playing, player);
