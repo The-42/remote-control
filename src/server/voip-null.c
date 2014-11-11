@@ -70,3 +70,13 @@ int voip_dial(struct voip *voip, uint8_t dtmf)
 {
 	return -ENOSYS;
 }
+
+int voip_set_playback(struct voip *voip, const char *card)
+{
+	return -ENOSYS;
+}
+
+int voip_set_capture(struct voip *voip, const char *card)
+{
+	return -ENOSYS;
+}

@@ -288,25 +288,6 @@ static void voip_codec_enable(struct voip *voip, const char *mime_type,
 	}
 }
 
-static int voip_set_soundcard(struct voip *voip, const gchar *card_name)
-{
-	int err;
-
-	err = linphone_core_set_playback_device(voip->core, card_name);
-	if (err < 0)
-		g_warning("voip-linphone: failed to set playback device");
-	else
-		g_debug("voip-linphone: set playback device to: %s", card_name);
-
-	err = linphone_core_set_capture_device(voip->core, card_name);
-	if (err < 0)
-		g_warning("voip-linphone: failed to set capture device");
-	else
-		g_debug("voip-linphone: set capture device to: %s", card_name);
-
-	return err;
-}
-
 int voip_create(struct voip **voipp, struct rpc_server *server,
 		GKeyFile *config)
 {
@@ -409,7 +390,8 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 	if (g_key_file_has_key(config, "linphone", "soundcard", NULL)) {
 		gchar *card = g_key_file_get_string(config, "linphone",
 						    "soundcard", NULL);
-		voip_set_soundcard(voip, card);
+		voip_set_playback(voip, card);
+		voip_set_capture(voip, card);
 		g_free(card);
 	}
 
@@ -696,4 +678,30 @@ int voip_dial(struct voip *voip, uint8_t dtmf)
 
 	linphone_core_send_dtmf(voip->core, (char)dtmf);
 	return 0;
+}
+
+int voip_set_playback(struct voip *voip, const char *card_name)
+{
+	if (!voip)
+		return -EINVAL;
+
+	int err = linphone_core_set_playback_device(voip->core, card_name);
+	if (err < 0)
+		g_warning("voip-linphone: failed to set playback device");
+	else
+		g_debug("voip-linphone: set playback device to: %s", card_name);
+	return err;
+}
+
+int voip_set_capture(struct voip *voip, const char *card_name)
+{
+	if (!voip)
+		return -EINVAL;
+
+	int err = linphone_core_set_capture_device(voip->core, card_name);
+	if (err < 0)
+		g_warning("voip-linphone: failed to set capture device");
+	else
+		g_debug("voip-linphone: set capture device to: %s", card_name);
+	return err;
 }
