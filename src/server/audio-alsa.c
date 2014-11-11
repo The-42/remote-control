@@ -31,6 +31,7 @@ struct soundcard {
 };
 
 struct audio {
+	struct remote_control *rc;
 	snd_use_case_mgr_t *ucm;
 	enum audio_state state;
 
@@ -408,6 +409,8 @@ int audio_create(struct audio **audiop, struct rpc_server *server,
 	if (!audio)
 		return -ENOMEM;
 
+	audio->rc = rpc_server_priv(server);
+
 	err = audio_find_cards(audio);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: No card found, %d", err);
@@ -476,6 +479,36 @@ int audio_free(struct audio *audio)
 	return 0;
 }
 
+static void audio_update_voip(struct audio *audio, const struct ucm_state *s)
+{
+	struct voip *voip = remote_control_get_voip(audio->rc);
+	char identifier[128];
+	char card[128];
+	char *name;
+
+	if (!voip || strcmp(s->verb, SND_USE_CASE_VERB_IP_VOICECALL) ||
+			!strcmp(s->device, SND_USE_CASE_DEV_NONE))
+		return;
+
+	snprintf(identifier, sizeof(identifier), "PlaybackPCM/%s", s->device);
+	if (!snd_use_case_get(audio->ucm, identifier, (const char **)&name) ||
+			!snd_use_case_get(audio->ucm, "PlaybackPCM",
+					(const char **)&name)) {
+		snprintf(card, sizeof(card), "ALSA: %s", name);
+		voip_set_playback(voip, card);
+		g_free(name);
+	}
+
+	snprintf(identifier, sizeof(identifier), "CapturePCM/%s", s->device);
+	if (!snd_use_case_get(audio->ucm, identifier, (const char **)&name) ||
+			!snd_use_case_get(audio->ucm, "CapturePCM",
+					(const char **)&name)) {
+		snprintf(card, sizeof(card), "ALSA: %s", name);
+		voip_set_capture(voip, card);
+		g_free(name);
+	}
+}
+
 int audio_set_state(struct audio *audio, enum audio_state state)
 {
 	const struct ucm_state *s;
@@ -520,6 +553,9 @@ int audio_set_state(struct audio *audio, enum audio_state state)
 	}
 
 	audio->state = state;
+
+	audio_update_voip(audio, s);
+
 	return 0;
 }
 
