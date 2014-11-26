@@ -11,7 +11,9 @@ remote_control_CPPFLAGS = \
 	@WEBKIT_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@ALSA_CFLAGS@ \
-	@GTK_CFLAGS@
+	@GTK_CFLAGS@ \
+	@LIBNETTLE_CFLAGS@ \
+	@LIBSOUP_CFLAGS@
 
 remote_control_SOURCES = \
 	log.c \
@@ -31,7 +33,9 @@ remote_control_LDADD = \
 	@LIBRPC_LIBS@ \
 	@WEBKIT_LIBS@ \
 	@GUDEV_LIBS@ \
-	@ALSA_LIBS@
+	@ALSA_LIBS@ \
+	@LIBNETTLE_LIBS@ \
+	@LIBSOUP_LIBS@
 
 if ENABLE_JAVASCRIPT
 remote_control_SOURCES += \
@@ -41,6 +45,7 @@ remote_control_SOURCES += \
 	javascript-backlight.c \
 	javascript-cursor.c \
 	javascript-fb.c \
+	javascript-http-request.c \
 	javascript-input.c \
 	javascript-media-player.c \
 	javascript-modem.c \
