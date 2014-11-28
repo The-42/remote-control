@@ -55,6 +55,7 @@ remote_control_SOURCES += \
 	javascript-output-hid-led.c \
 	javascript-output-sysfs.c \
 	javascript-smartcard.c \
+	javascript-sysinfo.c \
 	javascript-taskmanager.c \
 	javascript-voip.c
 
