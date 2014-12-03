@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <sys/utsname.h>
 
 #include "javascript.h"
 
@@ -99,6 +100,37 @@ cleanup:
 	return ret;
 }
 
+static JSValueRef sysinfo_function_local_host_name(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct sysinfo *inf = JSObjectGetPrivate(object);
+	JSValueRef ret = NULL;
+	struct utsname uts;
+
+	if (!inf) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_OBJECT_TEXT);
+		goto cleanup;
+	}
+	/* Usage: localHostName() */
+	if (argc) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_ARG_COUNT);
+		goto cleanup;
+	}
+
+	if (uname(&uts)) {
+		javascript_set_exception_text(context, exception,
+				"Failed to get information");
+		goto cleanup;
+	}
+	ret = javascript_make_string(context, uts.nodename, exception);
+
+cleanup:
+	return ret;
+}
+
 static struct sysinfo *sysinfo_new(JSContextRef context,
 	struct javascript_userdata *data)
 {
@@ -126,6 +158,10 @@ static const JSStaticFunction sysinfo_functions[] = {
 	{
 		.name = "localIP",
 		.callAsFunction = sysinfo_function_local_ip,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},{
+		.name = "localHostName",
+		.callAsFunction = sysinfo_function_local_host_name,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},{
 	}
