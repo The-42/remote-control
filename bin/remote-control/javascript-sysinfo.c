@@ -23,8 +23,7 @@
 #include "javascript.h"
 
 struct sysinfo {
-	/* remove it if struct is not empty */
-	int dummy;
+	struct remote_control_data *rcd;
 };
 
 static struct ifaddrs *sysinfo_get_if(struct ifaddrs *ifaddr, char *interface)
@@ -216,6 +215,36 @@ cleanup:
 	return ret;
 }
 
+static JSValueRef sysinfo_function_remote_uri(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct sysinfo *inf = JSObjectGetPrivate(object);
+	JSValueRef ret = NULL;
+	gchar *uri = NULL;
+
+	if (!inf || !inf->rcd) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_OBJECT_TEXT);
+		goto cleanup;
+	}
+	/* Usage: remoteUri() */
+	if (argc) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_ARG_COUNT);
+		goto cleanup;
+	}
+
+	uri = g_key_file_get_value(inf->rcd->config, "browser", "uri", NULL);
+	if (uri)
+		ret = javascript_make_string(context, uri, exception);
+
+cleanup:
+	if (uri)
+		g_free(uri);
+	return ret;
+}
+
 static struct sysinfo *sysinfo_new(JSContextRef context,
 	struct javascript_userdata *data)
 {
@@ -225,6 +254,7 @@ static struct sysinfo *sysinfo_new(JSContextRef context,
 		g_warning("js-request: failed to allocate memory");
 		return NULL;
 	}
+	inf->rcd = data->rcd;
 
 	return inf;
 }
@@ -251,6 +281,10 @@ static const JSStaticFunction sysinfo_functions[] = {
 	},{
 		.name = "localHostName",
 		.callAsFunction = sysinfo_function_local_host_name,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},{
+		.name = "remoteUri",
+		.callAsFunction = sysinfo_function_remote_uri,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},{
 	}
