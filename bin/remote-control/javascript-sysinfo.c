@@ -22,6 +22,11 @@
 
 #include "javascript.h"
 
+#define SYSINFO_RELEASE_FILE "/etc/os-release"
+
+#define SYSINFO_RELEASE_GROUP "INFO"
+#define SYSINFO_RELEASE_GROUP_DATA "["SYSINFO_RELEASE_GROUP"]\n"
+
 struct sysinfo {
 	struct remote_control_data *rcd;
 };
@@ -40,6 +45,89 @@ static struct ifaddrs *sysinfo_get_if(struct ifaddrs *ifaddr, char *interface)
 		return ifa;
 	}
 	return NULL;
+}
+
+static char *sysinfo_get_release_info(JSContextRef context, const char *type,
+	JSValueRef *exception)
+{
+	goffset data_len, group_data_len;
+	GFileInputStream *read = NULL;
+	GKeyFile *keyfile = NULL;
+	GFileInfo *info = NULL;
+	GFile *file = NULL;
+	char *buff = NULL;
+	char *ret = NULL;
+
+	file = g_file_new_for_path(SYSINFO_RELEASE_FILE);
+	if (!file) {
+		javascript_set_exception_text(context, exception,
+				"Failed to open file %s", SYSINFO_RELEASE_FILE);
+		goto cleanup;
+	}
+	read = g_file_read(file, NULL, NULL);
+	if (!read) {
+		javascript_set_exception_text(context, exception,
+				"Failed to get read interface for file %s",
+				SYSINFO_RELEASE_FILE);
+		goto cleanup;
+	}
+	info = g_file_input_stream_query_info(read,
+			G_FILE_ATTRIBUTE_STANDARD_SIZE, NULL, NULL);
+	if (!info) {
+		javascript_set_exception_text(context, exception,
+				"Failed to get information for file %s",
+				SYSINFO_RELEASE_FILE);
+		goto cleanup;
+	}
+	keyfile = g_key_file_new();
+	if (!keyfile) {
+		javascript_set_exception_text(context, exception,
+				"Failed to create object");
+		goto cleanup;
+	}
+	if (!g_file_info_has_attribute(info, G_FILE_ATTRIBUTE_STANDARD_SIZE)) {
+		javascript_set_exception_text(context, exception,
+				"Unable to detect the file size for file %s",
+				SYSINFO_RELEASE_FILE);
+		goto cleanup;
+	}
+	group_data_len = strlen(SYSINFO_RELEASE_GROUP_DATA);
+	data_len = g_file_info_get_size(info) + group_data_len;
+	buff = g_new(char, data_len);
+	if (!buff) {
+		javascript_set_exception_text(context, exception,
+				"Failed to alloc buffer");
+		goto cleanup;
+	}
+	strcpy(buff, SYSINFO_RELEASE_GROUP_DATA);
+	if (!g_input_stream_read_all(G_INPUT_STREAM(read),
+			&buff[group_data_len], data_len - group_data_len, NULL,
+			NULL, NULL)) {
+		javascript_set_exception_text(context, exception,
+				"Failed to read from file %s",
+				SYSINFO_RELEASE_FILE);
+		goto cleanup;
+	}
+	if (!g_key_file_load_from_data(keyfile, buff, data_len, G_KEY_FILE_NONE,
+			NULL)) {
+		javascript_set_exception_text(context, exception,
+				"Failed to load from data");
+		goto cleanup;
+	}
+	ret = g_key_file_get_value(keyfile, SYSINFO_RELEASE_GROUP, type, NULL);
+
+cleanup:
+	if (buff)
+		g_free(buff);
+	if (info)
+		g_object_unref(info);
+	if (read)
+		g_object_unref(read);
+	if (file)
+		g_object_unref(file);
+	if (keyfile)
+		g_key_file_free(keyfile);
+	return ret;
 }
 
 static JSValueRef sysinfo_function_local_ip(
@@ -245,6 +333,68 @@ cleanup:
 	return ret;
 }
 
+static JSValueRef sysinfo_function_release_version(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct sysinfo *inf = JSObjectGetPrivate(object);
+	JSValueRef ret = NULL;
+	char *version = NULL;
+
+	if (!inf) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_OBJECT_TEXT);
+		goto cleanup;
+	}
+	/* Usage: releaseVersion() */
+	if (argc) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_ARG_COUNT);
+		goto cleanup;
+	}
+
+	version = sysinfo_get_release_info(context, "VERSION", exception);
+	if (!version)
+		goto cleanup;
+	ret = javascript_make_string(context, version, exception);
+
+cleanup:
+	if (version)
+		g_free(version);
+	return ret;
+}
+
+static JSValueRef sysinfo_function_release_date(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct sysinfo *inf = JSObjectGetPrivate(object);
+	JSValueRef ret = NULL;
+	char *date = NULL;
+
+	if (!inf) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_OBJECT_TEXT);
+		goto cleanup;
+	}
+	/* Usage: releaseDate() */
+	if (argc) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_ARG_COUNT);
+		goto cleanup;
+	}
+
+	date = sysinfo_get_release_info(context, "DATE", exception);
+	if (!date)
+		goto cleanup;
+	ret = javascript_make_string(context, date, exception);
+
+cleanup:
+	if (date)
+		g_free(date);
+	return ret;
+}
+
 static struct sysinfo *sysinfo_new(JSContextRef context,
 	struct javascript_userdata *data)
 {
@@ -285,6 +435,14 @@ static const JSStaticFunction sysinfo_functions[] = {
 	},{
 		.name = "remoteUri",
 		.callAsFunction = sysinfo_function_remote_uri,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},{
+		.name = "releaseVersion",
+		.callAsFunction = sysinfo_function_release_version,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},{
+		.name = "releaseDate",
+		.callAsFunction = sysinfo_function_release_date,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},{
 	}
