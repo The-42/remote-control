@@ -1,5 +1,20 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.9.12 (2014-12-12)
 ==========================
+* server
+  - vlc: Implement configurable base volume
+  - audio: Update voip devices if state changes
+  - Add voip interface to set playback and capture device
+
+* javascript
+  - Add release info functions to Sysinfo
+  - Add remoteUri() to Sysinfo
+  - Add localMacAddress() to Sysinfo
+  - Add localHostName() to Sysinfo
+  - Add Sysinfo object
+  - Add HTTPRequest object
+
+* browser
+  - Use dialog hint instead of desktop
 
 Release 0.9.10 (2014-10-15)
 ==========================
