@@ -440,3 +440,23 @@ int media_player_get_state(struct media_player *player,
 
 	return 0;
 }
+
+int media_player_get_mute(struct media_player *player, bool *mute)
+{
+	int muted;
+
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	muted = libvlc_audio_get_mute(player->player);
+	if (mute)
+		*mute = !!muted;
+	return 0;
+}
+
+int media_player_set_mute(struct media_player *player, bool mute)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	libvlc_audio_set_mute(player->player, mute);
+	return 0;
+}

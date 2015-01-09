@@ -92,3 +92,13 @@ int media_player_get_state(struct media_player *player,
 {
 	return -ENOSYS;
 }
+
+int media_player_get_mute(struct media_player *player, bool *mute)
+{
+	return -ENOSYS;
+}
+
+int media_player_set_mute(struct media_player *player, bool mute)
+{
+	return -ENOSYS;
+}

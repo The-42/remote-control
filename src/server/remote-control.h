@@ -194,6 +194,8 @@ int media_player_set_position(struct media_player *player,
 		unsigned long position);
 int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep);
+int media_player_get_mute(struct media_player *player, bool *mute);
+int media_player_set_mute(struct media_player *player, bool mute);
 
 /**
  * sound manager

@@ -233,6 +233,53 @@ static bool js_media_player_set_state(JSContextRef context,
 	return err == 0;
 }
 
+static JSValueRef js_media_player_get_mute(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	bool mute;
+	int err;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = media_player_get_mute(player, &mute);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get mute");
+		return NULL;
+	}
+
+	return JSValueMakeBoolean(context, mute);
+}
+
+static bool js_media_player_set_mute(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef value,
+		JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	bool mute = JSValueToBoolean(context, value);
+	int err;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
+
+	err = media_player_set_mute(player, mute);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to set mute");
+		return false;
+	}
+
+	return err == 0;
+}
+
 static const JSStaticValue media_player_properties[] = {
 	{
 		.name = "uri",
@@ -256,6 +303,12 @@ static const JSStaticValue media_player_properties[] = {
 		.name = "state",
 		.getProperty = js_media_player_get_state,
 		.setProperty = js_media_player_set_state,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "mute",
+		.getProperty = js_media_player_get_mute,
+		.setProperty = js_media_player_set_mute,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{}
