@@ -206,3 +206,14 @@ gboolean g_sysfs_backlight_disable(GSysfsBacklight *self, GError **error)
 
 	return g_sysfs_write_uint(priv->device, "bl_power", value, error);
 }
+
+gboolean g_sysfs_backlight_is_enabled(GSysfsBacklight *self, GError **error)
+{
+	GSysfsBacklightPrivate *priv = G_SYSFS_BACKLIGHT_GET_PRIVATE(self);
+	guint value;
+
+	if (!g_sysfs_read_uint(priv->device, "bl_power", &value, error))
+		return FALSE;
+
+	return value == FB_BLANK_UNBLANK;
+}

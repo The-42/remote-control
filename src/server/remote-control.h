@@ -158,6 +158,7 @@ struct backlight;
 int backlight_create(struct backlight **backlightp);
 int backlight_free(struct backlight *backlight);
 int backlight_enable(struct backlight *backlight, bool enable);
+int backlight_is_enabled(struct backlight *backlight);
 int backlight_set(struct backlight *backlight, unsigned int brightness);
 int backlight_get(struct backlight *backlight);
 

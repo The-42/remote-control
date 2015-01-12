@@ -43,6 +43,8 @@ gboolean g_sysfs_backlight_set_brightness(GSysfsBacklight *backlight,
 gboolean g_sysfs_backlight_enable(GSysfsBacklight *backlight, GError **error);
 gboolean g_sysfs_backlight_disable(GSysfsBacklight *backlight,
 				   GError **error);
+gboolean g_sysfs_backlight_is_enabled(GSysfsBacklight *backlight,
+				      GError **error);
 
 G_END_DECLS
 

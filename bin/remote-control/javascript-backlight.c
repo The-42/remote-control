@@ -90,11 +90,23 @@ static bool js_backlight_set_enable(JSContextRef context,
 static JSValueRef js_backlight_get_enable(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	/* TODO: Replace this with a real implementation when
-	 * backlight_is_enabled() has been implemented. */
-	javascript_set_exception_text(context, exception,
-			"backlight enable can not be queried ATM");
-	return false;
+	struct backlight *backlight = JSObjectGetPrivate(object);
+	int state;
+
+	if (!backlight) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	state = backlight_is_enabled(backlight);
+	if (state < 0) {
+		javascript_set_exception_text(context, exception,
+			"failed to query backlight state");
+		return NULL;
+	}
+
+	return JSValueMakeBoolean(context, state ? TRUE : FALSE);
 }
 
 static const JSStaticValue backlight_properties[] = {

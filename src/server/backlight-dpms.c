@@ -97,6 +97,13 @@ int backlight_enable(struct backlight *backlight, bool enable)
 	return 0;
 }
 
+int backlight_is_enabled(struct backlight *backlight)
+{
+	g_debug("Querying screensaver states is currently not supported");
+
+	return -ENOSYS;
+}
+
 int backlight_set(struct backlight *backlight, unsigned int brightness)
 {
 	CARD16 level = (brightness > BACKLIGHT_MIN) ? DPMSModeOn : DPMSModeOff;

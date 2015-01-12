@@ -28,6 +28,11 @@ int backlight_enable(struct backlight *backlight, bool enable)
 	return -ENOSYS;
 }
 
+int backlight_is_enabled(struct backlight *backlight)
+{
+	return -ENOSYS;
+}
+
 int backlight_set(struct backlight *backlight, unsigned int brightness)
 {
 	return -ENOSYS;

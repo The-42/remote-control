@@ -110,6 +110,31 @@ out:
 	return err;
 }
 
+int backlight_is_enabled(struct backlight *backlight)
+{
+	int enabled;
+	int ret;
+	int num;
+	int fd;
+
+	if (!backlight)
+		return -EINVAL;
+
+	fd = open(SYSFS_PATH "/class/backlight/pwm-backlight/bl_power",
+			  O_RDONLY);
+	if (fd < 0)
+		return -errno;
+
+	num = fscanf (fd, "%d", &enabled);
+	if (num == 1)
+		ret = enabled == FB_BLANK_UNBLANK ? 1 : 0;
+	else
+		ret = num < 0 ? -errno : -EIO;
+
+	close (fd);
+	return ret;
+}
+
 int backlight_set(struct backlight *backlight, unsigned int brightness)
 {
 	int err;

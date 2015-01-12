@@ -37,6 +37,7 @@ struct backlight {
 	int (*set)(struct backlight *backlight, unsigned int brightness);
 	int (*get)(struct backlight *backlight);
 	int (*enable)(struct backlight *backlight, bool enable);
+	int (*is_enable)(struct backlight *backlight);
 };
 
 static int backlight_dpms_release(struct backlight *backlight)
@@ -56,6 +57,16 @@ static int backlight_dpms_enable(struct backlight *backlight, bool enable)
 	XFlush(backlight->display);
 
 	return ret ? 0 : -EIO;
+}
+
+static int backlight_dpms_is_enabled(struct backlight *backlight)
+{
+	int state = backlight_dpms_get(backlight);
+
+	if (state > 0)
+		return 1;
+
+	return state;
 }
 
 static int backlight_dpms_set(struct backlight *backlight,
@@ -108,6 +119,7 @@ static int backlight_dpms_probe(struct backlight *backlight)
 	backlight->set = backlight_dpms_set;
 	backlight->get = backlight_dpms_get;
 	backlight->enable = backlight_dpms_enable;
+	backlight->is_enabled = backlight_dpms_is_enabled;
 
 	g_debug("backlight-dpms: using DPMS v%d.%d", major, minor);
 
@@ -196,6 +208,19 @@ static int backlight_i2c_enable(struct backlight *backlight, bool enable)
 	return 0;
 }
 
+static int backlight_i2c_is_enabled(struct backlight *backlight)
+{
+	int status = backlight_i2c_get(backlight);
+
+	if (status < 0)
+		return status;
+
+	if (status & 0xFF > 0)
+		return 1;
+
+	return 0;
+}
+
 static int i2c_probe_device(int fd, unsigned int slave)
 {
 	int err;
@@ -268,6 +293,7 @@ static int backlight_i2c_probe(struct backlight *backlight)
 	backlight->set = backlight_i2c_set;
 	backlight->get = backlight_i2c_get;
 	backlight->enable = backlight_i2c_enable;
+	backlight->is_enabled = backlight_i2c_is_enabled;
 
 	g_debug("backlight-i2c: using I2C bus %s, slave %#x", device, slave);
 	g_object_unref(gmbus);
@@ -354,6 +380,24 @@ static int backlight_sysfs_enable(struct backlight *backlight, bool enable)
 	return 0;
 }
 
+static int backlight_sysfs_is_enabled(struct backlight *backlight)
+{
+	GSysfsBacklight *bl = backlight->sysfs;
+	GError *error = NULL;
+	gboolean state;
+
+	state = g_sysfs_backlight_is_enabled(bl, &error);
+
+	if (error) {
+		g_warning("backlight-sysfs: failed to get backlight status: %s",
+			  error->message);
+		g_clear_error(&error);
+		return -EIO;
+	}
+
+	return state ? 1 : 0;
+}
+
 static int backlight_sysfs_probe(struct backlight *backlight)
 {
 	GError *error = NULL;
@@ -384,6 +428,7 @@ static int backlight_sysfs_probe(struct backlight *backlight)
 	backlight->set = backlight_sysfs_set;
 	backlight->get = backlight_sysfs_get;
 	backlight->enable = backlight_sysfs_enable;
+	backlight->is_enabled = backlight_sysfs_is_enabled;
 
 	backlight->restore = backlight_sysfs_get(backlight);
 	if (backlight->restore < 0)
@@ -465,6 +510,14 @@ int backlight_enable(struct backlight *backlight, bool enable)
 		return -EINVAL;
 
 	return backlight->enable(backlight, enable);
+}
+
+int backlight_is_enabled(struct backlight *backlight)
+{
+	if (!backlight)
+		return -EINVAL;
+
+	return backlight->is_enabled(backlight);
 }
 
 int backlight_set(struct backlight *backlight, unsigned int brightness)
