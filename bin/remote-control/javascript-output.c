@@ -67,6 +67,12 @@ static bool js_output_set_value(
 		return true;
 
 	err = channel->type->set(channel->output, dval);
+	if (err && channel->type->prepare) {
+		if (channel->type->prepare(channel->output) >= 0) {
+			g_warning("Retry to set output due to error %d", err);
+			err = channel->type->set(channel->output, dval);
+		}
+	}
 	if (err)
 		javascript_set_exception_text(context, exception,
 			"failed to set output value");
@@ -88,6 +94,12 @@ static JSValueRef js_output_get_value(
 	}
 
 	err = channel->type->get(channel->output, &dval);
+	if (err && channel->type->prepare) {
+		if (channel->type->prepare(channel->output) >= 0) {
+			g_warning("Retry to get output due to error %d", err);
+			err = channel->type->get(channel->output, &dval);
+		}
+	}
 	if (err)
 		javascript_set_exception_text(context, exception,
 			"failed to get output value");
@@ -109,6 +121,12 @@ static gboolean js_output_on_set_done(gpointer user_data)
 	set = &channel->set[channel->set_pos];
 
 	err = channel->type->set(channel->output, set->value);
+	if (err && channel->type->prepare) {
+		if (channel->type->prepare(channel->output) >= 0) {
+			g_warning("Retry to set output due to error %d", err);
+			err = channel->type->set(channel->output, set->value);
+		}
+	}
 	if (err) {
 		g_warning("%s: Failed to set output %s to %g",
 			__func__, channel->name, set->value);
@@ -226,11 +244,9 @@ static JSObjectRef js_output_create(
 		JSObjectRef channel;
 		if (channels[i].type->prepare) {
 			int err = channels[i].type->prepare(channels[i].output);
-			if (err < 0) {
+			if (err < 0)
 				g_warning("%s: Failed to prepare output %s",
-					__func__, channels[i].name);
-				continue;
-			}
+						__func__, channels[i].name);
 		}
 		channel = JSObjectMake(js, class, &channels[i]);
 		if (channel)
