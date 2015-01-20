@@ -17,6 +17,8 @@
 #include "javascript.h"
 
 #define MEDIA_PLAYER_STATE(v, n) { .value = MEDIA_PLAYER_##v, .name = n }
+#define MEDIA_PLAYER_SPU_MIN -1
+#define MEDIA_PLAYER_SPU_MAX 0x1FFF
 
 static const struct javascript_enum media_player_state_enum[] = {
 	MEDIA_PLAYER_STATE(STOPPED,	"stop"),
@@ -280,6 +282,78 @@ static bool js_media_player_set_mute(JSContextRef context,
 	return err == 0;
 }
 
+static JSValueRef js_media_player_get_subtitle(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err, pid;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = media_player_get_spu(player, &pid);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get subtitle");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, pid);
+}
+
+static bool js_media_player_set_subtitle(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef value,
+		JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err, pid;
+
+	err = javascript_int_from_number(context, value, MEDIA_PLAYER_SPU_MIN,
+			MEDIA_PLAYER_SPU_MAX, &pid, exception);
+	if (err)
+		return false;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
+
+	err = media_player_set_spu(player, pid);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to set subtitle");
+		return false;
+	}
+
+	return true;
+}
+
+static JSValueRef js_media_player_get_subtitle_count(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err, count;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = media_player_get_spu_count(player, &count);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get subtitle count");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, count);
+}
+
 static const JSStaticValue media_player_properties[] = {
 	{
 		.name = "uri",
@@ -310,6 +384,18 @@ static const JSStaticValue media_player_properties[] = {
 		.getProperty = js_media_player_get_mute,
 		.setProperty = js_media_player_set_mute,
 		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "subtitle",
+		.getProperty = js_media_player_get_subtitle,
+		.setProperty = js_media_player_set_subtitle,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "subtitleCount",
+		.getProperty = js_media_player_get_subtitle_count,
+		.attributes = kJSPropertyAttributeReadOnly |
+			kJSPropertyAttributeDontDelete,
 	},
 	{}
 };
@@ -402,6 +488,97 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 	return NULL;
 }
 
+static JSValueRef js_media_player_get_subtitle_pid(JSContextRef context,
+		JSObjectRef function, JSObjectRef object,
+		size_t argc, const JSValueRef argv[],
+		JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err, pos, pid;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	switch (argc) {
+	case 1: /* Index of subtitle */
+		err = javascript_int_from_number(context, argv[0],
+				MEDIA_PLAYER_SPU_MIN, MEDIA_PLAYER_SPU_MAX,
+				&pos, exception);
+		if (err)
+			return NULL;
+		break;
+	default:
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+g_warning("js_media_player_get_subtitle_pid %d", pos);
+	err = media_player_get_spu_pid(player, pos, &pid);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get subtitle name");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, pid);
+}
+
+static JSValueRef js_media_player_get_subtitle_name(JSContextRef context,
+		JSObjectRef function, JSObjectRef object,
+		size_t argc, const JSValueRef argv[],
+		JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	char *name = NULL;
+	JSValueRef ret;
+	int err, pid;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	switch (argc) {
+	case 0: /* Current subtitle pid */
+		err = media_player_get_spu(player, &pid);
+		if (err) {
+			javascript_set_exception_text(context, exception,
+				"failed to get current subtitle");
+			return NULL;
+		}
+		break;
+	case 1: /* Subtitle pid */
+		err = javascript_int_from_number(context, argv[0],
+				MEDIA_PLAYER_SPU_MIN, MEDIA_PLAYER_SPU_MAX,
+				&pid, exception);
+		if (err)
+			return NULL;
+		break;
+	default:
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+g_warning("js_media_player_get_subtitle_name %d", pid);
+	err = media_player_get_spu_name(player, pid, &name);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get subtitle name");
+		return NULL;
+	}
+
+	ret = javascript_make_string(context, name, exception);
+	g_free(name);
+
+	return ret;
+}
+
 static const JSStaticFunction media_player_functions[] = {
 	{
 		.name = "setCrop",
@@ -411,6 +588,16 @@ static const JSStaticFunction media_player_functions[] = {
 	{
 		.name = "setWindow",
 		.callAsFunction = js_media_player_set_window,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "getSubtitlePid",
+		.callAsFunction = js_media_player_get_subtitle_pid,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "getSubtitleName",
+		.callAsFunction = js_media_player_get_subtitle_name,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{}
