@@ -56,7 +56,7 @@ static JSValueRef js_voip_get_login_state(
 		context, voip_state_enum, state, exception);
 }
 
-static JSValueRef js_voip_get_contact(
+static JSValueRef js_voip_get_contact_name(
 	JSContextRef context, JSObjectRef object,
 	JSStringRef name, JSValueRef *exception)
 {
@@ -70,7 +70,31 @@ static JSValueRef js_voip_get_contact(
 		return NULL;
 	}
 
-	err = voip_get_contact(voip, &contact);
+	err = voip_get_contact(voip, &contact, NULL);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get contact");
+		return NULL;
+	}
+
+	return javascript_make_string(context, contact, exception);
+}
+
+static JSValueRef js_voip_get_contact_display(
+	JSContextRef context, JSObjectRef object,
+	JSStringRef name, JSValueRef *exception)
+{
+	struct voip *voip = JSObjectGetPrivate(object);
+	const char *contact = NULL;
+	int err;
+
+	if (!voip) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = voip_get_contact(voip, NULL, &contact);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get contact");
@@ -88,8 +112,14 @@ static const JSStaticValue voip_properties[] = {
 			kJSPropertyAttributeReadOnly,
 	},
 	{
-		.name = "contact",
-		.getProperty = js_voip_get_contact,
+		.name = "contactName",
+		.getProperty = js_voip_get_contact_name,
+		.attributes = kJSPropertyAttributeDontDelete |
+			kJSPropertyAttributeReadOnly,
+	},
+	{
+		.name = "contactDisplay",
+		.getProperty = js_voip_get_contact_display,
 		.attributes = kJSPropertyAttributeDontDelete |
 			kJSPropertyAttributeReadOnly,
 	},

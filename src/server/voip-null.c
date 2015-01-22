@@ -61,7 +61,7 @@ int voip_get_state(struct voip *voip, enum voip_state *statep)
 	return -ENOSYS;
 }
 
-int voip_get_contact(struct voip *voip, const char **contactp)
+int voip_get_contact(struct voip *voip, const char **namep, const char **displayp)
 {
 	return -ENOSYS;
 }

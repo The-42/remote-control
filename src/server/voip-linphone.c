@@ -20,7 +20,8 @@
 struct voip {
 	GSource *timeout;
 	LinphoneCore *core;
-	gchar *contact;
+	gchar *contact_name;
+	gchar *contact_display;
 	int expires;
 };
 
@@ -46,25 +47,29 @@ static void linphone_registration_state_changed_cb(LinphoneCore *core,
 static void voip_update_contact(struct voip *voip, LinphoneCall *call)
 {
 	const LinphoneAddress *address;
-	const char *contact;
+	const char *contact_display;
+	const char *contact_name;
 
-	if (voip->contact) {
-		g_free(voip->contact);
-		voip->contact = NULL;
+	if (voip->contact_name) {
+		g_free(voip->contact_name);
+		voip->contact_name = NULL;
+	}
+	if (voip->contact_display) {
+		g_free(voip->contact_display);
+		voip->contact_display = NULL;
 	}
 
 	address = linphone_call_get_remote_address(call);
 	if (!address)
 		return;
 
-	contact = linphone_address_get_display_name(address);
-	if (!contact)
-		contact = linphone_address_get_username(address);
+	contact_name = linphone_address_get_username(address);
+	if (contact_name)
+		voip->contact_name = g_strdup(contact_name);
 
-	if (!contact)
-		return;
-
-	voip->contact = g_strdup(contact);
+	contact_display = linphone_address_get_display_name(address);
+	if (contact_display)
+		voip->contact_display = g_strdup(contact_display);
 }
 
 static void linphone_call_state_changed_cb(LinphoneCore *core,
@@ -364,7 +369,7 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 			voip->expires = CLAMP(voip->expires, 30, 3600);
 	}
 
-	voip->contact = NULL;
+	voip->contact_display = voip->contact_name = NULL;
 
 	/*
 	 * FIXME: This code was initially meant to set the output volume to
@@ -418,7 +423,8 @@ int voip_free(struct voip *voip)
 	linphone_core_terminate_all_calls(voip->core);
 	voip_logout(voip);
 	linphone_core_destroy(voip->core);
-	g_free(voip->contact);
+	g_free(voip->contact_name);
+	g_free(voip->contact_display);
 	g_free(voip);
 
 	return 0;
@@ -618,8 +624,12 @@ int voip_accept(struct voip *voip, char **caller)
 	if (err < 0)
 		return err;
 
-	if (caller && voip->contact)
-		*caller = g_strdup(voip->contact);
+	if (caller) {
+		if (voip->contact_display)
+			*caller = g_strdup(voip->contact_display);
+		else if (voip->contact_name)
+			*caller = g_strdup(voip->contact_name);
+	}
 
 	return 0;
 }
@@ -658,12 +668,15 @@ int voip_get_state(struct voip *voip, enum voip_state *statep)
 	return 0;
 }
 
-int voip_get_contact(struct voip *voip, const char **contactp)
+int voip_get_contact(struct voip *voip, const char **namep, const char **displayp)
 {
-	if (!voip || !contactp)
+	if (!voip)
 		return -EINVAL;
 
-	*contactp = voip->contact;
+	if (namep)
+		*namep = voip->contact_name;
+	if (displayp)
+		*displayp = voip->contact_display;
 	return 0;
 }
 

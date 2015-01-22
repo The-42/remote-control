@@ -309,7 +309,7 @@ int voip_call(struct voip *voip, const char *url);
 int voip_accept(struct voip *voip, char **caller);
 int voip_terminate(struct voip *voip);
 int voip_get_state(struct voip *voip, enum voip_state *statep);
-int voip_get_contact(struct voip *voip, const char **contactp);
+int voip_get_contact(struct voip *voip, const char **namep, const char **displayp);
 int voip_dial(struct voip *voip, uint8_t dtmf);
 int voip_set_playback(struct voip *voip, const char *card_name);
 int voip_set_capture(struct voip *voip, const char *card_name);

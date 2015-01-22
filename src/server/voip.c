@@ -227,7 +227,7 @@ int32_t RPC_IMPL(voip_get_last_contact)(void *priv, char **contact)
 		goto out;
 	}
 
-	ret = voip_get_contact(voip, &name);
+	ret = voip_get_contact(voip, &name, NULL);
 	if (ret < 0)
 		goto out;
 
