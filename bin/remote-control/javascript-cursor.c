@@ -23,11 +23,15 @@
 #define KEY_PRESSED 1
 #define KEY_RELEASE 0
 
+#define CURSOR_MOVEMENT_TIMEOUT_MIN 0
+#define CURSOR_MOVEMENT_TIMEOUT_MAX 60000
+
 struct cursor {
 	GdkDisplay *display;
 	GdkScreen *screen;
 	RemoteControlWebkitWindow *window;
 	int uinput; /* dummy input device */
+	struct cursor_movement *cursor_movement;
 };
 
 static inline int uinput_send_event(int uinput, int type, int code, int value)
@@ -225,11 +229,52 @@ static bool cursor_set_show(JSContextRef context, JSObjectRef object,
 	return true;
 }
 
+static JSValueRef cursor_get_show_movement(JSContextRef context,
+		JSObjectRef object, JSStringRef property, JSValueRef *exception)
+{
+	struct cursor *priv = JSObjectGetPrivate(object);
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return JSValueMakeBoolean(context, FALSE);
+	}
+
+	return JSValueMakeNumber(context, cursor_movement_get_timeout(
+			priv->cursor_movement));
+}
+
+static bool cursor_set_show_movement(JSContextRef context, JSObjectRef object,
+		JSStringRef property, JSValueRef value, JSValueRef *exception)
+{
+	struct cursor *priv = JSObjectGetPrivate(object);
+	int err, timeout;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
+
+	err = javascript_int_from_number(context, value,
+			CURSOR_MOVEMENT_TIMEOUT_MIN,
+			CURSOR_MOVEMENT_TIMEOUT_MAX, &timeout, exception);
+	if (err)
+		return false;
+
+	return cursor_movement_set_timeout(priv->cursor_movement, timeout) == 0;
+}
+
 static const JSStaticValue cursor_properties[] = {
 	{
 		.name = "show",
 		.getProperty = cursor_get_show,
 		.setProperty = cursor_set_show,
+		.attributes = kJSPropertyAttributeNone,
+	}, {
+		.name = "showMovement",
+		.getProperty = cursor_get_show_movement,
+		.setProperty = cursor_set_show_movement,
 		.attributes = kJSPropertyAttributeNone,
 	}, {
 	}
@@ -375,6 +420,9 @@ static JSObjectRef javascript_cursor_create(
 	priv->window = data->window;
 	g_assert(priv->window != NULL);
 	g_assert(REMOTE_CONTROL_IS_WEBKIT_WINDOW(priv->window));
+
+	priv->cursor_movement = remote_control_get_cursor_movement(
+			data->rcd->rc);
 
 	return JSObjectMake(js, class, priv);
 }

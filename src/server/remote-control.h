@@ -163,6 +163,16 @@ int backlight_set(struct backlight *backlight, unsigned int brightness);
 int backlight_get(struct backlight *backlight);
 
 /**
+ * cursor movement
+ */
+struct cursor_movement;
+
+int cursor_movement_create(struct cursor_movement **cursor_movement);
+int cursor_movement_free(struct cursor_movement *cursor_movement);
+int cursor_movement_set_timeout(struct cursor_movement *cursor_movement, int timeout);
+int cursor_movement_get_timeout(struct cursor_movement *cursor_movement);
+
+/**
  * media player
  */
 enum media_player_state {
@@ -462,6 +472,7 @@ int remote_control_free(struct remote_control *rc);
 struct event_manager *remote_control_get_event_manager(struct remote_control *rc);
 struct audio* remote_control_get_audio(struct remote_control *rc);
 struct backlight *remote_control_get_backlight(struct remote_control *rc);
+struct cursor_movement *remote_control_get_cursor_movement(struct remote_control *rc);
 struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);

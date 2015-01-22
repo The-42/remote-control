@@ -24,6 +24,7 @@ libremote_control_la_SOURCES = \
 	app-watchdog.c \
 	audio.c \
 	backlight.c \
+	cursor-movement.c \
 	event-manager.c \
 	handset.c \
 	io.c \

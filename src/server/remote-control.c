@@ -38,6 +38,7 @@ struct remote_control {
 	struct gpio_backend *gpio;
 	struct audio *audio;
 	struct backlight *backlight;
+	struct cursor_movement *cursor_movement;
 	struct media_player *player;
 	struct sound_manager *sound;
 	struct smartcard *smartcard;
@@ -357,6 +358,12 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
+	err = cursor_movement_create(&rc->cursor_movement);
+	if (err < 0) {
+		g_error("cursor_movement_create(): %s", strerror(-err));
+		return err;
+	}
+
 	err = media_player_create(&rc->player, config);
 	if (err < 0) {
 		g_error("media_player_create(): %s", strerror(-err));
@@ -508,6 +515,7 @@ int remote_control_free(struct remote_control *rc)
 	smartcard_free(rc->smartcard);
 	sound_manager_free(rc->sound);
 	media_player_free(rc->player);
+	cursor_movement_free(rc->cursor_movement);
 	backlight_free(rc->backlight);
 	audio_free(rc->audio);
 	rpc_server_free(server);
@@ -528,6 +536,11 @@ struct audio *remote_control_get_audio(struct remote_control *rc)
 struct backlight *remote_control_get_backlight(struct remote_control *rc)
 {
 	return rc ? rc->backlight : NULL;
+}
+
+struct cursor_movement *remote_control_get_cursor_movement(struct remote_control *rc)
+{
+	return rc ? rc->cursor_movement : NULL;
 }
 
 struct media_player *remote_control_get_media_player(struct remote_control *rc)
