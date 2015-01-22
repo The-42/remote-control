@@ -62,6 +62,8 @@ static int js_output_sysfs_get(struct js_output *out, double *valuep)
 		return -errno;
 
 	err = fscanf(fd, "%d", &ival);
+	fclose(fd);
+
 	if (err > 0) {
 		*valuep = ival;
 		return 0;
