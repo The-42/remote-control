@@ -516,7 +516,6 @@ static JSValueRef js_media_player_get_subtitle_pid(JSContextRef context,
 		return NULL;
 	}
 
-g_warning("js_media_player_get_subtitle_pid %d", pos);
 	err = media_player_get_spu_pid(player, pos, &pid);
 	if (err) {
 		javascript_set_exception_text(context, exception,
@@ -565,7 +564,6 @@ static JSValueRef js_media_player_get_subtitle_name(JSContextRef context,
 		return NULL;
 	}
 
-g_warning("js_media_player_get_subtitle_name %d", pid);
 	err = media_player_get_spu_name(player, pid, &name);
 	if (err) {
 		javascript_set_exception_text(context, exception,
