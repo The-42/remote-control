@@ -23,6 +23,10 @@
 #define MEDIA_PLAYER_TELETEXT_MIN 0
 #define MEDIA_PLAYER_TELETEXT_MAX 999
 
+struct js_media_player {
+	struct media_player *player;
+};
+
 static const struct javascript_enum media_player_state_enum[] = {
 	MEDIA_PLAYER_STATE(STOPPED,	"stop"),
 	MEDIA_PLAYER_STATE(PLAYING,	"play"),
@@ -33,18 +37,18 @@ static const struct javascript_enum media_player_state_enum[] = {
 static JSValueRef js_media_player_get_uri(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	JSValueRef value;
 	char *uri = NULL;
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_uri(player, &uri);
+	err = media_player_get_uri(priv->player, &uri);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get player uri");
@@ -64,11 +68,11 @@ static bool js_media_player_set_uri(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	char *uri;
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
@@ -78,7 +82,7 @@ static bool js_media_player_set_uri(JSContextRef context,
 	if (!uri)
 		return false;
 
-	err = media_player_set_uri(player, uri);
+	err = media_player_set_uri(priv->player, uri);
 	if (err)
 		javascript_set_exception_text(context, exception,
 			"failed to set uri");
@@ -90,17 +94,17 @@ static bool js_media_player_set_uri(JSContextRef context,
 static JSValueRef js_media_player_get_duration(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	unsigned long duration;
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_duration(player, &duration);
+	err = media_player_get_duration(priv->player, &duration);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get media duration");
@@ -113,17 +117,17 @@ static JSValueRef js_media_player_get_duration(JSContextRef context,
 static JSValueRef js_media_player_get_position(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	unsigned long position;
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_position(player, &position);
+	err = media_player_get_position(priv->player, &position);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get player position");
@@ -137,9 +141,15 @@ static bool js_media_player_set_position(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	double dval;
 	int err;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
 
 	dval = JSValueToNumber(context, value, exception);
 	if (isnan(dval))
@@ -151,7 +161,7 @@ static bool js_media_player_set_position(JSContextRef context,
 		return false;
 	}
 
-	err = media_player_set_position(player, dval);
+	err = media_player_set_position(priv->player, dval);
 	if (err)
 		javascript_set_exception_text(context, exception,
 			"failed to set player position");
@@ -162,17 +172,17 @@ static bool js_media_player_set_position(JSContextRef context,
 static JSValueRef js_media_player_get_state(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	enum media_player_state state;
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_state(player, &state);
+	err = media_player_get_state(priv->player, &state);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get player state");
@@ -187,17 +197,17 @@ static bool js_media_player_set_state(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	enum media_player_state current_state, next_state;
 	int err = 0;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
-	err = media_player_get_state(player, &current_state);
+	err = media_player_get_state(priv->player, &current_state);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get player state");
@@ -215,16 +225,16 @@ static bool js_media_player_set_state(JSContextRef context,
 
 	switch (next_state) {
 	case MEDIA_PLAYER_STOPPED:
-		err = media_player_stop(player);
+		err = media_player_stop(priv->player);
 		break;
 	case MEDIA_PLAYER_PAUSED:
-		err = media_player_pause(player);
+		err = media_player_pause(priv->player);
 		break;
 	case MEDIA_PLAYER_PLAYING:
 		if (current_state == MEDIA_PLAYER_PAUSED)
-			err = media_player_resume(player);
+			err = media_player_resume(priv->player);
 		else
-			err = media_player_play(player);
+			err = media_player_play(priv->player);
 		break;
 	}
 
@@ -241,17 +251,17 @@ static bool js_media_player_set_state(JSContextRef context,
 static JSValueRef js_media_player_get_mute(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	bool mute;
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_mute(player, &mute);
+	err = media_player_get_mute(priv->player, &mute);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get mute");
@@ -265,17 +275,17 @@ static bool js_media_player_set_mute(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	bool mute = JSValueToBoolean(context, value);
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
 	}
 
-	err = media_player_set_mute(player, mute);
+	err = media_player_set_mute(priv->player, mute);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to set mute");
@@ -288,16 +298,16 @@ static bool js_media_player_set_mute(JSContextRef context,
 static JSValueRef js_media_player_get_subtitle(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err, pid;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_spu(player, &pid);
+	err = media_player_get_spu(priv->player, &pid);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get subtitle");
@@ -311,21 +321,21 @@ static bool js_media_player_set_subtitle(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err, pid;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
 
 	err = javascript_int_from_number(context, value, MEDIA_PLAYER_SPU_MIN,
 			MEDIA_PLAYER_SPU_MAX, &pid, exception);
 	if (err)
 		return false;
 
-	if (!player) {
-		javascript_set_exception_text(context, exception,
-			JS_ERR_INVALID_OBJECT_TEXT);
-		return false;
-	}
-
-	err = media_player_set_spu(player, pid);
+	err = media_player_set_spu(priv->player, pid);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to set subtitle");
@@ -338,16 +348,16 @@ static bool js_media_player_set_subtitle(JSContextRef context,
 static JSValueRef js_media_player_get_subtitle_count(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err, count;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_spu_count(player, &count);
+	err = media_player_get_spu_count(priv->player, &count);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get subtitle count");
@@ -360,16 +370,16 @@ static JSValueRef js_media_player_get_subtitle_count(JSContextRef context,
 static JSValueRef js_media_player_get_teletext(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err, page;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
-	err = media_player_get_teletext(player, &page);
+	err = media_player_get_teletext(priv->player, &page);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get teletext");
@@ -383,8 +393,14 @@ static bool js_media_player_set_teletext(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef value,
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err, page;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
 
 	err = javascript_int_from_number(context, value,
 			MEDIA_PLAYER_TELETEXT_MIN, MEDIA_PLAYER_TELETEXT_MAX,
@@ -392,13 +408,7 @@ static bool js_media_player_set_teletext(JSContextRef context,
 	if (err)
 		return false;
 
-	if (!player) {
-		javascript_set_exception_text(context, exception,
-			JS_ERR_INVALID_OBJECT_TEXT);
-		return false;
-	}
-
-	err = media_player_set_teletext(player, page);
+	err = media_player_set_teletext(priv->player, page);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to set teletext");
@@ -465,12 +475,12 @@ static JSValueRef js_media_player_set_crop(JSContextRef context,
 		size_t argc, const JSValueRef argv[],
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	unsigned int args[4];
 	double dval;
 	int i, err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
@@ -495,7 +505,7 @@ static JSValueRef js_media_player_set_crop(JSContextRef context,
 	}
 
 	err = media_player_set_crop(
-		player, args[0], args[1], args[2], args[3]);
+		priv->player, args[0], args[1], args[2], args[3]);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to set crop");
@@ -510,12 +520,12 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 		size_t argc, const JSValueRef argv[],
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	unsigned int args[4];
 	double dval;
 	int i, err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return false;
@@ -540,7 +550,7 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 	}
 
 	err = media_player_set_output_window(
-		player, args[0], args[1], args[2], args[3]);
+		priv->player, args[0], args[1], args[2], args[3]);
 	if (err)
 		javascript_set_exception_text(context, exception,
 			"failed to set output window");
@@ -553,10 +563,10 @@ static JSValueRef js_media_player_get_subtitle_pid(JSContextRef context,
 		size_t argc, const JSValueRef argv[],
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err, pos, pid;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
@@ -576,7 +586,7 @@ static JSValueRef js_media_player_get_subtitle_pid(JSContextRef context,
 		return NULL;
 	}
 
-	err = media_player_get_spu_pid(player, pos, &pid);
+	err = media_player_get_spu_pid(priv->player, pos, &pid);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get subtitle name");
@@ -591,12 +601,12 @@ static JSValueRef js_media_player_get_subtitle_name(JSContextRef context,
 		size_t argc, const JSValueRef argv[],
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	char *name = NULL;
 	JSValueRef ret;
 	int err, pid;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
@@ -604,7 +614,7 @@ static JSValueRef js_media_player_get_subtitle_name(JSContextRef context,
 
 	switch (argc) {
 	case 0: /* Current subtitle pid */
-		err = media_player_get_spu(player, &pid);
+		err = media_player_get_spu(priv->player, &pid);
 		if (err) {
 			javascript_set_exception_text(context, exception,
 				"failed to get current subtitle");
@@ -624,7 +634,7 @@ static JSValueRef js_media_player_get_subtitle_name(JSContextRef context,
 		return NULL;
 	}
 
-	err = media_player_get_spu_name(player, pid, &name);
+	err = media_player_get_spu_name(priv->player, pid, &name);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get subtitle name");
@@ -642,10 +652,10 @@ static JSValueRef js_media_player_toggle_teletext_transparent(
 		size_t argc, const JSValueRef argv[],
 		JSValueRef *exception)
 {
-	struct media_player *player = JSObjectGetPrivate(object);
+	struct js_media_player *priv = JSObjectGetPrivate(object);
 	int err;
 
-	if (!player) {
+	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
@@ -657,7 +667,7 @@ static JSValueRef js_media_player_toggle_teletext_transparent(
 		return NULL;
 	}
 
-	err = media_player_toggle_teletext_transparent(player);
+	err = media_player_toggle_teletext_transparent(priv->player);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to toggle teletext transparent");
@@ -707,13 +717,20 @@ static JSObjectRef javascript_media_player_create(
 	JSContextRef js, JSClassRef class,
 	struct javascript_userdata *user_data)
 {
-	struct media_player *player;
+	struct js_media_player *priv;
 
-	player = remote_control_get_media_player(user_data->rcd->rc);
-	if (!player)
+	priv = g_new0(struct js_media_player, 1);
+	if (!priv)
 		return NULL;
 
-	return JSObjectMake(js, class, player);
+	priv->player = remote_control_get_media_player(user_data->rcd->rc);
+	if (!priv->player)
+		goto cleanup;
+
+	return JSObjectMake(js, class, priv);
+cleanup:
+	g_free(priv);
+	return NULL;
 }
 
 struct javascript_module javascript_media_player = {
