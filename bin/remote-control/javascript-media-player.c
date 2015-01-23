@@ -20,6 +20,9 @@
 #define MEDIA_PLAYER_SPU_MIN -1
 #define MEDIA_PLAYER_SPU_MAX 0x1FFF
 
+#define MEDIA_PLAYER_TELETEXT_MIN 0
+#define MEDIA_PLAYER_TELETEXT_MAX 999
+
 static const struct javascript_enum media_player_state_enum[] = {
 	MEDIA_PLAYER_STATE(STOPPED,	"stop"),
 	MEDIA_PLAYER_STATE(PLAYING,	"play"),
@@ -354,6 +357,57 @@ static JSValueRef js_media_player_get_subtitle_count(JSContextRef context,
 	return JSValueMakeNumber(context, count);
 }
 
+static JSValueRef js_media_player_get_teletext(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err, page;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = media_player_get_teletext(player, &page);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get teletext");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, page);
+}
+
+static bool js_media_player_set_teletext(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef value,
+		JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err, page;
+
+	err = javascript_int_from_number(context, value,
+			MEDIA_PLAYER_TELETEXT_MIN, MEDIA_PLAYER_TELETEXT_MAX,
+			&page, exception);
+	if (err)
+		return false;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
+
+	err = media_player_set_teletext(player, page);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to set teletext");
+		return false;
+	}
+
+	return true;
+}
+
 static const JSStaticValue media_player_properties[] = {
 	{
 		.name = "uri",
@@ -396,6 +450,12 @@ static const JSStaticValue media_player_properties[] = {
 		.getProperty = js_media_player_get_subtitle_count,
 		.attributes = kJSPropertyAttributeReadOnly |
 			kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "teletext",
+		.getProperty = js_media_player_get_teletext,
+		.setProperty = js_media_player_set_teletext,
+		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{}
 };
@@ -577,6 +637,36 @@ static JSValueRef js_media_player_get_subtitle_name(JSContextRef context,
 	return ret;
 }
 
+static JSValueRef js_media_player_toggle_teletext_transparent(
+		JSContextRef context, JSObjectRef function, JSObjectRef object,
+		size_t argc, const JSValueRef argv[],
+		JSValueRef *exception)
+{
+	struct media_player *player = JSObjectGetPrivate(object);
+	int err;
+
+	if (!player) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	if (argc) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+	err = media_player_toggle_teletext_transparent(player);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to toggle teletext transparent");
+		return NULL;
+	}
+
+	return NULL;
+}
+
 static const JSStaticFunction media_player_functions[] = {
 	{
 		.name = "setCrop",
@@ -596,6 +686,11 @@ static const JSStaticFunction media_player_functions[] = {
 	{
 		.name = "getSubtitleName",
 		.callAsFunction = js_media_player_get_subtitle_name,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "toggleTeletextTransparent",
+		.callAsFunction = js_media_player_toggle_teletext_transparent,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{}

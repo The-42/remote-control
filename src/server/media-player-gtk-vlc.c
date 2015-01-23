@@ -538,3 +538,31 @@ int media_player_set_spu(struct media_player *player, int pid)
 
 	return libvlc_video_set_spu(player->player, pid);
 }
+
+int media_player_get_teletext(struct media_player *player, int *page)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+	g_return_val_if_fail(page != NULL, -EINVAL);
+
+	*page = libvlc_video_get_teletext(player->player);
+
+	return 0;
+}
+
+int media_player_set_teletext(struct media_player *player, int page)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	libvlc_video_set_teletext(player->player, page);
+
+	return 0;
+}
+
+int media_player_toggle_teletext_transparent(struct media_player *player)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	libvlc_toggle_teletext(player->player);
+
+	return 0;
+}

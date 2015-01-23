@@ -127,3 +127,18 @@ int media_player_set_spu(struct media_player *player, int pid)
 {
 	return -ENOSYS;
 }
+
+int media_player_get_teletext(struct media_player *player, int *page)
+{
+	return -ENOSYS;
+}
+
+int media_player_set_teletext(struct media_player *player, int page)
+{
+	return -ENOSYS;
+}
+
+int media_player_toggle_teletext_transparent(struct media_player *player)
+{
+	return -ENOSYS;
+}

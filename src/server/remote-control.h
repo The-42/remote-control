@@ -203,6 +203,9 @@ int media_player_get_spu_pid(struct media_player *player, int pos, int *pid);
 int media_player_get_spu_name(struct media_player *player, int pid, char **name);
 int media_player_get_spu(struct media_player *player, int *pid);
 int media_player_set_spu(struct media_player *player, int pid);
+int media_player_get_teletext(struct media_player *player, int *page);
+int media_player_set_teletext(struct media_player *player, int page);
+int media_player_toggle_teletext_transparent(struct media_player *player);
 
 /**
  * sound manager
