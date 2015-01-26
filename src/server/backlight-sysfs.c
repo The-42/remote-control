@@ -115,23 +115,22 @@ int backlight_is_enabled(struct backlight *backlight)
 	int enabled;
 	int ret;
 	int num;
-	int fd;
+	FILE *fd;
 
 	if (!backlight)
 		return -EINVAL;
 
-	fd = open(SYSFS_PATH "/class/backlight/pwm-backlight/bl_power",
-			  O_RDONLY);
-	if (fd < 0)
+	fd = fopen(SYSFS_PATH "/class/backlight/pwm-backlight/bl_power", "r");
+	if (fd == NULL)
 		return -errno;
 
-	num = fscanf (fd, "%d", &enabled);
+	num = fscanf(fd, "%d", &enabled);
 	if (num == 1)
 		ret = enabled == FB_BLANK_UNBLANK ? 1 : 0;
 	else
 		ret = num < 0 ? -errno : -EIO;
 
-	close (fd);
+	fclose (fd);
 	return ret;
 }
 
