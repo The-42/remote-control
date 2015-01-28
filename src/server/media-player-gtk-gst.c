@@ -1806,3 +1806,9 @@ int media_player_toggle_teletext_transparent(struct media_player *player)
 {
 	return -ENOSYS;
 }
+
+int media_player_set_es_changed_callback(struct media_player *player,
+		media_player_es_changed_cb callback, void *data)
+{
+	return -ENOSYS;
+}

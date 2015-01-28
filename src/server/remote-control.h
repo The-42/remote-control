@@ -181,7 +181,23 @@ enum media_player_state {
 	MEDIA_PLAYER_PAUSED,
 };
 
+enum media_player_es_action {
+	MEDIA_PLAYER_ES_ADDED,
+	MEDIA_PLAYER_ES_DELETED,
+};
+
+enum media_player_es_type {
+	MEDIA_PLAYER_ES_UNKNOWN,
+	MEDIA_PLAYER_ES_AUDIO,
+	MEDIA_PLAYER_ES_VIDEO,
+	MEDIA_PLAYER_ES_TEXT,
+};
+
 struct media_player;
+
+typedef void (* media_player_es_changed_cb)( void *data,
+		enum media_player_es_action action,
+		enum media_player_es_type type, int pid);
 
 int media_player_create(struct media_player **playerp, GKeyFile *config);
 int media_player_free(struct media_player *player);
@@ -216,6 +232,8 @@ int media_player_set_spu(struct media_player *player, int pid);
 int media_player_get_teletext(struct media_player *player, int *page);
 int media_player_set_teletext(struct media_player *player, int page);
 int media_player_toggle_teletext_transparent(struct media_player *player);
+int media_player_set_es_changed_callback(struct media_player *player,
+		media_player_es_changed_cb callback, void *data);
 
 /**
  * sound manager

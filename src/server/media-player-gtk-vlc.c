@@ -45,6 +45,9 @@ struct media_player {
 #endif
 
 	struct options opts;
+
+	media_player_es_changed_cb es_changed_cb;
+	void *es_changed_data;
 };
 
 static gboolean hide_window(gpointer data)
@@ -87,6 +90,51 @@ static void on_vout(const struct libvlc_event_t *event, void *data)
 
 	if (event->u.media_player_vout.new_count > 0)
 		g_idle_add(show_window, player->window);
+}
+
+static void on_es_changed(const struct libvlc_event_t *event, void *data)
+{
+	media_player_es_changed_cb es_changed_cb;
+	struct media_player *player = data;
+	enum media_player_es_action action;
+	enum media_player_es_type type;
+	void *es_changed_data;
+	int pid;
+
+	if (!player)
+		return;
+
+	es_changed_cb = player->es_changed_cb;
+	es_changed_data = player->es_changed_data;
+
+	if (!es_changed_cb)
+		return;
+
+	switch (event->type) {
+		case libvlc_MediaPlayerESAdded:
+			action = MEDIA_PLAYER_ES_ADDED;
+			break;
+		case libvlc_MediaPlayerESDeleted:
+			action = MEDIA_PLAYER_ES_DELETED;
+			break;
+		default:
+			return;
+	}
+	switch (event->u.media_player_es_changed.i_type) {
+		case libvlc_track_audio:
+			type = MEDIA_PLAYER_ES_AUDIO;
+			break;
+		case libvlc_track_video:
+			type = MEDIA_PLAYER_ES_VIDEO;
+			break;
+		case libvlc_track_text:
+			type = MEDIA_PLAYER_ES_TEXT;
+			break;
+		default:
+			type = MEDIA_PLAYER_ES_UNKNOWN;
+	}
+	pid = event->u.media_player_es_changed.i_id;
+	es_changed_cb(es_changed_data, action, type, pid);
 }
 
 static void media_player_update_spu_list(struct media_player *player)
@@ -174,6 +222,10 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 			on_paused, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerVout,
 			on_vout, player);
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerESAdded,
+			on_es_changed, player);
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerESDeleted,
+			on_es_changed, player);
 
 #ifdef ENABLE_LIBTNJ3324
 	i2cbus = g_key_file_get_integer(config, "media-player",
@@ -574,5 +626,22 @@ int media_player_toggle_teletext_transparent(struct media_player *player)
 
 	libvlc_toggle_teletext(player->player);
 
+	return 0;
+}
+
+int media_player_set_es_changed_callback(struct media_player *player,
+		media_player_es_changed_cb callback, void *data)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+	if (!callback) {
+		/* Only clear callback if it is the current owner */
+		if (player->es_changed_data == data) {
+			player->es_changed_cb = NULL;
+			player->es_changed_data = NULL;
+		}
+	} else {
+		player->es_changed_data = data;
+		player->es_changed_cb = callback;
+	}
 	return 0;
 }

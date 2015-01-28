@@ -16,7 +16,7 @@
 
 #include "javascript.h"
 
-#define MEDIA_PLAYER_STATE(v, n) { .value = MEDIA_PLAYER_##v, .name = n }
+#define MEDIA_PLAYER_ENUM(v, n) { .value = MEDIA_PLAYER_##v, .name = n }
 #define MEDIA_PLAYER_SPU_MIN -1
 #define MEDIA_PLAYER_SPU_MAX 0x1FFF
 
@@ -24,14 +24,129 @@
 #define MEDIA_PLAYER_TELETEXT_MAX 999
 
 struct js_media_player {
+	GSource source;
 	struct media_player *player;
+	JSObjectRef callback;
+	JSContextRef context;
+	JSObjectRef this;
+	GList *events;
 };
 
 static const struct javascript_enum media_player_state_enum[] = {
-	MEDIA_PLAYER_STATE(STOPPED,	"stop"),
-	MEDIA_PLAYER_STATE(PLAYING,	"play"),
-	MEDIA_PLAYER_STATE(PAUSED,	"pause"),
+	MEDIA_PLAYER_ENUM(STOPPED, "stop"),
+	MEDIA_PLAYER_ENUM(PLAYING, "play"),
+	MEDIA_PLAYER_ENUM(PAUSED,  "pause"),
 	{}
+};
+
+static const struct javascript_enum media_player_es_action_enum[] = {
+	MEDIA_PLAYER_ENUM(ES_ADDED,   "add"),
+	MEDIA_PLAYER_ENUM(ES_DELETED, "del"),
+	{}
+};
+
+static const struct javascript_enum media_player_es_type_enum[] = {
+	MEDIA_PLAYER_ENUM(ES_UNKNOWN, "unknown"),
+	MEDIA_PLAYER_ENUM(ES_AUDIO,   "audio"),
+	MEDIA_PLAYER_ENUM(ES_VIDEO,   "video"),
+	MEDIA_PLAYER_ENUM(ES_TEXT,    "text"),
+	{}
+};
+
+struct media_player_es_event {
+	enum media_player_es_action action;
+	enum media_player_es_type type;
+	int pid;
+};
+
+void js_media_player_es_changed_cb(void *data,
+		enum media_player_es_action action,
+		enum media_player_es_type type, int pid)
+{
+	struct js_media_player *priv = (struct js_media_player *)data;
+	struct media_player_es_event *event;
+
+	if (!priv)
+		return;
+
+	event = g_new0(struct media_player_es_event, 1);
+	if (!event)
+		return;
+
+	event->action = action;
+	event->type = type;
+	event->pid = pid;
+	priv->events = g_list_append(priv->events, event);
+}
+
+static gboolean media_player_source_prepare(GSource *source, gint *timeout)
+{
+	if (timeout)
+		*timeout = -1;
+
+	return FALSE;
+}
+
+static gboolean media_player_source_check(GSource *source)
+{
+	struct js_media_player *priv = (struct js_media_player *)source;
+	if (priv && g_list_first(priv->events))
+		return TRUE;
+
+	return FALSE;
+}
+
+static void media_player_send_es_event(struct js_media_player *priv,
+		struct media_player_es_event *event)
+{
+	JSValueRef exception = NULL;
+	JSValueRef args[3];
+
+	args[0] = javascript_enum_to_string(priv->context,
+			media_player_es_action_enum, event->action,
+			&exception);
+	args[1] = javascript_enum_to_string(priv->context,
+			media_player_es_type_enum, event->type,
+			&exception);
+	args[2] = JSValueMakeNumber(priv->context, event->pid);
+	(void)JSObjectCallAsFunction(priv->context, priv->callback,
+			priv->this, G_N_ELEMENTS(args), args, &exception);
+	if (exception)
+		g_warning("%s: exception in es changed callback", __func__);
+}
+
+static gboolean media_player_source_dispatch(GSource *source, GSourceFunc callback,
+		gpointer user_data)
+{
+	struct js_media_player *priv = (struct js_media_player *)source;
+	GList *node = priv ? g_list_first(priv->events) : NULL;
+	struct media_player_es_event *event = node ? node->data : NULL;
+
+	if (event) {
+		if (priv->context && priv->callback)
+			media_player_send_es_event(priv, event);
+		priv->events = g_list_remove(priv->events, event);
+		g_free(event);
+	}
+
+	if (callback)
+		return callback(user_data);
+
+	return TRUE;
+}
+
+static void media_player_source_finalize(GSource *source)
+{
+	struct js_media_player *priv = (struct js_media_player *)source;
+
+	g_list_free_full(priv->events, g_free);
+}
+
+static GSourceFuncs media_player_source_funcs = {
+	.prepare = media_player_source_prepare,
+	.check = media_player_source_check,
+	.dispatch = media_player_source_dispatch,
+	.finalize = media_player_source_finalize,
 };
 
 static JSValueRef js_media_player_get_uri(JSContextRef context,
@@ -418,6 +533,54 @@ static bool js_media_player_set_teletext(JSContextRef context,
 	return true;
 }
 
+static JSValueRef js_media_player_get_on_es_changed(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	return priv->callback;
+}
+
+static bool js_media_player_set_on_es_changed(JSContextRef context, JSObjectRef object,
+		JSStringRef name, JSValueRef value, JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+	int err;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
+
+	if (priv->callback)
+		JSValueUnprotect(context, priv->callback);
+
+	priv->callback = JSValueToObject(context, value, exception);
+	if (!priv->callback) {
+		javascript_set_exception_text(context, exception,
+			"failed to set on es changed");
+		return false;
+	}
+	JSValueProtect(context, priv->callback);
+
+	err = media_player_set_es_changed_callback(priv->player,
+			js_media_player_es_changed_cb, priv);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to set es changed callback");
+		return false;
+	}
+
+	return true;
+}
+
 static const JSStaticValue media_player_properties[] = {
 	{
 		.name = "uri",
@@ -466,6 +629,12 @@ static const JSStaticValue media_player_properties[] = {
 		.getProperty = js_media_player_get_teletext,
 		.setProperty = js_media_player_set_teletext,
 		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "onEsChanged",
+		.getProperty = js_media_player_get_on_es_changed,
+		.setProperty = js_media_player_set_on_es_changed,
+		.attributes = kJSPropertyAttributeNone,
 	},
 	{}
 };
@@ -706,9 +875,29 @@ static const JSStaticFunction media_player_functions[] = {
 	{}
 };
 
+static void media_player_initialize(JSContextRef context, JSObjectRef object)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+
+	priv->this = object;
+}
+
+static void media_player_finalize(JSObjectRef object)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+
+	if (priv->callback) {
+		media_player_set_es_changed_callback(priv->player,
+				NULL, priv);
+		JSValueUnprotect(priv->context, priv->callback);
+	}
+	g_source_destroy(&priv->source);
+}
 
 static const JSClassDefinition media_player_classdef = {
 	.className = "MediaPlayer",
+	.initialize = media_player_initialize,
+	.finalize = media_player_finalize,
 	.staticValues = media_player_properties,
 	.staticFunctions = media_player_functions,
 };
@@ -718,8 +907,10 @@ static JSObjectRef javascript_media_player_create(
 	struct javascript_userdata *user_data)
 {
 	struct js_media_player *priv;
+	GSource *source;
 
-	priv = g_new0(struct js_media_player, 1);
+	source = g_source_new(&media_player_source_funcs, sizeof(*priv));
+	priv = (struct js_media_player *)source;
 	if (!priv)
 		return NULL;
 
@@ -727,9 +918,13 @@ static JSObjectRef javascript_media_player_create(
 	if (!priv->player)
 		goto cleanup;
 
-	return JSObjectMake(js, class, priv);
+	priv->callback = NULL;
+	priv->context = js;
+
+	g_source_attach(source, g_main_loop_get_context(user_data->loop));
+	return JSObjectMake(js, class, source);
 cleanup:
-	g_free(priv);
+	g_source_destroy(source);
 	return NULL;
 }
 
