@@ -116,6 +116,9 @@ static void on_es_changed(const struct libvlc_event_t *event, void *data)
 		case libvlc_MediaPlayerESDeleted:
 			action = MEDIA_PLAYER_ES_DELETED;
 			break;
+		case libvlc_MediaPlayerESSelected:
+			action = MEDIA_PLAYER_ES_SELECTED;
+			break;
 		default:
 			return;
 	}
@@ -215,6 +218,8 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerESAdded,
 			on_es_changed, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerESDeleted,
+			on_es_changed, player);
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerESSelected,
 			on_es_changed, player);
 
 #ifdef ENABLE_LIBTNJ3324

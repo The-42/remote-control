@@ -184,6 +184,7 @@ enum media_player_state {
 enum media_player_es_action {
 	MEDIA_PLAYER_ES_ADDED,
 	MEDIA_PLAYER_ES_DELETED,
+	MEDIA_PLAYER_ES_SELECTED,
 };
 
 enum media_player_es_type {

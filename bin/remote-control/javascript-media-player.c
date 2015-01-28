@@ -42,8 +42,9 @@ static const struct javascript_enum media_player_state_enum[] = {
 };
 
 static const struct javascript_enum media_player_es_action_enum[] = {
-	MEDIA_PLAYER_ENUM(ES_ADDED,   "add"),
-	MEDIA_PLAYER_ENUM(ES_DELETED, "del"),
+	MEDIA_PLAYER_ENUM(ES_ADDED,    "add"),
+	MEDIA_PLAYER_ENUM(ES_DELETED,  "del"),
+	MEDIA_PLAYER_ENUM(ES_SELECTED, "sel"),
 	{}
 };
 
