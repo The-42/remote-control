@@ -223,6 +223,12 @@ int media_player_get_state(struct media_player *player,
 		enum media_player_state *statep);
 int media_player_get_mute(struct media_player *player, bool *mute);
 int media_player_set_mute(struct media_player *player, bool mute);
+int media_player_get_audio_track_count(struct media_player *player, int *count);
+int media_player_get_audio_track_pid(struct media_player *player, int pos, int *pid);
+/* Return value name will be allocated! */
+int media_player_get_audio_track_name(struct media_player *player, int pid, char **name);
+int media_player_get_audio_track(struct media_player *player, int *pid);
+int media_player_set_audio_track(struct media_player *player, int pid);
 int media_player_get_spu_count(struct media_player *player, int *count);
 int media_player_get_spu_pid(struct media_player *player, int pos, int *pid);
 /* Return value name will be allocated! */

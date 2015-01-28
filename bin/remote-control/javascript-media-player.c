@@ -19,6 +19,8 @@
 #define MEDIA_PLAYER_ENUM(v, n) { .value = MEDIA_PLAYER_##v, .name = n }
 #define MEDIA_PLAYER_SPU_MIN -1
 #define MEDIA_PLAYER_SPU_MAX 0x1FFF
+#define MEDIA_PLAYER_PID_MIN -1
+#define MEDIA_PLAYER_PID_MAX 0x1FFF
 
 #define MEDIA_PLAYER_TELETEXT_MIN 0
 #define MEDIA_PLAYER_TELETEXT_MAX 999
@@ -410,6 +412,78 @@ static bool js_media_player_set_mute(JSContextRef context,
 	return err == 0;
 }
 
+static JSValueRef js_media_player_get_audio_track(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+	int err, pid;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = media_player_get_audio_track(priv->player, &pid);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get audio track");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, pid);
+}
+
+static bool js_media_player_set_audio_track(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef value,
+		JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+	int err, pid;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return false;
+	}
+
+	err = javascript_int_from_number(context, value, MEDIA_PLAYER_PID_MIN,
+			MEDIA_PLAYER_PID_MAX, &pid, exception);
+	if (err)
+		return false;
+
+	err = media_player_set_audio_track(priv->player, pid);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to set audio track");
+		return false;
+	}
+
+	return true;
+}
+
+static JSValueRef js_media_player_get_audio_track_count(JSContextRef context,
+		JSObjectRef object, JSStringRef name, JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+	int err, count;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	err = media_player_get_audio_track_count(priv->player, &count);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get audio track count");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, count);
+}
+
 static JSValueRef js_media_player_get_subtitle(JSContextRef context,
 		JSObjectRef object, JSStringRef name, JSValueRef *exception)
 {
@@ -613,6 +687,18 @@ static const JSStaticValue media_player_properties[] = {
 		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{
+		.name = "audioTrack",
+		.getProperty = js_media_player_get_audio_track,
+		.setProperty = js_media_player_set_audio_track,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "audioTrackCount",
+		.getProperty = js_media_player_get_audio_track_count,
+		.attributes = kJSPropertyAttributeReadOnly |
+			kJSPropertyAttributeDontDelete,
+	},
+	{
 		.name = "subtitle",
 		.getProperty = js_media_player_get_subtitle,
 		.setProperty = js_media_player_set_subtitle,
@@ -725,6 +811,95 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 			"failed to set output window");
 
 	return NULL;
+}
+
+static JSValueRef js_media_player_get_audio_track_pid(JSContextRef context,
+		JSObjectRef function, JSObjectRef object,
+		size_t argc, const JSValueRef argv[],
+		JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+	int err, pos, pid;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	switch (argc) {
+	case 1: /* Index of audio track */
+		err = javascript_int_from_number(context, argv[0],
+				MEDIA_PLAYER_PID_MIN, MEDIA_PLAYER_PID_MAX,
+				&pos, exception);
+		if (err)
+			return NULL;
+		break;
+	default:
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+	err = media_player_get_audio_track_pid(priv->player, pos, &pid);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get audio track name");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, pid);
+}
+
+static JSValueRef js_media_player_get_audio_track_name(JSContextRef context,
+		JSObjectRef function, JSObjectRef object,
+		size_t argc, const JSValueRef argv[],
+		JSValueRef *exception)
+{
+	struct js_media_player *priv = JSObjectGetPrivate(object);
+	char *name = NULL;
+	JSValueRef ret;
+	int err, pid;
+
+	if (!priv) {
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	switch (argc) {
+	case 0: /* Current audio track pid */
+		err = media_player_get_audio_track(priv->player, &pid);
+		if (err) {
+			javascript_set_exception_text(context, exception,
+				"failed to get current audio track");
+			return NULL;
+		}
+		break;
+	case 1: /* Audio track pid */
+		err = javascript_int_from_number(context, argv[0],
+				MEDIA_PLAYER_PID_MIN, MEDIA_PLAYER_PID_MAX,
+				&pid, exception);
+		if (err)
+			return NULL;
+		break;
+	default:
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+	err = media_player_get_audio_track_name(priv->player, pid, &name);
+	if (err) {
+		javascript_set_exception_text(context, exception,
+			"failed to get audio track name");
+		return NULL;
+	}
+
+	ret = javascript_make_string(context, name, exception);
+	g_free(name);
+
+	return ret;
 }
 
 static JSValueRef js_media_player_get_subtitle_pid(JSContextRef context,
@@ -855,6 +1030,16 @@ static const JSStaticFunction media_player_functions[] = {
 	{
 		.name = "setWindow",
 		.callAsFunction = js_media_player_set_window,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "getAudioTrackPid",
+		.callAsFunction = js_media_player_get_audio_track_pid,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},
+	{
+		.name = "getAudioTrackName",
+		.callAsFunction = js_media_player_get_audio_track_name,
 		.attributes = kJSPropertyAttributeDontDelete,
 	},
 	{

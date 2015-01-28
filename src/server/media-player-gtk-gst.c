@@ -1767,6 +1767,31 @@ int media_player_set_mute(struct media_player *player, bool mute)
 	return -ENOSYS;
 }
 
+int media_player_get_audio_track_count(struct media_player *player, int *count)
+{
+	return -ENOSYS;
+}
+
+int media_player_get_audio_track_pid(struct media_player *player, int pos, int *pid)
+{
+	return -ENOSYS;
+}
+
+int media_player_get_audio_track_name(struct media_player *player, int pid, char **name)
+{
+	return -ENOSYS;
+}
+
+int media_player_get_audio_track(struct media_player *player, int *pid)
+{
+	return -ENOSYS;
+}
+
+int media_player_set_audio_track(struct media_player *player, int pid)
+{
+	return -ENOSYS;
+}
+
 int media_player_get_spu_count(struct media_player *player, int *count)
 {
 	return -ENOSYS;

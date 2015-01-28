@@ -536,6 +536,85 @@ int media_player_set_mute(struct media_player *player, bool mute)
 	return 0;
 }
 
+int media_player_get_audio_track_count(struct media_player *player, int *count)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+	g_return_val_if_fail(count != NULL, -EINVAL);
+
+	*count = libvlc_audio_get_track_count(player->player);
+	if (*count < 0)
+		*count = 0;
+
+	return 0;
+}
+
+int media_player_get_audio_track_pid(struct media_player *player, int pos, int *pid)
+{
+	libvlc_track_description_t *track_list;
+	libvlc_track_description_t *track;
+	int ret = -ENOENT;
+
+	g_return_val_if_fail(player != NULL, -EINVAL);
+	g_return_val_if_fail(pid != NULL, -EINVAL);
+
+	track_list = libvlc_audio_get_track_description(player->player);
+	track = track_list;
+	while (track && pos-- > 0)
+		track = track->p_next;
+
+	if (!track)
+		goto cleanup;
+
+	*pid = track->i_id;
+	ret = 0;
+cleanup:
+	if (track_list)
+		libvlc_track_description_list_release(track_list);
+	return ret;
+}
+
+int media_player_get_audio_track_name(struct media_player *player, int pid, char **name)
+{
+	libvlc_track_description_t *track_list;
+	libvlc_track_description_t *track;
+	int ret = 0;
+
+	if (!name)
+		return -EINVAL;
+
+	track_list = libvlc_audio_get_track_description(player->player);
+	track = track_list;
+	while (track) {
+		if (pid == track->i_id) {
+			*name = g_strdup(track->psz_name);
+			goto cleanup;
+		}
+		track = track->p_next;
+	}
+	ret = -ENOENT;
+cleanup:
+	if (track_list)
+		libvlc_track_description_list_release(track_list);
+	return ret;
+}
+
+int media_player_get_audio_track(struct media_player *player, int *pid)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+	g_return_val_if_fail(pid != NULL, -EINVAL);
+
+	*pid = libvlc_audio_get_track(player->player);
+
+	return 0;
+}
+
+int media_player_set_audio_track(struct media_player *player, int pid)
+{
+	g_return_val_if_fail(player != NULL, -EINVAL);
+
+	return libvlc_audio_set_track(player->player, pid);
+}
+
 int media_player_get_spu_count(struct media_player *player, int *count)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
