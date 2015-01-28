@@ -38,7 +38,6 @@ struct media_player {
 	libvlc_media_player_t *player;
 	libvlc_event_manager_t *evman;
 	libvlc_media_t *media;
-	libvlc_track_description_t *spu_list;
 
 #ifdef ENABLE_LIBTNJ3324
 	struct tnj3324_t tnj3324;
@@ -135,15 +134,6 @@ static void on_es_changed(const struct libvlc_event_t *event, void *data)
 	}
 	pid = event->u.media_player_es_changed.i_id;
 	es_changed_cb(es_changed_data, action, type, pid);
-}
-
-static void media_player_update_spu_list(struct media_player *player)
-{
-	libvlc_track_description_t *track_list;
-	track_list = libvlc_video_get_spu_description(player->player);
-	if (player->spu_list)
-		libvlc_track_description_list_release(player->spu_list);
-	player->spu_list = track_list;
 }
 
 int media_player_create(struct media_player **playerp, GKeyFile *config)
@@ -256,8 +246,6 @@ int media_player_free(struct media_player *player)
 	libvlc_media_player_release(player->player);
 	libvlc_media_release(player->media);
 	libvlc_release(player->vlc);
-	if (player->spu_list)
-		libvlc_track_description_list_release(player->spu_list);
 
 	gdk_window_destroy(player->window);
 
@@ -416,7 +404,6 @@ int media_player_play(struct media_player *player)
 
 	libvlc_media_player_set_media(player->player, player->media);
 	libvlc_media_player_play(player->player);
-	media_player_update_spu_list(player);
 	return 0;
 }
 
@@ -629,38 +616,49 @@ int media_player_get_spu_count(struct media_player *player, int *count)
 
 int media_player_get_spu_pid(struct media_player *player, int pos, int *pid)
 {
+	libvlc_track_description_t *track_list;
 	libvlc_track_description_t *track;
+	int ret = -ENOENT;
 
 	g_return_val_if_fail(player != NULL, -EINVAL);
 	g_return_val_if_fail(pid != NULL, -EINVAL);
 
-	media_player_update_spu_list(player);
-	track = player->spu_list;
+	track_list = libvlc_video_get_spu_description(player->player);
+	track = track_list;
 	while (track && pos-- > 0)
 		track = track->p_next;
 
 	if (!track)
-		return -ENOENT;
+		goto cleanup;
 
 	*pid = track->i_id;
-
-	return 0;
+	ret = 0;
+cleanup:
+	if (track_list)
+		libvlc_track_description_list_release(track_list);
+	return ret;
 }
 
 int media_player_get_spu_name(struct media_player *player, int pid, char **name)
 {
+	libvlc_track_description_t *track_list;
 	libvlc_track_description_t *track;
+	int ret = 0;
 
-	media_player_update_spu_list(player);
-	track = player->spu_list;
+	track_list = libvlc_video_get_spu_description(player->player);
+	track = track_list;
 	while (track) {
 		if (pid == track->i_id) {
 			*name = g_strdup(track->psz_name);
-			return 0;
+			goto cleanup;
 		}
 		track = track->p_next;
 	}
-	return -ENOENT;
+	ret = -ENOENT;
+cleanup:
+	if (track_list)
+		libvlc_track_description_list_release(track_list);
+	return ret;
 }
 
 int media_player_get_spu(struct media_player *player, int *pid)
