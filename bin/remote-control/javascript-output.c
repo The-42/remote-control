@@ -166,7 +166,7 @@ static JSValueRef js_output_set(
 		return NULL;
 	}
 
-	/* We need an even number of arguments */
+	/* We need an odd number of arguments: values with intervals */
 	if ((argc & 1) == 0) {
 		javascript_set_exception_text(context, exception,
 			"invalid argument count");
@@ -197,8 +197,9 @@ static JSValueRef js_output_set(
 				return NULL;
 			}
 			set->duration = duration;
-		} else
+		} else {
 			set->duration = 0;
+		}
 		channel->set_count += 1;
 	}
 
