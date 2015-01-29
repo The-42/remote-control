@@ -326,7 +326,7 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		libvlc_video_set_deinterlace(player->player, NULL);
 	} else {
 #if defined(__arm__)
-		libvlc_video_set_deinterlace(player->player, NULL);
+		libvlc_video_set_deinterlace(player->player, "blend");
 #else
 		libvlc_video_set_deinterlace(player->player, "linear");
 #endif
