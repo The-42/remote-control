@@ -60,7 +60,8 @@ static gboolean sound_manger_gst_bus_event(GstBus *bus, GstMessage *msg,
 	return TRUE;
 }
 
-int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
+int sound_manager_create(struct sound_manager **managerp, struct audio *audio,
+		GKeyFile *config)
 {
 	struct sound_manager *manager;
 	char *argv[] = { "remote-control", NULL };

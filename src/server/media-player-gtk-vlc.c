@@ -155,9 +155,9 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 		volume = 100;
 	}
 	if (libvlc_audio_set_volume(player->player, volume))
-		g_warning("Failed to set VLC base volume to %d", volume);
+		g_warning("Failed to set media player VLC base volume to %d", volume);
 	else
-		g_info("Set VLC base volume to %d", volume);
+		g_info("Set media player VLC base volume to %d", volume);
 
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerPlaying,
 			on_playing, player);

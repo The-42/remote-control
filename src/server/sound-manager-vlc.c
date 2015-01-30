@@ -15,8 +15,6 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-#define LIBVLC_AUDIO_VOLUME_MAX 200
-
 struct sound_manager {
 	libvlc_instance_t *vlc;
 	libvlc_media_player_t *player;
@@ -76,12 +74,15 @@ static void on_state_changed(const struct libvlc_event_t *evt, void *context)
 	}
 }
 
-int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
+int sound_manager_create(struct sound_manager **managerp, struct audio *audio,
+		GKeyFile *config)
 {
 	const char *const argv[] = { "--file-caching", "0", NULL };
 	struct sound_manager *manager;
 	libvlc_event_manager_t *evt_manager;
+	GError *err = NULL;
 	int argc = 2;
+	int volume;
 
 	if (!managerp)
 		return -EINVAL;
@@ -92,8 +93,18 @@ int sound_manager_create(struct sound_manager **managerp, struct audio *audio)
 
 	manager->vlc = libvlc_new(argc, argv);
 	manager->player = libvlc_media_player_new(manager->vlc);
-	libvlc_audio_set_volume(manager->player, LIBVLC_AUDIO_VOLUME_MAX);
+
 	manager->audio = audio;
+
+	volume = g_key_file_get_integer(config, "media-player", "volume", &err);
+	if (err) {
+		g_clear_error(&err);
+		volume = 100;
+	}
+	if (libvlc_audio_set_volume(manager->player, volume))
+		g_warning("Failed to set sound manager VLC base volume to %d", volume);
+	else
+		g_info("Set sound manager VLC base volume to %d", volume);
 
 	/* Attach to the events that signal a state change of the player */
 	evt_manager = libvlc_media_player_event_manager(manager->player);
