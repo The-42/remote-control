@@ -407,6 +407,7 @@ int media_player_play(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
+	libvlc_media_player_stop(player->player);
 	libvlc_media_player_set_media(player->player, player->media);
 	libvlc_media_player_play(player->player);
 	return 0;
