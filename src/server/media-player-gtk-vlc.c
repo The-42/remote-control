@@ -74,6 +74,13 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 	player->state = MEDIA_PLAYER_STOPPED;
 }
 
+static void on_paused(const struct libvlc_event_t *event, void *data)
+{
+	struct media_player *player = data;
+
+	player->state = MEDIA_PLAYER_PAUSED;
+}
+
 static void on_vout(const struct libvlc_event_t *event, void *data)
 {
 	struct media_player *player = data;
@@ -163,6 +170,8 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 			on_playing, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerStopped,
 			on_stopped, player);
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerPaused,
+			on_paused, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerVout,
 			on_vout, player);
 
@@ -375,6 +384,7 @@ int media_player_pause(struct media_player *player)
 		return -ENOTSUP;
 
 	libvlc_media_player_set_pause(player->player, TRUE);
+	player->state = MEDIA_PLAYER_PAUSED;
 
 	return 0;
 }
