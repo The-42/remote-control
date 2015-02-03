@@ -1,5 +1,26 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.9.14 (2015-02-03)
 ==========================
+* server
+  - vlc: Report pause state
+  - vlc: Activate deinterlacer for arm
+  - media-player: Stop vlc stream before setting new media
+  - audio-manager: vlc: Use configured values for volume
+  - vlc: Don't keep global spu list
+
+* javascript
+  - Add support for selecting audio tracks
+  - Add support for es changed callback
+  - Add support for hiding cursor if no movement
+  - Add support for teletext
+  - Add support for getting voip display and user name
+  - Add support for selecting subtitles
+  - Add mute property for MediaPlayer
+  - Implement the backlight enable getter
+  - output: sysfs: Add missing close
+  - output: Create all outputs and retry prepare on error
+
+* backlight
+  -  Fix sysfs state check
 
 Release 0.9.12 (2014-12-12)
 ==========================
