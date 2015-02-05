@@ -211,6 +211,12 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 			on_playing, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerStopped,
 			on_stopped, player);
+	/* stream is stopped if we reached the end */
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerEndReached,
+			on_stopped, player);
+	/* stream is stopped if we encounter an error */
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerEncounteredError,
+			on_stopped, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerPaused,
 			on_paused, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerVout,
