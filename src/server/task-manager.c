@@ -129,7 +129,8 @@ static int create_environment(gchar ***envpp)
 	} environment[] = {
 		{ "DISPLAY", ":0" },
 		{ "HOME", "/tmp" },
-		{ "http_proxy", NULL }
+		{ "http_proxy", NULL },
+		{ "DBUS_SESSION_BUS_ADDRESS", NULL}
 	};
 	gchar **envp;
 	int i,j;
