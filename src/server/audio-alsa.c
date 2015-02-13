@@ -507,6 +507,15 @@ static void audio_update_voip(struct audio *audio, const struct ucm_state *s)
 		voip_set_capture(voip, card);
 		g_free(name);
 	}
+	snprintf(identifier, sizeof(identifier), "CaptureGain/%s", s->device);
+	if (!snd_use_case_get(audio->ucm, identifier, (const char **)&name) ||
+			!snd_use_case_get(audio->ucm, "CaptureGain",
+					(const char **)&name)) {
+		float gain = atof(name);
+		if (gain != 0.0)
+			voip_set_capture_gain(voip, gain);
+		g_free(name);
+	}
 }
 
 int audio_set_state(struct audio *audio, enum audio_state state)
