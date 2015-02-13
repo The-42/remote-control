@@ -12,6 +12,7 @@
 
 #include <ctype.h>
 #include <linphonecore.h>
+#include <lpconfig.h>
 #include <glib.h>
 
 #include "remote-control-stub.h"
@@ -717,4 +718,21 @@ int voip_set_capture(struct voip *voip, const char *card_name)
 	else
 		g_debug("voip-linphone: set capture device to: %s", card_name);
 	return err;
+}
+
+int voip_set_capture_gain(struct voip *voip, float gain)
+{
+	struct _LpConfig *conf;
+
+	if (!voip)
+		return -EINVAL;
+
+	conf = linphone_core_get_config(voip->core);
+	if (!conf) {
+		g_warning("voip-linphone: failed to get config while setting capture gain");
+		return -EINVAL;
+	}
+
+	lp_config_set_float(conf, "sound", "mic_gain", gain);
+	return 0;
 }

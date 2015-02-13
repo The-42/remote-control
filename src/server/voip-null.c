@@ -80,3 +80,8 @@ int voip_set_capture(struct voip *voip, const char *card)
 {
 	return -ENOSYS;
 }
+
+int voip_set_capture_gain(struct voip *voip, float gain)
+{
+	return -ENOSYS;
+}
