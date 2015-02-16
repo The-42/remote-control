@@ -307,6 +307,10 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	 */
 	split_uri = g_strsplit(uri, " ", 0);
 	location = split_uri[0];
+	if (!location) {
+		g_strfreev(split_uri);
+		return -EINVAL;
+	}
 
 	url = g_uri_new(location);
 	if (!url) {
@@ -414,6 +418,10 @@ int media_player_play(struct media_player *player)
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
 	libvlc_media_player_stop(player->player);
+
+	if (!player->media)
+		return -EINVAL;
+
 	libvlc_media_player_set_media(player->player, player->media);
 	libvlc_media_player_play(player->player);
 	return 0;
