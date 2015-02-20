@@ -31,7 +31,7 @@ static const GtkBorder border = {
 };
 
 static const gint max_page_chars = 5;
-static const double scale = 1.0;
+static const double scale = 2.0;
 static const gint shadow = 4;
 
 enum {
@@ -42,6 +42,7 @@ enum {
 
 typedef struct {
 	PopplerDocument *document;
+	cairo_surface_t *surface;
 	GtkDrawingArea *canvas;
 	GtkToolItem *forward;
 	GtkToolbar *toolbar;
@@ -69,15 +70,6 @@ static void gtk_pdf_view_remove_child(GtkContainer *container, GtkWidget *child)
 	g_debug("< %s()", __func__);
 }
 
-static void update_canvas_size(GtkWidget *widget, double width, double height)
-{
-	gint w = spacing.left + border.left + width + border.right + shadow + spacing.right;
-	gint h = spacing.top + border.top + height + border.bottom + shadow + spacing.bottom;
-
-	gtk_widget_set_size_request(widget, w, h);
-	gtk_widget_queue_draw(widget);
-}
-
 static void update_toolbar(GtkWidget *widget)
 {
 	GtkPdfViewPrivate *priv;
@@ -99,45 +91,85 @@ static void update_toolbar(GtkWidget *widget)
 			priv->page < (num_pages - 1));
 }
 
-static void goto_page(GtkPdfView *view, gint pgno)
+static void goto_page(GtkPdfView *view, gint pgno, gboolean force)
 {
 	GtkPdfViewPrivate *priv = GTK_PDF_VIEW_GET_PRIVATE(view);
+	PopplerPage *page;
+	gint num_pages;
+	double height;
+	double width;
+	cairo_t *cr;
+	gint w, h;
 
-	if (priv->document) {
-		gint num_pages = poppler_document_get_n_pages(priv->document);
-		PopplerPage *page;
-		double height;
-		double width;
+	if (!priv->document)
+		return;
+	num_pages = poppler_document_get_n_pages(priv->document);
+	pgno = CLAMP(pgno, 0, num_pages - 1);
+	if (pgno == priv->page && priv->surface && !force)
+		return;
 
-		pgno = CLAMP(pgno, 0, num_pages - 1);
-		if (pgno != priv->page) {
-			g_debug("switching to page %u", priv->page);
-			priv->page = pgno;
+	g_debug("switching to page %u", priv->page);
+	page = poppler_document_get_page(priv->document, pgno);
+	if (!page)
+		return;
 
-			page = poppler_document_get_page(priv->document,
-					priv->page);
-			poppler_page_get_size(page, &width, &height);
-			g_object_unref(page);
+	priv->page = pgno;
+	poppler_page_get_size(page, &width, &height);
 
-			update_canvas_size(GTK_WIDGET(priv->canvas),
-					width * scale, height * scale);
-			update_toolbar(GTK_WIDGET(view));
-		}
-	}
+	width *= scale;
+	height *= scale;
+
+	w = spacing.left + border.left + width + border.right + shadow +
+			spacing.right;
+	h = spacing.top + border.top + height + border.bottom + shadow +
+			spacing.bottom;
+
+	if (priv->surface)
+		cairo_surface_destroy(priv->surface);
+	priv->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+	gtk_widget_set_size_request(GTK_WIDGET(priv->canvas), w, h);
+
+	cr = cairo_create(priv->surface);
+
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_rectangle(cr, spacing.left, spacing.top,
+			width + border.left + border.right,
+			height + border.top + border.bottom);
+	cairo_rectangle(cr, spacing.left + shadow,
+			spacing.top + shadow,
+			width + border.left + border.right,
+			height + border.top + border.bottom);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	cairo_rectangle(cr, spacing.left + border.left,
+			spacing.top + border.top,
+			width, height);
+	cairo_fill(cr);
+
+	cairo_scale(cr, scale, scale);
+	poppler_page_render(page, cr);
+
+	cairo_destroy(cr);
+
+	g_object_unref(page);
+
+	gtk_widget_queue_draw(GTK_WIDGET(priv->canvas));
+	update_toolbar(GTK_WIDGET(view));
 }
 
 static void on_back_clicked(GtkWidget *widget, gpointer data)
 {
 	GtkPdfViewPrivate *priv = GTK_PDF_VIEW_GET_PRIVATE(data);
 
-	goto_page(GTK_PDF_VIEW(data), priv->page - 1);
+	goto_page(GTK_PDF_VIEW(data), priv->page - 1, FALSE);
 }
 
 static void on_forward_clicked(GtkWidget *widget, gpointer data)
 {
 	GtkPdfViewPrivate *priv = GTK_PDF_VIEW_GET_PRIVATE(data);
 
-	goto_page(GTK_PDF_VIEW(data), priv->page + 1);
+	goto_page(GTK_PDF_VIEW(data), priv->page + 1, FALSE);
 }
 
 static void on_page_activate(GtkWidget *widget, gpointer data)
@@ -155,7 +187,7 @@ static void on_page_activate(GtkWidget *widget, gpointer data)
 		return;
 	}
 
-	goto_page(GTK_PDF_VIEW(data), page - 1);
+	goto_page(GTK_PDF_VIEW(data), page - 1, FALSE);
 }
 
 static GtkWidget *gtk_pdf_view_create_toolbar(GtkPdfView *self)
@@ -209,60 +241,20 @@ static GtkWidget *gtk_pdf_view_create_toolbar(GtkPdfView *self)
 	return toolbar;
 }
 
-static gboolean on_canvas_expose(GtkWidget *widget, GdkEvent *event, gpointer data)
+#if GTK_CHECK_VERSION(2, 91, 0)
+static gboolean on_draw(GtkWidget *drawing_area, cairo_t *cr,
+		gpointer data)
 {
 	GtkPdfViewPrivate *priv = GTK_PDF_VIEW_GET_PRIVATE(data);
-	GdkWindow *window;
-	PopplerPage *page;
-	cairo_t *cairo;
 
-	if (priv->document) {
-		double height;
-		double width;
+	if (!priv->surface)
+		return TRUE;
 
-		window = gtk_widget_get_window(widget);
-		page = poppler_document_get_page(priv->document, priv->page);
-#if GTK_CHECK_VERSION(2, 91, 6)
-		cairo = gdk_cairo_create(window);
-#else
-		cairo = gdk_cairo_create(GDK_DRAWABLE(window));
-#endif
-
-		poppler_page_get_size(page, &width, &height);
-		width *= scale;
-		height *= scale;
-
-		/*
-		 * TODO: This can probably be optimized by only drawing the
-		 *       border where it is not overlapped by the actual PDF
-		 *       content.
-		 */
-
-		cairo_set_source_rgb(cairo, 0.0, 0.0, 0.0);
-		cairo_rectangle(cairo, spacing.left, spacing.top,
-				width + border.left + border.right,
-				height + border.top + border.bottom);
-		cairo_rectangle(cairo, spacing.left + shadow,
-				spacing.top + shadow,
-				width + border.left + border.right,
-				height + border.top + border.bottom);
-		cairo_fill(cairo);
-
-		cairo_set_source_rgb(cairo, 1.0, 1.0, 1.0);
-		cairo_rectangle(cairo, spacing.left + border.left,
-				spacing.top + border.top,
-				width, height);
-		cairo_fill(cairo);
-
-		cairo_scale(cairo, scale, scale);
-		poppler_page_render(page, cairo);
-
-		cairo_destroy(cairo);
-		g_object_unref(page);
-	}
-
+	cairo_set_source_surface (cr, priv->surface, 0, 0);
+	cairo_paint (cr);
 	return TRUE;
 }
+#endif
 
 static void gtk_pdf_view_init(GtkPdfView *self)
 {
@@ -287,12 +279,16 @@ static void gtk_pdf_view_init(GtkPdfView *self)
 	gtk_widget_set_app_paintable(canvas, TRUE);
 #if GTK_CHECK_VERSION(2, 91, 0)
 	g_signal_connect(G_OBJECT(canvas), "draw",
+			G_CALLBACK(on_draw), self);
 #else
-	g_signal_connect(G_OBJECT(canvas), "expose-event",
+#error "Needs to be implemented"
 #endif
-			G_CALLBACK(on_canvas_expose), self);
+#if GTK_CHECK_VERSION(3, 7, 8)
+	gtk_container_add(GTK_CONTAINER(window), canvas);
+#else
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(window),
 			canvas);
+#endif
 	gtk_widget_show(canvas);
 
 	gtk_box_pack_start(box, window, TRUE, TRUE, 0);
@@ -364,6 +360,8 @@ static void gtk_pdf_view_finalize(GObject *object)
 {
 	GtkPdfViewPrivate *priv = GTK_PDF_VIEW_GET_PRIVATE(object);
 
+	if (priv->surface)
+		cairo_surface_destroy(priv->surface);
 	g_object_unref(priv->document);
 	g_free(priv->title);
 
@@ -473,11 +471,8 @@ gboolean gtk_pdf_view_load_uri(GtkPdfView *view, const gchar *uri)
 	PopplerDocument *document;
 	GtkPdfViewPrivate *priv;
 	GError *error = NULL;
-	PopplerPage *page;
 	gint num_pages;
 	gchar *buffer;
-	double height;
-	double width;
 
 	g_return_val_if_fail(GTK_IS_PDF_VIEW(view), FALSE);
 	priv = GTK_PDF_VIEW_GET_PRIVATE(view);
@@ -504,17 +499,11 @@ gboolean gtk_pdf_view_load_uri(GtkPdfView *view, const gchar *uri)
 	priv->loading = FALSE;
 	g_object_notify(G_OBJECT(view), "loading");
 
-	page = poppler_document_get_page(priv->document, priv->page);
-	poppler_page_get_size(page, &width, &height);
-	g_object_unref(page);
-
 	buffer = g_strdup_printf(" / %u", num_pages);
 	gtk_label_set_text(priv->label, buffer);
 	g_free(buffer);
 
-	update_canvas_size(GTK_WIDGET(priv->canvas), width * scale,
-			height * scale);
-	update_toolbar(GTK_WIDGET(view));
+	goto_page(view, 0, TRUE);
 
 	return FALSE;
 }
