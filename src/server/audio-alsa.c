@@ -224,10 +224,7 @@ static int soundcard_control_set_volume(struct soundcard *card,
 	if (err < 0)
 		return err;
 
-	/* FIXME: for some unknown reason the control is muted
-	 *        before setting the volume. */
-	if (vol > 0)
-		snd_mixer_selem_set_playback_switch_all(elem, 1);
+	snd_mixer_selem_set_playback_switch_all(elem, vol > 0);
 
 	soundcard_mixer_close(card);
 	return 0;
