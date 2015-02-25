@@ -62,7 +62,7 @@ static gpointer cursor_movement_thread(gpointer user_data)
 			0, 0);
 
 	while (priv->timeout) {
-		const unsigned int mask = PointerMotionMask | ButtonPressMask;
+		const unsigned int mask = PointerMotionMask;
 		gint64 start;
 		XEvent event;
 		int ret;
