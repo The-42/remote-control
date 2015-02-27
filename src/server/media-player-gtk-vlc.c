@@ -15,6 +15,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <vlc/vlc.h>
+#include <vlc/libvlc_version.h>
 
 #ifdef ENABLE_LIBTNJ3324
 #include <tnj3324.h>
@@ -47,7 +48,92 @@ struct media_player {
 
 	media_player_es_changed_cb es_changed_cb;
 	void *es_changed_data;
+
+#if (LIBVLC_VERSION_INT < LIBVLC_VERSION(3, 0, 0, 0))
+	libvlc_track_description_t *audio_track_list;
+	libvlc_track_description_t *spu_track_list;
+	int audio_pid;
+	int spu_pid;
+#endif
 };
+
+#if (LIBVLC_VERSION_INT < LIBVLC_VERSION(3, 0, 0, 0))
+
+static void update_tracks(struct media_player *player,
+		libvlc_track_description_t *new_list,
+		libvlc_track_description_t **old_list,
+		enum media_player_es_type type,
+		int cur_pid, int *last_pid)
+{
+	media_player_es_changed_cb  es_changed_cb = player->es_changed_cb;
+	void * es_changed_data = player->es_changed_data;
+
+	if (*last_pid != cur_pid) {
+		if (es_changed_cb)
+			es_changed_cb(es_changed_data, MEDIA_PLAYER_ES_SELECTED,
+					type, cur_pid);
+		*last_pid = cur_pid;
+	}
+
+	if (es_changed_cb) {
+		libvlc_track_description_t *old_item;
+		libvlc_track_description_t *new_item;
+
+		old_item = *old_list;
+		while (old_item) {
+			new_item = new_list;
+			while (new_item && new_item->i_id != old_item->i_id)
+				new_item = new_item->p_next;
+			if (!new_item)
+				es_changed_cb(es_changed_data,
+						MEDIA_PLAYER_ES_DELETED,
+						type, old_item->i_id);
+			old_item = old_item->p_next;
+		}
+		new_item = new_list;
+		while (new_item) {
+			old_item = *old_list;
+			while (old_item && old_item->i_id != new_item->i_id)
+				old_item = old_item->p_next;
+			if (!old_item)
+				es_changed_cb(es_changed_data,
+						MEDIA_PLAYER_ES_ADDED,
+						type, new_item->i_id);
+			new_item = new_item->p_next;
+		}
+	}
+
+	if (*old_list)
+		libvlc_track_description_list_release(*old_list);
+	*old_list = new_list;
+}
+
+static void do_clear_tracks(struct media_player *player)
+{
+	update_tracks(player, NULL, &player->audio_track_list,
+			MEDIA_PLAYER_ES_AUDIO,
+			-1, &player->audio_pid);
+	update_tracks(player, NULL, &player->spu_track_list,
+			MEDIA_PLAYER_ES_TEXT,
+			-1, &player->spu_pid);
+}
+
+static void do_check_tracks(struct media_player *player)
+{
+	if (!player->player)
+		return;
+
+	update_tracks(player, libvlc_audio_get_track_description(player->player),
+			&player->audio_track_list, MEDIA_PLAYER_ES_AUDIO,
+			libvlc_audio_get_track(player->player),
+			&player->audio_pid);
+	update_tracks(player, libvlc_video_get_spu_description(player->player),
+			&player->spu_track_list, MEDIA_PLAYER_ES_TEXT,
+			libvlc_video_get_spu(player->player),
+			&player->spu_pid);
+}
+
+#endif
 
 static gboolean hide_window(gpointer data)
 {
@@ -74,6 +160,9 @@ static void on_stopped(const struct libvlc_event_t *event, void *data)
 
 	g_idle_add(hide_window, player->window);
 	player->state = MEDIA_PLAYER_STOPPED;
+#if (LIBVLC_VERSION_INT < LIBVLC_VERSION(3, 0, 0, 0))
+	do_clear_tracks(player);
+#endif
 }
 
 static void on_paused(const struct libvlc_event_t *event, void *data)
@@ -90,6 +179,8 @@ static void on_vout(const struct libvlc_event_t *event, void *data)
 	if (event->u.media_player_vout.new_count > 0)
 		g_idle_add(show_window, player->window);
 }
+
+#if (LIBVLC_VERSION_INT >= LIBVLC_VERSION(3, 0, 0, 0))
 
 static void on_es_changed(const struct libvlc_event_t *event, void *data)
 {
@@ -139,6 +230,17 @@ static void on_es_changed(const struct libvlc_event_t *event, void *data)
 	es_changed_cb(es_changed_data, action, type, pid);
 }
 
+#else
+
+static void on_position_changed(const struct libvlc_event_t *event, void *data)
+{
+	struct media_player *player = data;
+
+	do_check_tracks(player);
+}
+
+#endif
+
 int media_player_create(struct media_player **playerp, GKeyFile *config)
 {
 	GdkWindowAttr attributes = {
@@ -171,6 +273,11 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 		return -ENOMEM;
 
 	player->state = MEDIA_PLAYER_STOPPED;
+
+#if (LIBVLC_VERSION_INT < LIBVLC_VERSION(3, 0, 0, 0))
+	player->audio_pid = -1;
+	player->spu_pid = -1;
+#endif
 
 	player->window = gdk_window_new(NULL, &attributes, GDK_WA_NOREDIR);
 	gdk_window_set_decorations(player->window, 0);
@@ -221,12 +328,17 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 			on_paused, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerVout,
 			on_vout, player);
+#if (LIBVLC_VERSION_INT >= LIBVLC_VERSION(3, 0, 0, 0))
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerESAdded,
 			on_es_changed, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerESDeleted,
 			on_es_changed, player);
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerESSelected,
 			on_es_changed, player);
+#else
+	libvlc_event_attach(player->evman, libvlc_MediaPlayerPositionChanged,
+			on_position_changed, player);
+#endif
 
 #ifdef ENABLE_LIBTNJ3324
 	i2cbus = g_key_file_get_integer(config, "media-player",
@@ -254,6 +366,12 @@ int media_player_free(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
+#if (LIBVLC_VERSION_INT < LIBVLC_VERSION(3, 0, 0, 0))
+	if (player->audio_track_list)
+		libvlc_track_description_list_release(player->audio_track_list);
+	if (player->spu_track_list)
+		libvlc_track_description_list_release(player->spu_track_list);
+#endif
 	libvlc_media_player_release(player->player);
 	libvlc_media_release(player->media);
 	libvlc_release(player->vlc);
