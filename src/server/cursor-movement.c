@@ -37,8 +37,8 @@ static void cursor_motion_wait_for_motion(struct cursor_movement *priv,
 		fds[0].fd = xfd;
 		fds[0].events = POLLIN;
 
-		err = poll(fds, 1, CURSOR_MOVEMENT_SLEEP);
-		if (err < 0 || fds[0].revents & POLLIN)
+		err = poll(fds, 1, CURSOR_MOVEMENT_SLEEP / 1000);
+		if (err < 0 || fds[0].revents & POLLIN || XPending(dpy))
 			return;
 	}
 }
