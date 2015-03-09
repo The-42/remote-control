@@ -85,7 +85,7 @@ void js_media_player_es_changed_cb(void *data,
 static gboolean media_player_source_prepare(GSource *source, gint *timeout)
 {
 	if (timeout)
-		*timeout = -1;
+		*timeout = 100;
 
 	return FALSE;
 }
@@ -125,11 +125,13 @@ static gboolean media_player_source_dispatch(GSource *source, GSourceFunc callba
 	GList *node = priv ? g_list_first(priv->events) : NULL;
 	struct media_player_es_event *event = node ? node->data : NULL;
 
-	if (event) {
+	while (event) {
 		if (priv->context && priv->callback)
 			media_player_send_es_event(priv, event);
 		priv->events = g_list_remove(priv->events, event);
 		g_free(event);
+		node = g_list_first(priv->events);
+		event = node ? node->data : NULL;
 	}
 
 	if (callback)
