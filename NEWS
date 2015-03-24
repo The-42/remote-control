@@ -1,5 +1,23 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.10.0 (2015-03-24)
 ==========================
+* browser
+  - Reworked displaying pdf
+
+* server
+  - Add support for es changed callback for vlc 2.0.7
+  - Don't only depend on events while grabing pointer
+  - Add voip interface to set capture gain
+  - audio: Really mute alsa mixer if volume is 0
+  - audio: Update voip capture gain if state changes
+  - vlc: Fix crashes due to unexpected state or uri
+  - vlc: Disable deinterlacer for arm
+  - media-player: Set stream status to stopped on stream end or error
+
+* javascript
+  - Report all pending es changed events during dispatch
+
+* task-manager
+  - Also inherit DBUS Address enviroment variable
 
 Release 0.9.14 (2015-02-03)
 ==========================
