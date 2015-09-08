@@ -312,6 +312,10 @@ static struct taskmanager *taskmanager_new(JSContextRef context,
 static void taskmanager_finalize(JSObjectRef object)
 {
 	struct taskmanager *tm = JSObjectGetPrivate(object);
+
+	if (tm->callback)
+		JSValueUnprotect(tm->context, tm->callback);
+
 	g_free(tm);
 }
 
