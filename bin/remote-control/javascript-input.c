@@ -362,6 +362,11 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 	if (input->callback)
 		JSValueUnprotect(context, input->callback);
 
+	if (JSValueIsNull(context, value)) {
+		input->callback = NULL;
+		return true;
+	}
+
 	input->callback = JSValueToObject(context, value, exception);
 	if (!input->callback) {
 		g_warning("%s: failed to assign callback", __func__);

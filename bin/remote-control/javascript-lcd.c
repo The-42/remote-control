@@ -661,6 +661,11 @@ static bool lcd_set_onevent(JSContextRef context, JSObjectRef object,
 	if (priv->receive_cb)
 		JSValueUnprotect(context, priv->receive_cb);
 
+	if (JSValueIsNull(context, value)) {
+		priv->callback = NULL;
+		return true;
+	}
+
 	priv->receive_cb = JSValueToObject(context, value, exception);
 	if (!priv->receive_cb) {
 		g_warning("%s: failed to assign callback", __func__);

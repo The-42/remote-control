@@ -639,6 +639,12 @@ static bool js_media_player_set_on_es_changed(JSContextRef context, JSObjectRef 
 	if (priv->callback)
 		JSValueUnprotect(context, priv->callback);
 
+	if (JSValueIsNull(context, value)) {
+		media_player_set_es_changed_callback(priv->player, NULL, priv);
+		priv->callback = NULL;
+		return true;
+	}
+
 	priv->callback = JSValueToObject(context, value, exception);
 	if (!priv->callback) {
 		javascript_set_exception_text(context, exception,

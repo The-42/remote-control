@@ -103,6 +103,11 @@ static bool taskmanager_set_onevent(JSContextRef context, JSObjectRef object,
 	if (tm->callback)
 		JSValueUnprotect(context, tm->callback);
 
+	if (JSValueIsNull(context, value)) {
+		tm->callback = NULL;
+		return true;
+	}
+
 	tm->callback = JSValueToObject(context, value, exception);
 	if (!tm->callback) {
 		g_warning("%s: failed to assign callback", __func__);
