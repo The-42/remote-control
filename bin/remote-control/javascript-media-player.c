@@ -99,11 +99,14 @@ static gboolean media_player_source_check(GSource *source)
 	return FALSE;
 }
 
-static void media_player_send_es_event(struct js_media_player *priv,
+static int media_player_send_es_event(struct js_media_player *priv,
 		struct media_player_es_event *event)
 {
 	JSValueRef exception = NULL;
 	JSValueRef args[3];
+
+	g_return_val_if_fail(priv->context != NULL, -EINVAL);
+	g_return_val_if_fail(event != NULL, -EINVAL);
 
 	args[0] = javascript_enum_to_string(priv->context,
 			media_player_es_action_enum, event->action,
@@ -114,8 +117,11 @@ static void media_player_send_es_event(struct js_media_player *priv,
 	args[2] = JSValueMakeNumber(priv->context, event->pid);
 	(void)JSObjectCallAsFunction(priv->context, priv->callback,
 			priv->this, G_N_ELEMENTS(args), args, &exception);
-	if (exception)
-		g_warning("%s: exception in es changed callback", __func__);
+	if (exception) {
+		g_warning(JS_LOG_CALLBACK_EXCEPTION, __func__);
+		return -EFAULT;
+	}
+	return 0;
 }
 
 static gboolean media_player_source_dispatch(GSource *source, GSourceFunc callback,
@@ -126,8 +132,11 @@ static gboolean media_player_source_dispatch(GSource *source, GSourceFunc callba
 	struct media_player_es_event *event = node ? node->data : NULL;
 
 	while (event) {
-		if (priv->context && priv->callback)
-			media_player_send_es_event(priv, event);
+		if (priv->context && priv->callback) {
+			int err = media_player_send_es_event(priv, event);
+			if (err < 0 && err != -EFAULT)
+				g_warning("%s: %s", __func__, g_strerror(-err));
+		}
 		priv->events = g_list_remove(priv->events, event);
 		g_free(event);
 		node = g_list_first(priv->events);

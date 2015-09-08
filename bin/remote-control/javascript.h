@@ -18,6 +18,9 @@
 #define JS_ERR_INVALID_ARG_COUNT        "invalid argument count"
 #define JS_ERR_INVALID_NUMBER           "argument is not a valid number"
 
+#define JS_LOG_CALLBACK_EXCEPTION       "%s: Exception in callback. " \
+                                        "Page unloaded without clearing the callback?"
+
 struct javascript_userdata {
 	RemoteControlWebkitWindow *window;
 	struct remote_control_data *rcd;

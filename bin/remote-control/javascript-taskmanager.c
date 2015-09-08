@@ -178,12 +178,8 @@ static void taskmanager_terminate_cb(int pid, void *data)
 
 	(void)JSObjectCallAsFunction(tm->context, tm->callback,
 			object, G_N_ELEMENTS(args), args, &exception);
-	if (exception) {
-		g_warning("%s: exception in callback", __func__);
-		return;
-	}
-
-	return;
+	if (exception)
+		g_warning(JS_LOG_CALLBACK_EXCEPTION, __func__);
 }
 
 static JSValueRef taskmanager_function_exec(JSContextRef context,

@@ -83,10 +83,9 @@ static int input_report(struct input *input, struct device *device,
 	(void)JSObjectCallAsFunction(input->context, input->callback,
 			input->this, G_N_ELEMENTS(args), args, &exception);
 	if (exception) {
-		g_warning("%s: exception in callback", __func__);
+		g_warning(JS_LOG_CALLBACK_EXCEPTION, __func__);
 		return -EFAULT;
 	}
-
 	return 0;
 }
 
@@ -171,8 +170,8 @@ static gboolean input_source_dispatch(GSource *source, GSourceFunc callback,
 
 			err = input_report(input, device, &event);
 			if (err < 0) {
-				g_debug("js-input: input_report(): %s",
-						g_strerror(-err));
+				if (err != -EFAULT)
+					g_warning("%s: %s", __func__, g_strerror(-err));
 				continue;
 			}
 		}

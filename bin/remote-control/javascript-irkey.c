@@ -106,35 +106,14 @@ static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
 	return pos;
 }
 
-static void print_exception(JSContextRef context, JSValueRef exception)
-{
-	JSStringRef text;
-	size_t length;
-	char *buf;
-
-	if (!JSValueIsString(context, exception))
-		return;
-
-	text = JSValueToStringCopy(context, exception, NULL);
-	if (!text)
-		return;
-
-	length = JSStringGetMaximumUTF8CStringSize(text);
-	buf = g_malloc0(length+1);
-	JSStringGetUTF8CString(text, buf, length);
-
-	g_warning("%s", buf);
-
-	JSStringRelease(text);
-	g_free(buf);
-}
-
 static int ir_report(struct ir *ir, struct ir_message *message)
 {
 	JSValueRef exception = NULL;
 	JSValueRef arguments[1];
 	JSValueRef array[8];
-	int ret = 0;
+
+	g_return_val_if_fail(ir->context != NULL, -EINVAL);
+	g_return_val_if_fail(message != NULL, -EINVAL);
 
 	/* ir object has been used but callback has not been set */
 	if (ir->callback == NULL)
@@ -160,12 +139,10 @@ static int ir_report(struct ir *ir, struct ir_message *message)
 			ir->thisptr, G_N_ELEMENTS(arguments), arguments,
 			&exception);
 	if (exception) {
-		g_warning("js-irkey: exception in callback");
-		print_exception(ir->context, exception);
-		ret = -EFAULT;
+		g_warning(JS_LOG_CALLBACK_EXCEPTION, __func__);
+		return -EFAULT;
 	}
-
-	return ret;
+	return 0;
 }
 
 static gboolean ir_source_prepare(GSource *source, gint *timeout)
@@ -217,8 +194,8 @@ static gboolean ir_source_dispatch(GSource *source, GSourceFunc callback,
 	case HEADER_PROTOCOL_LG:
 		err = ir_report(ir, msg);
 		if (err < 0) {
-			g_warning("js-irkey: ir_report() failed: %s",
-				  g_strerror(-err));
+			if (err != -EFAULT)
+				g_warning("%s: %s", __func__, g_strerror(-err));
 			goto fail;
 		}
 		break;

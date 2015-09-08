@@ -161,36 +161,16 @@ static int parse_response(guint8 *buffer, guint length)
 }
 #endif
 
-static void print_exception(JSContextRef context, JSValueRef exception)
-{
-	JSStringRef text;
-	size_t length;
-	char *buf;
-
-	if (!JSValueIsString(context, exception))
-		return;
-
-	text = JSValueToStringCopy(context, exception, NULL);
-	if (!text)
-		return;
-
-	length = JSStringGetMaximumUTF8CStringSize(text);
-	buf = g_malloc0(length+1);
-	JSStringGetUTF8CString(text, buf, length);
-
-	g_warning("%s", buf);
-
-	JSStringRelease(text);
-	g_free(buf);
-}
-
 static int lcd_report(struct lcd *lcd, uint8_t *data, int length)
 {
 	JSValueRef exception = NULL;
 	JSValueRef arguments[1];
 	JSValueRef *array;
-	int ret = 0;
 	int i;
+
+	g_return_val_if_fail(lcd->context != NULL, -EINVAL);
+	g_return_val_if_fail(data != NULL, -EINVAL);
+	g_return_val_if_fail(length > 0, -EINVAL);
 
 	hexdump(data, length);
 
@@ -210,12 +190,10 @@ static int lcd_report(struct lcd *lcd, uint8_t *data, int length)
 			lcd->thisptr, G_N_ELEMENTS(arguments), arguments,
 			&exception);
 	if (exception) {
-		g_warning("%s: exception in callback", __func__);
-		print_exception(lcd->context, exception);
-		ret = -EFAULT;
+		g_warning(JS_LOG_CALLBACK_EXCEPTION, __func__);
+		return -EFAULT;
 	}
-
-	return ret;
+	return 0;
 }
 
 static gboolean lcd_source_prepare(GSource *source, gint *timeout)
@@ -254,7 +232,8 @@ static gboolean lcd_source_dispatch(GSource *source, GSourceFunc callback,
 
 	err = lcd_report(lcd, buf, got);
 	if (err < 0) {
-		g_warning("%s: %s", __func__, g_strerror(-err));
+		if (err != -EFAULT)
+			g_warning("%s: %s", __func__, g_strerror(-err));
 		goto fail;
 	}
 
