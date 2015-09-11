@@ -1,5 +1,7 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.10.2 (2015-09-11)
 ==========================
+* javascript
+  - Fixes for javascript callback handling
 
 Release 0.10.0 (2015-03-24)
 ==========================
