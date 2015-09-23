@@ -297,6 +297,12 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	if (!rcp)
 		return -EINVAL;
 
+	source = lldp_monitor_get_source(rc->lldp);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
+
 	err = rpc_server_create(&server, NULL, sizeof(*rc));
 	if (err < 0) {
 		g_error("rpc_server_create(): %s", strerror(-err));
@@ -428,12 +434,6 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	if (err < 0) {
 		g_error("lldp_monitor_create(): %s", strerror(-err));
 		return err;
-	}
-
-	source = lldp_monitor_get_source(rc->lldp);
-	if (source) {
-		g_source_add_child_source(rc->source, source);
-		g_source_unref(source);
 	}
 
 	err = task_manager_create(&rc->task_manager);
