@@ -97,6 +97,7 @@ static int js_output_hid_led_get(struct js_output *out, double *valuep)
 	err = ioctl(fd, EVIOCGLED(sizeof(leds)), leds);
 	if (err > 0)
 		*valuep = (leds[out->code >> 3] >> (out->code & 7)) & 1;
+	close(fd);
 	return err < 0 ? -errno : 0;
 }
 
