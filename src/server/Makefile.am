@@ -21,7 +21,6 @@ libremote_control_la_LIBADD = \
 	@WATCHDOG_LIBS@
 
 libremote_control_la_SOURCES = \
-	app-watchdog.c \
 	audio.c \
 	backlight.c \
 	cursor-movement.c \
@@ -176,6 +175,12 @@ else
 libremote_control_la_SOURCES += gpio-null.c
 endif # ENABLE_GPIO_SYSFS
 endif # ENABLE_GPIO_GPIODEV
+
+if ENABLE_WATCHDOG
+libremote_control_la_SOURCES += app-watchdog-dbus.c
+else
+libremote_control_la_SOURCES += app-watchdog-null.c
+endif # ENABLE_WATCHDOG
 
 remote-control-stub.c: $(srcdir)/../protocol.xml
 	$(AM_V_GEN)$(RPC_STUBGEN) --server --source -o $@ $<
