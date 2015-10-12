@@ -234,7 +234,7 @@ static JSValueRef sysinfo_function_local_mac_address(
 	}
 	if (strlen(ifa->ifa_name) >= sizeof(ifr.ifr_name)) {
 		javascript_set_exception_text(context, exception,
-			"Interface name to long: %s (max %d)", ifa->ifa_name,
+			"Interface name to long: %s (max %zu)", ifa->ifa_name,
 			sizeof(ifr.ifr_name));
 		goto cleanup;
 	}

@@ -72,8 +72,8 @@ static JSValueRef http_request_decrypt(JSContextRef context,
 	}
 
 	base16_decode_init(&base16_ctx);
-	base16_decode_update(&base16_ctx, &dst_len, crypt, src_len,
-			(uint8_t *)cmd);
+	base16_decode_update(&base16_ctx, (unsigned int *)&dst_len, crypt,
+			src_len, (uint8_t *)cmd);
 	if (!base16_decode_final(&base16_ctx)) {
 		javascript_set_exception_text(context, exception,
 				"Failed to decode");
@@ -81,7 +81,7 @@ static JSValueRef http_request_decrypt(JSContextRef context,
 	}
 	if (dst_len % BLOWFISH_BLOCK_SIZE) {
 		javascript_set_exception_text(context, exception,
-				"Invalid data size: %d", dst_len);
+				"Invalid data size: %zu", dst_len);
 		goto cleanup;
 	}
 	data = g_new0(char, dst_len);
