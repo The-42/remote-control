@@ -281,7 +281,7 @@ static void gtk_pdf_view_init(GtkPdfView *self)
 	g_signal_connect(G_OBJECT(canvas), "draw",
 			G_CALLBACK(on_draw), self);
 #else
-#error "Needs to be implemented"
+#warning "gtk_pdf_view_init: missing implementation for GTK < 2.91.0"
 #endif
 #if GTK_CHECK_VERSION(3, 7, 8)
 	gtk_container_add(GTK_CONTAINER(window), canvas);
