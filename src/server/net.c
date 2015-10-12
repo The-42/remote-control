@@ -35,7 +35,9 @@ enum net_write_mode {
 
 static ssize_t gethwaddr(char *hwaddr, size_t len)
 {
+	char ifname[IF_NAMESIZE];
 	struct ifreq req;
+	int ifindex;
 	ssize_t err;
 	int skt;
 
@@ -45,7 +47,13 @@ static ssize_t gethwaddr(char *hwaddr, size_t len)
 
 	memset(&req, 0, sizeof(req));
 	req.ifr_addr.sa_family = AF_INET;
-	strncpy(req.ifr_name, "eth0", IFNAMSIZ - 1);
+	ifindex = if_lookup_default();
+	if (ifindex == 0)
+		return -ENODEV;
+	if (!if_indextoname(ifindex, ifname))
+		return -errno;
+	g_debug("%s: using MAC from %s", __func__, ifname);
+	strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
 
 	err = ioctl(skt, SIOCGIFHWADDR, &req);
 	if (err < 0) {
