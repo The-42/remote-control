@@ -641,7 +641,7 @@ static bool lcd_set_onevent(JSContextRef context, JSObjectRef object,
 		JSValueUnprotect(context, priv->receive_cb);
 
 	if (JSValueIsNull(context, value)) {
-		priv->callback = NULL;
+		priv->receive_cb = NULL;
 		return true;
 	}
 
