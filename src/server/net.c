@@ -105,7 +105,7 @@ int32_t RPC_IMPL(net_read)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 
 	case NET_READ_MODE_HWADDR:
 		ret = gethwaddr(buffer->tx_buf, buffer->tx_num);
-		buffer->tx_num = ret;
+		buffer->tx_num = ret > 0 ? ret : 0;
 		break;
 	}
 
