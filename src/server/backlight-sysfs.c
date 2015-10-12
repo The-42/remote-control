@@ -37,7 +37,7 @@ static int backlight_initialize(struct backlight *backlight)
 
 	fd = fopen(SYSFS_PATH "/class/backlight/pwm-backlight/max_brightness",
 			   "r");
-	if (fd < 0)
+	if (fd == NULL)
 		return -errno;
 
 	err = fscanf (fd, "%d", &backlight->max_brightness);
