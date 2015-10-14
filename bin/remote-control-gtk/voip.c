@@ -273,7 +273,7 @@ static int voip_panel_create(struct panel *panel, GtkWidget **widget)
 	if (!panel)
 		return -EINVAL;
 
-	xml = glade_xml_new("remote-client-gtk.glade", "voip_panel", NULL);
+	xml = glade_xml_new(GLADE_FILE, "voip_panel", NULL);
 	if (!xml) {
 		fprintf(stderr, "failed to open glade file\n");
 		return -ENOENT;

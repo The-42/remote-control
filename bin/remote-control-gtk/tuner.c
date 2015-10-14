@@ -20,7 +20,7 @@ static int tuner_panel_create(struct panel *panel, GtkWidget **widget)
 	if (!panel)
 		return -EINVAL;
 
-	xml = glade_xml_new("remote-client-gtk.glade", "tuner_panel", NULL);
+	xml = glade_xml_new(GLADE_FILE, "tuner_panel", NULL);
 	glade_xml_signal_autoconnect(xml);
 
 	container = glade_xml_get_widget(xml, "tuner_panel");

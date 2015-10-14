@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
 	g_client = client;
 
-	xml = glade_xml_new(PKG_DATA_DIR "/remote-control-gtk.glade", "main_window", NULL);
+	xml = glade_xml_new(GLADE_FILE, "main_window", NULL);
 	glade_xml_signal_autoconnect(xml);
 
 	window = glade_xml_get_widget(xml, "main_window");

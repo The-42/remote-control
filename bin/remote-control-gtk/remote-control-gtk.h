@@ -16,6 +16,8 @@
 
 #include "remote-control.h"
 
+#define GLADE_FILE	(PKG_DATA_DIR "/remote-control-gtk.glade")
+
 /* TODO: get rid of this global variable */
 extern struct remote_client *g_client;
 
