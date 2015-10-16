@@ -311,6 +311,12 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	rc = rpc_server_priv(server);
 
+	rc->source = g_source_new(&remote_control_source_funcs, sizeof(GSource));
+	if (!rc->source) {
+		g_error("g_source_new() failed");
+		return -ENOMEM;
+	}
+
 	err = lldp_monitor_create(&rc->lldp, config);
 	if (err < 0) {
 		g_error("lldp_monitor_create(): %s", strerror(-err));
@@ -321,12 +327,6 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	if (source) {
 		g_source_add_child_source(rc->source, source);
 		g_source_unref(source);
-	}
-
-	rc->source = g_source_new(&remote_control_source_funcs, sizeof(GSource));
-	if (!rc->source) {
-		g_error("g_source_new() failed");
-		return -ENOMEM;
 	}
 
 	source = g_source_new(&rpc_source_funcs, sizeof(struct rpc_source));
