@@ -130,7 +130,11 @@ void on_read_clicked(GtkWidget *widget, gpointer user_data)
 	}
 
 	font = pango_font_description_from_string("Monospace");
+#if GTK_CHECK_VERSION(3, 0, 0)
+	gtk_widget_override_font(GTK_WIDGET(view), font);
+#else
 	gtk_widget_modify_font(GTK_WIDGET(view), font);
+#endif
 
 	buffer = gtk_text_view_get_buffer(view);
 

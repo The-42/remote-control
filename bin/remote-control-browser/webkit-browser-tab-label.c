@@ -39,7 +39,11 @@ static void webkit_browser_tab_label_init(WebKitBrowserTabLabel *self)
 
 	font_desc = pango_font_description_new();
 	pango_font_description_set_size(font_desc, 14 * PANGO_SCALE);
+#if GTK_CHECK_VERSION(3, 0, 0)
+	gtk_widget_override_font(widget, font_desc);
+#else
 	gtk_widget_modify_font(widget, font_desc);
+#endif
 	pango_font_description_free(font_desc);
 
 	gtk_widget_show(widget);

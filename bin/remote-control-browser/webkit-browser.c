@@ -1287,7 +1287,11 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	widget = gtk_entry_new();
 	font_desc = pango_font_description_new();
 	pango_font_description_set_size(font_desc, 16 * PANGO_SCALE);
+#if GTK_CHECK_VERSION(3, 0, 0)
+	gtk_widget_override_font(widget, font_desc);
+#else
 	gtk_widget_modify_font(widget, font_desc);
+#endif
 	pango_font_description_free(font_desc);
 
 	priv->entry = GTK_ENTRY(widget);
