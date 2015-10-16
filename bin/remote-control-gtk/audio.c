@@ -26,7 +26,11 @@ struct panel_data {
 	enum remote_mixer_input_source input_source;
 	/* the mixer controls */
 	GtkComboBox *mixer_combo;
+#if GTK_CHECK_VERSION(3, 0, 0)
+	GtkScale *mixer_volume;
+#else
 	GtkHScale *mixer_volume;
+#endif
 	GtkCheckButton *mixer_muted;
 	/* the input controls */
 	GtkComboBox *input_combo;
@@ -369,7 +373,11 @@ static int audio_panel_create_mixer(GladeXML *xml, struct panel_data *priv)
 	if (priv->mixer_combo)
 		g_object_set_data(G_OBJECT(priv->mixer_combo), USER_DATA_KEY, priv);
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+	priv->mixer_volume = GTK_SCALE(glade_xml_get_widget(xml, "channel_volume"));
+#else
 	priv->mixer_volume = GTK_HSCALE(glade_xml_get_widget(xml, "channel_volume"));
+#endif
 	if (priv->mixer_volume)
 		g_object_set_data(G_OBJECT(priv->mixer_volume), USER_DATA_KEY, priv);
 

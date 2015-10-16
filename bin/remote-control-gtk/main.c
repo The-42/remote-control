@@ -107,7 +107,11 @@ void on_panel_select_changed(GtkWidget *tree, gpointer ptr)
 		return;
 	}
 
+#if GTK_CHECK_VERSION(3, 8, 0)
+	gtk_container_add(GTK_CONTAINER(parent), widget);
+#else
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(parent), widget);
+#endif
 	g_object_set_data(G_OBJECT(widget), "user", panel);
 }
 
