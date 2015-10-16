@@ -485,6 +485,7 @@ int gpio_backend_get_value(struct gpio_backend *backend, unsigned int gpio);
 struct app_watchdog;
 
 int app_watchdog_create(struct app_watchdog **watchdogp, GKeyFile *config);
+int app_watchdog_free(struct app_watchdog *watchdog);
 int app_watchdog_start(struct app_watchdog *watchdog, int interval);
 int app_watchdog_stop(struct app_watchdog *watchdog);
 int app_watchdog_trigger(struct app_watchdog *watchdog);

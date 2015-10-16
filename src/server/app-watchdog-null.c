@@ -37,3 +37,8 @@ int app_watchdog_create(struct app_watchdog **watchdogp, GKeyFile *config)
 {
 	return 0;
 }
+
+int app_watchdog_free(struct app_watchdog *watchdog)
+{
+	return 0;
+}

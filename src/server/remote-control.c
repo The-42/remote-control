@@ -518,6 +518,7 @@ int remote_control_free(struct remote_control *rc)
 	cursor_movement_free(rc->cursor_movement);
 	backlight_free(rc->backlight);
 	audio_free(rc->audio);
+	app_watchdog_free(rc->watchdog);
 	rpc_server_free(server);
 
 	return 0;

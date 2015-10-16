@@ -90,3 +90,13 @@ int app_watchdog_create(struct app_watchdog **watchdogp, GKeyFile *config)
 	*watchdogp = watchdog;
 	return 0;
 }
+
+int app_watchdog_free(struct app_watchdog *watchdog)
+{
+	if (!watchdog)
+		return -EINVAL;
+
+	g_free(watchdog);
+
+	return 0;
+}
