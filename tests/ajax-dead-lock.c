@@ -110,7 +110,9 @@ int main(int argc, char *argv[])
 		g_thread_init(NULL);
 #endif
 
+#if !GTK_CHECK_VERSION(3, 6, 0)
 	gdk_threads_init();
+#endif
 
 	gtk_init(&argc, &argv);
 
@@ -129,9 +131,13 @@ int main(int argc, char *argv[])
 
 	gtk_widget_show_all(window);
 
+#if !GTK_CHECK_VERSION(3, 6, 0)
 	gdk_threads_enter();
 	gtk_main();
 	gdk_threads_leave();
+#else
+	gtk_main();
+#endif
 
 	return 0;
 }
