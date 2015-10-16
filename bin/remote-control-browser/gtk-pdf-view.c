@@ -203,12 +203,23 @@ static GtkWidget *gtk_pdf_view_create_toolbar(GtkPdfView *self)
 	gtk_toolbar_set_style(priv->toolbar, GTK_TOOLBAR_ICONS);
 	//gtk_toolbar_set_icon_size(priv->toolbar, GTK_ICON_SIZE_DIALOG);
 
+#if GTK_CHECK_VERSION(3, 10, 0)
+	priv->back = item = gtk_tool_button_new(NULL, "Back");
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "go-previous");
+#else
 	priv->back = item = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+#endif
+
 	g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_back_clicked), self);
 	gtk_toolbar_insert(priv->toolbar, item, -1);
 	gtk_widget_show(GTK_WIDGET(item));
 
+#if GTK_CHECK_VERSION(3, 10, 0)
+	priv->forward = item = gtk_tool_button_new(NULL, "Forward");
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(item), "go-next");
+#else
 	priv->forward = item = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+#endif
 	g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_forward_clicked), self);
 	gtk_toolbar_insert(priv->toolbar, item, -1);
 	gtk_widget_show(GTK_WIDGET(item));

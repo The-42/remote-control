@@ -1259,13 +1259,23 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toolbar_set_style(priv->toolbar, GTK_TOOLBAR_ICONS);
 	gtk_toolbar_set_icon_size(priv->toolbar, GTK_ICON_SIZE_DIALOG);
 
+#if GTK_CHECK_VERSION(3, 10, 0)
+	priv->back = gtk_tool_button_new(NULL, "Back");
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->back), "go-previous");
+#else
 	priv->back = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+#endif
 	g_signal_connect(G_OBJECT(priv->back), "clicked",
 			G_CALLBACK(on_back_clicked), browser);
 	gtk_toolbar_insert(priv->toolbar, priv->back, -1);
 	gtk_widget_show(GTK_WIDGET(priv->back));
 
+#if GTK_CHECK_VERSION(3, 10, 0)
+	priv->forward = gtk_tool_button_new(NULL, "Forward");
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->forward), "go-next");
+#else
 	priv->forward = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+#endif
 	g_signal_connect(G_OBJECT(priv->forward), "clicked",
 			G_CALLBACK(on_forward_clicked), browser);
 	gtk_toolbar_insert(priv->toolbar, priv->forward, -1);
@@ -1333,7 +1343,11 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 #endif
 
 	priv->add_tab = gtk_button_new();
+#if GTK_CHECK_VERSION(3, 10, 0)
+	image = gtk_image_new_from_icon_name("list-add", GTK_ICON_SIZE_BUTTON);
+#else
 	image = gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON);
+#endif
 	gtk_container_add(GTK_CONTAINER(priv->add_tab), image);
 	g_signal_connect(G_OBJECT(priv->add_tab), "clicked",
 			G_CALLBACK(on_add_tab_clicked), browser);
@@ -1341,8 +1355,13 @@ static GtkWidget *webkit_browser_create_notebook(WebKitBrowser *browser)
 	gtk_widget_show_all(priv->add_tab);
 
 	priv->del_tab = gtk_button_new();
+#if GTK_CHECK_VERSION(3, 10, 0)
+	image = gtk_image_new_from_icon_name("list-remove",
+			GTK_ICON_SIZE_BUTTON);
+#else
 	image = gtk_image_new_from_stock(GTK_STOCK_REMOVE,
 			GTK_ICON_SIZE_BUTTON);
+#endif
 	gtk_container_add(GTK_CONTAINER(priv->del_tab), image);
 	g_signal_connect(G_OBJECT(priv->del_tab), "clicked",
 			G_CALLBACK(on_del_tab_clicked), browser);
