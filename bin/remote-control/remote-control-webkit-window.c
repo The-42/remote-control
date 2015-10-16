@@ -54,7 +54,11 @@ struct _RemoteControlWebkitWindowPrivate {
 #endif
 	WebKitWebView *webkit_inspector_view;
 	GtkExpander *expander;
+#if GTK_CHECK_VERSION(3, 2, 0)
+	GtkWidget *vbox;
+#else
 	GtkVBox *vbox;
+#endif
 
 	/* Context to control remote control server */
 	struct remote_control_data *rcd;
@@ -447,8 +451,8 @@ static void remote_control_webkit_construct_view(RemoteControlWebkitWindow *self
 		g_object_set (G_OBJECT(settings), "enable-developer-extras", TRUE,
 					  NULL);
 
-#if GTK_CHECK_VERSION(3, 0, 0)
-		priv->vbox = GTK_VBOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+#if GTK_CHECK_VERSION(3, 2, 0)
+		priv->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
 		priv->vbox = GTK_VBOX(gtk_vbox_new(false, 0));
 #endif
