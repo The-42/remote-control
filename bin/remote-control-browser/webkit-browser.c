@@ -1019,7 +1019,9 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	/* create WebKit browser */
 	webkit = webkit_web_view_new();
 	webkit_browser_set_user_agent(WEBKIT_WEB_VIEW(webkit), priv->user_agent);
+#if !GTK_CHECK_VERSION(3, 10, 0)
 	gtk_widget_set_double_buffered(webkit, TRUE);
+#endif
 
 	/* TODO: Support GtkDragView with scrollbar */
 #if !GTK_CHECK_VERSION(3, 0, 0)
