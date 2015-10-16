@@ -115,6 +115,7 @@ struct event {
 struct event_manager;
 
 int event_manager_create(struct event_manager **managerp, struct rpc_server *server);
+int event_manager_free(struct event_manager *manager);
 int event_manager_report(struct event_manager *manager, struct event *event);
 int event_manager_get_status(struct event_manager *manager, uint32_t *statusp);
 int event_manager_get_source_state(struct event_manager *manager, struct event *event);
