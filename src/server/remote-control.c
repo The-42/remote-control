@@ -519,6 +519,7 @@ int remote_control_free(struct remote_control *rc)
 	backlight_free(rc->backlight);
 	audio_free(rc->audio);
 	app_watchdog_free(rc->watchdog);
+	gpio_backend_free(rc->gpio);
 	rpc_server_free(server);
 
 	return 0;
