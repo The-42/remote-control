@@ -34,15 +34,17 @@ static void webkit_browser_tab_label_init(WebKitBrowserTabLabel *self)
 
 	widget = gtk_label_new("New Tab");
 	gtk_label_set_ellipsize(GTK_LABEL(widget), PANGO_ELLIPSIZE_END);
-	gtk_misc_set_alignment(GTK_MISC(widget), 0.0, 0.5);
 	priv->title = GTK_LABEL(widget);
 
 	font_desc = pango_font_description_new();
 	pango_font_description_set_size(font_desc, 14 * PANGO_SCALE);
 #if GTK_CHECK_VERSION(3, 0, 0)
 	gtk_widget_override_font(widget, font_desc);
+	gtk_widget_set_halign(widget, 0.0);
+	gtk_widget_set_valign(widget, 0.5);
 #else
 	gtk_widget_modify_font(widget, font_desc);
+	gtk_misc_set_alignment(GTK_MISC(widget), 0.0, 0.5);
 #endif
 	pango_font_description_free(font_desc);
 
