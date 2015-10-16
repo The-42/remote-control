@@ -38,6 +38,8 @@ static const struct javascript_enum media_player_state_enum[] = {
 	MEDIA_PLAYER_ENUM(STOPPED, "stop"),
 	MEDIA_PLAYER_ENUM(PLAYING, "play"),
 	MEDIA_PLAYER_ENUM(PAUSED,  "pause"),
+	MEDIA_PLAYER_ENUM(STARTING,"starting"),
+	MEDIA_PLAYER_ENUM(STOPPING,"stopping"),
 	{}
 };
 
@@ -364,6 +366,8 @@ static bool js_media_player_set_state(JSContextRef context,
 			err = media_player_resume(priv->player);
 		else
 			err = media_player_play(priv->player);
+		break;
+	default:
 		break;
 	}
 

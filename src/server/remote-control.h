@@ -179,6 +179,8 @@ enum media_player_state {
 	MEDIA_PLAYER_STOPPED,
 	MEDIA_PLAYER_PLAYING,
 	MEDIA_PLAYER_PAUSED,
+	MEDIA_PLAYER_STARTING,
+	MEDIA_PLAYER_STOPPING,
 };
 
 enum media_player_es_action {
