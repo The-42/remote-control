@@ -6,3 +6,6 @@ SUBDIRS = \
 	data \
 	doc \
 	tests
+
+DISTCHECK_CONFIGURE_FLAGS = \
+	--with-gtk=3.0
