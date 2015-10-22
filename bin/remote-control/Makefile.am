@@ -90,6 +90,9 @@ INPUT_H = $(or $(filter %/linux/input.h,$(INPUT_DEPS)),/dev/null)
 javascript-input-%.c: $(srcdir)/javascript-input-%.awk
 	$(AM_V_GEN)awk -f $< $(INPUT_H) > $@ || (rm -f $@ ; false)
 
+clean-local:
+	rm -f $(patsubst %.awk,%.c,$(wildcard $(srcdir)/javascript-input-*.awk))
+
 endif # ENABLE_JAVASCRIPT
 
 EXTRA_DIST = \
