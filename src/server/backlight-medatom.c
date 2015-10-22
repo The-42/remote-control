@@ -37,7 +37,7 @@ struct backlight {
 	int (*set)(struct backlight *backlight, unsigned int brightness);
 	int (*get)(struct backlight *backlight);
 	int (*enable)(struct backlight *backlight, bool enable);
-	int (*is_enable)(struct backlight *backlight);
+	int (*is_enabled)(struct backlight *backlight);
 };
 
 static int backlight_dpms_release(struct backlight *backlight)
@@ -57,16 +57,6 @@ static int backlight_dpms_enable(struct backlight *backlight, bool enable)
 	XFlush(backlight->display);
 
 	return ret ? 0 : -EIO;
-}
-
-static int backlight_dpms_is_enabled(struct backlight *backlight)
-{
-	int state = backlight_dpms_get(backlight);
-
-	if (state > 0)
-		return 1;
-
-	return state;
 }
 
 static int backlight_dpms_set(struct backlight *backlight,
@@ -95,6 +85,16 @@ static int backlight_dpms_get(struct backlight *backlight)
 	default:
 		return -EIO;
 	}
+}
+
+static int backlight_dpms_is_enabled(struct backlight *backlight)
+{
+	int state = backlight_dpms_get(backlight);
+
+	if (state > 0)
+		return 1;
+
+	return state;
 }
 
 static int backlight_dpms_probe(struct backlight *backlight)
@@ -215,7 +215,7 @@ static int backlight_i2c_is_enabled(struct backlight *backlight)
 	if (status < 0)
 		return status;
 
-	if (status & 0xFF > 0)
+	if ((status & 0xFF) > 0)
 		return 1;
 
 	return 0;
