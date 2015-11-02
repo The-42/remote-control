@@ -39,6 +39,7 @@ struct gpio_backend {
 	struct gpio_chip *chip;
 
 	guint base;
+	gchar *label;
 	struct pollfd gpios[GPIO_NUM];
 	guint gpio_map[GPIO_NUM];
 
@@ -193,6 +194,7 @@ static void gpio_source_finalize(GSource *source)
 
 	gpio_chip_close(backend->chip);
 	g_free(backend->exposed_gpios);
+	g_free(backend->label);
 }
 
 static GSourceFuncs gpio_source_funcs = {
@@ -216,10 +218,17 @@ int gpio_load_config(struct gpio_backend *backend, GKeyFile *config)
 	backend->base = g_key_file_get_integer(config, GPIO_GROUP, "base",
 					    &err);
 	if (err != NULL) {
-		g_warning("gpio-sysfs: could not load gpio base address (%s)",
-			  err->message);
+		backend->label = g_key_file_get_string(config, GPIO_GROUP, "label", NULL);
+		if (!backend->label) {
+			g_warning("gpio-sysfs: could not load gpio base address or label (%s)",
+				  err->message);
+			g_error_free(err);
+			return -EINVAL;
+		}
 		g_error_free(err);
-		return -EINVAL;
+		err = NULL;
+	} else {
+		backend->label = NULL;
 	}
 
 	for (i = 0; i < G_N_ELEMENTS(gpio_list); i++) {
@@ -306,9 +315,15 @@ int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *ev
 	if (err < 0)
 		goto unref;
 
-	err = asprintf(&syspath, SYSFS_GPIO_PATH "/gpiochip%u", backend->base);
-	if (err < 0)
-		goto unref;
+	if (backend->label == NULL) {
+		err = asprintf(&syspath, SYSFS_GPIO_PATH "/gpiochip%u", backend->base);
+		if (err < 0)
+			goto unref;
+	} else {
+		err = gpio_chip_find(backend->label, &syspath);
+		if (err < 0)
+			goto unref;
+	}
 
 	err = gpio_chip_open(syspath, &backend->chip);
 	if (err < 0) {
