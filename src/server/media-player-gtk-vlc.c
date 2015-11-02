@@ -413,6 +413,7 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	g_return_val_if_fail(player != NULL, -EINVAL);
 	g_return_val_if_fail(uri != NULL, -EINVAL);
 
+	media_player_stop(player);
 	if (player->media) {
 		libvlc_media_release(player->media);
 		player->media = NULL;
@@ -459,7 +460,6 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 		g_object_unref(address);
 	}
 
-	gdk_window_hide(player->window);
 	player->media = libvlc_media_new_location(player->vlc, location);
 
 	if (location != split_uri[0]) {
