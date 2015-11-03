@@ -285,7 +285,7 @@ AS_CASE([$with_gpio_backend],
 	[AC_MSG_ERROR([Invalid GPIO backend: must be none, gpiodev or sysfs])]
 )
 
-AS_IF([test "x$enable_gpio_sysfs" = "xyes"], [PKG_CHECK_MODULES(LIBGPIO, libgpio)])
+AS_IF([test "x$enable_gpio_sysfs" = "xyes"], [PKG_CHECK_MODULES(LIBGPIO, libgpio >= 0.4.1)])
 
 #
 # JavaScript binding
