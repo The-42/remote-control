@@ -53,6 +53,8 @@ typedef enum {
 #define G_SYSFS_TYPE_GPIO_FLAGS g_sysfs_gpio_flags_get_type()
 GType g_sysfs_gpio_flags_get_type(void);
 
+GSysfsGpio *g_sysfs_gpio_new_by_label(const gchar *label, guint pin, guint flags,
+			     GError **errorp);
 GSysfsGpio *g_sysfs_gpio_new(const gchar *chip, guint pin, guint flags,
 			     GError **error);
 GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,

@@ -397,6 +397,54 @@ GSysfsGpio *g_sysfs_gpio_new(const gchar *chip, guint pin, guint flags,
 	return gpio;
 }
 
+GSysfsGpio *g_sysfs_gpio_new_by_label(const gchar *label, guint pin, guint flags,
+			     GError **errorp)
+{
+	const gchar *const subsystems[] = { "gpio", NULL };
+	GSysfsGpio *sysfsgpio = NULL;
+	const gchar *device_label;
+	GUdevClient *udev;
+	GList *devices;
+	GList *d;
+
+	udev = g_udev_client_new(subsystems);
+	if (!udev) {
+		g_set_error(errorp, G_SYSFS_ERROR,
+			    G_SYSFS_ERROR_DEVICE_NOT_FOUND,
+			    "Udev not found");
+		return NULL;
+	}
+
+	devices = g_udev_client_query_by_subsystem(udev, "gpio");
+	if (!devices) {
+		g_set_error(errorp, G_SYSFS_ERROR,
+			    G_SYSFS_ERROR_DEVICE_NOT_FOUND,
+			    "No gpio device found");
+		g_object_unref(udev);
+		return NULL;
+	}
+
+	for (d = devices; d != NULL; d = d->next) {
+		device_label = g_udev_device_get_sysfs_attr(d->data, "label");
+		if (!device_label)
+			continue;
+
+		if (!strcmp(label, device_label)) {
+			sysfsgpio = g_sysfs_gpio_new(g_udev_device_get_name(d->data),
+					pin, flags, errorp);
+			break;
+		}
+	}
+	g_list_free_full(devices, g_object_unref);
+	g_object_unref(udev);
+
+	if (!sysfsgpio) {
+		g_set_error(errorp, G_SYSFS_ERROR, G_SYSFS_ERROR_INVALID_VALUE,
+			    "could not resolve gpio: %s", label);
+	}
+	return sysfsgpio;
+}
+
 GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,
 				const gchar *key, GError **error)
 {
@@ -434,7 +482,10 @@ GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,
 		goto freev;
 	}
 
-	gpio = g_sysfs_gpio_new(parts[0], pin, flags, error);
+	if (!strncmp(parts[0], "label=", 6))
+		gpio = g_sysfs_gpio_new_by_label(parts[0] + 6, pin, flags, error);
+	else
+		gpio = g_sysfs_gpio_new(parts[0], pin, flags, error);
 
 	g_strfreev(parts);
 
