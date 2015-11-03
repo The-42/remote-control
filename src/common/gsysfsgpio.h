@@ -56,17 +56,17 @@ GType g_sysfs_gpio_flags_get_type(void);
 GSysfsGpio *g_sysfs_gpio_new_by_label(const gchar *label, guint pin, guint flags,
 			     GError **errorp);
 GSysfsGpio *g_sysfs_gpio_new(const gchar *chip, guint pin, guint flags,
-			     GError **error);
+			     GError **errorp);
 GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,
-				const gchar *key, GError **error);
+				const gchar *key, GError **errorp);
 gboolean g_sysfs_gpio_set_direction(GSysfsGpio *gpio,
 				    GSysfsGpioDirection direction,
-				    guint value, GError **error);
+				    guint value, GError **errorp);
 GSysfsGpioDirection g_sysfs_gpio_get_direction(GSysfsGpio *gpio,
-					       GError **error);
+					       GError **errorp);
 gboolean g_sysfs_gpio_set_value(GSysfsGpio *gpio, guint value,
-				GError **error);
-guint g_sysfs_gpio_get_value(GSysfsGpio *gpio, GError **error);
+				GError **errorp);
+guint g_sysfs_gpio_get_value(GSysfsGpio *gpio, GError **errorp);
 
 G_END_DECLS
 

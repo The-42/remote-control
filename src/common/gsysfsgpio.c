@@ -95,18 +95,18 @@ static gboolean gpio_set_direction(GSysfsGpio *gpio,
 	return g_sysfs_write_string(priv->device, "direction", dir, errorp);
 }
 
-static gboolean gpio_get_level(GSysfsGpio *gpio, guint *level, GError **error)
+static gboolean gpio_get_level(GSysfsGpio *gpio, guint *level, GError **errorp)
 {
 	GSysfsGpioPrivate *priv = G_SYSFS_GPIO_GET_PRIVATE(gpio);
 
-	return g_sysfs_read_uint(priv->device, "value", level, error);
+	return g_sysfs_read_uint(priv->device, "value", level, errorp);
 }
 
-static gboolean gpio_set_level(GSysfsGpio *gpio, guint level, GError **error)
+static gboolean gpio_set_level(GSysfsGpio *gpio, guint level, GError **errorp)
 {
 	GSysfsGpioPrivate *priv = G_SYSFS_GPIO_GET_PRIVATE(gpio);
 
-	return g_sysfs_write_uint(priv->device, "value", level, error);
+	return g_sysfs_write_uint(priv->device, "value", level, errorp);
 }
 
 static void g_sysfs_gpio_get_property(GObject *object, guint prop_id,
@@ -446,20 +446,20 @@ GSysfsGpio *g_sysfs_gpio_new_by_label(const gchar *label, guint pin, guint flags
 }
 
 GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,
-				const gchar *key, GError **error)
+				const gchar *key, GError **errorp)
 {
 	unsigned long pin, flags;
 	gchar *value, **parts;
 	GSysfsGpio *gpio;
 	char *end;
 
-	value = g_key_file_get_value(keyfile, group, key, error);
+	value = g_key_file_get_value(keyfile, group, key, errorp);
 	if (!value)
 		return NULL;
 
 	parts = g_strsplit(value, ":", 3);
 	if (!parts) {
-		g_set_error(error, G_SYSFS_ERROR, G_SYSFS_ERROR_PARSE,
+		g_set_error(errorp, G_SYSFS_ERROR, G_SYSFS_ERROR_PARSE,
 			    "failed to parse value `%s'", value);
 		g_free(value);
 		return NULL;
@@ -469,7 +469,7 @@ GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,
 
 	pin = strtoul(parts[1], &end, 0);
 	if (end == parts[1]) {
-		g_set_error(error, G_SYSFS_ERROR,
+		g_set_error(errorp, G_SYSFS_ERROR,
 			    G_SYSFS_ERROR_INVALID_VALUE,
 			    "invalid GPIO pin number: %s", parts[1]);
 		goto freev;
@@ -477,15 +477,15 @@ GSysfsGpio *g_key_file_get_gpio(GKeyFile *keyfile, const gchar *group,
 
 	flags = strtoul(parts[2], &end, 0);
 	if (end == parts[2]) {
-		g_set_error(error, G_SYSFS_ERROR, G_SYSFS_ERROR_INVALID_VALUE,
+		g_set_error(errorp, G_SYSFS_ERROR, G_SYSFS_ERROR_INVALID_VALUE,
 			    "invalid flags value: %s", parts[2]);
 		goto freev;
 	}
 
 	if (!strncmp(parts[0], "label=", 6))
-		gpio = g_sysfs_gpio_new_by_label(parts[0] + 6, pin, flags, error);
+		gpio = g_sysfs_gpio_new_by_label(parts[0] + 6, pin, flags, errorp);
 	else
-		gpio = g_sysfs_gpio_new(parts[0], pin, flags, error);
+		gpio = g_sysfs_gpio_new(parts[0], pin, flags, errorp);
 
 	g_strfreev(parts);
 
@@ -496,19 +496,19 @@ freev:
 	return NULL;
 }
 
-gboolean g_sysfs_gpio_set_value(GSysfsGpio *gpio, guint value, GError **error)
+gboolean g_sysfs_gpio_set_value(GSysfsGpio *gpio, guint value, GError **errorp)
 {
 	GSysfsGpioPrivate *priv = G_SYSFS_GPIO_GET_PRIVATE(gpio);
 
-	return g_sysfs_write_uint(priv->device, "value", value, error);
+	return g_sysfs_write_uint(priv->device, "value", value, errorp);
 }
 
-guint g_sysfs_gpio_get_value(GSysfsGpio *gpio, GError **error)
+guint g_sysfs_gpio_get_value(GSysfsGpio *gpio, GError **errorp)
 {
 	GSysfsGpioPrivate *priv = G_SYSFS_GPIO_GET_PRIVATE(gpio);
 	guint value;
 
-	if (!g_sysfs_read_uint(priv->device, "value", &value, error))
+	if (!g_sysfs_read_uint(priv->device, "value", &value, errorp))
 		return 0;
 
 	return value;
