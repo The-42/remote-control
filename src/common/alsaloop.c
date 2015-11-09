@@ -27,7 +27,7 @@ static void *alsaloop_thread(void *ptr)
 	struct alsaloop *alsaloop = (struct alsaloop *)ptr;
 	aloop_context_t *ctx = alsaloop->ctx;
 	aloop_t *loops[2];
-	int ret = 0, i;
+	int i;
 	char opt[32];
 
 	snprintf(opt, sizeof(opt), "%d", alsaloop->verbose);
@@ -42,7 +42,6 @@ static void *alsaloop_thread(void *ptr)
 		loops[i] = aloop_loop_create(ctx);
 		if (loops[i] == NULL) {
 			g_warning("alsaloop: failed to create loop %d", i);
-			ret = -ENOMEM;
 			goto cleanup;
 		}
 
@@ -60,17 +59,15 @@ static void *alsaloop_thread(void *ptr)
 
 	/* aloop_run is blocking, return immediatly on errors but some spawned
 	 * thread may be still running, "signaled" to exit but running. */
-	if (aloop_run(ctx) < 0)  {
+	if (aloop_run(ctx) < 0)
 		g_warning("alsaloop: aloop_run failed");
-		ret = -EIO;
-	}
 
 cleanup:
 	for (i = 0; i < G_N_ELEMENTS(loops); i++) {
 		if (loops[i] != NULL)
 			aloop_loop_destroy(loops[i]);
 	}
-	return (void *)ret;
+	return NULL;
 }
 
 int alsaloop_create(struct alsaloop **alsaloopp)
