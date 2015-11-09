@@ -116,7 +116,7 @@ int audio_state_name(enum remote_audio_state state, char *buffer, size_t size)
 
 	for (i = 0; i < ARRAY_SIZE(audio_state_map); i++) {
 		if (audio_state_map[i].id == state) {
-			ret = snprintf(buffer, size, audio_state_map[i].name);
+			ret = snprintf(buffer, size, "%s", audio_state_map[i].name);
 			break;
 		}
 	}
@@ -163,7 +163,7 @@ int mixer_input_source_name(enum remote_mixer_input_source source,
 
 	for (i = 0; i < ARRAY_SIZE(mixer_input_map); i++) {
 		if (mixer_input_map[i].id == source) {
-			ret = snprintf(buffer, size, mixer_input_map[i].name);
+			ret = snprintf(buffer, size, "%s", mixer_input_map[i].name);
 			break;
 		}
 	}
