@@ -439,6 +439,7 @@ static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser,
 					apply_user_agent_override, browser);
 }
 
+#ifndef USE_WEBKIT2
 static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 		WebKitBrowser *browser)
 {
@@ -497,6 +498,7 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 
 	g_strfreev(jshooks);
 }
+#endif
 
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 {
