@@ -15,8 +15,6 @@ remote_control_browser_SOURCES = \
 	gtk-drag-view.h \
 	gtk-pdf-view.c \
 	gtk-pdf-view.h \
-	adblock.c \
-	adblock.h \
 	main.c \
 	jshooks.c \
 	jshooks.h \
@@ -29,6 +27,12 @@ if !ENABLE_GTK3
 remote_control_browser_SOURCES += \
 	katze-scrolled.c \
 	katze-scrolled.h
+endif
+
+if !ENABLE_WEBKIT2
+remote_control_browser_SOURCES += \
+	adblock.c \
+	adblock.h
 endif
 
 remote_control_browser_LDADD = \

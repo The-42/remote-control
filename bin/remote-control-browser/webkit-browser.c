@@ -30,7 +30,9 @@
 #include "utils.h"
 #include "guri.h"
 #include "jshooks.h"
+#ifndef USE_WEBKIT2
 #include "adblock.h"
+#endif
 
 #if !GTK_CHECK_VERSION(3, 0, 0)
 static const gchar style_large[] = \
@@ -85,7 +87,9 @@ struct _WebKitBrowserPrivate {
 	guint max_pages;
 	gchar *user_agent;
 	gchar *user_agent_uri;
+#ifndef USE_WEBKIT2
 	gboolean adblock;
+#endif
 	GData *user_agent_overrides;
 	gboolean jshooks;
 
@@ -196,9 +200,11 @@ static void webkit_browser_get_property(GObject *object, guint prop_id,
 		g_value_set_uint(value, priv->max_pages);
 		break;
 
+#ifndef USE_WEBKIT2
 	case PROP_ADBLOCK:
 		g_value_set_boolean(value, priv->adblock);
 		break;
+#endif
 
 	case PROP_USER_AGENT_OVERRIDES:
 		g_value_set_pointer(value, priv->user_agent_overrides);
@@ -281,6 +287,7 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 		priv->user_agent_overrides = g_value_get_pointer(value);
 		break;
 
+#ifndef USE_WEBKIT2
 	case PROP_ADBLOCK:
 		priv->adblock = g_value_get_boolean(value);
 		if (priv->adblock) {
@@ -288,6 +295,7 @@ static void webkit_browser_set_property(GObject *object, guint prop_id,
 			adblock_add_tab_cb(webkit_browser_get_web_view(browser));
 		}
 		break;
+#endif
 
 	case PROP_JSHOOKS:
 		priv->jshooks = g_value_get_boolean(value);
@@ -303,8 +311,10 @@ static void webkit_browser_finalize(GObject *object)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(object);
 
+#ifndef USE_WEBKIT2
 	if (priv->adblock)
 		adblock_deactivate_cb(WEBKIT_BROWSER(object));
+#endif
 	g_free(priv->geometry);
 	g_free(priv->user_agent);
 
@@ -1092,8 +1102,10 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 	g_signal_connect(G_OBJECT(webkit), "notify::uri",
 			G_CALLBACK(on_notify_uri), browser);
 
+#ifndef USE_WEBKIT2
 	if (priv->adblock)
 		adblock_add_tab_cb(WEBKIT_WEB_VIEW(webkit));
+#endif
 
 	return page;
 }
@@ -1166,8 +1178,10 @@ static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 		webkit_browser_update_tab_controls(priv);
 	}
 
+#ifndef USE_WEBKIT2
 	if (priv->adblock)
 		adblock_remove_tab_cb(webkit_browser_get_current_view(browser));
+#endif
 }
 
 static void on_size_allocate(GtkNotebook *notebook, GdkRectangle *allocation,
@@ -1495,11 +1509,13 @@ static void webkit_browser_class_init(WebKitBrowserClass *class)
 					  G_PARAM_CONSTRUCT |
 					  G_PARAM_STATIC_STRINGS));
 
+#ifndef USE_WEBKIT2
 	g_object_class_install_property(object, PROP_ADBLOCK,
 			g_param_spec_boolean("adblock", "Adblocker",
 				"Enable or disable the Adblocker",
 				TRUE,
 				G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+#endif
 
 	g_object_class_install_property(object, PROP_USER_AGENT,
 			g_param_spec_string("user-agent",
