@@ -1,6 +1,5 @@
 XSLTPROC_STYLESHEET = http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
 XSLTPROC_FLAGS = \
-	--nonet \
 	--stringparam funcsynopsis.style ansi
 
 edit = $(SED) 's|[@]PACKAGE[@]|$(PACKAGE)|' $< > $@
