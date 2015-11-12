@@ -27,7 +27,9 @@ static const gchar *configfile = default_configfile;
 static GData *user_agent_overrides = NULL;
 static gboolean disable_jshooks = FALSE;
 static gchar *user_agent = NULL;
+#ifndef USE_WEBKIT2
 static gboolean adblock = FALSE;
+#endif
 static gboolean cursor = FALSE;
 static gboolean noexit = FALSE;
 static gchar *geometry = NULL;
@@ -63,9 +65,11 @@ static GOptionEntry entries[] = {
 		"max-pages", 'p', 0, G_OPTION_ARG_INT, &max_pages,
 		"The max numbers of pages", NULL
 	}, {
+#ifndef USE_WEBKIT2
 		"adblock", 'a', 0, G_OPTION_ARG_NONE, &adblock,
 		"Use adblocker", NULL
 	}, {
+#endif
 		"disable jshooks", 'j', 0, G_OPTION_ARG_NONE, &disable_jshooks,
 		"Do not use JavaScript hook scripts", NULL
 	}, {
@@ -296,7 +300,9 @@ int main(int argc, char *argv[])
 	g_object_set(browser, "accept-language", language, NULL);
 	g_object_set(browser, "no-exit", noexit, NULL);
 	g_object_set(browser, "user-agent", user_agent, NULL);
+#ifndef USE_WEBKIT2
 	g_object_set(browser, "adblock", adblock, NULL);
+#endif
 	g_object_set(browser, "jshooks", !disable_jshooks, NULL);
 	g_object_set(browser, "user-agent-overrides", user_agent_overrides,
 			NULL);

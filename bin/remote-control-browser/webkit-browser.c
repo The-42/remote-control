@@ -1169,7 +1169,6 @@ static void on_add_tab_clicked(GtkWidget *widget, gpointer data)
 static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
-	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	gint pages = gtk_notebook_get_n_pages(priv->notebook);
 	gint page;
 
@@ -1181,8 +1180,10 @@ static void on_del_tab_clicked(GtkWidget *widget, gpointer data)
 	}
 
 #ifndef USE_WEBKIT2
-	if (priv->adblock)
+	if (priv->adblock) {
+		WebKitBrowser *browser = WEBKIT_BROWSER(data);
 		adblock_remove_tab_cb(webkit_browser_get_current_view(browser));
+	}
 #endif
 }
 
