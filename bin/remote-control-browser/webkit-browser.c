@@ -426,8 +426,7 @@ static void user_agent_update(WebKitWebView *web_view, WebKitBrowser *browser,
 	 * previous agent as default */
 	if (priv->user_agent == NULL || priv->user_agent[0] == '\0') {
 		g_free(priv->user_agent);
-		priv->user_agent =
-			strdup(webkit_web_view_get_user_agent(web_view));
+		priv->user_agent = webkit_web_view_get_user_agent(web_view);
 	}
 
 	priv->user_agent_uri = uri;
@@ -991,6 +990,8 @@ static void webkit_browser_set_user_agent(WebKitWebView *webkit, const gchar *st
 	}
 
 	user_agent = webkit_web_view_get_user_agent(webkit);
+	if (!user_agent)
+		return;
 
 	/*
 	 * If armv7l is set as processor we simply remove it. This is an ugly
