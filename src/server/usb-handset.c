@@ -101,6 +101,10 @@ static gboolean usb_handset_dispatch(GSource *source, GSourceFunc callback,
 			err = read(poll->fd, &event, sizeof(event));
 			if (err < 0) {
 				g_debug("usb-handset: read(): %s", g_strerror(errno));
+				if (errno == ENODEV) {
+					g_source_remove_poll(source, poll);
+					g_list_delete_link(input->devices, node);
+				}
 				continue;
 			}
 
