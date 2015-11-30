@@ -529,7 +529,7 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	 * used to register the JavaScript binding within the frame.
 	 */
 #ifdef USE_WEBKIT2
-	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-changed",
+	g_signal_connect(GTK_WIDGET(priv->webkit), "load-changed",
 		G_CALLBACK(webkit_on_load_changed), self);
 #else
 	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-status",
