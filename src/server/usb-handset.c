@@ -90,27 +90,33 @@ static gboolean usb_handset_dispatch(GSource *source, GSourceFunc callback,
 		gpointer user_data)
 {
 	struct usb_handset *input = (struct usb_handset *)source;
-	GList *node;
+	GList *node = g_list_first(input->devices);
 
-	for (node = g_list_first(input->devices); node; node = node->next) {
+	while (node != NULL) {
 		GPollFD *poll = node->data;
+		GList *next = node->next;
 		struct input_event event;
 		ssize_t err;
 
 		if (poll->revents & G_IO_IN) {
 			err = read(poll->fd, &event, sizeof(event));
 			if (err < 0) {
-				g_debug("usb-handset: read(): %s", g_strerror(errno));
-				continue;
-			}
-
-			err = usb_handset_report(input, &event);
-			if (err < 0) {
-				g_debug("usb-handset: input_report(): %s",
-						g_strerror(-err));
-				continue;
+				int e = errno;
+				g_debug("usb-handset: read(): %s", g_strerror(e));
+				if (e == ENODEV) {
+					g_source_remove_poll(source, poll);
+					input->devices = g_list_delete_link(
+							input->devices, node);
+				}
+			} else {
+				err = usb_handset_report(input, &event);
+				if (err < 0) {
+					g_debug("usb-handset: input_report(): %s",
+							g_strerror(-err));
+				}
 			}
 		}
+		node = next;
 	}
 
 	if (callback)
