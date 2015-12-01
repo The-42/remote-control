@@ -1074,7 +1074,7 @@ static gint webkit_browser_append_tab(WebKitBrowser *browser, const gchar *title
 			G_CALLBACK(webkit_download_started), browser);
 	g_signal_connect(G_OBJECT(webkit), "notify::estimated-load-progress",
 			G_CALLBACK(on_notify_progress), browser);
-	g_signal_connect(G_OBJECT(webkit), "notify::create",
+	g_signal_connect(G_OBJECT(webkit), "create",
 			G_CALLBACK(on_create_web_view), browser);
 #else
 	g_signal_connect(G_OBJECT(webkit), "mime-type-policy-decision-requested",
