@@ -224,6 +224,19 @@ static void webkit_browser_set_user_agent(WebKitWebView *webkit, const gchar *st
 static gchar *webkit_web_view_get_user_agent(WebKitWebView *webkit);
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser);
 
+static WebKitWebView *get_webkit_from_notebook_page(GtkWidget *widget)
+{
+	WebKitWebView *view;
+
+	/* get GtkViewport from GtkScrollWindow */
+	widget = gtk_bin_get_child(GTK_BIN(widget));
+	/* get actual WebkitWebView from GtkViewport */
+	widget = gtk_bin_get_child(GTK_BIN(widget));
+	view = WEBKIT_WEB_VIEW(widget);
+
+	return view;
+}
+
 static void webkit_browser_set_property(GObject *object, guint prop_id,
 		const GValue *value, GParamSpec *pspec)
 {
@@ -502,16 +515,13 @@ static void on_page_load(WebKitWebView *web_view, GParamSpec *pspec,
 static WebKitWebView *webkit_browser_get_current_view(WebKitBrowser *browser)
 {
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
-	WebKitWebView *view;
 	GtkWidget *widget;
 	gint page;
 
 	page = gtk_notebook_get_current_page(priv->notebook);
 	widget = gtk_notebook_get_nth_page(priv->notebook, page);
-	widget = gtk_bin_get_child(GTK_BIN(widget));
-	view = WEBKIT_WEB_VIEW(widget);
 
-	return view;
+	return get_webkit_from_notebook_page(widget);
 }
 
 static void on_notify_uri(WebKitWebView *webkit, GParamSpec *pspec, WebKitBrowser *browser)
@@ -602,14 +612,7 @@ static void on_exit_clicked(GtkWidget *widget, gpointer data)
 
 static void webkit_browser_view_stop(GtkWidget *widget, gpointer data)
 {
-	WebKitWebView *view;
-
-#if GTK_CHECK_VERSION(3, 0, 0)
-	view = WEBKIT_WEB_VIEW(widget);
-#else
-	widget = gtk_bin_get_child(GTK_BIN(widget));
-	view = WEBKIT_WEB_VIEW(widget);
-#endif
+	WebKitWebView *view = get_webkit_from_notebook_page(widget);
 
 	/* FIXME: disconnect notify::progress signal handler instead? */
 	webkit_web_view_stop_loading(view);
@@ -1223,12 +1226,9 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 #ifndef USE_WEBKIT2
 	WebKitWebFrame *frame;
 #endif
-	GtkWidget *widget;
 
 	if (GTK_IS_BIN(page)) {
-		/* the notebook page contains a KatzeScrolled */
-		widget = gtk_bin_get_child(GTK_BIN(page));
-		webkit = WEBKIT_WEB_VIEW(widget);
+		webkit = get_webkit_from_notebook_page(page);
 
 #ifndef USE_WEBKIT2
 		frame = webkit_web_view_get_main_frame(webkit);
