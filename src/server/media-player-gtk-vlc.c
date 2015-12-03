@@ -550,7 +550,8 @@ int media_player_stop(struct media_player *player)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
 
-	player->state = MEDIA_PLAYER_STOPPING;
+	player->state = libvlc_media_player_is_playing(player->player) ?
+			MEDIA_PLAYER_STOPPING : MEDIA_PLAYER_STOPPED;
 	libvlc_media_player_stop(player->player);
 	return 0;
 }
