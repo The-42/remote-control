@@ -1,5 +1,60 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.10.4 (2015-12-04)
 ==========================
+
+* common
+  - Use gtk3 for distcheck
+  - Remove unneeded thread exit state
+  - gsysfsgpio: Sync header with c code
+  - gsysfsgpio: Add label based init
+  - Specify required libgpio version
+  - Add label based chip lookup
+  - Fix glade file path
+  - Fix broken callback assignment check
+  - Fix snprintf() calls
+  - Disable threading for gtk+-3.6 and newer
+
+* server
+  - Set state to stopped if not running
+  - Stop stream while setting new uri
+  - fix medatom is-enabled functions
+  - Add free function
+  - Initialize lldp first
+  - Implement enable-watchdog switch
+  - Fix segfault on failed init
+  - Fix rpc packet tx buffer overflow
+  - Dynamic first iface instead of eth0
+  - Remove device if read failed with ENODEV
+
+* remote-control
+  - Free event manager on termination
+  - Free gpio backend on termination
+  - Fix wrong load-changed signal name
+  - Replace gtk3 deprecations
+  - Output led: Add missing close
+
+* media-player
+  - Introduce starting and stopping states
+
+* browser
+  - Disable jshooks for webkit2
+  - Disable adblock for webkit2
+  - Exclude adblock remnants for webkit2
+  - Replace gtk_widget_modify_font for gtk3
+  - Fix string-related segfaults
+  - Replace gdk_window_get_pointer for gtk3
+  - Change #error to #warning
+  - Fix webkit element access
+  - Fix wrong signal name
+
+* js-api
+  - Remove generated files on clean
+  - Fix some compiler warnings about types
+
+* webkit
+  - Change tab alignment call for gtk3
+  - Remove GTK_VBOX macro for gtk+-3.2
+  - Remove double buffer feature for gtk+3.10
+  - Replace stock items from gtk+-3.10 on
 
 Release 0.10.2 (2015-09-11)
 ==========================
