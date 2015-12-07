@@ -1,5 +1,7 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.10.6 (2015-12-07)
 ==========================
+* browser
+  - Fix broken widget addressing introduced by "fix webkit element access"
 
 Release 0.10.4 (2015-12-04)
 ==========================
