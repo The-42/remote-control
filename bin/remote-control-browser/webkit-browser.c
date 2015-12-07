@@ -230,8 +230,10 @@ static WebKitWebView *get_webkit_from_notebook_page(GtkWidget *widget)
 
 	/* get GtkViewport from GtkScrollWindow */
 	widget = gtk_bin_get_child(GTK_BIN(widget));
+#ifdef USE_WEBKIT2
 	/* get actual WebkitWebView from GtkViewport */
 	widget = gtk_bin_get_child(GTK_BIN(widget));
+#endif
 	view = WEBKIT_WEB_VIEW(widget);
 
 	return view;
