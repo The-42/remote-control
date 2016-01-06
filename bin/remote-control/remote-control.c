@@ -604,10 +604,15 @@ int main(int argc, char *argv[])
 #endif
 	int err;
 
+#ifndef __arm__
+	/* Initializing threads will result in dead locks while switching vlc
+	 * streams using our gles2 plugin.
+	 */
 	if (!XInitThreads()) {
 		g_critical("XInitThreads() failed");
 		return EXIT_FAILURE;
 	}
+#endif
 
 #if !GLIB_CHECK_VERSION(2, 31, 0)
 	if (!g_thread_supported())
