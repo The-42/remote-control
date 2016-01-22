@@ -567,6 +567,7 @@ static void on_forward_clicked(GtkWidget *widget, gpointer data)
 static void on_uri_activate(GtkWidget *widget, gpointer data)
 {
 	WebKitBrowser *browser = WEBKIT_BROWSER(data);
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	GtkEntry *entry = GTK_ENTRY(widget);
 	WebKitWebView *webkit;
 	const gchar *uri;
@@ -574,13 +575,19 @@ static void on_uri_activate(GtkWidget *widget, gpointer data)
 	webkit = webkit_browser_get_current_view(browser);
 	uri = gtk_entry_get_text(entry);
 
+	gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
 	webkit_browser_load_uri(browser, uri);
 	gtk_widget_grab_focus(GTK_WIDGET(webkit));
 }
 
 static gboolean on_uri_focus(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
+	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	GtkEditable *editable = GTK_EDITABLE(widget);
+	WebKitBrowserPrivate *priv;
+
+	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
+	gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
 
 	if (!gtk_widget_has_focus(widget)) {
 		gtk_editable_select_region(editable, 0, -1);
@@ -827,9 +834,12 @@ static gboolean on_webview_button_press_event(GtkWidget *widget,
 					      GdkEvent  *event,
 					      gpointer   data)
 {
+	WebKitBrowser *browser = WEBKIT_BROWSER(data);
 	WebKitHitTestResult *result;
+	WebKitBrowserPrivate *priv;
 	guint context = 0;
 
+	priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
 	result = webkit_web_view_get_hit_test_result(WEBKIT_WEB_VIEW(widget), &event->button);
 	g_assert(result);
 	g_object_get(result, "context", &context, NULL);
@@ -837,6 +847,11 @@ static gboolean on_webview_button_press_event(GtkWidget *widget,
 
 	if (context == 0)
 		return FALSE;
+
+	if (context & WEBKIT_HIT_TEST_RESULT_CONTEXT_EDITABLE)
+		gtk_toggle_tool_button_set_active(priv->toggle, TRUE);
+	else
+		gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
 
 	return FALSE;
 }
