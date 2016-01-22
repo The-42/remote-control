@@ -1,6 +1,13 @@
 bin_PROGRAMS = \
 	remote-control-browser
 
+BUILT_SOURCES = \
+	gtkosk-dbus.c \
+	gtkosk-dbus.h
+CLEANFILES = \
+	gtkosk-dbus.c \
+	gtkosk-dbus.h
+
 remote_control_browser_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-DPKG_DATA_DIR=\"$(pkgdatadir)\" \
@@ -8,9 +15,11 @@ remote_control_browser_CPPFLAGS = \
 	-I$(top_srcdir)/bin/utils \
 	@POPPLER_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
+	@GLIB_CFLAGS@ \
 	@GTK_CFLAGS@
 
 remote_control_browser_SOURCES = \
+	gtkosk-dbus.c \
 	gtk-drag-view.c \
 	gtk-drag-view.h \
 	gtk-pdf-view.c \
@@ -35,11 +44,22 @@ remote_control_browser_SOURCES += \
 	adblock.h
 endif
 
+gtkosk-dbus.c: gtkosk-dbus.h
+	touch $@
+
+gtkosk-dbus.h:
+	gdbus-codegen \
+		--generate-c-code gtkosk-dbus \
+		--c-namespace GtkOsk \
+		--interface-prefix com.avionicdesign.gtkosk. \
+		@GTKOSK_DATADIR@/com.avionicdesign.gtkosk.control.xml
+
 remote_control_browser_LDADD = \
 	../../src/common/libcommon.la \
 	../utils/libutils.la \
 	@POPPLER_LIBS@ \
 	@WEBKIT_LIBS@ \
+	@GLIB_LIBS@ \
 	@GTK_LIBS@
 
 jshooksdir = $(pkgdatadir)/jshooks

@@ -27,6 +27,7 @@
 #include "webkit-browser.h"
 #include "webkit-browser-tab-label.h"
 #include "gtk-pdf-view.h"
+#include "gtkosk-dbus.h"
 #include "utils.h"
 #include "guri.h"
 #include "jshooks.h"
@@ -77,7 +78,9 @@ struct _WebKitBrowserPrivate {
 	GtkToolItem *back;
 	GtkToolItem *forward;
 	GtkToolItem *reload;
+	GtkToggleToolButton *toggle;
 	GtkToolItem *exit;
+	GtkOskControl *osk;
 	gchar *geometry;
 	gboolean controls;
 	gboolean noexit;
@@ -603,6 +606,14 @@ static void on_go_clicked(GtkWidget *widget, gpointer data)
 		webkit_browser_load_uri(browser, uri);
 	else
 		webkit_web_view_stop_loading(webkit);
+}
+
+static void on_keyboard_clicked(GtkWidget *widget, gpointer data)
+{
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
+
+	gtk_osk_control_set_visible(priv->osk,
+			gtk_toggle_tool_button_get_active(priv->toggle));
 }
 
 static void on_exit_clicked(GtkWidget *widget, gpointer data)
@@ -1335,6 +1346,15 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_toolbar_insert(priv->toolbar, priv->reload, -1);
 	gtk_widget_show(GTK_WIDGET(priv->reload));
 
+	priv->toggle = GTK_TOGGLE_TOOL_BUTTON(gtk_toggle_tool_button_new());
+	gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
+	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->toggle),
+			"input-keyboard");
+	g_signal_connect(G_OBJECT(priv->toggle), "toggled",
+			G_CALLBACK(on_keyboard_clicked), browser);
+	gtk_toolbar_insert(priv->toolbar, GTK_TOOL_ITEM(priv->toggle), -1);
+	gtk_widget_show(GTK_WIDGET(priv->toggle));
+
 	priv->exit = gtk_tool_button_new(NULL, NULL);
 	gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(priv->exit), "exit");
 	g_signal_connect(G_OBJECT(priv->exit), "clicked",
@@ -1435,6 +1455,12 @@ static void webkit_browser_init(WebKitBrowser *browser)
 	 * cookies in memory unless told otherwise.
 	 */
 #endif
+
+	priv->osk = gtk_osk_control_proxy_new_for_bus_sync(G_BUS_TYPE_SESSION,
+			G_DBUS_PROXY_FLAGS_NONE,
+			"com.avionicdesign.gtkosk.control",
+			"/com/avionicdesign/gtkosk/control",
+			NULL, NULL);
 
 	toolbar = webkit_browser_create_toolbar(browser);
 	gtk_widget_show(toolbar);
