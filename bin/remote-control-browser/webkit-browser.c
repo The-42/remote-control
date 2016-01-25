@@ -627,6 +627,7 @@ static void on_exit_clicked(GtkWidget *widget, gpointer data)
 {
 	GtkWidget *window = GTK_WIDGET(data);
 
+	gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
 	gtk_widget_destroy(window);
 }
 
