@@ -625,6 +625,7 @@ static void on_keyboard_clicked(GtkWidget *widget, gpointer data)
 
 static void on_exit_clicked(GtkWidget *widget, gpointer data)
 {
+	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(data);
 	GtkWidget *window = GTK_WIDGET(data);
 
 	gtk_toggle_tool_button_set_active(priv->toggle, FALSE);
