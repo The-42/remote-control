@@ -316,7 +316,7 @@ static struct mixer_map {
 			}, {
 				.control = MIXER_CONTROL_PLAYBACK_HEADSET,
 				.name = "Headphone",
-				.index = 1,
+				.index = 0,
 			}, {
 				.control = MIXER_CONTROL_PLAYBACK_SPEAKER,
 				.name = "Speaker",
@@ -324,7 +324,7 @@ static struct mixer_map {
 			}, {
 				.control = MIXER_CONTROL_PLAYBACK_HANDSET,
 				.name = "Headphone",
-				.index = 0,
+				.index = 1,
 			}, {
 				.control = MIXER_CONTROL_CAPTURE_MASTER,
 				.name = "Capture",
