@@ -188,9 +188,23 @@ remote-control-stub.c: $(srcdir)/../protocol.xml
 remote-control-stub.h: $(srcdir)/../protocol.xml
 	$(AM_V_GEN)$(RPC_STUBGEN) --server --header -o $@ $<
 
+libremote_control_la_SOURCES += gtkosk-dbus.c
+
+gtkosk-dbus.c: gtkosk-dbus.h
+	touch $@
+
+gtkosk-dbus.h:
+	gdbus-codegen \
+		--generate-c-code gtkosk-dbus \
+		--c-namespace GtkOsk \
+		--interface-prefix com.avionicdesign.gtkosk. \
+		@GTKOSK_DATADIR@/com.avionicdesign.gtkosk.control.xml
+
 BUILT_SOURCES = \
 	remote-control-stub.c \
-	remote-control-stub.h
+	remote-control-stub.h \
+	gtkosk-dbus.c \
+	gtkosk-dbus.h
 
 if ENABLE_LIBTNJ3324
 libremote_control_la_CFLAGS += @LIBTNJ3324_CFLAGS@

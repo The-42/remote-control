@@ -13,6 +13,8 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
+#include "gtkosk-dbus.h"
+
 #define TASK_MANAGER_PID_MIN 2
 
 struct task {
@@ -24,6 +26,7 @@ struct task {
 
 struct task_manager {
 	int32_t last_pid;
+	GtkOskControl *osk;
 	GList *tasks;
 };
 
@@ -92,6 +95,11 @@ int task_manager_create(struct task_manager **managerp)
 		return -ENOMEM;
 
 	manager->last_pid = TASK_MANAGER_PID_MIN - 1;
+	manager->osk = gtk_osk_control_proxy_new_for_bus_sync(
+			G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE,
+			"com.avionicdesign.gtkosk.control",
+			"/com/avionicdesign/gtkosk/control",
+			NULL, NULL);
 
 	*managerp = manager;
 	return 0;
@@ -117,6 +125,7 @@ int task_manager_free(struct task_manager *manager)
 	}
 
 	g_list_free_full(manager->tasks, task_free);
+	g_free(manager->osk);
 	g_free(manager);
 	return 0;
 }
@@ -246,6 +255,8 @@ int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig)
 			break;
 		}
 	}
+	if (manager->osk) /* Make sure osk is not active */
+		gtk_osk_control_set_visible(manager->osk, FALSE);
 
 	return ret;
 }
