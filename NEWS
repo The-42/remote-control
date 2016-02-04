@@ -1,5 +1,12 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.10.8 (2016-02-04)
 ==========================
+* remote-control
+  - Close osk in task_manager_kill
+  - Don't initialize multithreaded Xlib for arm
+* browser
+  - Close osk before exit
+  - Explicitly toggle keyboard visibility when possible
+  - Add button for explicit osk control
 
 Release 0.10.6 (2015-12-07)
 ==========================
