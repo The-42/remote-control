@@ -125,7 +125,7 @@ int task_manager_free(struct task_manager *manager)
 	}
 
 	g_list_free_full(manager->tasks, task_free);
-	g_free(manager->osk);
+	g_object_unref(manager->osk);
 	g_free(manager);
 	return 0;
 }
