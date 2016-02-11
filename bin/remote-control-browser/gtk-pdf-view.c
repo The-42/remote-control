@@ -265,6 +265,57 @@ static gboolean on_draw(GtkWidget *drawing_area, cairo_t *cr,
 	cairo_paint (cr);
 	return TRUE;
 }
+#else
+static gboolean on_canvas_expose(GtkWidget *widget, GdkEvent *event,
+		gpointer data)
+{
+	GtkPdfViewPrivate *priv = GTK_PDF_VIEW_GET_PRIVATE(data);
+	GdkWindow *window;
+	PopplerPage *page;
+	cairo_t *cairo;
+
+	if (priv->document) {
+		double height;
+		double width;
+
+		window = gtk_widget_get_window(widget);
+		page = poppler_document_get_page(priv->document, priv->page);
+		cairo = gdk_cairo_create(GDK_DRAWABLE(window));
+
+		poppler_page_get_size(page, &width, &height);
+		width *= scale;
+		height *= scale;
+
+		/*
+		 * TODO: This can probably be optimized by only drawing the
+		 *       border where it is not overlapped by the actual PDF
+		 *       content.
+		 */
+
+		cairo_set_source_rgb(cairo, 0.0, 0.0, 0.0);
+		cairo_rectangle(cairo, spacing.left, spacing.top,
+				width + border.left + border.right,
+				height + border.top + border.bottom);
+		cairo_rectangle(cairo, spacing.left + shadow,
+				spacing.top + shadow,
+				width + border.left + border.right,
+				height + border.top + border.bottom);
+		cairo_fill(cairo);
+
+		cairo_set_source_rgb(cairo, 1.0, 1.0, 1.0);
+		cairo_rectangle(cairo, spacing.left + border.left,
+				spacing.top + border.top,
+				width, height);
+		cairo_fill(cairo);
+
+		cairo_scale(cairo, scale, scale);
+		poppler_page_render(page, cairo);
+
+		cairo_destroy(cairo);
+		g_object_unref(page);
+	}
+	return TRUE;
+}
 #endif
 
 static void gtk_pdf_view_init(GtkPdfView *self)
@@ -292,7 +343,8 @@ static void gtk_pdf_view_init(GtkPdfView *self)
 	g_signal_connect(G_OBJECT(canvas), "draw",
 			G_CALLBACK(on_draw), self);
 #else
-#warning "gtk_pdf_view_init: missing implementation for GTK < 2.91.0"
+	g_signal_connect(G_OBJECT(canvas), "expose-event",
+		G_CALLBACK(on_canvas_expose), self);
 #endif
 #if GTK_CHECK_VERSION(3, 7, 8)
 	gtk_container_add(GTK_CONTAINER(window), canvas);
