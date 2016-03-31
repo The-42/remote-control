@@ -15,6 +15,7 @@
 #include <string.h>
 #include <gudev/gudev.h>
 #include <linux/fb.h>
+#include <glib-unix.h>
 
 #include "gsysfsbacklight.h"
 #include "glogging.h"
@@ -157,6 +158,11 @@ GSysfsBacklight *g_sysfs_backlight_new(const gchar *name, GError **error)
 
 	g_list_free_full(list, g_object_unref);
 	g_object_unref(udev);
+
+	if (!device) {
+		g_set_error(error, G_UNIX_ERROR, ENXIO, "No such device");
+		return NULL;
+	}
 
 	object = g_object_new(G_SYSFS_TYPE_BACKLIGHT, "device", device, NULL);
 
