@@ -110,7 +110,8 @@ static int backlight_dpms_probe(struct backlight *backlight)
 
 	if (!DPMSGetVersion(backlight->display, &major, &minor) ||
 	    !DPMSCapable(backlight->display) ||
-	    !DPMSQueryExtension(backlight->display, &dummy, &dummy)) {
+	    !DPMSQueryExtension(backlight->display, &dummy, &dummy) ||
+	    !DPMSEnable(backlight->display)) {
 		XCloseDisplay(backlight->display);
 		return -ENOTSUP;
 	}
