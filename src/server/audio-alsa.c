@@ -458,16 +458,18 @@ int audio_free(struct audio *audio)
 	if (!audio)
 		return -EINVAL;
 
-	err = snd_use_case_mgr_reset(audio->ucm);
-	if (err < 0) {
-		g_warning("audio-alsa-ucm: failed to reset UCM: %s",
-			  snd_strerror(err));
-	}
+	if (audio->ucm) {
+		err = snd_use_case_mgr_reset(audio->ucm);
+		if (err < 0) {
+			g_warning("audio-alsa-ucm: failed to reset UCM: %s",
+				  snd_strerror(err));
+		}
 
-	err = snd_use_case_mgr_close(audio->ucm);
-	if (err < 0) {
-		g_warning("audio-alsa-ucm: failed to close UCM: %s",
-			  snd_strerror(err));
+		err = snd_use_case_mgr_close(audio->ucm);
+		if (err < 0) {
+			g_warning("audio-alsa-ucm: failed to close UCM: %s",
+				  snd_strerror(err));
+		}
 	}
 
 	g_list_free_full(audio->cards, (GDestroyNotify)soundcard_free);
