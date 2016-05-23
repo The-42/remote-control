@@ -395,6 +395,27 @@ static int audio_find_cards(struct audio *audio)
 	return g_list_length(audio->cards) > 0 ? 0 : -ENODEV;
 }
 
+static int audio_ucm_open(snd_use_case_mgr_t **ucm, const char *card_name)
+{
+	gchar **splinters;
+	gchar *name;
+	int err;
+
+	err = snd_use_case_mgr_open(ucm, card_name);
+	if (err >= 0)
+		return 0;
+
+	/* retry after replacing spaces with underscores (PBS workaround) */
+	splinters = g_strsplit(card_name, " ", 0);
+	name = g_strjoinv("_", splinters);
+	g_strfreev(splinters);
+
+	err = snd_use_case_mgr_open(ucm, name);
+	g_free(name);
+
+	return err;
+}
+
 int audio_create(struct audio **audiop, struct rpc_server *server,
 		 GKeyFile *config)
 {
@@ -417,7 +438,7 @@ int audio_create(struct audio **audiop, struct rpc_server *server,
 
 	card = g_list_nth(audio->cards, audio->index)->data;
 
-	err = snd_use_case_mgr_open(&audio->ucm, card->name);
+	err = audio_ucm_open(&audio->ucm, card->name);
 	if (err < 0) {
 		g_warning("audio-alsa-ucm: failed to open use-case-manager: "
 			  "%s", snd_strerror(err));
