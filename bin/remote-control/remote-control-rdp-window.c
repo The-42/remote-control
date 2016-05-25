@@ -231,11 +231,6 @@ gboolean remote_control_rdp_window_reconnect(RemoteControlRdpWindow *self)
 	/* TODO: check for network connection (netlink socket, libnl?) */
 
 	argv = g_new0(gchar *, 10);
-	if (!argv) {
-		g_error("g_new0() failed");
-		return FALSE;
-	}
-
 	argv[0] = g_strdup("xfreerdp");
 	argv[1] = g_strdup("-u");
 	argv[2] = g_strdup(priv->rdp.username);
@@ -250,7 +245,7 @@ gboolean remote_control_rdp_window_reconnect(RemoteControlRdpWindow *self)
 	if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD |
 			G_SPAWN_SEARCH_PATH, NULL, NULL, &priv->xfreerdp,
 			&error)) {
-		g_error("g_spawn_async(): %s", error->message);
+		g_critical("g_spawn_async(): %s", error->message);
 		g_error_free(error);
 		g_strfreev(argv);
 		return FALSE;
@@ -260,7 +255,7 @@ gboolean remote_control_rdp_window_reconnect(RemoteControlRdpWindow *self)
 
 	priv->watch = g_child_watch_source_new(priv->xfreerdp);
 	if (!priv->watch) {
-		g_error("g_child_watch_source_new() failed");
+		g_critical("g_child_watch_source_new() failed");
 		return FALSE;
 	}
 

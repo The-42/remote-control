@@ -120,14 +120,14 @@ static int js_output_sysfs_create(
 		attr = javascript_config_get_string(config, OUTPUT_GROUP, name,
 				"attr");
 		if (!attr) {
-			g_error("%s: Output %s doesn't have an attribute",
+			g_critical("%s: Output %s doesn't have an attribute",
 				__func__, name);
 			err = -EINVAL;
 			goto on_error;
 		}
 		err = parse_udev_matches(match, &udev_match);
 		if (err) {
-			g_error("%s: Failed to parse match rule of output %s",
+			g_critical("%s: Failed to parse match rule of output %s",
 				__func__, name);
 			goto on_error;
 		}
@@ -137,7 +137,7 @@ static int js_output_sysfs_create(
 		path = javascript_config_get_string(config, OUTPUT_GROUP, name,
 				"path");
 		if (!path) {
-			g_error("%s: Output %s doesn't have a path or match rule",
+			g_critical("%s: Output %s doesn't have a path or match rule",
 				__func__, name);
 			err = -EINVAL;
 			goto on_error;

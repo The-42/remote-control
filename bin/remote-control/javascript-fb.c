@@ -392,7 +392,7 @@ static int js_fb_init_fb(GKeyFile *config, const char *name,
 	if (match) {
 		ret = parse_udev_matches(match, &data->match);
 		if (ret) {
-			g_error("%s: Failed to parse match rule for framebuffer %s",
+			g_critical("%s: Failed to parse match rule for framebuffer %s",
 				__func__, name);
 			goto cleanup;
 		}

@@ -85,7 +85,7 @@ static int js_output_hid_led_get(struct js_output *out, double *valuep)
 		return -ENODEV;
 
 	if (out->code / 8 >= sizeof(leds)) {
-		g_error("%s: Output %s has a too large LED code",
+		g_critical("%s: Output %s has a too large LED code",
 			__func__, out->name ? out->name : out->path);
 		return -EINVAL;
 	}
@@ -147,7 +147,7 @@ static int js_output_hid_led_create(
 	path = javascript_config_get_string(config, OUTPUT_GROUP, name,
 					"path");
 	if (!path && !dev_name) {
-		g_error("%s: Output %s doesn't have a path or device name",
+		g_critical("%s: Output %s doesn't have a path or device name",
 			__func__, name);
 		err = -EINVAL;
 		goto on_error;
@@ -155,7 +155,7 @@ static int js_output_hid_led_create(
 
 	led_name = javascript_config_get_string(config, OUTPUT_GROUP, name, "led");
 	if (!led_name) {
-		g_error("%s: Output %s is missing the 'led' key",
+		g_critical("%s: Output %s is missing the 'led' key",
 			__func__, name);
 		err = -EINVAL;
 		goto on_error;
@@ -163,7 +163,7 @@ static int js_output_hid_led_create(
 
 	led_code = get_led_code(led_name);
 	if (led_code < 0) {
-		g_error("%s: Output %s has an unknown led: %s",
+		g_critical("%s: Output %s has an unknown led: %s",
 			__func__, name, led_name);
 		err = -EINVAL;
 		goto on_error;

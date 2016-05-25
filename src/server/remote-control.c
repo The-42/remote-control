@@ -299,13 +299,13 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	err = rpc_server_create(&server, NULL, sizeof(*rc));
 	if (err < 0) {
-		g_error("rpc_server_create(): %s", strerror(-err));
+		g_critical("rpc_server_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = rpc_server_listen(server, 7482);
 	if (err < 0) {
-		g_error("rpc_server_listen(): %s", strerror(-err));
+		g_critical("rpc_server_listen(): %s", strerror(-err));
 		return err;
 	}
 
@@ -313,13 +313,13 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	rc->source = g_source_new(&remote_control_source_funcs, sizeof(GSource));
 	if (!rc->source) {
-		g_error("g_source_new() failed");
+		g_critical("g_source_new() failed");
 		return -ENOMEM;
 	}
 
 	err = lldp_monitor_create(&rc->lldp, config);
 	if (err < 0) {
-		g_error("lldp_monitor_create(): %s", strerror(-err));
+		g_critical("lldp_monitor_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -331,7 +331,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	source = g_source_new(&rpc_source_funcs, sizeof(struct rpc_source));
 	if (!source) {
-		g_error("g_source_new() failed");
+		g_critical("g_source_new() failed");
 		return -ENOMEM;
 	}
 
@@ -340,7 +340,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	socket = rpc_server_get_listen_socket(server);
 	if (socket < 0) {
-		g_error("rpc_server_get_listen(): %s", g_strerror(-socket));
+		g_critical("rpc_server_get_listen(): %s", g_strerror(-socket));
 		return socket;
 	}
 
@@ -360,55 +360,55 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	err = event_manager_create(&rc->event_manager, server);
 	if (err < 0) {
-		g_error("event_manager_create(): %s", strerror(-err));
+		g_critical("event_manager_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = backlight_create(&rc->backlight);
 	if (err < 0) {
-		g_error("backlight_create(): %s", strerror(-err));
+		g_critical("backlight_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = cursor_movement_create(&rc->cursor_movement);
 	if (err < 0) {
-		g_error("cursor_movement_create(): %s", strerror(-err));
+		g_critical("cursor_movement_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = media_player_create(&rc->player, config);
 	if (err < 0) {
-		g_error("media_player_create(): %s", strerror(-err));
+		g_critical("media_player_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = audio_create(&rc->audio, server, config);
 	if (err < 0) {
-		g_error("audio_create(): %s", strerror(-err));
+		g_critical("audio_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = sound_manager_create(&rc->sound, rc->audio, config);
 	if (err < 0) {
-		g_error("sound_manager_create(): %s", strerror(-err));
+		g_critical("sound_manager_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = smartcard_create(&rc->smartcard, server, config);
 	if (err < 0) {
-		g_error("smartcard_create(): %s", strerror(-err));
+		g_critical("smartcard_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = rfid_create(&rc->rfid, server);
 	if (err < 0) {
-		g_error("rfid_create(): %s", strerror(-err));
+		g_critical("rfid_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = modem_manager_create(&rc->modem, server, config);
 	if (err < 0) {
-		g_error("modem_manager_create(): %s", strerror(-err));
+		g_critical("modem_manager_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -420,7 +420,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	err = voip_create(&rc->voip, server, config);
 	if (err < 0) {
-		g_error("voip_create(): %s", strerror(-err));
+		g_critical("voip_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -432,31 +432,31 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	err = net_create(&rc->net, server);
 	if (err < 0) {
-		g_error("net_create(): %s", strerror(-err));
+		g_critical("net_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = task_manager_create(&rc->task_manager);
 	if (err < 0) {
-		g_error("task_manager_create(): %s", strerror(-err));
+		g_critical("task_manager_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = tuner_create(&rc->tuner);
 	if (err < 0) {
-		g_error("tuner_create(): %s", strerror(-err));
+		g_critical("tuner_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = handset_create(&rc->handset, server);
 	if (err < 0) {
-		g_error("handset_create(): %s", strerror(-err));
+		g_critical("handset_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = mixer_create(&rc->mixer);
 	if (err < 0) {
-		g_error("mixer_create(): %s", strerror(-err));
+		g_critical("mixer_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -468,7 +468,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	err = gpio_backend_create(&rc->gpio, rc->event_manager, config);
 	if (err < 0) {
-		g_error("gpio_backend_create(): %s", strerror(-err));
+		g_critical("gpio_backend_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -480,13 +480,13 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 
 	err = usb_handset_create(rc);
 	if (err < 0) {
-		g_error("usb_handset_create(): %s", strerror(-err));
+		g_critical("usb_handset_create(): %s", strerror(-err));
 		return err;
 	}
 
 	err = app_watchdog_create(&rc->watchdog, config);
 	if (err < 0) {
-		g_error("app_watchdog_create(): %s", strerror(-err));
+		g_critical("app_watchdog_create(): %s", strerror(-err));
 		return err;
 	}
 
