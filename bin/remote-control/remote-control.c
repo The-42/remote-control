@@ -492,6 +492,7 @@ static gpointer remote_control_thread(gpointer data)
 	context = g_main_context_new();
 	if (!context) {
 		g_critical("failed to create main context");
+		g_mutex_unlock(&rcd->startup_mutex);
 		return NULL;
 	}
 
@@ -500,6 +501,7 @@ static gpointer remote_control_thread(gpointer data)
 	err = remote_control_create(&rc, rcd->config);
 	if (err < 0) {
 		g_critical("remote_control_create(): %s", strerror(-err));
+		g_mutex_unlock(&rcd->startup_mutex);
 		return NULL;
 	}
 
