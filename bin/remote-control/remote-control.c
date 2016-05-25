@@ -729,6 +729,7 @@ int main(int argc, char *argv[])
 	err = javascript_init(conf);
 	if (err) {
 		g_critical("failed to init javascript backend");
+		stop_remote_control(rcd);
 		return EXIT_FAILURE;
 	}
 #endif
