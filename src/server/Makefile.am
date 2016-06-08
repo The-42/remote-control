@@ -136,9 +136,9 @@ if ENABLE_LIBSMARTCARD
 libremote_control_la_CFLAGS += @LIBSMARTCARD_CFLAGS@
 libremote_control_la_LIBADD += @LIBSMARTCARD_LIBS@
 libremote_control_la_SOURCES += smartcard-i2c.c
-else
-libremote_control_la_SOURCES += smartcard-null.c
 endif # ENABLE_LIBSMARTCARD
+
+libremote_control_la_SOURCES += smartcard-generic.c
 
 if ENABLE_LIBMODEM
 libremote_control_la_CFLAGS += @LIBMODEM_CFLAGS@

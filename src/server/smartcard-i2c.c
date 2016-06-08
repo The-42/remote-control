@@ -48,8 +48,8 @@ static void smartcard_disable_power(struct smartcard *smartcard)
 	}
 }
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
-		     GKeyFile *config)
+int smartcard_create_i2c(struct smartcard **smartcardp,
+		struct rpc_server *server, GKeyFile *config)
 {
 	gchar **parts, *device, *bus;
 	struct smartcard *smartcard;
@@ -119,7 +119,7 @@ int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
 	return 0;
 }
 
-int smartcard_free(struct smartcard *smartcard)
+int smartcard_free_i2c(struct smartcard *smartcard)
 {
 	if (!smartcard)
 		return -EINVAL;
@@ -134,7 +134,7 @@ int smartcard_free(struct smartcard *smartcard)
 	return 0;
 }
 
-int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep)
+int smartcard_get_type_i2c(struct smartcard *smartcard, unsigned int *typep)
 {
 	if (!smartcard || !typep)
 		return -EINVAL;
@@ -143,13 +143,13 @@ int smartcard_get_type(struct smartcard *smartcard, unsigned int *typep)
 	return 0;
 }
 
-ssize_t smartcard_read(struct smartcard *smartcard, off_t offset,
+ssize_t smartcard_read_i2c(struct smartcard *smartcard, off_t offset,
 		       void *buffer, size_t size)
 {
 	return smartcard_i2c_read(smartcard->i2c, offset, buffer, size);
 }
 
-ssize_t smartcard_write(struct smartcard *smartcard, off_t offset,
+ssize_t smartcard_write_i2c(struct smartcard *smartcard, off_t offset,
 			const void *buffer, size_t size)
 {
 	return smartcard_i2c_write(smartcard->i2c, offset, buffer, size);

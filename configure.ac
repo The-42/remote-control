@@ -124,15 +124,10 @@ AS_CASE([$with_backlight_backend],
 #
 enable_libsmartcard=no
 
-AC_ARG_WITH(smartcard_backend,
-	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard@:>@],
-		[Use the specified SmartCard backend. [default=none]])
-	], [], [with_smartcard_backend=none])
-
-AS_CASE([$with_smartcard_backend],
-	[none], [],
-	[libsmartcard], [PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])],
-	[AC_MSG_ERROR([Invalid SmartCard backend: must be none or libsmartcard])]
+PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])
+AS_IF([test "x$enable_libsmartcard" = "xyes"],
+	[AC_DEFINE([ENABLE_LIBSMARTCARD], [1], [Define to 1 if smartcard should support libsmartcard])],
+	[AC_DEFINE([ENABLE_LIBSMARTCARD], [0], [Define to 0 if smartcard should not support libsmartcard])]
 )
 
 #
@@ -451,8 +446,19 @@ AS_IF([test "x$enable_gst" = "xyes"],
 	[AS_ECHO("  Video Backend:             $with_video_backend")])
 AS_IF([test "x$with_video_backend" = "xlibvlc"],
 	[AS_ECHO("     Tuner Support:          $with_libtnj3324")])
-AS_ECHO("  SmartCard Backend:         $with_smartcard_backend
-  VoIP Backend:              $with_voip_backend
+
+smartcard_none=yes
+AS_ECHO_N("  SmartCard Backends:  ")
+AS_IF([test "x$enable_libsmartcard" = "xyes"],
+	[
+	AS_ECHO_N(" libsmartcard")
+	smartcard_none=no
+	])
+AS_IF([test "x$smartcard_none" = "xyes"],
+	[AS_ECHO_N(" none")])
+AS_ECHO("")
+
+AS_ECHO("  VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
   Modem Backend:             $with_modem_backend")
 AS_IF([test "x$with_modem_backend" = "xlibmodem"],
