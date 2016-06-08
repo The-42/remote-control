@@ -138,6 +138,12 @@ libremote_control_la_LIBADD += @LIBSMARTCARD_LIBS@
 libremote_control_la_SOURCES += smartcard-i2c.c
 endif # ENABLE_LIBSMARTCARD
 
+if ENABLE_LIBPCSCLITE
+libremote_control_la_CFLAGS += @LIBPCSCLITE_CFLAGS@
+libremote_control_la_LIBADD += @LIBPCSCLITE_LIBS@
+libremote_control_la_SOURCES += smartcard-pcsc.c
+endif # ENABLE_LIBPCSCLITE
+
 libremote_control_la_SOURCES += smartcard-generic.c
 
 if ENABLE_LIBMODEM

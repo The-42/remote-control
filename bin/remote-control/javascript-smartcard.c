@@ -26,6 +26,8 @@
 static const struct javascript_enum smartcard_type_enum[] = {
 	SMARTCARD_TYPE(UNKNOWN, "unknown"),
 	SMARTCARD_TYPE(I2C, "I2C"),
+	SMARTCARD_TYPE(T0, "T0"),
+	SMARTCARD_TYPE(T1, "T1"),
 	{}
 };
 

@@ -34,6 +34,9 @@ struct smartcard_data;
 	val->p_read     = smartcard_read_##TYPE;                               \
 	val->p_write    = smartcard_write_##TYPE
 
+#if ENABLE_LIBPCSCLITE
+REGISTER_SMARTCARD(pcsc);
+#endif
 #if ENABLE_LIBSMARTCARD
 REGISTER_SMARTCARD(i2c);
 #endif
@@ -69,6 +72,13 @@ int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
 	*smartcardp = smartcard;
 
 	//TODO: Force type if defined by configuration
+#if ENABLE_LIBPCSCLITE
+	ret = smartcard_create_pcsc(&smartcard->data, server, config);
+	if (ret >= 0) {
+		SET_SMARTCARD(smartcard, pcsc);
+		return ret;
+	}
+#endif
 #if ENABLE_LIBSMARTCARD
 	ret = smartcard_create_i2c(&smartcard->data, server, config);
 	if (ret >= 0) {

@@ -31,6 +31,12 @@ int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *typep)
 	case SMARTCARD_TYPE_I2C:
 		*typep = RPC_MACRO(CARD_TYPE_I2C);
 		break;
+	case SMARTCARD_TYPE_T0:
+		*typep = RPC_MACRO(CARD_TYPE_T0);
+		break;
+	case SMARTCARD_TYPE_T1:
+		*typep = RPC_MACRO(CARD_TYPE_T1);
+		break;
 	default:
 		*typep = RPC_MACRO(CARD_TYPE_UNKNOWN);
 		break;

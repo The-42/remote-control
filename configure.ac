@@ -123,11 +123,18 @@ AS_CASE([$with_backlight_backend],
 # SmartCard backend
 #
 enable_libsmartcard=no
+enable_libpcsclite=no
 
 PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])
 AS_IF([test "x$enable_libsmartcard" = "xyes"],
 	[AC_DEFINE([ENABLE_LIBSMARTCARD], [1], [Define to 1 if smartcard should support libsmartcard])],
 	[AC_DEFINE([ENABLE_LIBSMARTCARD], [0], [Define to 0 if smartcard should not support libsmartcard])]
+)
+
+PKG_CHECK_MODULES(LIBPCSCLITE, libpcsclite, [enable_libpcsclite=yes])
+AS_IF([test "x$enable_libpcsclite" = "xyes"],
+	[AC_DEFINE([ENABLE_LIBPCSCLITE], [1], [Define to 1 if smartcard should support libpcsclite])],
+	[AC_DEFINE([ENABLE_LIBPCSCLITE], [1], [Define to 0 if smartcard should not support libpcsclite])]
 )
 
 #
@@ -361,6 +368,7 @@ AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "x
 AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
+AM_CONDITIONAL(ENABLE_LIBPCSCLITE, [test "x$enable_libpcsclite" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
@@ -452,6 +460,11 @@ AS_ECHO_N("  SmartCard Backends:  ")
 AS_IF([test "x$enable_libsmartcard" = "xyes"],
 	[
 	AS_ECHO_N(" libsmartcard")
+	smartcard_none=no
+	])
+AS_IF([test "x$enable_libpcsclite" = "xyes"],
+	[
+	AS_ECHO_N(" libpcsclite")
 	smartcard_none=no
 	])
 AS_IF([test "x$smartcard_none" = "xyes"],
