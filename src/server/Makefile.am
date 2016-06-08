@@ -38,7 +38,6 @@ libremote_control_la_SOURCES = \
 	net-unix.c \
 	remote-control.c \
 	remote-control.h \
-	rfid.c \
 	smartcard.c \
 	sound.c \
 	system.c \
@@ -145,7 +144,6 @@ libremote_control_la_SOURCES += smartcard-i2c.c
 else
 libremote_control_la_SOURCES += smartcard-null.c
 endif # ENABLE_LIBSMARTCARD
-libremote_control_la_SOURCES += rfid-null.c
 endif # ENABLE_LIBCCID
 
 if ENABLE_LIBMODEM

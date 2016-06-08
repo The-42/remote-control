@@ -127,14 +127,14 @@ enable_libccid=no
 
 AC_ARG_WITH(smartcard_backend,
 	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
-		[Use the specified SmartCard/RFID backend. [default=none]])
+		[Use the specified SmartCard backend. [default=none]])
 	], [], [with_smartcard_backend=none])
 
 AS_CASE([$with_smartcard_backend],
 	[none], [],
 	[libsmartcard], [PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])],
 	[libccid], [PKG_CHECK_MODULES(LIBCCID, libccid, [enable_libccid=yes])],
-	[AC_MSG_ERROR([Invalid SmartCard/RFID backend: must be none, libsmartcard or libccid])]
+	[AC_MSG_ERROR([Invalid SmartCard backend: must be none, libsmartcard or libccid])]
 )
 
 #
@@ -454,7 +454,7 @@ AS_IF([test "x$enable_gst" = "xyes"],
 	[AS_ECHO("  Video Backend:             $with_video_backend")])
 AS_IF([test "x$with_video_backend" = "xlibvlc"],
 	[AS_ECHO("     Tuner Support:          $with_libtnj3324")])
-AS_ECHO("  SmartCard/RFID Backend:    $with_smartcard_backend
+AS_ECHO("  SmartCard Backend:         $with_smartcard_backend
   VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
   Modem Backend:             $with_modem_backend")

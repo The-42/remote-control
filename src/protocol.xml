@@ -175,17 +175,6 @@
 			<arg name="offset" type="off_t" mode="in"/>
 			<arg name="buffer" type="buffer" mode="inout"/>
 		</func>
-		<func name="rfid_get_type" returns="int32_t" opcode="350">
-			<arg name="type" type="rfid_type" mode="out"/>
-		</func>
-		<func name="rfid_read" returns="int32_t" opcode="351">
-			<arg name="offset" type="off_t" mode="in"/>
-			<arg name="buffer" type="buffer" mode="inout"/>
-		</func>
-		<func name="rfid_write" returns="int32_t" opcode="352">
-			<arg name="offset" type="off_t" mode="in"/>
-			<arg name="buffer" type="buffer" mode="inout"/>
-		</func>
 		<!-- Modem -->
 		<func name="modem_init" returns="int32_t" opcode="400"/>
 		<func name="modem_deinit" returns="int32_t" opcode="401"/>

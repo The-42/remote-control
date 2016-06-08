@@ -283,23 +283,6 @@ ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, 
 ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *buffer, size_t size);
 
 /**
- * RFID
- */
-enum rfid_type {
-	RFID_TYPE_UNKNOWN,
-	RFID_TYPE_MIFARE_1K,
-};
-
-struct rfid;
-
-int rfid_create(struct rfid **rfidp, struct rpc_server *server);
-int rfid_free(struct rfid *rfid);
-int rfid_get_type(struct rfid *rfid, enum rfid_type *typep);
-ssize_t rfid_read(struct rfid *rfid, off_t offset, void *buffer, size_t size);
-ssize_t rfid_write(struct rfid *rfid, off_t offset, const void *buffer,
-		size_t size);
-
-/**
  * modem manager
  */
 enum modem_state {

@@ -193,13 +193,6 @@ remote_public int remote_card_read(void *priv, off_t offset, void *buffer,
 remote_public int remote_card_write(void *priv, off_t offset,
 		const void *buffer, size_t size);
 
-remote_public int remote_rfid_get_type(void *priv,
-		enum remote_rfid_type *type);
-remote_public int remote_rfid_read(void *priv, off_t offset, void *buffer,
-		size_t size);
-remote_public int remote_rfid_write(void *priv, off_t offset,
-		const void *buffer, size_t size);
-
 remote_public int remote_handset_display_clear(void *priv);
 remote_public int remote_handset_display_sync(void *priv);
 remote_public int remote_handset_display_set_brightness(void *priv,
