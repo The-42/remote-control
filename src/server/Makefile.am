@@ -132,11 +132,6 @@ libremote_control_la_SOURCES += \
 endif # ENABLE_GST
 endif # ENABLE_LIBVLC
 
-if ENABLE_LIBCCID
-libremote_control_la_CFLAGS += @LIBCCID_CFLAGS@
-libremote_control_la_LIBADD += @LIBCCID_LIBS@
-libremote_control_la_SOURCES += smartcard-libccid.c
-else
 if ENABLE_LIBSMARTCARD
 libremote_control_la_CFLAGS += @LIBSMARTCARD_CFLAGS@
 libremote_control_la_LIBADD += @LIBSMARTCARD_LIBS@
@@ -144,7 +139,6 @@ libremote_control_la_SOURCES += smartcard-i2c.c
 else
 libremote_control_la_SOURCES += smartcard-null.c
 endif # ENABLE_LIBSMARTCARD
-endif # ENABLE_LIBCCID
 
 if ENABLE_LIBMODEM
 libremote_control_la_CFLAGS += @LIBMODEM_CFLAGS@

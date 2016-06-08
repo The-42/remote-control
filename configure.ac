@@ -123,18 +123,16 @@ AS_CASE([$with_backlight_backend],
 # SmartCard backend
 #
 enable_libsmartcard=no
-enable_libccid=no
 
 AC_ARG_WITH(smartcard_backend,
-	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard/libccid@:>@],
+	[AS_HELP_STRING([--with-smartcard-backend=@<:@none/libsmartcard@:>@],
 		[Use the specified SmartCard backend. [default=none]])
 	], [], [with_smartcard_backend=none])
 
 AS_CASE([$with_smartcard_backend],
 	[none], [],
 	[libsmartcard], [PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])],
-	[libccid], [PKG_CHECK_MODULES(LIBCCID, libccid, [enable_libccid=yes])],
-	[AC_MSG_ERROR([Invalid SmartCard backend: must be none, libsmartcard or libccid])]
+	[AC_MSG_ERROR([Invalid SmartCard backend: must be none or libsmartcard])]
 )
 
 #
@@ -369,7 +367,6 @@ AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
-AM_CONDITIONAL(ENABLE_LIBCCID, [test "x$enable_libccid" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
