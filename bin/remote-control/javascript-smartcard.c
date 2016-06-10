@@ -55,7 +55,7 @@ static JSValueRef js_smartcard_get_type(
 }
 
 static const JSStaticValue smartcard_properties[] = {
-	{ /* The current audio state as a String */
+	{ /* The smartcard type as a string */
 		.name = "type",
 		.getProperty = js_smartcard_get_type,
 		.attributes = kJSPropertyAttributeDontDelete |
