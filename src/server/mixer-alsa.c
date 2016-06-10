@@ -481,6 +481,7 @@ static int mixer_probe(struct mixer *mixer)
 	int i;
 
 	dt = g_device_tree_load(&error);
+	g_clear_error(&error);
 	if (!dt)
 		return -ENOMEM;
 

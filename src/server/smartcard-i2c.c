@@ -71,6 +71,7 @@ int smartcard_create_i2c(struct smartcard **smartcardp,
 
 	device = g_key_file_get_string(config, "smartcard", "device", &error);
 	if (!device) {
+		g_clear_error(&error);
 		free(smartcard);
 		return -ENODEV;
 	}

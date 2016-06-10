@@ -388,12 +388,16 @@ static int modem_manager_load_config(GKeyFile *config, struct modem_desc *desc)
 	}
 
 	vgm = g_key_file_get_integer(config, "modem", "vgm", &error);
-	if (error)
+	if (error) {
 		vgm = MODEM_PARAM_DO_NOT_SET;
+		g_clear_error(&error);
+	}
 
 	vgs = g_key_file_get_integer(config, "modem", "vgs", &error);
-	if (error)
+	if (error) {
 		vgs = MODEM_PARAM_DO_NOT_SET;
+		g_clear_error(&error);
+	}
 
 	g_debug("modem-libmodem: configuration loaded: %s, flags:%lx, "
 			"VLS:%u, ATL:%u", device, flags, vls, atl);
