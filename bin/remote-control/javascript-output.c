@@ -245,7 +245,7 @@ static JSObjectRef js_output_create(
 		JSObjectRef channel;
 		if (channels[i].type->prepare) {
 			int err = channels[i].type->prepare(channels[i].output);
-			if (err < 0)
+			if (err < 0 && err != -ENOENT)
 				g_warning("%s: Failed to prepare output %s",
 						__func__, channels[i].name);
 		}
