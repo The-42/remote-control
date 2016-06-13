@@ -119,17 +119,19 @@ static JSValueRef js_smartcard_read(
 		return NULL;
 	}
 
-	if (argc < 1) {
+	if (argc < 1 || argc > 2) {
 		javascript_set_exception_text(js, exception,
-			JS_ERR_INVALID_ARG_COUNT);
+			"invalid arguments count: use 'count[, offset]'");
 		return NULL;
 	}
 
 	err = javascript_int_from_number(
 		js, argv[0], 0, MAX_BUFFER_SIZE, &size, exception);
-
 	if (err)
 		return NULL;
+
+	if (!size)
+		return javascript_buffer_to_object(js, NULL, 0, exception);
 
 	if (argc > 1) {
 		err = javascript_int_from_number(
@@ -174,9 +176,9 @@ static JSValueRef js_smartcard_write(
 		return NULL;
 	}
 
-	if (argc < 1) {
+	if (argc < 1 || argc > 2) {
 		javascript_set_exception_text(js, exception,
-			JS_ERR_INVALID_ARG_COUNT);
+			"invalid arguments count: use 'data[, offset]");
 		return NULL;
 	}
 
@@ -190,6 +192,9 @@ static JSValueRef js_smartcard_write(
 	size = javascript_buffer_from_value(js, argv[0], &data, exception);
 	if (size < 0)
 		return NULL;
+
+	if (!size)
+		return JSValueMakeNumber(js, 0);
 
 	size = smartcard_write(smartcard, offset, data, size);
 	if (size < 0)
