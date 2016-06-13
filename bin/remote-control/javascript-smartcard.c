@@ -17,8 +17,8 @@
 #include "remote-control.h"
 #include "javascript.h"
 
-/* Only allow transactions with up to 1MB of data */
-#define MAX_BUFFER_SIZE (1024*1024)
+/* Only allow transactions with up to 4 kB of data */
+#define MAX_BUFFER_SIZE (1024*4)
 #define MAX_OFFSET INT_MAX
 
 #define SMARTCARD_TYPE(v, n) { .value = SMARTCARD_TYPE_##v, .name = n }
