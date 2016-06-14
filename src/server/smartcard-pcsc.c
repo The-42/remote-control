@@ -273,13 +273,30 @@ ssize_t smartcard_write_pcsc(struct smartcard *smartcard, off_t offset,
 		const void *buffer, size_t size)
 {
 	const SCARD_IO_REQUEST *pioSendPci;
-	ssize_t ret;
+	SCARDCONTEXT context;
+	ssize_t ret = -EIO;
+	SCARDHANDLE card;
+	DWORD protocol;
 	LONG rv;
 
 	if (!smartcard)
 		return -EINVAL;
 
-	switch (smartcard->protocol) {
+	rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, NULL, NULL, &context);
+	if (rv != SCARD_S_SUCCESS) {
+		pr_debug("%s SCardEstablishContext: %s", __FUNCTION__,
+				pcsc_stringify_error(rv));
+		goto cleanup;
+	}
+	rv = SCardConnect(context, smartcard->device, SCARD_SHARE_SHARED,
+			SCARD_PROTOCOL_ANY, &card, &protocol);
+	if (rv != SCARD_S_SUCCESS) {
+		pr_debug("%s SCardEstablishContext: %s", __FUNCTION__,
+				pcsc_stringify_error(rv));
+		goto cleanup;
+	}
+
+	switch (protocol) {
 	case SCARD_PROTOCOL_T0:
 		pioSendPci = SCARD_PCI_T0;
 		break;
@@ -291,15 +308,16 @@ ssize_t smartcard_write_pcsc(struct smartcard *smartcard, off_t offset,
 		break;
 	default:
 		/* No valid protocol */
-		return -EIO;
+		goto cleanup;
 	}
 
 	smartcard->rcv_len = smartcard->rcv_size;
-	rv = SCardTransmit(smartcard->card, pioSendPci, buffer, size, NULL,
+	rv = SCardTransmit(card, pioSendPci, buffer, size, NULL,
 			smartcard->rcv_buffer, &smartcard->rcv_len);
 	switch (rv) {
 	case SCARD_S_SUCCESS:
-		return size;
+		ret = size;
+		goto cleanup;
 	case SCARD_W_RESET_CARD:
 		reconnect(smartcard);
 		ret = -EAGAIN;
@@ -327,5 +345,8 @@ ssize_t smartcard_write_pcsc(struct smartcard *smartcard, off_t offset,
 	pr_debug("SCardTransmit: %s len %ld", pcsc_stringify_error(rv),
 			smartcard->rcv_len);
 	smartcard->rcv_len = 0;
+cleanup:
+	(void)SCardDisconnect(card, SCARD_LEAVE_CARD);
+	(void)SCardReleaseContext(context);
 	return ret;
 }
