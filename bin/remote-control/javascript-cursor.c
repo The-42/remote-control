@@ -308,8 +308,6 @@ static int cursor_uinput_create(struct cursor *priv)
 		return -ENOENT;
 	}
 
-	fcntl (fd, F_SETFD, FD_CLOEXEC);
-
 	width = gdk_screen_get_width(priv->screen) - 1;
 	height = gdk_screen_get_height(priv->screen) - 1;
 
