@@ -587,6 +587,7 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
                                               const char *name,
 					      struct javascript_userdata *data)
 {
+	JSValueRef api_version;
 	JSObjectRef object;
 	int i, err;
 
@@ -602,6 +603,16 @@ static int javascript_register_avionic_design(JSGlobalContextRef js,
 			if (err != -ENODEV)
 				return err;
 		}
+	}
+
+	api_version = JSValueMakeNumber(js, JS_API_VERSION);
+	err = javascript_object_set_property(js, object, "version", api_version,
+		kJSPropertyAttributeDontDelete | kJSPropertyAttributeReadOnly,
+		NULL);
+
+	if (err) {
+		g_warning("%s: failed to set version property on %s object",
+			__func__, name);
 	}
 
 	return javascript_object_set_property(

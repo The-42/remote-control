@@ -14,6 +14,11 @@
 #include "remote-control-webkit-window.h"
 #include "remote-control-data.h"
 
+/* JS API version returned from the window.AvionicDesign.version property */
+#ifndef JS_API_VERSION
+  #define JS_API_VERSION	1
+#endif
+
 #define JS_ERR_INVALID_OBJECT_TEXT      "object not valid, context switched?"
 #define JS_ERR_INVALID_ARG_COUNT        "invalid argument count"
 #define JS_ERR_INVALID_NUMBER           "argument is not a valid number"
