@@ -76,7 +76,7 @@ static JSValueRef taskmanager_get_signal(
 			return JSValueMakeNumber(
 				context, signal_names[i].signo);
 
-	return NULL;
+	return JSValueMakeUndefined(context);
 }
 
 static JSValueRef taskmanager_get_onevent(JSContextRef context,
@@ -196,24 +196,24 @@ static JSValueRef taskmanager_function_exec(JSContextRef context,
 	if (!tm) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_ARG_COUNT);
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (!JSValueIsString(context, argv[0])) {
 		javascript_set_exception_text(context, exception,
 			"command is not a string");
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	string = JSValueToStringCopy(context, argv[0], exception);
 	if (!string)
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 
 	length = JSStringGetMaximumUTF8CStringSize(string);
 	command = g_alloca(length + 1);
@@ -223,7 +223,7 @@ static JSValueRef taskmanager_function_exec(JSContextRef context,
 	if (!tm->rcd->rc) {
 		javascript_set_exception_text(context, exception,
 			"remote-control context not ready");
-		return JSValueMakeNumber(context, -EBUSY);
+		return NULL;
 	}
 
 	ret = task_manager_exec(tm->rcd->rc, command, taskmanager_terminate_cb,
@@ -231,7 +231,7 @@ static JSValueRef taskmanager_function_exec(JSContextRef context,
 	if (ret < 0) {
 		javascript_set_exception_text(context, exception,
 			"command could not be executed");
-		return JSValueMakeNumber(context, ret);
+		return NULL;
 	}
 
 	return JSValueMakeNumber(context, ret);
@@ -248,31 +248,31 @@ static JSValueRef taskmanager_function_kill(JSContextRef context,
 	if (!tm) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (argc != 2) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_ARG_COUNT);
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (!JSValueIsNumber(context, argv[0])) {
 		javascript_set_exception_text(context, exception,
 			"pid is not a number");
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (!JSValueIsNumber(context, argv[1])) {
 		javascript_set_exception_text(context, exception,
 			"signal is not a number");
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (!tm->rcd->rc) {
 		javascript_set_exception_text(context, exception,
 			"remote-control context not ready");
-		return JSValueMakeNumber(context, -EBUSY);
+		return NULL;
 	}
 
 	pid = JSValueToNumber(context, argv[0], exception);
@@ -281,7 +281,7 @@ static JSValueRef taskmanager_function_kill(JSContextRef context,
 	if (ret < 0) {
 		javascript_set_exception_text(context, exception,
 			"kill could not be executed");
-		return JSValueMakeNumber(context, ret);
+		return NULL;
 	}
 
 	return JSValueMakeNumber(context, ret);

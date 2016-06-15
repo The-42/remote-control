@@ -760,7 +760,7 @@ static JSValueRef js_media_player_set_crop(JSContextRef context,
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return false;
+		return NULL;
 	}
 
 	if (argc != 4) {
@@ -805,7 +805,7 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return false;
+		return NULL;
 	}
 
 	if (argc != 4) {
@@ -817,7 +817,7 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 	for (i = 0; i < 4 ; i++) {
 		dval = JSValueToNumber(context, argv[i], exception);
 		if (isnan(dval))
-			return NULL;
+			return JSValueMakeBoolean(context, FALSE);
 		if (dval < 0)
 			args[i] = 0;
 		else if (dval > UINT_MAX)
@@ -828,11 +828,13 @@ static JSValueRef js_media_player_set_window(JSContextRef context,
 
 	err = media_player_set_output_window(
 		priv->player, args[0], args[1], args[2], args[3]);
-	if (err)
+	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to set output window");
+		return NULL;
+	}
 
-	return NULL;
+	return JSValueMakeBoolean(context, TRUE);
 }
 
 static JSValueRef js_media_player_get_audio_track_pid(JSContextRef context,

@@ -342,8 +342,9 @@ static JSValueRef input_get_onevent(JSContextRef context, JSObjectRef object,
 {
 	struct input *input = JSObjectGetPrivate(object);
 	if (!input) {
-		g_warning("%s: object not valid, context changed?", __func__);
-		return JSValueMakeNull(context);
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
 	}
 
 	return input->callback;
@@ -354,8 +355,9 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 {
 	struct input *input = JSObjectGetPrivate(object);
 	if (!input) {
-		g_warning("%s: object not valid, context changed?", __func__);
-		return false;
+		javascript_set_exception_text(context, exception,
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
 	}
 
 	if (input->callback)
@@ -368,10 +370,12 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 
 	input->callback = JSValueToObject(context, value, exception);
 	if (!input->callback) {
-		g_warning("%s: failed to assign callback", __func__);
-		return false;
+		javascript_set_exception_text(context, exception,
+			"failed to assign callback");
+		return NULL;
 	}
 	JSValueProtect(context, input->callback);
+
 	return true;
 }
 
@@ -422,13 +426,13 @@ static JSValueRef input_get_devices(JSContextRef context,
 	if (argc != 0) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_ARG_COUNT);
-		return JSValueMakeNumber(context, -EINVAL);
+		return NULL;
 	}
 
 	if (!input) {
 		javascript_set_exception_text(context, exception,
-				"object not valid, context switched?");
-		return JSValueMakeNumber(context, -EINVAL);
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
 	}
 
 	for (node = g_list_first(input->devices); node && i < MAX_INPUT_DEVICES;
@@ -501,7 +505,9 @@ static JSValueRef input_get_event_name(
 			prefix[0] = "REP_";
 			break;
 		default:
-			return JSValueMakeNull(context);
+			javascript_set_exception_text(context, exception,
+				"unknown event type");
+			return NULL;
 		}
 	}
 
@@ -515,7 +521,10 @@ static JSValueRef input_get_event_name(
 		}
 	}
 
-	return JSValueMakeNull(context);
+	javascript_set_exception_text(context, exception,
+		"unknown event type or ID");
+
+	return NULL;
 }
 
 static JSValueRef input_get_switch_state(

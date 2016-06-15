@@ -77,7 +77,7 @@ static bool js_audio_player_set_uri(
 	if (!player) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return false;
+		return NULL;
 	}
 
 	if (player->uri) {
@@ -366,7 +366,7 @@ static JSValueRef js_audio_get_speakers_enable(JSContextRef context,
 	if (!audio) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return false;
+		return NULL;
 	}
 
 	err = audio_get_speakers_enable(audio, &enable);

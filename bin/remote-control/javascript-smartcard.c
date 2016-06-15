@@ -41,7 +41,7 @@ static JSValueRef js_smartcard_get_type(
 
 	if (!smartcard) {
 		javascript_set_exception_text(js, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
@@ -115,18 +115,19 @@ static JSValueRef js_smartcard_read(
 
 	if (!smartcard) {
 		javascript_set_exception_text(js, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc < 1) {
 		javascript_set_exception_text(js, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 
 	err = javascript_int_from_number(
 		js, argv[0], 0, MAX_BUFFER_SIZE, &size, exception);
+
 	if (err)
 		return NULL;
 
@@ -169,13 +170,13 @@ static JSValueRef js_smartcard_write(
 
 	if (!smartcard) {
 		javascript_set_exception_text(js, exception,
-			"object not valid, context switched?");
+			JS_ERR_INVALID_OBJECT_TEXT);
 		return NULL;
 	}
 
 	if (argc < 1) {
 		javascript_set_exception_text(js, exception,
-			"invalid arguments count");
+			JS_ERR_INVALID_ARG_COUNT);
 		return NULL;
 	}
 

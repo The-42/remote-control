@@ -24,7 +24,7 @@ static JSValueRef monitor_function_get_free_memory(
 	if (argc != 0) {
 		javascript_set_exception_text(context, exception,
 			"invalid argument count");
-		return JSValueMakeNumber(context, -1);
+		return NULL;
 	}
 
 	/* TODO: mayby we should and query the memory usage of
@@ -36,7 +36,7 @@ static JSValueRef monitor_function_get_free_memory(
 	if (avail_pages < 0 || page_size < 0) {
 		javascript_set_exception_text(context, exception,
 			"failed to query memory stats");
-		return JSValueMakeNumber(context, -1);
+		return NULL;
 	}
 
 	return JSValueMakeNumber(context, (avail_pages * page_size) / 1024);

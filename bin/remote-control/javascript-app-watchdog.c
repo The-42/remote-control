@@ -24,20 +24,20 @@ static JSValueRef app_watchdog_function_start(
 
 	if (!watchdog) {
 		javascript_set_exception_text(context, exception,
-			"object notvalid, context switched?");
-		return JSValueMakeBoolean(context, FALSE);
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
 	}
 
 	if (argc != 1) {
 		javascript_set_exception_text(context, exception,
-			"invalid argument count");
-		return JSValueMakeBoolean(context, FALSE);
+			JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
 	}
 
 	if (!JSValueIsNumber(context, argv[0])) {
 		javascript_set_exception_text(context, exception,
 			"timeout is not a number");
-		return JSValueMakeBoolean(context, FALSE);
+		return NULL;
 	}
 
 	ret = app_watchdog_start(watchdog, JSValueToNumber(context, argv[0], NULL));
@@ -45,7 +45,7 @@ static JSValueRef app_watchdog_function_start(
 		javascript_set_exception_text(context, exception,
 			"Failed to start watchdog");
 
-	return 0;
+	return NULL;
 }
 
 static JSValueRef app_watchdog_function_stop(JSContextRef context,
@@ -57,8 +57,8 @@ static JSValueRef app_watchdog_function_stop(JSContextRef context,
 
 	if (!watchdog) {
 		javascript_set_exception_text(context, exception,
-			"object notvalid, context switched?");
-		return JSValueMakeBoolean(context, FALSE);
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
 	}
 
 	ret = app_watchdog_stop(watchdog);
@@ -66,7 +66,7 @@ static JSValueRef app_watchdog_function_stop(JSContextRef context,
 		javascript_set_exception_text(context, exception,
 			"Failed to stop watchdog");
 
-	return 0;
+	return NULL;
 }
 
 static JSValueRef app_watchdog_function_trigger(
@@ -78,8 +78,8 @@ static JSValueRef app_watchdog_function_trigger(
 
 	if (!watchdog) {
 		javascript_set_exception_text(context, exception,
-			"object notvalid, context switched?");
-		return JSValueMakeBoolean(context, FALSE);
+			JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
 	}
 
 	ret = app_watchdog_trigger(watchdog);
@@ -87,7 +87,7 @@ static JSValueRef app_watchdog_function_trigger(
 		javascript_set_exception_text(context, exception,
 			"Failed to trigger watchdog");
 
-	return 0;
+	return NULL;
 }
 
 static const JSStaticFunction app_watchdog_functions[] = {
