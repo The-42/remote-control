@@ -15,23 +15,11 @@
 
 #include "javascript.h"
 
-struct monitor {
-	/* if it is empty, can we remove it? */
-	int dummy;
-};
-
 static JSValueRef monitor_function_get_free_memory(
 	JSContextRef context, JSObjectRef function, JSObjectRef object,
 	size_t argc, const JSValueRef argv[], JSValueRef *exception)
 {
-	struct monitor *priv = JSObjectGetPrivate(object);
 	long avail_pages, page_size;
-
-	if (!priv) {
-		javascript_set_exception_text(context, exception,
-			"object notvalid, context switched?");
-		return JSValueMakeNumber(context, -1);
-	}
 
 	if (argc != 0) {
 		javascript_set_exception_text(context, exception,
@@ -54,26 +42,6 @@ static JSValueRef monitor_function_get_free_memory(
 	return JSValueMakeNumber(context, (avail_pages * page_size) / 1024);
 }
 
-static struct monitor *monitor_new(JSContextRef context,
-	struct javascript_userdata *data)
-{
-	struct monitor *mon;
-
-	mon = g_new0(struct monitor, 1);
-	if (!mon) {
-		g_warning("js-monitor: failed to allocate memory");
-		return NULL;
-	}
-
-	return mon;
-}
-
-static void monitor_finalize(JSObjectRef object)
-{
-	struct monitor *monitor = JSObjectGetPrivate(object);
-	g_free(monitor);
-}
-
 static const JSStaticFunction monitor_functions[] = {
 	{
 		.name = "getFreeMem",
@@ -85,7 +53,6 @@ static const JSStaticFunction monitor_functions[] = {
 
 static const JSClassDefinition monitor_classdef = {
 	.className = "Monitor",
-	.finalize = monitor_finalize,
 	.staticFunctions = monitor_functions,
 };
 
@@ -93,13 +60,7 @@ static JSObjectRef javascript_monitor_create(
 	JSContextRef js, JSClassRef class,
 	struct javascript_userdata *user_data)
 {
-	struct monitor *mon;
-
-	mon = monitor_new(js, user_data);
-	if (!mon)
-		return NULL;
-
-	return JSObjectMake(js, class, mon);
+	return JSObjectMake(js, class, NULL);
 }
 
 struct javascript_module javascript_monitor = {
