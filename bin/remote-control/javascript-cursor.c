@@ -54,19 +54,27 @@ static inline int uinput_send_event(int uinput, int type, int code, int value)
 	return 0;
 }
 
-static void cursor_uinput_move(struct cursor *priv, int x, int y)
+static int cursor_uinput_move(struct cursor *priv, int x, int y)
 {
-	uinput_send_event(priv->uinput, EV_ABS, ABS_X, x);
-	uinput_send_event(priv->uinput, EV_ABS, ABS_Y, y);
-	uinput_send_event(priv->uinput, EV_SYN, SYN_REPORT, 0);
+	int ret = 0;
+
+	ret += uinput_send_event(priv->uinput, EV_ABS, ABS_X, x);
+	ret += uinput_send_event(priv->uinput, EV_ABS, ABS_Y, y);
+	ret += uinput_send_event(priv->uinput, EV_SYN, SYN_REPORT, 0);
+
+	return ret < 0 ? -1 : 0;
 }
 
-static void cursor_uinput_click(struct cursor *priv)
+static int cursor_uinput_click(struct cursor *priv)
 {
-	uinput_send_event(priv->uinput, EV_KEY, BTN_TOUCH, KEY_PRESSED);
-	uinput_send_event(priv->uinput, EV_SYN, SYN_REPORT, 0);
-	uinput_send_event(priv->uinput, EV_KEY, BTN_TOUCH, KEY_RELEASE);
-	uinput_send_event(priv->uinput, EV_SYN, SYN_REPORT, 0);
+	int ret = 0;
+
+	ret += uinput_send_event(priv->uinput, EV_KEY, BTN_TOUCH, KEY_PRESSED);
+	ret += uinput_send_event(priv->uinput, EV_SYN, SYN_REPORT, 0);
+	ret += uinput_send_event(priv->uinput, EV_KEY, BTN_TOUCH, KEY_RELEASE);
+	ret += uinput_send_event(priv->uinput, EV_SYN, SYN_REPORT, 0);
+
+	return ret < 0 ? -1 : 0;
 }
 
 static JSValueRef cursor_moveto_callback(JSContextRef context,
@@ -76,7 +84,8 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
                                          JSValueRef *exception)
 {
 	struct cursor *priv = JSObjectGetPrivate(object);
-	int x, y;
+	gboolean jsret = FALSE;
+	int x, y, ret;
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
@@ -105,7 +114,13 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 	y = JSValueToNumber(context, argv[1], exception);
 
 	if (priv->uinput) {
-		cursor_uinput_move(priv, x, y);
+		ret = cursor_uinput_move(priv, x, y);
+		if (ret) {
+			javascript_set_exception_text(context, exception,
+				"uinput device failure");
+		} else {
+			jsret = TRUE;
+		}
 	} else {
 #if GTK_CHECK_VERSION(3, 0, 0)
 		GdkDeviceManager *manager = gdk_display_get_device_manager(priv->display);
@@ -116,9 +131,10 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 		gdk_display_warp_pointer(priv->display, priv->screen, x, y);
 #endif
 		gdk_display_flush(priv->display);
+		jsret = TRUE;
 	}
 
-	return JSValueMakeBoolean(context, TRUE);
+	return JSValueMakeBoolean(context, jsret);
 }
 
 static JSValueRef cursor_clickat_callback(JSContextRef context,
@@ -128,8 +144,9 @@ static JSValueRef cursor_clickat_callback(JSContextRef context,
                                           JSValueRef *exception)
 {
 	struct cursor *priv = JSObjectGetPrivate(object);
+	gboolean jsret = FALSE;
 	GdkWindow *window;
-	int x, y;
+	int x, y, ret;
 
 	if (!priv) {
 		javascript_set_exception_text(context, exception,
@@ -158,20 +175,30 @@ static JSValueRef cursor_clickat_callback(JSContextRef context,
 	y = JSValueToNumber(context, argv[1], exception);
 
 	if (priv->uinput) {
-		cursor_uinput_move(priv, x, y);
-		cursor_uinput_click(priv);
+		ret = cursor_uinput_move(priv, x, y);
+		ret += cursor_uinput_click(priv);
+		if (ret) {
+			javascript_set_exception_text(context, exception,
+				"uinput device failure");
+		} else {
+			jsret = TRUE;
+		}
 	} else {
 		g_assert(priv->window != NULL);
 		window = gtk_widget_get_window(GTK_WIDGET(GTK_WINDOW(priv->window)));
 		g_assert(window != NULL);
 
-		gdk_test_simulate_button(window, x, y, 1, GDK_BUTTON1_MASK,
-		                         GDK_BUTTON_PRESS);
-		gdk_test_simulate_button(window, x, y, 1, GDK_BUTTON1_MASK,
-		                         GDK_BUTTON_RELEASE);
+		jsret = gdk_test_simulate_button(window, x, y, 1,
+				GDK_BUTTON1_MASK, GDK_BUTTON_PRESS);
+		jsret &= gdk_test_simulate_button(window, x, y, 1,
+				GDK_BUTTON1_MASK, GDK_BUTTON_RELEASE);
+		if (!jsret) {
+			javascript_set_exception_text(context, exception,
+				"gdk failure");
+		}
 	}
 
-	return JSValueMakeBoolean(context, TRUE);
+	return JSValueMakeBoolean(context, jsret);
 }
 
 static const JSStaticFunction cursor_functions[] = {
