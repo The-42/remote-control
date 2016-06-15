@@ -1550,7 +1550,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 		REMOTE_IRQ_SOURCE_VOIP,
 		REMOTE_IRQ_SOURCE_IO,
 		REMOTE_IRQ_SOURCE_MODEM,
-		REMOTE_IRQ_SOURCE_RFID,
 		REMOTE_IRQ_SOURCE_HANDSET,
 	};
 	uint32_t mask = 0;
@@ -1593,10 +1592,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 
 			case REMOTE_IRQ_SOURCE_MODEM:
 				fprintf(stderr, "MODEM\n");
-				break;
-
-			case REMOTE_IRQ_SOURCE_RFID:
-				fprintf(stderr, "RFID\n");
 				break;
 
 			case REMOTE_IRQ_SOURCE_HANDSET:

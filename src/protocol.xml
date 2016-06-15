@@ -52,10 +52,6 @@
 			<value name="CARD_TYPE_SLE4432"/>
 			<value name="CARD_TYPE_SLE4442"/>
 		</enum>
-		<enum name="rfid_type" mnemonic="u32">
-			<value name="RFID_TYPE_UNKNOWN"/>
-			<value name="RFID_TYPE_MIFARE_1K"/>
-		</enum>
 		<!-- Modem -->
 		<enum name="modem_event" mnemonic="u32">
 			<value name="MODEM_EVT_ERROR" value="-1"/>
@@ -82,7 +78,6 @@
 			<value name="IRQ_SOURCE_VOIP"/>
 			<value name="IRQ_SOURCE_IO"/>
 			<value name="IRQ_SOURCE_MODEM"/>
-			<value name="IRQ_SOURCE_RFID"/>
 			<value name="IRQ_SOURCE_HANDSET"/>
 		</enum>
 		<struct name="voip_account">

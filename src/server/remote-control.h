@@ -27,7 +27,6 @@ enum event_source {
 	EVENT_SOURCE_VOIP,
 	EVENT_SOURCE_SMARTCARD,
 	EVENT_SOURCE_HOOK,
-	EVENT_SOURCE_RFID,
 	EVENT_SOURCE_HANDSET,
 	EVENT_SOURCE_MAX,
 };
@@ -89,15 +88,6 @@ struct event_handset {
 	bool pressed;
 };
 
-enum event_rfid_state {
-	EVENT_RFID_STATE_DETECTED,
-	EVENT_RFID_STATE_LOST,
-};
-
-struct event_rfid {
-	enum event_rfid_state state;
-};
-
 struct event {
 	enum event_source source;
 
@@ -107,7 +97,6 @@ struct event {
 		struct event_voip voip;
 		struct event_smartcard smartcard;
 		struct event_hook hook;
-		struct event_rfid rfid;
 		struct event_handset handset;
 	};
 };
@@ -494,7 +483,6 @@ struct cursor_movement *remote_control_get_cursor_movement(struct remote_control
 struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
-struct rfid *remote_control_get_rfid(struct remote_control *rc);
 struct modem_manager *remote_control_get_modem_manager(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);

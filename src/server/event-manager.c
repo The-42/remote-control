@@ -25,7 +25,6 @@ struct event_manager {
 	enum event_voip_state voip_state;
 	enum event_smartcard_state smartcard_state;
 	enum event_hook_state hook_state;
-	enum event_rfid_state rfid_state;
 	enum event_modem_state modem_state;
 	GQueue *handset_events;
 };
@@ -49,7 +48,6 @@ int event_manager_create(struct event_manager **managerp,
 	manager->voip_state = EVENT_VOIP_STATE_IDLE;
 	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
 	manager->hook_state = EVENT_HOOK_STATE_ON;
-	manager->rfid_state = EVENT_RFID_STATE_LOST;
 	manager->modem_state = EVENT_MODEM_STATE_DISCONNECTED;
 
 	manager->handset_events = g_queue_new();
@@ -108,11 +106,6 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	case EVENT_SOURCE_HOOK:
 		manager->hook_state = event->hook.state;
 		irq_status |= BIT(EVENT_SOURCE_HOOK);
-		break;
-
-	case EVENT_SOURCE_RFID:
-		manager->rfid_state = event->rfid.state;
-		irq_status |= BIT(EVENT_SOURCE_RFID);
 		break;
 
 	case EVENT_SOURCE_HANDSET:
@@ -206,11 +199,6 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 	case EVENT_SOURCE_HOOK:
 		event->hook.state = manager->hook_state;
 		irq_status &= ~BIT(EVENT_SOURCE_HOOK);
-		break;
-
-	case EVENT_SOURCE_RFID:
-		event->rfid.state = manager->rfid_state;
-		irq_status &= ~BIT(EVENT_SOURCE_RFID);
 		break;
 
 	case EVENT_SOURCE_HANDSET:
