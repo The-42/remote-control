@@ -46,7 +46,7 @@ static inline int uinput_send_event(int uinput, int type, int code, int value)
 
 	ret = write(uinput, &event, sizeof(event));
 	if (ret != sizeof(event)) {
-		g_warning("%s: failed to send event %s",
+		g_warning("%s: failed to send event: %s",
 		          __func__, g_strerror(errno));
 		return -1;
 	}
@@ -162,7 +162,7 @@ static JSValueRef cursor_clickat_callback(JSContextRef context,
 		cursor_uinput_click(priv);
 	} else {
 		g_assert(priv->window != NULL);
-		window =  gtk_widget_get_window(GTK_WIDGET(GTK_WINDOW(priv->window)));
+		window = gtk_widget_get_window(GTK_WIDGET(GTK_WINDOW(priv->window)));
 		g_assert(window != NULL);
 
 		gdk_test_simulate_button(window, x, y, 1, GDK_BUTTON1_MASK,
@@ -294,13 +294,10 @@ static int cursor_uinput_create(struct cursor *priv)
 	gint width, height;
 	int err, fd, i;
 
-	for (i=0; i<G_N_ELEMENTS(DEVS); i++) {
+	for (i = 0; i < G_N_ELEMENTS(DEVS); i++) {
 		fd = open(DEVS[i], O_WRONLY|O_NDELAY|O_CLOEXEC);
-		if (fd < 0) {
-			g_debug("%s: unable to open %s", __func__, DEVS[i]);
-			continue;
-		}
-		break;
+		if (fd >= 0)
+			break;
 	}
 	if (fd < 0) {
 		g_warning("%s: no uinput device found, try: modprobe uinput",
@@ -312,7 +309,8 @@ static int cursor_uinput_create(struct cursor *priv)
 	height = gdk_screen_get_height(priv->screen) - 1;
 
 	memset(&dev, 0, sizeof(dev));
-	strncpy(dev.name, "Avionic Design GmbH virtual touch", UINPUT_MAX_NAME_SIZE);
+	strncpy(dev.name, "Avionic Design GmbH virtual touch",
+		UINPUT_MAX_NAME_SIZE);
 	dev.id.bustype = BUS_VIRTUAL;
 	dev.absmax[ABS_X] = width;
 	dev.absmax[ABS_Y] = height;
@@ -328,7 +326,7 @@ static int cursor_uinput_create(struct cursor *priv)
 		goto cleanup;
 	}
 
-	err = ioctl (fd, UI_SET_PHYS, PACKAGE_NAME"/"PACKAGE_VERSION);
+	err = ioctl(fd, UI_SET_PHYS, PACKAGE_NAME"/"PACKAGE_VERSION);
 
 	if (ioctl(fd, UI_SET_EVBIT, EV_KEY) ||
 	    ioctl(fd, UI_SET_KEYBIT, BTN_TOUCH) ||
@@ -336,15 +334,15 @@ static int cursor_uinput_create(struct cursor *priv)
 	    ioctl(fd, UI_SET_ABSBIT, ABS_X) ||
 	    ioctl(fd, UI_SET_ABSBIT, ABS_Y))
 	{
-		g_warning("%s: setup error, ioctrl failed %s",
+		g_warning("%s: setup error, ioctl failed with %s",
 		          __func__, g_strerror(errno));
 		goto cleanup;
 	}
 
-	/* "creating device; DO NOT FORGET UNREGISTER */
+	/* creates device - DO NOT FORGET TO UNREGISTER */
 	err = ioctl(fd, UI_DEV_CREATE);
 	if (err < 0) {
-		g_warning("%s: create uinput device failed %s",
+		g_warning("%s: creating uinput device failed %s",
 		          __func__, g_strerror(-err));
 		goto cleanup;
 	}
@@ -368,7 +366,7 @@ static void cursor_uinput_destroy(struct cursor *priv)
 
 	err = ioctl(priv->uinput, UI_DEV_DESTROY);
 	if (err < 0) {
-		g_warning("%s: create uinput device failed %s",
+		g_warning("%s: destroying uinput device failed %s",
 		          __func__, g_strerror(-err));
 	}
 
