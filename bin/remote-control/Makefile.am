@@ -47,6 +47,7 @@ remote_control_SOURCES += \
 	javascript-fb.c \
 	javascript-http-request.c \
 	javascript-input.c \
+	javascript-lldp.c \
 	javascript-media-player.c \
 	javascript-modem.c \
 	javascript-monitor.c \

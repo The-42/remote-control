@@ -394,6 +394,8 @@ ssize_t net_recv_sync(struct net *net, void *buffer, size_t size);
 /**
  * LLDP monitor
  */
+#define LLDP_MAX_SIZE 1536
+
 struct lldp_monitor;
 
 int lldp_monitor_create(struct lldp_monitor **monitorp, GKeyFile *config);

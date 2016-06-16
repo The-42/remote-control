@@ -35,8 +35,6 @@
 #define ARRAY_SIZE(a) (sizeof(a))/(sizeof((a)[0]))
 #endif
 
-#define LLDP_MAX_SIZE 1536
-
 #if defined(__linux__)
 extern unsigned int if_nametoindex (const char *__ifname) __THROW;
 extern char *if_indextoname (unsigned int __ifindex, char *__ifname) __THROW;

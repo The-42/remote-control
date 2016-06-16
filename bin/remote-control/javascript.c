@@ -36,6 +36,7 @@ extern struct javascript_module javascript_smartcard;
 extern struct javascript_module javascript_fb;
 extern struct javascript_module javascript_http_request;
 extern struct javascript_module javascript_sysinfo;
+extern struct javascript_module javascript_lldp;
 
 static struct javascript_module *ad_modules[] = {
 	&javascript_cursor,
@@ -62,6 +63,7 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_fb,
 	&javascript_http_request,
 	&javascript_sysinfo,
+	&javascript_lldp,
 	NULL
 };
 
