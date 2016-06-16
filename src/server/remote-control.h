@@ -273,6 +273,29 @@ int smartcard_get_type(struct smartcard *smartcard, enum smartcard_type *typep);
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, size_t size);
 ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *buffer, size_t size);
 
+struct smartcard_info {
+	char *first_name;
+	char *last_name;
+	char *date_of_birth;
+	char *gender;
+	char *zip_code;
+	char *city;
+	char *country;
+	char *street;
+	char *street_number;
+	char *insurance_id;
+	char *insurer_id;
+	char *insurer_country;
+	char *insurer_name;
+	char *billing_insurer_id;
+	char *billing_insurer_name;
+	char *card_id;
+	char *card_atr;
+	char *atr;
+};
+ssize_t smartcard_read_info(struct smartcard *smartcard, struct smartcard_info *data);
+void smartcard_read_info_free(struct smartcard_info *data);
+
 /**
  * modem manager
  */
