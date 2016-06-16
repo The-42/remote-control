@@ -122,19 +122,27 @@ AS_CASE([$with_backlight_backend],
 #
 # SmartCard backend
 #
-enable_libsmartcard=no
-enable_libpcsclite=no
 
-PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard, [enable_libsmartcard=yes])
+AC_ARG_ENABLE([libsmartcard],
+	[AS_HELP_STRING([--enable-libsmartcard],
+			[Enable libsmartcard support [default=no]])],
+	[enable_libsmartcard="$enableval"], [enable_libsmartcard=no])
+AS_IF([test "x$enable_libsmartcard" = "xyes"],
+	[PKG_CHECK_MODULES(LIBSMARTCARD, libsmartcard)])
 AS_IF([test "x$enable_libsmartcard" = "xyes"],
 	[AC_DEFINE([ENABLE_LIBSMARTCARD], [1], [Define to 1 if smartcard should support libsmartcard])],
 	[AC_DEFINE([ENABLE_LIBSMARTCARD], [0], [Define to 0 if smartcard should not support libsmartcard])]
 )
 
-PKG_CHECK_MODULES(LIBPCSCLITE, libpcsclite, [enable_libpcsclite=yes])
+AC_ARG_ENABLE([libpcsclite],
+	[AS_HELP_STRING([--enable-libpcsclite],
+			[Enable libpcsclite support [default=no]])],
+	[enable_libpcsclite="$enableval"], [enable_libpcsclite=no])
+AS_IF([test "x$enable_libpcsclite" = "xyes"],
+	[PKG_CHECK_MODULES(LIBPCSCLITE, libpcsclite)])
 AS_IF([test "x$enable_libpcsclite" = "xyes"],
 	[AC_DEFINE([ENABLE_LIBPCSCLITE], [1], [Define to 1 if smartcard should support libpcsclite])],
-	[AC_DEFINE([ENABLE_LIBPCSCLITE], [1], [Define to 0 if smartcard should not support libpcsclite])]
+	[AC_DEFINE([ENABLE_LIBPCSCLITE], [0], [Define to 0 if smartcard should not support libpcsclite])]
 )
 
 #
@@ -468,9 +476,8 @@ AS_IF([test "x$enable_libpcsclite" = "xyes"],
 	smartcard_none=no
 	])
 AS_IF([test "x$smartcard_none" = "xyes"],
-	[AS_ECHO_N(" none")])
+	[AS_ECHO_N("      none")])
 AS_ECHO("")
-
 AS_ECHO("  VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
   Modem Backend:             $with_modem_backend")
