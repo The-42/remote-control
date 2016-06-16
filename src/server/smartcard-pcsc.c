@@ -134,6 +134,68 @@ static void reconnect(struct smartcard *smartcard)
 	}
 }
 
+#define RESPONSE_SIZE 2
+unsigned char RESPONSE_SUCCESS[RESPONSE_SIZE] = {0x90, 0x00};
+unsigned char RESPONSE_UNSUCCESSFUL[RESPONSE_SIZE] = {0x64, 0x00};
+unsigned char RESPONSE_WARNING_NO_CARD[RESPONSE_SIZE] = {0x62, 0x00};
+
+static ssize_t process_icc_command(struct smartcard *smartcard,
+		const unsigned char *buffer, size_t size, SCARDHANDLE card)
+{
+	DWORD protocol;
+	LONG rv;
+	int ret;
+
+	if (size < 2)
+		return -EINVAL;
+
+	ret = ensure_buffer(smartcard, RESPONSE_SIZE);
+	if (ret)
+		return ret;
+
+	smartcard->rcv_len = sizeof(RESPONSE_UNSUCCESSFUL);
+	memcpy(smartcard->rcv_buffer, RESPONSE_UNSUCCESSFUL,
+			sizeof(RESPONSE_UNSUCCESSFUL));
+
+	switch (buffer[1]) {
+	case 0x11: /* Reset CT */
+		rv = SCardReconnect(card, SCARD_SHARE_SHARED,
+			SCARD_PROTOCOL_ANY, SCARD_RESET_CARD, &protocol);
+		if (rv == SCARD_S_SUCCESS)
+			memcpy(smartcard->rcv_buffer,  RESPONSE_SUCCESS,
+					sizeof(RESPONSE_SUCCESS));
+		break;
+	case 0x12: /* Request ICC */
+		if (!smartcard->state.cbAtr) {
+			memcpy(&smartcard->rcv_buffer[smartcard->rcv_len++],
+					RESPONSE_WARNING_NO_CARD,
+					sizeof(RESPONSE_WARNING_NO_CARD));
+			break;
+		}
+		smartcard->rcv_len = 0;
+		if (size > 3 && buffer[3] == 1) {
+			if (ensure_buffer(smartcard, smartcard->state.cbAtr + 2))
+				break;
+			memcpy(smartcard->rcv_buffer, smartcard->state.rgbAtr,
+					smartcard->state.cbAtr);
+			smartcard->rcv_len = smartcard->state.cbAtr;
+		}
+		memcpy(&smartcard->rcv_buffer[smartcard->rcv_len++],
+				RESPONSE_SUCCESS, sizeof(RESPONSE_SUCCESS));
+		break;
+	case 0x15: /* Eject ICC */
+		rv = SCardReconnect(smartcard->card, SCARD_SHARE_SHARED,
+			SCARD_PROTOCOL_ANY, SCARD_EJECT_CARD, &protocol);
+		if (rv == SCARD_S_SUCCESS)
+			memcpy(smartcard->rcv_buffer, RESPONSE_SUCCESS,
+					sizeof( RESPONSE_SUCCESS));
+		break;
+	default:
+		break;
+	}
+	return size;
+}
+
 static gpointer scan_thread(gpointer data)
 {
 	struct smartcard *smartcard = data;
@@ -295,6 +357,9 @@ ssize_t smartcard_write_pcsc(struct smartcard *smartcard, off_t offset,
 				pcsc_stringify_error(rv));
 		goto cleanup;
 	}
+
+	if (size && ((unsigned char *)buffer)[0] == 0x20)
+		return process_icc_command(smartcard, buffer, size, card);
 
 	switch (protocol) {
 	case SCARD_PROTOCOL_T0:
