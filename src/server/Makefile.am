@@ -146,6 +146,16 @@ endif # ENABLE_LIBPCSCLITE
 
 libremote_control_la_SOURCES += smartcard-generic.c
 
+if ENABLE_SMARTCARD_INFO
+libremote_control_la_SOURCES += smartcard-info.c
+libremote_control_la_CFLAGS += @ZLIB_CFLAGS@
+libremote_control_la_LIBADD += @ZLIB_LIBS@
+libremote_control_la_CFLAGS += @LIBXML2_CFLAGS@
+libremote_control_la_LIBADD += @LIBXML2_LIBS@
+else
+libremote_control_la_SOURCES += smartcard-info-null.c
+endif # ENABLE_SMARTCARD_INFO
+
 if ENABLE_LIBMODEM
 libremote_control_la_CFLAGS += @LIBMODEM_CFLAGS@
 libremote_control_la_LIBADD += @LIBMODEM_LIBS@

@@ -145,6 +145,19 @@ AS_IF([test "x$enable_libpcsclite" = "xyes"],
 	[AC_DEFINE([ENABLE_LIBPCSCLITE], [0], [Define to 0 if smartcard should not support libpcsclite])]
 )
 
+AC_ARG_ENABLE([smartcard_info],
+	[AS_HELP_STRING([--enable-smartcard_info],
+			[Enable reading smartcard info [default=no]])],
+	[enable_smartcard_info="$enableval"], [enable_smartcard_info=no])
+AS_IF([test "x$enable_smartcard_info" = "xyes"],
+	[PKG_CHECK_MODULES(LIBXML2, libxml-2.0)])
+AS_IF([test "x$enable_smartcard_info" = "xyes"],
+	[PKG_CHECK_MODULES(ZLIB, zlib)])
+AS_IF([test "x$enable_smartcard_info" = "xyes"],
+	[AC_DEFINE([ENABLE_SMARTCARD_INFO], [1], [Define to 1 for smartcard info support])],
+	[AC_DEFINE([ENABLE_SMARTCARD_INFO], [0], [Define to 0 for no smartcard info support])]
+)
+
 #
 # Video backend
 #
@@ -378,6 +391,7 @@ AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPCSCLITE, [test "x$enable_libpcsclite" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
+AM_CONDITIONAL(ENABLE_SMARTCARD_INFO, [test "x$enable_smartcard_info" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBMODEM, [test "x$enable_libmodem" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
@@ -478,6 +492,7 @@ AS_IF([test "x$enable_libpcsclite" = "xyes"],
 AS_IF([test "x$smartcard_none" = "xyes"],
 	[AS_ECHO_N("      none")])
 AS_ECHO("")
+AS_ECHO("  Smartcard info function:   $enable_smartcard_info")
 AS_ECHO("  VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
   Modem Backend:             $with_modem_backend")
