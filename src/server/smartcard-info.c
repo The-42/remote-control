@@ -460,10 +460,24 @@ static int read_atr(struct smartcard *smartcard, struct smartcard_info *data)
 int smartcard_read_info(struct smartcard *smartcard,
 		struct smartcard_info *data)
 {
+	unsigned int type;
+
 	memset(data, 0, sizeof(*data));
 
-	if (read_atr(smartcard, data))
+	if (smartcard_get_type(smartcard, &type))
 		return -ENOENT;
+
+	switch (type) {
+	case SMARTCARD_TYPE_T0:
+	case SMARTCARD_TYPE_T1:
+		break;
+	default:
+		pr_debug("Invalid card type for reading info");
+		return -EINVAL;
+	}
+
+	if (read_atr(smartcard, data))
+		return -ENODATA;
 
 	read_ef_gdo(smartcard, data);
 	read_ef_atr(smartcard, data);
