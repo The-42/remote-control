@@ -296,8 +296,10 @@ static struct taskmanager *taskmanager_new(JSContextRef context,
 	}
 
 	tm = g_new0(struct taskmanager, 1);
-	if (!tm)
-		g_warning("js-taskmanger: failed to allocate memory");
+	if (!tm) {
+		g_warning("js-taskmanager: failed to allocate memory");
+		return NULL;
+	}
 
 	tm->rcd = data->rcd;
 	tm->context = context;
