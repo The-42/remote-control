@@ -80,6 +80,9 @@ static JSValueRef js_smartcard_get_info(JSContextRef js, JSObjectRef object,
 	ret = JSObjectMake(js, NULL, NULL);
 	RET_SET_INFO_PROP(first_name, "firstName");
 	RET_SET_INFO_PROP(last_name, "lastName");
+	RET_SET_INFO_PROP(name_prefix, "namePrefix");
+	RET_SET_INFO_PROP(name_affix, "nameAffix");
+	RET_SET_INFO_PROP(title, "title");
 	RET_SET_INFO_PROP(date_of_birth, "dateOfBirth");
 	RET_SET_INFO_PROP(gender, "gender");
 	RET_SET_INFO_PROP(zip_code, "zipCode");
@@ -87,11 +90,17 @@ static JSValueRef js_smartcard_get_info(JSContextRef js, JSObjectRef object,
 	RET_SET_INFO_PROP(country, "country");
 	RET_SET_INFO_PROP(street, "street");
 	RET_SET_INFO_PROP(street_number, "streetNumber");
+	RET_SET_INFO_PROP(po_zip_code, "poZipCode");
+	RET_SET_INFO_PROP(po_city, "poCity");
+	RET_SET_INFO_PROP(po_box, "poBox");
+	RET_SET_INFO_PROP(po_country, "poCountry");
+	RET_SET_INFO_PROP(address_affix, "addressAffix");
 	RET_SET_INFO_PROP(insurance_id, "insuranceId");
 	RET_SET_INFO_PROP(insurer_id, "insurerId");
 	RET_SET_INFO_PROP(insurer_country, "insurerCountry");
 	RET_SET_INFO_PROP(insurer_name, "insurerName");
 	RET_SET_INFO_PROP(billing_insurer_id, "billingInsurerId");
+	RET_SET_INFO_PROP(billing_insurer_country, "billingInsurerCountry");
 	RET_SET_INFO_PROP(billing_insurer_name, "billingInsurerName");
 	RET_SET_INFO_PROP(card_id, "cardId");
 	RET_SET_INFO_PROP(card_atr, "cardAtr");

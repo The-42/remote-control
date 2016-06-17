@@ -229,6 +229,12 @@ const char *EGK_EF_PD_FIRST_NAME[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Person", "Vorname", NULL };
 const char *EGK_EF_PD_LAST_NAME[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Person", "Nachname", NULL };
+const char *EGK_EF_PD_NAME_PREFIX[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "Vorsatzwort", NULL };
+const char *EGK_EF_PD_NAME_AFFIX[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "Namenszusatz", NULL };
+const char *EGK_EF_PD_TITLE[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "Titel", NULL };
 const char *EGK_EF_PD_DATE_OF_BIRTH[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Person", "Geburtsdatum", NULL };
 const char *EGK_EF_PD_GENDER[] = { "UC_PersoenlicheVersichertendatenXML",
@@ -244,6 +250,17 @@ const char *EGK_EF_PD_STREET[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Person", "StrassenAdresse", "Strasse", NULL };
 const char *EGK_EF_PD_STREET_NUMBER[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Person", "StrassenAdresse", "Hausnummer", NULL };
+const char *EGK_EF_PD_PO_ZIP_CODE[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "PostfachAdresse", "Postleitzahl", NULL };
+const char *EGK_EF_PD_PO_CITY[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "PostfachAdresse", "Ort", NULL };
+const char *EGK_EF_PD_PO_BOX[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "PostfachAdresse", "Postfach", NULL };
+const char *EGK_EF_PD_PO_COUNTRY[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "PostfachAdresse", "Land", NULL };
+const char *EGK_EF_PD_ADDR_AFFIX[] = { "UC_PersoenlicheVersichertendatenXML",
+	"Versicherter", "Person", "StrassenAdresse", "Anschriftenzusatz",
+	NULL };
 const char *EGK_EF_PD_INSURANCE_ID[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Versicherten_ID", NULL };
 
@@ -283,6 +300,12 @@ static int read_ef_pd(struct smartcard *smartcard, struct smartcard_info *data)
 			EGK_EF_PD_FIRST_NAME);
 	data->last_name = get_node_content(xmlDocGetRootElement(doc),
 			EGK_EF_PD_LAST_NAME);
+	data->name_prefix = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_NAME_PREFIX);
+	data->name_affix = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_NAME_AFFIX);
+	data->title = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_TITLE);
 	data->date_of_birth = get_node_content(xmlDocGetRootElement(doc),
 			EGK_EF_PD_DATE_OF_BIRTH);
 	data->gender = get_node_content(xmlDocGetRootElement(doc),
@@ -297,6 +320,16 @@ static int read_ef_pd(struct smartcard *smartcard, struct smartcard_info *data)
 			EGK_EF_PD_STREET);
 	data->street_number = get_node_content(xmlDocGetRootElement(doc),
 			EGK_EF_PD_STREET_NUMBER);
+	data->po_zip_code = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_PO_ZIP_CODE);
+	data->po_city = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_PO_CITY);
+	data->po_box = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_PO_BOX);
+	data->po_country = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_PO_COUNTRY);
+	data->address_affix = get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_PD_ADDR_AFFIX);
 	data->insurance_id = get_node_content(xmlDocGetRootElement(doc),
 			EGK_EF_PD_INSURANCE_ID);
 
@@ -320,6 +353,10 @@ const char *EGK_EF_VD_BILLING_INSURER_ID[] = {
 	"UC_AllgemeineVersicherungsdatenXML", "Versicherter",
 	"Versicherungsschutz", "Kostentraeger", "AbrechnenderKostentraeger",
 	"Kostentraegerkennung", NULL };
+const char *EGK_EF_VD_BILLING_INSURER_COUNTRY[] = {
+	"UC_AllgemeineVersicherungsdatenXML", "Versicherter",
+	"Versicherungsschutz", "Kostentraeger", "AbrechnenderKostentraeger",
+	"Kostentraegerlaendercode", NULL };
 const char *EGK_EF_VD_BILLING_INSURER_NAME[] = {
 	"UC_AllgemeineVersicherungsdatenXML", "Versicherter",
 	"Versicherungsschutz", "Kostentraeger", "AbrechnenderKostentraeger",
@@ -365,6 +402,9 @@ static int read_ef_vd(struct smartcard *smartcard, struct smartcard_info *data)
 			EGK_EF_VD_INSURER_NAME);
 	data->billing_insurer_id = get_node_content(xmlDocGetRootElement(doc),
 			EGK_EF_VD_BILLING_INSURER_ID);
+	data->billing_insurer_country =
+			get_node_content(xmlDocGetRootElement(doc),
+			EGK_EF_VD_BILLING_INSURER_COUNTRY);
 	data->billing_insurer_name = get_node_content(xmlDocGetRootElement(doc),
 			EGK_EF_VD_BILLING_INSURER_NAME);
 
@@ -494,6 +534,9 @@ void smartcard_read_info_free(struct smartcard_info *data)
 
 	free(data->first_name);
 	free(data->last_name);
+	free(data->name_prefix);
+	free(data->name_affix);
+	free(data->title);
 	free(data->date_of_birth);
 	free(data->gender);
 	free(data->zip_code);
@@ -501,11 +544,17 @@ void smartcard_read_info_free(struct smartcard_info *data)
 	free(data->country);
 	free(data->street);
 	free(data->street_number);
+	free(data->po_zip_code);
+	free(data->po_city);
+	free(data->po_box);
+	free(data->po_country);
+	free(data->address_affix);
 	free(data->insurance_id);
 	free(data->insurer_id);
 	free(data->insurer_country);
 	free(data->insurer_name);
 	free(data->billing_insurer_id);
+	free(data->billing_insurer_country);
 	free(data->billing_insurer_name);
 	free(data->card_id);
 	free(data->card_atr);

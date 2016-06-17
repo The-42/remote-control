@@ -276,6 +276,9 @@ ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *b
 struct smartcard_info {
 	char *first_name;
 	char *last_name;
+	char *name_prefix;
+	char *name_affix;
+	char *title;
 	char *date_of_birth;
 	char *gender;
 	char *zip_code;
@@ -283,11 +286,17 @@ struct smartcard_info {
 	char *country;
 	char *street;
 	char *street_number;
+	char *po_zip_code;
+	char *po_city;
+	char *po_box;
+	char *po_country;
+	char *address_affix;
 	char *insurance_id;
 	char *insurer_id;
 	char *insurer_country;
 	char *insurer_name;
 	char *billing_insurer_id;
+	char *billing_insurer_country;
 	char *billing_insurer_name;
 	char *card_id;
 	char *card_atr;
