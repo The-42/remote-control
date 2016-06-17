@@ -240,7 +240,7 @@ static JSValueRef js_voip_call(
 	err = voip_call(voip, url);
 	if (err)
 		javascript_set_exception_text(context, exception,
-			"VoIP logout failed");
+			"VoIP call failed");
 
 	g_free(url);
 
