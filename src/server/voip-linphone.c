@@ -24,6 +24,10 @@ struct voip {
 	gchar *contact_name;
 	gchar *contact_display;
 	int expires;
+
+	voip_onstatechange_cb onstatechange_cb;
+	void *callback_data;
+	void *callback_owner;
 };
 
 static void linphone_global_state_changed_cb(LinphoneCore *core,
@@ -80,6 +84,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 	struct remote_control *rc = linphone_core_get_user_data(core);
 	struct event_manager *manager = remote_control_get_event_manager(rc);
 	struct voip *voip = remote_control_get_voip(rc);
+	enum voip_state cb_state = VOIP_STATE_IDLE;
 	struct event event;
 	const char *name;
 	int err;
@@ -102,43 +107,59 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 		}
 
 		event.voip.state = EVENT_VOIP_STATE_INCOMING;
+		cb_state = VOIP_STATE_INCOMING;
 
 		voip_update_contact(voip, call);
 		break;
 
 	case LinphoneCallConnected:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_CONNECTED;
+		cb_state = VOIP_STATE_CONNECTED;
 		break;
 
 	case LinphoneCallEnd:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_DISCONNECTED;
+		cb_state = VOIP_STATE_DISCONNECTED;
 		break;
 
 	case LinphoneCallIncomingEarlyMedia:
 		event.voip.state = EVENT_VOIP_STATE_INCOMING_EARLYMEDIA;
+		cb_state = VOIP_STATE_INCOMING_EARLYMEDIA;
 		break;
 
 	case LinphoneCallOutgoingEarlyMedia:
 		event.voip.state = EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA;
+		cb_state = VOIP_STATE_OUTGOING_EARLYMEDIA;
 		break;
 
 	case LinphoneCallOutgoingProgress:
 		event.voip.state = EVENT_VOIP_STATE_OUTGOING;
+		cb_state = VOIP_STATE_OUTGOING;
 		break;
 
 	case LinphoneCallError:
 		/* Sadly there is no other way to get the info, that the called
 		 * user is busy. */
-		if (g_strcmp0(message, "Busy Here") == 0)
+		if (g_strcmp0(message, "Busy Here") == 0) {
 			event.voip.state = EVENT_VOIP_STATE_ERROR_USER_BUSY;
-		else
+			cb_state = VOIP_STATE_ERROR_USER_BUSY;
+		} else {
 			event.voip.state = EVENT_VOIP_STATE_OUTGOING_DISCONNECTED;
+			cb_state = VOIP_STATE_OUTGOING_FAILED;
+		}
+		break;
+
+	case LinphoneCallIdle:
+		cb_state = VOIP_STATE_IDLE;
 		break;
 
 	default:
 		g_debug("voip-linphone: unhandled event: %s", name);
 		return;
 	}
+
+	if (voip->onstatechange_cb)
+		voip->onstatechange_cb(cb_state, voip->callback_data);
 
 	err = event_manager_report(manager, &event);
 	if (err < 0)
@@ -741,4 +762,22 @@ int voip_set_capture_gain(struct voip *voip, float gain)
 
 	lp_config_set_float(conf, "sound", "mic_gain", gain);
 	return 0;
+}
+
+int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb cb,
+			      void *cb_data, void *owner_ref)
+{
+	if (!voip)
+		return -EINVAL;
+
+	voip->onstatechange_cb = cb;
+	voip->callback_data = cb_data;
+	voip->callback_owner = owner_ref;
+
+	return 0;
+}
+
+void *voip_get_onstatechange_cb_owner(struct voip *voip)
+{
+	return voip ? voip->callback_owner : NULL;
 }

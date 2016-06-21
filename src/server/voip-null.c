@@ -85,3 +85,14 @@ int voip_set_capture_gain(struct voip *voip, float gain)
 {
 	return -ENOSYS;
 }
+
+int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb *cb,
+			      void *cb_data, void *owner_ref)
+{
+	return -ENOSYS;
+}
+
+void *voip_get_onstatechange_cb_owner(struct voip *voip)
+{
+	return -ENOSYS;
+}

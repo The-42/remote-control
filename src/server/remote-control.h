@@ -264,6 +264,19 @@ enum voip_login_state {
 	VOIP_LOGIN_STATE_LOGGED_IN,
 };
 
+enum voip_state {
+	VOIP_STATE_IDLE,
+	VOIP_STATE_CONNECTED,
+	VOIP_STATE_DISCONNECTED,
+	VOIP_STATE_INCOMING,
+	VOIP_STATE_INCOMING_EARLYMEDIA,
+	VOIP_STATE_ERROR_USER_BUSY,
+	VOIP_STATE_OUTGOING,
+	VOIP_STATE_OUTGOING_FAILED,
+	VOIP_STATE_OUTGOING_EARLYMEDIA,
+};
+
+typedef void(*voip_onstatechange_cb)(enum voip_state, void*);
 struct voip;
 
 int voip_create(struct voip **voipp, struct rpc_server *server,
@@ -283,6 +296,9 @@ int voip_dial(struct voip *voip, uint8_t dtmf);
 int voip_set_playback(struct voip *voip, const char *card_name);
 int voip_set_capture(struct voip *voip, const char *card_name);
 int voip_set_capture_gain(struct voip *voip, float gain);
+int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb cb,
+			      void *cb_data, void *owner_ref);
+void *voip_get_onstatechange_cb_owner(struct voip *voip);
 
 /**
  * mixer
