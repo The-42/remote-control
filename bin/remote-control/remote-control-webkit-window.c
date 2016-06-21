@@ -523,6 +523,8 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 #endif
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
+
+	webkit_set_cache_model(WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
 #ifdef ENABLE_JAVASCRIPT
 	/*
 	 * Add a callback to listen for load-status property changes. This is
