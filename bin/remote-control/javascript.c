@@ -588,6 +588,18 @@ static int javascript_register_classes(void)
 	return 0;
 }
 
+static void javascript_release_classes(void)
+{
+	int i;
+
+	for (i = 0; ad_modules[i]; i++) {
+		if (ad_modules[i]->class) {
+			JSClassRelease(ad_modules[i]->class);
+			ad_modules[i]->class = NULL;
+		}
+	}
+}
+
 int javascript_register(JSGlobalContextRef context,
                         struct javascript_userdata *user_data)
 {
@@ -606,6 +618,8 @@ int javascript_register(JSGlobalContextRef context,
 	err = javascript_register_avionic_design(context, object,
 	                                         "AvionicDesign",
 	                                         user_data);
+	javascript_release_classes();
+
 	if (err < 0) {
 		g_debug("failed to register AvionicDesign object: %s",
 				g_strerror(-err));
