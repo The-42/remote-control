@@ -37,8 +37,6 @@
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
 
-#define RCT_TIMEOUT_S  10
-
 #ifdef ENABLE_DBUS
 static const gchar REMOTE_CONTROL_BUS_NAME[] = "de.avionic-design.RemoteControl";
 
@@ -595,11 +593,9 @@ int main(int argc, char *argv[])
 	};
 	struct remote_control_data *rcd;
 	GMainContext *context = NULL;
-	gboolean rct_success = TRUE;
 	struct watchdog *watchdog;
 	GUdevClient* udev_client;
 	GOptionContext *options;
-	gint64 rct_wait_time;
 	GError *error = NULL;
 	GtkWidget *window;
 	GDeviceTree *dt;
@@ -726,21 +722,10 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	rct_wait_time = g_get_monotonic_time() +
-			RCT_TIMEOUT_S * G_TIME_SPAN_SECOND;
 	g_mutex_lock(&rcd->startup_mutex);
-	while (!rcd->rc && rct_success) {
-		rct_success = g_cond_wait_until(&rcd->startup_cond,
-			&rcd->startup_mutex, rct_wait_time);
-	}
+	while (!rcd->rc)
+		g_cond_wait(&rcd->startup_cond, &rcd->startup_mutex);
 	g_mutex_unlock(&rcd->startup_mutex);
-
-	if (!rct_success) {
-		g_critical("control thread failed to come up within %d s.",
-			RCT_TIMEOUT_S);
-		stop_remote_control(rcd);
-		return EXIT_FAILURE;
-	}
 
 #ifdef ENABLE_JAVASCRIPT
 	err = javascript_init(conf);
