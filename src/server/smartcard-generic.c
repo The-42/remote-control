@@ -86,7 +86,7 @@ int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
 		return ret;
 	}
 #endif
-	return 0;
+	return ret;
 }
 
 int smartcard_free(struct smartcard *smartcard)
