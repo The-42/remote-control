@@ -167,21 +167,23 @@ static ssize_t process_icc_command(struct smartcard *smartcard,
 		break;
 	case 0x12: /* Request ICC */
 		if (!smartcard->state.cbAtr) {
-			memcpy(&smartcard->rcv_buffer[smartcard->rcv_len++],
+			memcpy(smartcard->rcv_buffer,
 					RESPONSE_WARNING_NO_CARD,
 					sizeof(RESPONSE_WARNING_NO_CARD));
 			break;
 		}
 		smartcard->rcv_len = 0;
 		if (size > 3 && buffer[3] == 1) {
-			if (ensure_buffer(smartcard, smartcard->state.cbAtr + 2))
+			if (ensure_buffer(smartcard, smartcard->state.cbAtr +
+					sizeof(RESPONSE_SUCCESS)))
 				break;
 			memcpy(smartcard->rcv_buffer, smartcard->state.rgbAtr,
 					smartcard->state.cbAtr);
 			smartcard->rcv_len = smartcard->state.cbAtr;
 		}
-		memcpy(&smartcard->rcv_buffer[smartcard->rcv_len++],
+		memcpy(&smartcard->rcv_buffer[smartcard->rcv_len],
 				RESPONSE_SUCCESS, sizeof(RESPONSE_SUCCESS));
+		smartcard->rcv_len += sizeof(RESPONSE_SUCCESS);
 		break;
 	case 0x15: /* Eject ICC */
 		rv = SCardReconnect(smartcard->card, SCARD_SHARE_SHARED,
