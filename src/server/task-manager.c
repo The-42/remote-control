@@ -53,7 +53,8 @@ static void child_watch(GPid pid, gint status, gpointer data)
 					task->real_pid, status);
 			manager->tasks = g_list_delete_link(tasks, node);
 			if (task->callback)
-				task->callback(task->pid, task->callback_data);
+				task->callback(task->pid, task->callback_data,
+						status);
 			task_free(task);
 			break;
 		}

@@ -396,7 +396,7 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 /**
  * task manager
  */
-typedef void(*task_terminate_cb)(int, void*);
+typedef void(*task_terminate_cb)(int, void*, int);
 struct task_manager;
 
 int task_manager_create(struct task_manager **managerp);

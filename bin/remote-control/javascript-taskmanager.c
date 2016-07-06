@@ -163,18 +163,19 @@ static const JSStaticValue taskmanager_properties[] = {
 	{}
 };
 
-static void taskmanager_terminate_cb(int pid, void *data)
+static void taskmanager_terminate_cb(int pid, void *data, int status)
 {
 	JSObjectRef object = data;
 	struct taskmanager *tm = JSObjectGetPrivate(object);
 
 	JSValueRef exception = NULL;
-	JSValueRef args[1];
+	JSValueRef args[2];
 
 	if (tm->callback == NULL)
 		return;
 
 	args[0] = JSValueMakeNumber(tm->context, pid);
+	args[1] = JSValueMakeNumber(tm->context, status);
 
 	(void)JSObjectCallAsFunction(tm->context, tm->callback,
 			object, G_N_ELEMENTS(args), args, &exception);
