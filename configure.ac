@@ -224,7 +224,7 @@ AC_ARG_WITH(voip_backend,
 
 AS_CASE([$with_voip_backend],
 	[none], [],
-	[linphone], [PKG_CHECK_MODULES(LINPHONE, linphone >= 3.4, [enable_linphone=yes])],
+	[linphone], [PKG_CHECK_MODULES(LINPHONE, linphone >= 3.7, [enable_linphone=yes])],
 	[AC_MSG_ERROR([Invalid voip backend: must be none or linphone])]
 )
 

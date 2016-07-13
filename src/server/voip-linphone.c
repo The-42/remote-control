@@ -146,13 +146,13 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 			name, g_strerror(-err));
 }
 
-static void linphone_notify_presence_recv_cb(LinphoneCore *core,
+static void linphone_notify_presence_received_cb(LinphoneCore *core,
 		LinphoneFriend *friend)
 {
 	g_debug("voip-linphone: presence notification for %p", friend);
 }
 
-static void linphone_new_subscription_request_cb(LinphoneCore *core,
+static void linphone_new_subscription_requested_cb(LinphoneCore *core,
 		LinphoneFriend *friend, const char *url)
 {
 	g_debug("voip-linphone: subscription request from %p: %s", friend,
@@ -160,10 +160,10 @@ static void linphone_new_subscription_request_cb(LinphoneCore *core,
 }
 
 static void linphone_auth_info_requested_cb(LinphoneCore *core,
-		const char *realm, const char *username)
+		const char *realm, const char *username, const char *domain)
 {
-	g_debug("voip-linphone: authorization info requested for %s@%s",
-			username, realm);
+	g_debug("voip-linphone: authorization info requested for %s@%s %s",
+			username, realm, domain);
 }
 
 static void linphone_call_log_updated_cb(LinphoneCore *core,
@@ -199,11 +199,10 @@ static void linphone_buddy_info_updated_cb(LinphoneCore *core,
 	g_debug("voip-linphone: buddy info updated for %p", friend);
 }
 
-static void linphone_notify_recv_cb(LinphoneCore *core, LinphoneCall *call,
-		const char *from, const char *event)
+static void linphone_notify_received_cb(LinphoneCore *core, LinphoneEvent *evt,
+		const char *notified_event, const LinphoneContent *body)
 {
-	g_debug("voip-linphone: notification received from %s: %s", from,
-			event);
+	g_debug("voip-linphone: notification received: %s", notified_event);
 }
 
 static void linphone_display_status_cb(LinphoneCore *core,
@@ -239,15 +238,15 @@ static const LinphoneCoreVTable vtable = {
 	.global_state_changed = linphone_global_state_changed_cb,
 	.registration_state_changed = linphone_registration_state_changed_cb,
 	.call_state_changed = linphone_call_state_changed_cb,
-	.notify_presence_recv = linphone_notify_presence_recv_cb,
-	.new_subscription_request = linphone_new_subscription_request_cb,
+	.notify_presence_received = linphone_notify_presence_received_cb,
+	.new_subscription_requested = linphone_new_subscription_requested_cb,
 	.auth_info_requested = linphone_auth_info_requested_cb,
 	.call_log_updated = linphone_call_log_updated_cb,
 	.text_received = linphone_text_received_cb,
 	.dtmf_received = linphone_dtmf_received_cb,
 	.refer_received = linphone_refer_received_cb,
 	.buddy_info_updated = linphone_buddy_info_updated_cb,
-	.notify_recv = linphone_notify_recv_cb,
+	.notify_received = linphone_notify_received_cb,
 	.display_status = linphone_display_status_cb,
 	.display_message = linphone_display_message_cb,
 	.display_warning = linphone_display_warning_cb,
@@ -403,13 +402,12 @@ int voip_create(struct voip **voipp, struct rpc_server *server,
 
 	/*
 	 * FIXME: This should be removed, the configuration should be done
-	 *        via linphone's own config file. And it is only possible with
-	 *        a patched linphone version.
+	 *        via linphone's own config file.
 	 */
 	if (g_key_file_has_key(config, "linphone", "qos-dscp", NULL)) {
 		int dscp = g_key_file_get_integer(config, "linphone",
 						  "qos-dscp", NULL);
-		linphone_core_set_rtp_dscp(voip->core, dscp);
+		linphone_core_set_audio_dscp(voip->core, dscp);
 	}
 
 	*voipp = voip;
@@ -536,11 +534,11 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 	linphone_address_set_display_name(address, user);
 	linphone_address_set_username(address, user);
 	linphone_address_set_domain(address, domain);
-	linphone_address_set_port_int(address, port);
+	linphone_address_set_port(address, port);
 	identity = linphone_address_as_string(address);
 	linphone_address_destroy(address);
 
-	auth = linphone_auth_info_new(user, NULL, password, NULL, NULL);
+	auth = linphone_auth_info_new(user, NULL, password, NULL, NULL, NULL);
 	linphone_core_add_auth_info(voip->core, auth);
 
 	linphone_proxy_config_set_server_addr(proxy, server);
