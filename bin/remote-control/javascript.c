@@ -317,6 +317,44 @@ int javascript_object_set_property(
 	JSValueRef excp = NULL;
 	JSStringRef str;
 
+	char *path_pos = strchr(prop, '.');
+	if (path_pos) {
+		char *path_name = g_strndup(prop, path_pos - prop);
+		JSStringRef path_str;
+		JSObjectRef path_obj;
+
+		if (!path_name) {
+			javascript_set_exception_text(context, exception,
+					"failed to create path name");
+			return -ENOMEM;
+		}
+		path_str = JSStringCreateWithUTF8CString(path_name);
+		g_free(path_name);
+		if (!path_str) {
+			javascript_set_exception_text(context, exception,
+					"failed to create path string");
+			return -ENOMEM;
+		}
+		if (JSObjectHasProperty(context, object, path_str)) {
+			path_obj = (JSObjectRef)JSObjectGetProperty(context,
+					object, path_str, exception);
+		} else {
+			path_obj = JSObjectMake(context, NULL, NULL);
+			if (!path_obj) {
+				JSStringRelease(path_str);
+				javascript_set_exception_text(context, exception,
+						"failed to create path object");
+				return -ENOMEM;
+			}
+			JSObjectSetProperty(context, object, path_str, path_obj,
+					0, NULL);
+		}
+		JSStringRelease(path_str);
+
+		return javascript_object_set_property(context, path_obj,
+				&path_pos[1], value, attr, exception);
+	}
+
 	str = JSStringCreateWithUTF8CString(prop);
 	if (!str) {
 		javascript_set_exception_text(context, exception,
