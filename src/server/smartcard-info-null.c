@@ -14,11 +14,7 @@
 #include "remote-control.h"
 
 int smartcard_read_info(struct smartcard *smartcard,
-		struct smartcard_info *data)
+		GHashTable **data)
 {
 	return -ENOSYS;
-}
-
-void smartcard_read_info_free(struct smartcard_info *data)
-{
 }

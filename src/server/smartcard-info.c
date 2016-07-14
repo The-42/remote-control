@@ -264,7 +264,7 @@ const char *EGK_EF_PD_ADDR_AFFIX[] = { "UC_PersoenlicheVersichertendatenXML",
 const char *EGK_EF_PD_INSURANCE_ID[] = { "UC_PersoenlicheVersichertendatenXML",
 	"Versicherter", "Versicherten_ID", NULL };
 
-static int read_ef_pd(struct smartcard *smartcard, struct smartcard_info *data)
+static int read_ef_pd(struct smartcard *smartcard, GHashTable *data)
 {
 	unsigned char raw_data[0x0352 + sizeof(EGK_SUCCESS)];
 	unsigned char file_data[0xFFF];
@@ -296,42 +296,60 @@ static int read_ef_pd(struct smartcard *smartcard, struct smartcard_info *data)
 		pr_debug("Parse EF.PD failed");
 		return -EIO;
 	}
-	data->first_name = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_FIRST_NAME);
-	data->last_name = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_LAST_NAME);
-	data->name_prefix = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_NAME_PREFIX);
-	data->name_affix = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_NAME_AFFIX);
-	data->title = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_TITLE);
-	data->date_of_birth = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_DATE_OF_BIRTH);
-	data->gender = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_GENDER);
-	data->zip_code = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_ZIP_CODE);
-	data->city = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_CITY);
-	data->country = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_COUNTRY);
-	data->street = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_STREET);
-	data->street_number = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_STREET_NUMBER);
-	data->po_zip_code = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_PO_ZIP_CODE);
-	data->po_city = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_PO_CITY);
-	data->po_box = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_PO_BOX);
-	data->po_country = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_PO_COUNTRY);
-	data->address_affix = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_ADDR_AFFIX);
-	data->insurance_id = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_PD_INSURANCE_ID);
+	g_hash_table_insert(data, "firstName",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_FIRST_NAME));
+	g_hash_table_insert(data, "lastName",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_LAST_NAME));
+	g_hash_table_insert(data, "namePrefix",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_NAME_PREFIX));
+	g_hash_table_insert(data, "nameAffix",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_NAME_AFFIX));
+	g_hash_table_insert(data, "title",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_TITLE));
+	g_hash_table_insert(data, "dateOfBirth",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_DATE_OF_BIRTH));
+	g_hash_table_insert(data, "gender",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_GENDER));
+	g_hash_table_insert(data, "zipCode",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_ZIP_CODE));
+	g_hash_table_insert(data, "city",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_CITY));
+	g_hash_table_insert(data, "country",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_COUNTRY));
+	g_hash_table_insert(data, "street",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_STREET));
+	g_hash_table_insert(data, "streetNumber",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_STREET_NUMBER));
+	g_hash_table_insert(data, "poZipCode",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_PO_ZIP_CODE));
+	g_hash_table_insert(data, "poCity",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_PO_CITY));
+	g_hash_table_insert(data, "poBox",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_PO_BOX));
+	g_hash_table_insert(data, "poCountry",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_PO_COUNTRY));
+	g_hash_table_insert(data, "addressAffix",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_ADDR_AFFIX));
+	g_hash_table_insert(data, "insuranceId",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_PD_INSURANCE_ID));
 
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
@@ -362,7 +380,7 @@ const char *EGK_EF_VD_BILLING_INSURER_NAME[] = {
 	"Versicherungsschutz", "Kostentraeger", "AbrechnenderKostentraeger",
 	"Name", NULL };
 
-static int read_ef_vd(struct smartcard *smartcard, struct smartcard_info *data)
+static int read_ef_vd(struct smartcard *smartcard, GHashTable *data)
 {
 	unsigned char raw_data[0x04E2 + sizeof(EGK_SUCCESS)];
 	unsigned char file_data[0xFFF];
@@ -394,19 +412,24 @@ static int read_ef_vd(struct smartcard *smartcard, struct smartcard_info *data)
 		pr_debug("Parse EF.VD failed");
 		return -EIO;
 	}
-	data->insurer_id = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_VD_INSURER_ID);
-	data->insurer_country = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_VD_INSURER_COUNTRY);
-	data->insurer_name = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_VD_INSURER_NAME);
-	data->billing_insurer_id = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_VD_BILLING_INSURER_ID);
-	data->billing_insurer_country =
+	g_hash_table_insert(data, "insurerId",
 			get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_VD_BILLING_INSURER_COUNTRY);
-	data->billing_insurer_name = get_node_content(xmlDocGetRootElement(doc),
-			EGK_EF_VD_BILLING_INSURER_NAME);
+					EGK_EF_VD_INSURER_ID));
+	g_hash_table_insert(data, "insurerCountry",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_VD_INSURER_COUNTRY));
+	g_hash_table_insert(data, "insurerName",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_VD_INSURER_NAME));
+	g_hash_table_insert(data, "billingInsurerId",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_VD_BILLING_INSURER_ID));
+	g_hash_table_insert(data, "billingInsurerCountry",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_VD_BILLING_INSURER_COUNTRY));
+	g_hash_table_insert(data, "billingInsurerName",
+			get_node_content(xmlDocGetRootElement(doc),
+					EGK_EF_VD_BILLING_INSURER_NAME));
 
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
@@ -414,9 +437,10 @@ static int read_ef_vd(struct smartcard *smartcard, struct smartcard_info *data)
 	return 0;
 }
 
-static int read_ef_gdo(struct smartcard *smartcard, struct smartcard_info *data)
+static int read_ef_gdo(struct smartcard *smartcard, GHashTable *data)
 {
 	unsigned char raw_data[0x0C + sizeof(EGK_SUCCESS)];
+	char *card_id;
 	int i, ret;
 
 	ret = smartcard_command(smartcard, EGK_SELECT_EGK_ROOT,
@@ -435,19 +459,22 @@ static int read_ef_gdo(struct smartcard *smartcard, struct smartcard_info *data)
 	}
 	ret -= 2;
 
-	data->card_id = malloc(ret * 2 + 1);
-	if (!data->card_id)
+	card_id = malloc(ret * 2 + 1);
+	if (!card_id)
 		return -ENOMEM;
 
 	for (i = 0; i < ret; i++)
-		snprintf(&data->card_id[i * 2], 3, "%02X", raw_data[i + 2]);
+		snprintf(&card_id[i * 2], 3, "%02X", raw_data[i + 2]);
+
+	g_hash_table_insert(data, "cardId", card_id);
 
 	return 0;
 }
 
-static int read_ef_atr(struct smartcard *smartcard, struct smartcard_info *data)
+static int read_ef_atr(struct smartcard *smartcard, GHashTable *data)
 {
 	unsigned char raw_data[0xFF + sizeof(EGK_SUCCESS)];
+	char *card_atr;
 	int i, ret;
 
 	ret = smartcard_command(smartcard, EGK_SELECT_EGK_ROOT,
@@ -465,20 +492,23 @@ static int read_ef_atr(struct smartcard *smartcard, struct smartcard_info *data)
 		return ret;
 	}
 
-	data->card_atr = malloc(ret * 2 + 1);
-	if (!data->card_atr)
+	card_atr = malloc(ret * 2 + 1);
+	if (!card_atr)
 		return -ENOMEM;
 
 	for (i = 0; i < ret; i++)
-		snprintf(&data->card_atr[i * 2], 3, "%02X", raw_data[i]);
+		snprintf(&card_atr[i * 2], 3, "%02X", raw_data[i]);
+
+	g_hash_table_insert(data, "cardAtr", card_atr);
 
 	return 0;
 }
 
-static int read_atr(struct smartcard *smartcard, struct smartcard_info *data)
+static int read_atr(struct smartcard *smartcard, GHashTable *data)
 {
 	unsigned char raw_data[0xFF + sizeof(EGK_SUCCESS)];
 	int i, ret;
+	char *atr;
 
 	ret = smartcard_command(smartcard, EGK_REQUEST_ICC,
 			sizeof(EGK_REQUEST_ICC), raw_data, sizeof(raw_data));
@@ -487,22 +517,26 @@ static int read_atr(struct smartcard *smartcard, struct smartcard_info *data)
 		return ret;
 	}
 
-	data->atr = malloc(ret * 2 + 1);
-	if (!data->atr)
+	atr = malloc(ret * 2 + 1);
+	if (!atr)
 		return -ENOMEM;
 
 	for (i = 0; i < ret; i++)
-		snprintf(&data->atr[i * 2], 3, "%02X", raw_data[i]);
+		snprintf(&atr[i * 2], 3, "%02X", raw_data[i]);
+
+	g_hash_table_insert(data, "atr", atr);
 
 	return 0;
 }
 
 int smartcard_read_info(struct smartcard *smartcard,
-		struct smartcard_info *data)
+		GHashTable **data)
 {
 	unsigned int type;
 
-	memset(data, 0, sizeof(*data));
+	*data = g_hash_table_new_full(NULL, NULL, NULL, free);
+	if (!*data)
+		return -ENOMEM;
 
 	if (smartcard_get_type(smartcard, &type))
 		return -ENOENT;
@@ -516,47 +550,13 @@ int smartcard_read_info(struct smartcard *smartcard,
 		return -EINVAL;
 	}
 
-	if (read_atr(smartcard, data))
+	if (read_atr(smartcard, *data))
 		return -ENODATA;
 
-	read_ef_gdo(smartcard, data);
-	read_ef_atr(smartcard, data);
-	read_ef_pd(smartcard, data);
-	read_ef_vd(smartcard, data);
+	read_ef_gdo(smartcard, *data);
+	read_ef_atr(smartcard, *data);
+	read_ef_pd(smartcard, *data);
+	read_ef_vd(smartcard, *data);
 
 	return 0;
-}
-
-void smartcard_read_info_free(struct smartcard_info *data)
-{
-	if (!data)
-		return;
-
-	free(data->first_name);
-	free(data->last_name);
-	free(data->name_prefix);
-	free(data->name_affix);
-	free(data->title);
-	free(data->date_of_birth);
-	free(data->gender);
-	free(data->zip_code);
-	free(data->city);
-	free(data->country);
-	free(data->street);
-	free(data->street_number);
-	free(data->po_zip_code);
-	free(data->po_city);
-	free(data->po_box);
-	free(data->po_country);
-	free(data->address_affix);
-	free(data->insurance_id);
-	free(data->insurer_id);
-	free(data->insurer_country);
-	free(data->insurer_name);
-	free(data->billing_insurer_id);
-	free(data->billing_insurer_country);
-	free(data->billing_insurer_name);
-	free(data->card_id);
-	free(data->card_atr);
-	free(data->atr);
 }
