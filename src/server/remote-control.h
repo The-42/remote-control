@@ -393,6 +393,7 @@ int lldp_monitor_free(struct lldp_monitor *monitor);
 GSource *lldp_monitor_get_source(struct lldp_monitor *monitor);
 ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 		size_t size);
+int lldp_monitor_read_info(struct lldp_monitor *monitor, GHashTable **data);
 
 /**
  * task manager

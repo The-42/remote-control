@@ -245,3 +245,8 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 
 	return ret;
 }
+
+int lldp_monitor_read_info(struct lldp_monitor *monitor, GHashTable **data)
+{
+	return -ENOSYS;
+}

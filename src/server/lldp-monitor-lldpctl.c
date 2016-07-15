@@ -211,6 +211,33 @@ static lldpctl_atom_t *lldp_monitor_get_neighbors(struct lldp_monitor *monitor)
 	return ret;
 }
 
+#ifdef DEBUG_INFO
+static void lldp_monitor_dump_info(struct lldp_monitor *monitor)
+{
+	GList *keys, *key;
+	GHashTable *info;
+	int err;
+
+	if ((err = lldp_monitor_read_info(monitor, &info)) < 0) {
+		printf("lldp_monitor_dump_info failed: %d\n", err);
+		return;
+	}
+
+	printf("lldp_monitor_dump_info:\n");
+	keys = g_hash_table_get_keys(info);
+	keys = g_list_sort(keys, (GCompareFunc)g_strcmp0);
+	key = g_list_first(keys);
+	while (key) {
+		char *val = g_hash_table_lookup(info, key->data);
+		if (val)
+			printf("%s:%s\n", (char *)key->data, val);
+		key = g_list_next(key);
+	}
+	g_list_free(keys);
+	g_hash_table_unref(info);
+}
+#endif
+
 ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 		size_t size)
 {
@@ -218,6 +245,10 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 	lldpctl_atom_t *neighbor = NULL;
 	char *data = NULL;
 	ssize_t ret = 0;
+
+#ifdef DEBUG_INFO
+	lldp_monitor_dump_info(monitor);
+#endif
 
 	if (!monitor || !buffer || !size)
 		return -EINVAL;
@@ -242,4 +273,267 @@ ssize_t lldp_monitor_read(struct lldp_monitor *monitor, void *buffer,
 	free(data);
 
 	return ret;
+}
+
+#define G_HASH_TABLE_ADD_STR(c,p,d,n,k,v) { \
+	const char *s = lldpctl_atom_get_str(n, v); \
+	if (lldpctl_last_error(c) == LLDPCTL_NO_ERROR && s) \
+		g_hash_table_insert(d, \
+				g_strdup_printf("%s%s", p, k), \
+				g_strdup(s)); \
+}
+#define G_HASH_TABLE_ADD_INT(c,p,d,n,k,v) { \
+	long int i = lldpctl_atom_get_int(n, v); \
+	if (lldpctl_last_error(c) == LLDPCTL_NO_ERROR) \
+		g_hash_table_insert(d, \
+				g_strdup_printf("%s%s", p, k), \
+				g_strdup_printf("%ld", i)); \
+}
+#define LLDPCTR_ATOM_LIST_FOR_EACH(a,i,v) \
+	for (i = lldpctl_atom_iter(a); \
+	     i && (v = lldpctl_atom_iter_value(a, i)); \
+	     i = lldpctl_atom_iter_next(a, i), \
+		 lldpctl_atom_dec_ref(v))
+
+static void lldp_add_neighbor(GHashTable *data, lldpctl_conn_t *conn,
+		lldpctl_atom_t *neighbor, int index)
+{
+	gchar *prefix = g_strdup_printf("neighbor%d.", index);
+	lldpctl_atom_iter_t *iter;
+	lldpctl_atom_t *subs;
+	lldpctl_atom_t *sub;
+	int pos;
+
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.protocol",
+			lldpctl_k_port_protocol);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "port.age",
+			lldpctl_k_port_age);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.id_subtype",
+			lldpctl_k_port_id_subtype);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.id",
+			lldpctl_k_port_id);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.descr",
+			lldpctl_k_port_descr);
+
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "port.dot3.mfs",
+			lldpctl_k_port_dot3_mfs);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "port.dot3.aggregid",
+			lldpctl_k_port_dot3_aggregid);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor,
+			"port.dot3.autoneg.support",
+			lldpctl_k_port_dot3_autoneg_support);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor,
+			"port.dot3.autoneg.enabled",
+			lldpctl_k_port_dot3_autoneg_enabled);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor,
+			"port.dot3.autoneg.advertised",
+			lldpctl_k_port_dot3_autoneg_advertised);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.dot3.mautype",
+			lldpctl_k_port_dot3_mautype);
+
+	sub = lldpctl_atom_get(neighbor, lldpctl_k_port_dot3_power);
+	if (sub) {
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.devicetype",
+				lldpctl_k_dot3_power_devicetype);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.supported",
+				lldpctl_k_dot3_power_supported);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.enabled",
+				lldpctl_k_dot3_power_enabled);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.paircontrol",
+				lldpctl_k_dot3_power_paircontrol);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.pairs",
+				lldpctl_k_dot3_power_pairs);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.class",
+				lldpctl_k_dot3_power_class);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.type",
+				lldpctl_k_dot3_power_type);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.source",
+				lldpctl_k_dot3_power_source);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.priority",
+				lldpctl_k_dot3_power_priority);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.allocated",
+				lldpctl_k_dot3_power_allocated);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.dot3.power.requested",
+				lldpctl_k_dot3_power_requested);
+		lldpctl_atom_dec_ref(sub);
+	}
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "port.pvid",
+			lldpctl_k_port_vlan_pvid);
+	pos = 0;
+	subs = lldpctl_atom_get(neighbor, lldpctl_k_port_vlans);
+	LLDPCTR_ATOM_LIST_FOR_EACH(subs, iter, sub) {
+		gchar *sub_prefix = g_strdup_printf("%sport.vlan%d.", prefix,
+				pos++);
+
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "id",
+				lldpctl_k_vlan_id);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "name",
+				lldpctl_k_vlan_name);
+		g_free(sub_prefix);
+	}
+	lldpctl_atom_dec_ref(subs);
+
+	pos = 0;
+	subs = lldpctl_atom_get(neighbor, lldpctl_k_port_ppvids);
+	LLDPCTR_ATOM_LIST_FOR_EACH(subs, iter, sub) {
+		gchar *sub_prefix = g_strdup_printf("%sport.ppvid%d.", prefix,
+				pos++);
+
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "status",
+				lldpctl_k_ppvid_status);
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "id",
+				lldpctl_k_ppvid_id);
+		g_free(sub_prefix);
+	}
+	lldpctl_atom_dec_ref(subs);
+
+	pos = 0;
+	subs = lldpctl_atom_get(neighbor, lldpctl_k_port_pis);
+	LLDPCTR_ATOM_LIST_FOR_EACH(subs, iter, sub) {
+		gchar *sub_prefix = g_strdup_printf("%sport.pid%d.", prefix,
+				pos++);
+
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "id",
+				lldpctl_k_pi_id);
+		g_free(sub_prefix);
+	}
+	lldpctl_atom_dec_ref(subs);
+
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "chassis.index",
+			lldpctl_k_chassis_index);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "chassis.id_subtype",
+			lldpctl_k_chassis_id_subtype);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "chassis.id",
+			lldpctl_k_chassis_id);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "chassis.name",
+			lldpctl_k_chassis_name);
+	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "chassis.descr",
+			lldpctl_k_chassis_descr);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor,
+			"chassis.cap.available",
+			lldpctl_k_chassis_cap_available);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor,
+			"chassis.cap.enabled", lldpctl_k_chassis_cap_enabled);
+	pos = 0;
+	subs = lldpctl_atom_get(neighbor, lldpctl_k_chassis_mgmt);
+	LLDPCTR_ATOM_LIST_FOR_EACH(subs, iter, sub) {
+		gchar *sub_prefix = g_strdup_printf("%schassis.mgmt%d.",
+				prefix, pos++);
+
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "ip",
+				lldpctl_k_mgmt_ip);
+		g_free(sub_prefix);
+	}
+	lldpctl_atom_dec_ref(subs);
+
+	pos = 0;
+	subs = lldpctl_atom_get(neighbor, lldpctl_k_port_med_policies);
+	LLDPCTR_ATOM_LIST_FOR_EACH(subs, iter, sub) {
+		gchar *sub_prefix;
+
+		if (lldpctl_atom_get_int(sub, lldpctl_k_med_policy_type) <= 0)
+			continue;
+
+		sub_prefix = g_strdup_printf("%sport.med.policy%d.", prefix,
+				pos++);
+
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "type",
+				lldpctl_k_med_policy_type);
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "unknown",
+				lldpctl_k_med_policy_unknown);
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "tagging",
+				lldpctl_k_med_policy_tagged);
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "vid",
+				lldpctl_k_med_policy_vid);
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "priority",
+				lldpctl_k_med_policy_priority);
+		G_HASH_TABLE_ADD_INT(conn, sub_prefix, data, sub, "dscp",
+				lldpctl_k_med_policy_dscp);
+		g_free(sub_prefix);
+	}
+	lldpctl_atom_dec_ref(subs);
+
+	pos = 0;
+	subs = lldpctl_atom_get(neighbor, lldpctl_k_port_med_locations);
+	LLDPCTR_ATOM_LIST_FOR_EACH(subs, iter, sub) {
+		gchar *sub_prefix;
+
+		if (lldpctl_atom_get_int(sub,
+				lldpctl_k_med_location_format) <= 0)
+			continue;
+
+		sub_prefix = g_strdup_printf("%sport.med.location%d.",
+				prefix, pos++);
+
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "format",
+				lldpctl_k_med_location_format);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "geoid",
+				lldpctl_k_med_location_geoid);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "latitude",
+				lldpctl_k_med_location_latitude);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "longitude",
+				lldpctl_k_med_location_longitude);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "altitude",
+				lldpctl_k_med_location_altitude);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub,
+				"altitude_unit",
+				lldpctl_k_med_location_altitude_unit);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "country",
+				lldpctl_k_med_location_country);
+		G_HASH_TABLE_ADD_STR(conn, sub_prefix, data, sub, "elin",
+				lldpctl_k_med_location_elin);
+		/*TODO: Add list of med_location_ca_elements (med_civicaddress_type, med_civicaddress_value */
+		g_free(sub_prefix);
+	}
+	lldpctl_atom_dec_ref(subs);
+
+	sub = lldpctl_atom_get(neighbor, lldpctl_k_port_med_power);
+	if (sub) {
+		G_HASH_TABLE_ADD_STR(conn, prefix, data, sub,
+				"port.med.power.type",
+				lldpctl_k_med_power_type);
+		G_HASH_TABLE_ADD_STR(conn, prefix, data, sub,
+				"port.med.power.source",
+				lldpctl_k_med_power_source);
+		G_HASH_TABLE_ADD_STR(conn, prefix, data, sub,
+				"port.med.power.priority",
+				lldpctl_k_med_power_priority);
+		G_HASH_TABLE_ADD_INT(conn, prefix, data, sub,
+				"port.med.power.val", lldpctl_k_med_power_val);
+	}
+	g_free(prefix);
+}
+
+int lldp_monitor_read_info(struct lldp_monitor *monitor, GHashTable **data)
+{
+	lldpctl_atom_t *neighbors = NULL;
+	lldpctl_atom_t *neighbor = NULL;
+	lldpctl_atom_iter_t *iter;
+	int i = 0;
+
+	if (!monitor || !data)
+		return -EINVAL;
+
+	*data = g_hash_table_new_full(NULL, NULL, g_free, g_free);
+	if (!*data)
+		return -ENOMEM;
+
+	neighbors = lldp_monitor_get_neighbors(monitor);
+	LLDPCTR_ATOM_LIST_FOR_EACH(neighbors, iter, neighbor) {
+		lldp_add_neighbor(*data, monitor->conn, neighbor, i++);
+	}
+	lldpctl_atom_dec_ref(neighbors);
+
+	return 0;
 }

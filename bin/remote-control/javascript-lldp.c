@@ -16,6 +16,47 @@
 
 #include "javascript.h"
 
+static JSValueRef js_lldp_get_info(JSContextRef js, JSObjectRef object,
+		JSStringRef name, JSValueRef *exception)
+{
+	struct lldp_monitor *lldp = JSObjectGetPrivate(object);
+	GHashTableIter iter;
+	GHashTable *info;
+	JSObjectRef ret;
+	char *key, *val;
+	int err;
+
+	if ((err = lldp_monitor_read_info(lldp, &info)) < 0) {
+		*exception = JSValueMakeNumber(js, err);
+		return NULL;
+	}
+
+	ret = JSObjectMake(js, NULL, NULL);
+
+	g_hash_table_iter_init(&iter, info);
+	while (g_hash_table_iter_next(&iter, (gpointer)&key, (gpointer)&val)) {
+		if (!val)
+			continue;
+		javascript_object_set_property(js, ret, key,
+				javascript_make_string(js, val, NULL),
+				0, NULL);
+	}
+
+	g_hash_table_unref(info);
+
+	return ret;
+}
+
+static const JSStaticValue lldp_properties[] = {
+	{
+		.name = "info",
+		.getProperty = js_lldp_get_info,
+		.attributes = kJSPropertyAttributeDontDelete |
+			kJSPropertyAttributeReadOnly,
+	},
+	{}
+};
+
 static JSValueRef js_lldp_read(JSContextRef js, JSObjectRef function,
 		JSObjectRef object, size_t argc, const JSValueRef argv[],
 		JSValueRef *exception)
@@ -79,6 +120,7 @@ static const JSStaticFunction lldp_functions[] = {
 
 static const JSClassDefinition lldp_classdef = {
 	.className = "LLDP",
+	.staticValues = lldp_properties,
 	.staticFunctions = lldp_functions,
 };
 
