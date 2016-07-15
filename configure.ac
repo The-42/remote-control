@@ -120,6 +120,17 @@ AS_CASE([$with_backlight_backend],
 )
 
 #
+# lldp monitor backend
+#
+
+AC_ARG_ENABLE([lldpctl],
+	[AS_HELP_STRING([--enable-lldpctl],
+			[Enable lldpctl support [default=no]])],
+	[enable_lldpctl="$enableval"], [enable_lldpctl=no])
+AS_IF([test "x$enable_lldpctl" = "xyes"],
+	[PKG_CHECK_MODULES(LLDPCTL, lldpctl)])
+
+#
 # SmartCard backend
 #
 
@@ -389,6 +400,7 @@ AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "x
 AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBVLC, [test "x$enable_libvlc" = "xyes"])
 AM_CONDITIONAL(ENABLE_GST, [test "x$enable_gst" = "xyes"])
+AM_CONDITIONAL(ENABLE_LLDPCTL, [test "x$enable_lldpctl" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBPCSCLITE, [test "x$enable_libpcsclite" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
 AM_CONDITIONAL(ENABLE_SMARTCARD_INFO, [test "x$enable_smartcard_info" = "xyes"])
@@ -514,4 +526,6 @@ AS_IF([test "x$enable_javascript" = "xyes"], [
 ])
 
 AS_ECHO("  D-Bus Watchdog support:    $enable_watchdog")
+AS_IF([test "x$enable_lldpctl" = "xyes"],
+	[AS_ECHO("  LLDP monitor:              lldpctl")])
 AS_ECHO

@@ -513,6 +513,7 @@ int remote_control_free(struct remote_control *rc)
 	app_watchdog_free(rc->watchdog);
 	gpio_backend_free(rc->gpio);
 	event_manager_free(rc->event_manager);
+	lldp_monitor_free(rc->lldp);
 	rpc_server_free(server);
 
 	return 0;

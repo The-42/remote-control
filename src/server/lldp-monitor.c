@@ -218,6 +218,12 @@ free:
 	return err;
 }
 
+int lldp_monitor_free(struct lldp_monitor *monitor)
+{
+	/* Done via source */
+	return 0;
+}
+
 GSource *lldp_monitor_get_source(struct lldp_monitor *monitor)
 {
 	return monitor ? &monitor->source : NULL;

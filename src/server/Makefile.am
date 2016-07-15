@@ -29,7 +29,6 @@ libremote_control_la_SOURCES = \
 	io.c \
 	irq.c \
 	lldp.c \
-	lldp-monitor.c \
 	media.c \
 	media-player.c \
 	mixer.c \
@@ -47,6 +46,14 @@ libremote_control_la_SOURCES = \
 	usb-handset.c \
 	utils.c \
 	voip.c
+
+if ENABLE_LLDPCTL
+libremote_control_la_CFLAGS += @LLDPCTL_CFLAGS@
+libremote_control_la_LIBADD += @LLDPCTL_LIBS@
+libremote_control_la_SOURCES += lldp-monitor-lldpctl.c
+else
+libremote_control_la_SOURCES += lldp-monitor.c
+endif
 
 nodist_libremote_control_la_SOURCES = \
 	remote-control-stub.c \
