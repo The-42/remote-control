@@ -296,58 +296,58 @@ static int read_ef_pd(struct smartcard *smartcard, GHashTable *data)
 		pr_debug("Parse EF.PD failed");
 		return -EIO;
 	}
-	g_hash_table_insert(data, "firstName",
+	g_hash_table_insert(data, "insurant.person.firstName",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_FIRST_NAME));
-	g_hash_table_insert(data, "lastName",
+	g_hash_table_insert(data, "insurant.person.lastName",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_LAST_NAME));
-	g_hash_table_insert(data, "namePrefix",
+	g_hash_table_insert(data, "insurant.person.namePrefix",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_NAME_PREFIX));
-	g_hash_table_insert(data, "nameAffix",
+	g_hash_table_insert(data, "insurant.person.nameAffix",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_NAME_AFFIX));
-	g_hash_table_insert(data, "title",
+	g_hash_table_insert(data, "insurant.person.title",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_TITLE));
-	g_hash_table_insert(data, "dateOfBirth",
+	g_hash_table_insert(data, "insurant.person.dateOfBirth",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_DATE_OF_BIRTH));
-	g_hash_table_insert(data, "gender",
+	g_hash_table_insert(data, "insurant.person.gender",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_GENDER));
-	g_hash_table_insert(data, "zipCode",
+	g_hash_table_insert(data, "insurant.person.zipCode",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_ZIP_CODE));
-	g_hash_table_insert(data, "city",
+	g_hash_table_insert(data, "insurant.person.city",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_CITY));
-	g_hash_table_insert(data, "country",
+	g_hash_table_insert(data, "insurant.person.country",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_COUNTRY));
-	g_hash_table_insert(data, "street",
+	g_hash_table_insert(data, "insurant.person.street",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_STREET));
-	g_hash_table_insert(data, "streetNumber",
+	g_hash_table_insert(data, "insurant.person.streetNumber",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_STREET_NUMBER));
-	g_hash_table_insert(data, "poZipCode",
+	g_hash_table_insert(data, "insurant.person.poZipCode",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_PO_ZIP_CODE));
-	g_hash_table_insert(data, "poCity",
+	g_hash_table_insert(data, "insurant.person.poCity",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_PO_CITY));
-	g_hash_table_insert(data, "poBox",
+	g_hash_table_insert(data, "insurant.person.poBox",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_PO_BOX));
-	g_hash_table_insert(data, "poCountry",
+	g_hash_table_insert(data, "insurant.person.poCountry",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_PO_COUNTRY));
-	g_hash_table_insert(data, "addressAffix",
+	g_hash_table_insert(data, "insurant.person.addressAffix",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_ADDR_AFFIX));
-	g_hash_table_insert(data, "insuranceId",
+	g_hash_table_insert(data, "insurant.insuranceId",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_PD_INSURANCE_ID));
 
@@ -412,22 +412,22 @@ static int read_ef_vd(struct smartcard *smartcard, GHashTable *data)
 		pr_debug("Parse EF.VD failed");
 		return -EIO;
 	}
-	g_hash_table_insert(data, "insurerId",
+	g_hash_table_insert(data, "insurer.id",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_VD_INSURER_ID));
-	g_hash_table_insert(data, "insurerCountry",
+	g_hash_table_insert(data, "insurer.country",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_VD_INSURER_COUNTRY));
-	g_hash_table_insert(data, "insurerName",
+	g_hash_table_insert(data, "insurer.name",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_VD_INSURER_NAME));
-	g_hash_table_insert(data, "billingInsurerId",
+	g_hash_table_insert(data, "insurer.billing.id",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_VD_BILLING_INSURER_ID));
-	g_hash_table_insert(data, "billingInsurerCountry",
+	g_hash_table_insert(data, "insurer.billing.country",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_VD_BILLING_INSURER_COUNTRY));
-	g_hash_table_insert(data, "billingInsurerName",
+	g_hash_table_insert(data, "insurer.billing.name",
 			get_node_content(xmlDocGetRootElement(doc),
 					EGK_EF_VD_BILLING_INSURER_NAME));
 
@@ -466,7 +466,7 @@ static int read_ef_gdo(struct smartcard *smartcard, GHashTable *data)
 	for (i = 0; i < ret; i++)
 		snprintf(&card_id[i * 2], 3, "%02X", raw_data[i + 2]);
 
-	g_hash_table_insert(data, "cardId", card_id);
+	g_hash_table_insert(data, "card.id", card_id);
 
 	return 0;
 }
@@ -499,7 +499,7 @@ static int read_ef_atr(struct smartcard *smartcard, GHashTable *data)
 	for (i = 0; i < ret; i++)
 		snprintf(&card_atr[i * 2], 3, "%02X", raw_data[i]);
 
-	g_hash_table_insert(data, "cardAtr", card_atr);
+	g_hash_table_insert(data, "card.atr", card_atr);
 
 	return 0;
 }
