@@ -47,7 +47,6 @@ struct remote_control {
 	struct net *net;
 	struct lldp_monitor *lldp;
 	struct task_manager *task_manager;
-	struct tuner *tuner;
 	struct handset *handset;
 	struct app_watchdog *watchdog;
 
@@ -422,12 +421,6 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = tuner_create(&rc->tuner);
-	if (err < 0) {
-		g_critical("tuner_create(): %s", strerror(-err));
-		return err;
-	}
-
 	err = handset_create(&rc->handset, server);
 	if (err < 0) {
 		g_critical("handset_create(): %s", strerror(-err));
@@ -487,7 +480,6 @@ int remote_control_free(struct remote_control *rc)
 		return -EINVAL;
 
 	handset_free(rc->handset);
-	tuner_free(rc->tuner);
 	task_manager_free(rc->task_manager);
 	net_free(rc->net);
 	voip_free(rc->voip);
@@ -564,11 +556,6 @@ struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc)
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc)
 {
 	return rc ? rc->task_manager : NULL;
-}
-
-struct tuner *remote_control_get_tuner(struct remote_control *rc)
-{
-	return rc ? rc->tuner : NULL;
 }
 
 struct handset *remote_control_get_handset(struct remote_control *rc)

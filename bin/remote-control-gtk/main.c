@@ -19,7 +19,6 @@ extern struct panel backlight_panel;
 extern struct panel card_panel;
 extern struct panel mediaplayer_panel;
 extern struct panel miscellaneous_panel;
-extern struct panel tuner_panel;
 extern struct panel voip_panel;
 extern struct panel webkit_panel;
 
@@ -29,7 +28,6 @@ static struct panel *panels[] = {
 	&card_panel,
 	&mediaplayer_panel,
 	&miscellaneous_panel,
-//	&tuner_panel,
 	&voip_panel,
 	&webkit_panel,
 };
