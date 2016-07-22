@@ -106,11 +106,6 @@ void RPC_IMPL(card_event)(void *priv, uint32_t type)
 	remote_call_events(priv, REMOTE_EVENT_CARD, type);
 }
 
-void RPC_IMPL(modem_event)(void *priv, uint32_t type)
-{
-	remote_call_events(priv, REMOTE_EVENT_MODEM, type);
-}
-
 void RPC_IMPL(voip_event)(void *priv, uint32_t type)
 {
 	remote_call_events(priv, REMOTE_EVENT_VOIP, type);

@@ -25,7 +25,6 @@ libremote_control_la_SOURCES = \
 	lldp.c \
 	media-player.c \
 	mixer.c \
-	modem.c \
 	remote-control.c \
 	remote-control.h \
 	sound-manager.c \

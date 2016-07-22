@@ -52,13 +52,6 @@
 			<value name="CARD_TYPE_SLE4432"/>
 			<value name="CARD_TYPE_SLE4442"/>
 		</enum>
-		<!-- Modem -->
-		<enum name="modem_event" mnemonic="u32">
-			<value name="MODEM_EVT_ERROR" value="-1"/>
-			<value name="MODEM_EVT_RING" value="0"/>
-			<value name="MODEM_EVT_CONNECT"/>
-			<value name="MODEM_EVT_DISCONNECT"/>
-		</enum>
 		<!-- Tuner -->
 		<enum name="tuner_source" mnemonic="u32">
 			<value name="TUNER_SOURCE_FM"/>
@@ -77,7 +70,6 @@
 			<value name="IRQ_SOURCE_CARD"/>
 			<value name="IRQ_SOURCE_VOIP"/>
 			<value name="IRQ_SOURCE_IO"/>
-			<value name="IRQ_SOURCE_MODEM"/>
 			<value name="IRQ_SOURCE_HANDSET"/>
 		</enum>
 		<struct name="voip_account">
@@ -169,20 +161,6 @@
 		<func name="card_write" returns="int32_t" opcode="302">
 			<arg name="offset" type="off_t" mode="in"/>
 			<arg name="buffer" type="buffer" mode="inout"/>
-		</func>
-		<!-- Modem -->
-		<func name="modem_init" returns="int32_t" opcode="400"/>
-		<func name="modem_deinit" returns="int32_t" opcode="401"/>
-		<func name="modem_pick_up" returns="int32_t" opcode="402"/>
-		<func name="modem_hang_up" returns="int32_t" opcode="403"/>
-		<func name="modem_dial" returns="int32_t" opcode="404">
-			<arg name="number" type="const char *" mode="in"/>
-		</func>
-		<func name="modem_is_calling" returns="int32_t" opcode="405">
-			<arg name="calling" type="bool" mode="out"/>
-		</func>
-		<func name="modem_is_connected" returns="int32_t" opcode="406">
-			<arg name="connected" type="bool" mode="out"/>
 		</func>
 		<!-- ADMP -->
 		<func name="media_player_start" returns="int32_t" opcode="500"/>
@@ -376,9 +354,6 @@
 	</functions>
 	<events>
 		<event name="card_event" opcode="10300">
-			<param name="type" type="uint32_t"/>
-		</event>
-		<event name="modem_event" opcode="10400">
 			<param name="type" type="uint32_t"/>
 		</event>
 		<event name="voip_event" opcode="10700">

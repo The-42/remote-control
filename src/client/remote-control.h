@@ -83,7 +83,6 @@ enum remote_irq_source {
 	REMOTE_IRQ_SOURCE_SMARTCARD,
 	REMOTE_IRQ_SOURCE_VOIP,
 	REMOTE_IRQ_SOURCE_IO,
-	REMOTE_IRQ_SOURCE_MODEM,
 	REMOTE_IRQ_SOURCE_HANDSET,
 	REMOTE_IRQ_SOURCE_MAX
 };
@@ -97,7 +96,6 @@ struct remote_voip_account {
 
 enum remote_event {
 	REMOTE_EVENT_CARD,
-	REMOTE_EVENT_MODEM,
 	REMOTE_EVENT_VOIP,
 	REMOTE_EVENT_MAX,
 };
@@ -161,14 +159,6 @@ remote_public int remote_media_player_get_position(void *priv,
 		unsigned long *position);
 remote_public int remote_media_player_set_position(void *priv,
 		unsigned long position);
-
-remote_public int remote_modem_init(void *priv);
-remote_public int remote_modem_deinit(void *priv);
-remote_public int remote_modem_pick_up(void *priv);
-remote_public int remote_modem_hang_up(void *priv);
-remote_public int remote_modem_dial(void *priv, const char *number);
-remote_public int remote_modem_is_calling(void *priv, bool *status);
-remote_public int remote_modem_is_connected(void *priv, bool *status);
 
 remote_public int remote_voip_login(void *priv,
 		struct remote_voip_account *account);

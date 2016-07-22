@@ -836,108 +836,6 @@ const struct cli_command_info cmd_sound_stop _command_ = {
 };
 
 /*
- * "modem-call" command
- */
-static int exec_modem_call(struct cli *cli, int argc, char *argv[])
-{
-	int32_t err;
-
-	err = remote_modem_dial(cli->client, argv[1]);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_modem_call _command_ = {
-	.name = "modem-call",
-	.summary = "place a phone call",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_modem_call,
-};
-
-/*
- * "modem-accept" command
- */
-static int exec_modem_accept(struct cli *cli, int argc, char *argv[])
-{
-	int32_t err;
-
-	err = remote_modem_pick_up(cli->client);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_modem_accept _command_ = {
-	.name = "modem-accept",
-	.summary = "accept an incoming phone call",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_modem_accept,
-};
-
-/*
- * "modem-terminate" command
- */
-static int exec_modem_terminate(struct cli *cli, int argc, char *argv[])
-{
-	int32_t err;
-
-	err = remote_modem_hang_up(cli->client);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_modem_terminate _command_ = {
-	.name = "modem-terminate",
-	.summary = "terminate a phone call",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_modem_terminate,
-};
-
-/*
- * "modem-reset" command
- */
-static int exec_modem_reset(struct cli *cli, int argc, char *argv[])
-{
-	int32_t err;
-
-	err = remote_modem_deinit(cli->client);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	err = remote_modem_init(cli->client);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_modem_reset _command_ = {
-	.name = "modem-reset",
-	.summary = "reset the modem",
-	.help = "No options",
-	.options = NULL,
-	.exec = exec_modem_reset,
-};
-
-/*
  * "smartcard-read" command
  */
 static int exec_smartcard_read(struct cli *cli, int argc, char *argv[])
@@ -1549,7 +1447,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 		REMOTE_IRQ_SOURCE_SMARTCARD,
 		REMOTE_IRQ_SOURCE_VOIP,
 		REMOTE_IRQ_SOURCE_IO,
-		REMOTE_IRQ_SOURCE_MODEM,
 		REMOTE_IRQ_SOURCE_HANDSET,
 	};
 	uint32_t mask = 0;
@@ -1588,10 +1485,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 
 			case REMOTE_IRQ_SOURCE_IO:
 				fprintf(stderr, "IO\n");
-				break;
-
-			case REMOTE_IRQ_SOURCE_MODEM:
-				fprintf(stderr, "MODEM\n");
 				break;
 
 			case REMOTE_IRQ_SOURCE_HANDSET:

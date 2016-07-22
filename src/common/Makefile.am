@@ -41,10 +41,3 @@ endif
 libcommon_la_LIBADD = \
 	@GUDEV_LIBS@
 
-if ENABLE_ALSALOOP
-libcommon_la_CPPFLAGS += @ALSALOOP_CFLAGS@
-libcommon_la_SOURCES += \
-	alsaloop.c \
-	rc-alsaloop.h
-libcommon_la_LIBADD += @ALSALOOP_LIBS@
-endif

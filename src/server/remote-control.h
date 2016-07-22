@@ -22,24 +22,12 @@
  * event manager
  */
 enum event_source {
-	EVENT_SOURCE_MODEM,
 	EVENT_SOURCE_IO,
 	EVENT_SOURCE_VOIP,
 	EVENT_SOURCE_SMARTCARD,
 	EVENT_SOURCE_HOOK,
 	EVENT_SOURCE_HANDSET,
 	EVENT_SOURCE_MAX,
-};
-
-enum event_modem_state {
-	EVENT_MODEM_STATE_RINGING,
-	EVENT_MODEM_STATE_CONNECTED,
-	EVENT_MODEM_STATE_DISCONNECTED,
-	EVENT_MODEM_STATE_ERROR,
-};
-
-struct event_modem {
-	enum event_modem_state state;
 };
 
 struct event_io {
@@ -92,7 +80,6 @@ struct event {
 	enum event_source source;
 
 	union {
-		struct event_modem modem;
 		struct event_io io;
 		struct event_voip voip;
 		struct event_smartcard smartcard;
@@ -273,29 +260,6 @@ int smartcard_get_type(struct smartcard *smartcard, enum smartcard_type *typep);
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, size_t size);
 ssize_t smartcard_write(struct smartcard *smartcard, off_t offset, const void *buffer, size_t size);
 int smartcard_read_info(struct smartcard *smartcard, GHashTable **data);
-
-/**
- * modem manager
- */
-enum modem_state {
-	MODEM_STATE_IDLE,
-	MODEM_STATE_RINGING,
-	MODEM_STATE_INCOMING,
-	MODEM_STATE_OUTGOING,
-	MODEM_STATE_ACTIVE,
-};
-
-struct modem_manager;
-
-int modem_manager_create(struct modem_manager **managerp,
-		struct rpc_server *server, GKeyFile *config);
-GSource *modem_manager_get_source(struct modem_manager *manager);
-int modem_manager_initialize(struct modem_manager *manager);
-int modem_manager_shutdown(struct modem_manager *manager);
-int modem_manager_call(struct modem_manager *manager, const char *number);
-int modem_manager_accept(struct modem_manager *manager);
-int modem_manager_terminate(struct modem_manager *manager);
-int modem_manager_get_state(struct modem_manager *manager, enum modem_state *statep);
 
 /**
  * Voice-over-IP
@@ -486,7 +450,6 @@ struct cursor_movement *remote_control_get_cursor_movement(struct remote_control
 struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
-struct modem_manager *remote_control_get_modem_manager(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);
 struct net *remote_control_get_net(struct remote_control *rc);

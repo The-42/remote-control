@@ -9,7 +9,6 @@ remote_control_gtk_SOURCES = \
 	remote-control-gtk.h \
 	mediaplayer.c \
 	miscellaneous.c \
-	modem.c \
 	tuner.c \
 	voip.c \
 	voip.h \

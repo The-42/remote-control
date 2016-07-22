@@ -42,7 +42,6 @@ struct remote_control {
 	struct media_player *player;
 	struct sound_manager *sound;
 	struct smartcard *smartcard;
-	struct modem_manager *modem;
 	struct voip *voip;
 	struct mixer *mixer;
 	struct net *net;
@@ -399,18 +398,6 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = modem_manager_create(&rc->modem, server, config);
-	if (err < 0) {
-		g_critical("modem_manager_create(): %s", strerror(-err));
-		return err;
-	}
-
-	source = modem_manager_get_source(rc->modem);
-	if (source) {
-		g_source_add_child_source(rc->source, source);
-		g_source_unref(source);
-	}
-
 	err = voip_create(&rc->voip, server, config);
 	if (err < 0) {
 		g_critical("voip_create(): %s", strerror(-err));
@@ -552,11 +539,6 @@ struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc)
 {
 	return rc ? rc->smartcard : NULL;
-}
-
-struct modem_manager *remote_control_get_modem_manager(struct remote_control *rc)
-{
-	return rc ? rc->modem : NULL;
 }
 
 struct voip *remote_control_get_voip(struct remote_control *rc)
