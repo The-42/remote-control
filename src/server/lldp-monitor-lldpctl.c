@@ -310,6 +310,8 @@ static void lldp_add_neighbor(GHashTable *data, lldpctl_conn_t *conn,
 			lldpctl_k_port_age);
 	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.id_subtype",
 			lldpctl_k_port_id_subtype);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "port.id_subtype_num",
+			lldpctl_k_port_id_subtype);
 	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.id",
 			lldpctl_k_port_id);
 	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "port.descr",
@@ -413,6 +415,8 @@ static void lldp_add_neighbor(GHashTable *data, lldpctl_conn_t *conn,
 	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "chassis.index",
 			lldpctl_k_chassis_index);
 	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "chassis.id_subtype",
+			lldpctl_k_chassis_id_subtype);
+	G_HASH_TABLE_ADD_INT(conn, prefix, data, neighbor, "chassis.id_subtype_num",
 			lldpctl_k_chassis_id_subtype);
 	G_HASH_TABLE_ADD_STR(conn, prefix, data, neighbor, "chassis.id",
 			lldpctl_k_chassis_id);
