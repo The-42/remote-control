@@ -1,5 +1,44 @@
-Release x.y.z (YYYY-MM-DD)
+Release 1.0.0 (2016-09-14)
 ==========================
+* cleanup
+- drop tuner support
+- drop modem support including alsaloop
+- drop handset support
+- drop io support
+- drop rpc support
+- Remove obsolete rfid interface
+
+* lldp-monitor
+- Introduce info function
+- Add implementation using lldpctl
+- Fix segfaults with strlen()
+
+* smartcard
+- Add generic support for smartcards
+- Enable configuration for smartcard implementations
+- Add implementation for reading smartcard informations
+- Add support for PC/SC
+- Remove obsolete libccid support
+- limit transaction size to 4 kB
+
+* server/alsa
+- workaround for card names with spaces
+- fix segfault on init failure
+
+* other
+- bug fixes
+- ignore missing outputs silently
+- js: add LLDP module
+- js: add event manager object
+- js: add voip event callback
+- js: move monitor into sysinfo
+- gsysfsbacklight Allow initialization to fail
+- medatom: Ensure dpms is enabled
+- rc-webkit: disable caching
+- js-taskmanager: Report status in callback
+- voip-linphone: update api usage for linphone 3.7
+- voip-linphone: add sanity check to voip_login()
+- server: add bright warning for missing rpc commands
 
 Release 0.10.10 (2016-02-12)
 ==========================
