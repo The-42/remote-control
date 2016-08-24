@@ -140,16 +140,16 @@ int32_t RPC_IMPL(voip_logout)(void *priv)
 int32_t RPC_IMPL(voip_still_logged_in)(void *priv, bool *status)
 {
 	struct voip *voip = remote_control_get_voip(priv);
-	enum voip_state state = VOIP_STATE_LOGGED_OUT;
+	enum voip_login_state state = VOIP_LOGIN_STATE_LOGGED_OUT;
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, status=%p)", __func__, priv, status);
 
-	ret = voip_get_state(voip, &state);
+	ret = voip_get_login_state(voip, &state);
 	if (ret < 0)
 		goto out;
 
-	if (state == VOIP_STATE_LOGGED_IN)
+	if (state == VOIP_LOGIN_STATE_LOGGED_IN)
 		*status = true;
 	else
 		*status = false;

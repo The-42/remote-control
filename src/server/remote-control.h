@@ -259,9 +259,9 @@ enum voip_transport {
 	VOIP_TRANSPORT_MAX,
 };
 
-enum voip_state {
-	VOIP_STATE_LOGGED_OUT,
-	VOIP_STATE_LOGGED_IN,
+enum voip_login_state {
+	VOIP_LOGIN_STATE_LOGGED_OUT,
+	VOIP_LOGIN_STATE_LOGGED_IN,
 };
 
 struct voip;
@@ -277,7 +277,7 @@ int voip_logout(struct voip *voip);
 int voip_call(struct voip *voip, const char *url);
 int voip_accept(struct voip *voip, char **caller);
 int voip_terminate(struct voip *voip);
-int voip_get_state(struct voip *voip, enum voip_state *statep);
+int voip_get_login_state(struct voip *voip, enum voip_login_state *statep);
 int voip_get_contact(struct voip *voip, const char **namep, const char **displayp);
 int voip_dial(struct voip *voip, uint8_t dtmf);
 int voip_set_playback(struct voip *voip, const char *card_name);

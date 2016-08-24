@@ -659,9 +659,9 @@ int voip_terminate(struct voip *voip)
 	return 0;
 }
 
-int voip_get_state(struct voip *voip, enum voip_state *statep)
+int voip_get_login_state(struct voip *voip, enum voip_login_state *statep)
 {
-	enum voip_state state = VOIP_STATE_LOGGED_OUT;
+	enum voip_login_state state = VOIP_LOGIN_STATE_LOGGED_OUT;
 	LinphoneProxyConfig *proxy = NULL;
 
 	if (!voip || !statep)
@@ -669,7 +669,7 @@ int voip_get_state(struct voip *voip, enum voip_state *statep)
 
 	linphone_core_get_default_proxy(voip->core, &proxy);
 	if (proxy && linphone_proxy_config_is_registered(proxy))
-		state = VOIP_STATE_LOGGED_IN;
+		state = VOIP_LOGIN_STATE_LOGGED_IN;
 
 	*statep = state;
 	return 0;

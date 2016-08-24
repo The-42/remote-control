@@ -14,11 +14,11 @@
 #include "remote-control.h"
 #include "javascript.h"
 
-#define VOIP_STATE(v, n) { .value = VOIP_STATE_##v, .name = n }
+#define VOIP_LOGIN_STATE(v, n) { .value = VOIP_LOGIN_STATE_##v, .name = n }
 
-static const struct javascript_enum voip_state_enum[] = {
-	VOIP_STATE(LOGGED_OUT,	"logged-out"),
-	VOIP_STATE(LOGGED_IN,	"logged-in"),
+static const struct javascript_enum voip_login_state_enum[] = {
+	VOIP_LOGIN_STATE(LOGGED_OUT,	"logged-out"),
+	VOIP_LOGIN_STATE(LOGGED_IN,	"logged-in"),
 	{}
 };
 
@@ -36,7 +36,7 @@ static JSValueRef js_voip_get_login_state(
 	JSStringRef name, JSValueRef *exception)
 {
 	struct voip *voip = JSObjectGetPrivate(object);
-	enum voip_state state;
+	enum voip_login_state state;
 	int err;
 
 	if (!voip) {
@@ -45,7 +45,7 @@ static JSValueRef js_voip_get_login_state(
 		return NULL;
 	}
 
-	err = voip_get_state(voip, &state);
+	err = voip_get_login_state(voip, &state);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to get VoIP login state");
@@ -53,7 +53,7 @@ static JSValueRef js_voip_get_login_state(
 	}
 
 	return javascript_enum_to_string(
-		context, voip_state_enum, state, exception);
+		context, voip_login_state_enum, state, exception);
 }
 
 static JSValueRef js_voip_get_contact_name(

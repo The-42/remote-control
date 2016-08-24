@@ -56,7 +56,7 @@ int voip_terminate(struct voip *voip)
 	return -ENOSYS;
 }
 
-int voip_get_state(struct voip *voip, enum voip_state *statep)
+int voip_get_login_state(struct voip *voip, enum voip_state *statep)
 {
 	return -ENOSYS;
 }
