@@ -56,10 +56,17 @@ struct event {
 
 struct event_manager;
 
+typedef int (* event_manager_event_cb)( void *data, struct event *event);
+
 int event_manager_create(struct event_manager **managerp);
 int event_manager_free(struct event_manager *manager);
 int event_manager_report(struct event_manager *manager, struct event *event);
 int event_manager_get_source_state(struct event_manager *manager, struct event *event);
+/* The owner_ref identifier is used to identify the instance setting the callback.
+ * Blame Bert and Julian for this construct ;) */
+int event_manager_set_event_cb(struct event_manager *manager,
+		event_manager_event_cb callback, void *data, void *owner_ref);
+void *event_manager_get_event_cb_owner(struct event_manager *manager);
 
 /**
  * audio state
