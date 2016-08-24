@@ -129,7 +129,7 @@ static void linphone_call_state_changed_cb(LinphoneCore *core,
 	case LinphoneCallError:
 		/* Sadly there is no other way to get the info, that the called
 		 * user is busy. */
-		if (g_strcmp0(message, "User is busy.") == 0)
+		if (g_strcmp0(message, "Busy Here") == 0)
 			event.voip.state = EVENT_VOIP_STATE_ERROR_USER_BUSY;
 		else
 			event.voip.state = EVENT_VOIP_STATE_OUTGOING_DISCONNECTED;
