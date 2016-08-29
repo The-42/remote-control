@@ -129,13 +129,13 @@ static char *lldp_write_neighbor(lldpctl_atom_t *n, int *len)
 	chassis_id = lldpctl_atom_get_buffer(n, lldpctl_k_chassis_id,
 			&chassis_id_len);
 	port_id = lldpctl_atom_get_str(n, lldpctl_k_port_id);
-	port_id_len = strlen(port_id);
+	port_id_len = port_id ? strlen(port_id) : 0;
 	port_descr = lldpctl_atom_get_str(n, lldpctl_k_port_descr);
-	port_descr_len = strlen(port_descr);
+	port_descr_len = port_descr ? strlen(port_descr) : 0;
 	chassis_name = lldpctl_atom_get_str(n, lldpctl_k_chassis_name);
-	chassis_name_len = strlen(chassis_name);
+	chassis_name_len = chassis_name ? strlen(chassis_name) : 0;
 	chassis_descr = lldpctl_atom_get_str(n, lldpctl_k_chassis_descr);
-	chassis_descr_len = strlen(chassis_descr);
+	chassis_descr_len = chassis_descr ? strlen(chassis_descr) : 0;
 
 	ret = malloc(sizeof(lldp_header) +
 			lldp_write_tlv(NULL, 1, chassis_id,
