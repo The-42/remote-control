@@ -192,7 +192,13 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 		}
 
 		err = remote_control_dispatch(server, request);
-		if (err < 0) {
+		if (err == -ENOSYS) {
+			uint32_t opcode = 0;
+			rpc_packet_get_opcode(request, &opcode);
+			g_critical("rpc_dispatch(): opcode %u is not "
+					"implemented (anymore?)",
+					opcode);
+		} else if (err < 0) {
 			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO,
 					"rpc_dispatch(): %s", strerror(-err));
 			rpc_packet_dump(request, rpc_log, 0);
