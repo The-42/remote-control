@@ -49,7 +49,6 @@ remote_control_SOURCES += \
 	javascript-input.c \
 	javascript-lldp.c \
 	javascript-media-player.c \
-	javascript-monitor.c \
 	javascript-output.c \
 	javascript-output.h \
 	javascript-output-hid-led.c \

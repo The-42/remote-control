@@ -395,6 +395,41 @@ cleanup:
 	return ret;
 }
 
+static JSValueRef sysinfo_function_get_free_memory(
+	JSContextRef context, JSObjectRef function, JSObjectRef object,
+	size_t argc, const JSValueRef argv[], JSValueRef *exception)
+{
+	struct sysinfo *inf = JSObjectGetPrivate(object);
+	long avail_pages, page_size;
+
+	if (!inf) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_OBJECT_TEXT);
+		return NULL;
+	}
+
+	/* Usage: getFreeMem() */
+	if (argc) {
+		javascript_set_exception_text(context, exception,
+				JS_ERR_INVALID_ARG_COUNT);
+		return NULL;
+	}
+
+	/* TODO: mayby we should and query the memory usage of
+	 *       remote-control and its children to calculate
+	 *       the free memory? */
+	avail_pages = sysconf(_SC_AVPHYS_PAGES);
+	page_size = sysconf(_SC_PAGE_SIZE);
+
+	if (avail_pages < 0 || page_size < 0) {
+		javascript_set_exception_text(context, exception,
+			"failed to query memory stats");
+		return NULL;
+	}
+
+	return JSValueMakeNumber(context, (avail_pages * page_size) / 1024);
+}
+
 static struct sysinfo *sysinfo_new(JSContextRef context,
 	struct javascript_userdata *data)
 {
@@ -421,6 +456,10 @@ static void sysinfo_finalize(JSObjectRef object)
 
 static const JSStaticFunction sysinfo_functions[] = {
 	{
+		.name = "getFreeMem",
+		.callAsFunction = sysinfo_function_get_free_memory,
+		.attributes = kJSPropertyAttributeDontDelete,
+	},{
 		.name = "localIP",
 		.callAsFunction = sysinfo_function_local_ip,
 		.attributes = kJSPropertyAttributeDontDelete,

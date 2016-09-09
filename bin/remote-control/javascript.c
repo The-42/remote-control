@@ -23,7 +23,6 @@ extern struct javascript_module javascript_input;
 extern struct javascript_module javascript_ir;
 extern struct javascript_module javascript_lcd;
 extern struct javascript_module javascript_app_watchdog;
-extern struct javascript_module javascript_monitor;
 extern struct javascript_module javascript_taskmanager;
 extern struct javascript_module javascript_audio;
 extern struct javascript_module javascript_audio_player;
@@ -49,7 +48,6 @@ static struct javascript_module *ad_modules[] = {
 #ifdef ENABLE_JAVASCRIPT_APP_WATCHDOG
 	&javascript_app_watchdog,
 #endif
-	&javascript_monitor,
 	&javascript_taskmanager,
 	&javascript_audio,
 	&javascript_audio_player,
