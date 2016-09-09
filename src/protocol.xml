@@ -231,15 +231,6 @@
 		</func>
 		<!-- miscellaneous -->
 		<func name="reset" returns="int32_t" opcode="800"/>
-		<func name="check_io" returns="int32_t" opcode="801">
-			<arg name="value" type="uint8_t" mode="out"/>
-		</func>
-		<func name="gpio_set_mask" returns="int32_t" opcode="802">
-			<arg name="mask" type="uint32_t" mode="in"/>
-		</func>
-		<func name="gpio_get_mask" returns="int32_t" opcode="803">
-			<arg name="mask" type="uint32_t" mode="out"/>
-		</func>
 		<!-- IRQ functions -->
 		<func name="irq_enable" returns="int32_t" opcode="900">
 			<arg name="virtkey" type="uint8_t" mode="in"/>

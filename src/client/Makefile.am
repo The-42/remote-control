@@ -19,7 +19,6 @@ libremote_control_la_SOURCES = \
 	backlight.c \
 	card.c \
 	events.c \
-	gpio.c \
 	handset.c \
 	irq.c \
 	lldp.c \

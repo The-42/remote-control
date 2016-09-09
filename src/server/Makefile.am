@@ -26,7 +26,6 @@ libremote_control_la_SOURCES = \
 	cursor-movement.c \
 	event-manager.c \
 	handset.c \
-	io.c \
 	irq.c \
 	lldp.c \
 	media.c \
