@@ -21,7 +21,6 @@ enum {
 	IRQ_HOOK,
 	IRQ_SMARTCARD,
 	IRQ_VOIP,
-	IRQ_IO,
 	IRQ_HANDSET,
 };
 
@@ -220,10 +219,6 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 			ret = -ENXIO;
 			break;
 		}
-		break;
-
-	case RPC_MACRO(IRQ_SOURCE_IO):
-		g_debug("  IRQ_SOURCE_IO");
 		break;
 
 	case RPC_MACRO(IRQ_SOURCE_HANDSET):

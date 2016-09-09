@@ -82,10 +82,6 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	g_debug("> %s(manager=%p, event=%p)", __func__, manager, event);
 
 	switch (event->source) {
-	case EVENT_SOURCE_IO:
-		irq_status |= BIT(EVENT_SOURCE_IO);
-		break;
-
 	case EVENT_SOURCE_VOIP:
 		manager->voip_state = event->voip.state;
 		irq_status |= BIT(EVENT_SOURCE_VOIP);

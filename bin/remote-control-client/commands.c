@@ -1411,7 +1411,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 		REMOTE_IRQ_SOURCE_HOOK,
 		REMOTE_IRQ_SOURCE_SMARTCARD,
 		REMOTE_IRQ_SOURCE_VOIP,
-		REMOTE_IRQ_SOURCE_IO,
 		REMOTE_IRQ_SOURCE_HANDSET,
 	};
 	uint32_t mask = 0;
@@ -1446,10 +1445,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 
 			case REMOTE_IRQ_SOURCE_VOIP:
 				fprintf(stderr, "VOIP\n");
-				break;
-
-			case REMOTE_IRQ_SOURCE_IO:
-				fprintf(stderr, "IO\n");
 				break;
 
 			case REMOTE_IRQ_SOURCE_HANDSET:

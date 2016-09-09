@@ -22,15 +22,11 @@
  * event manager
  */
 enum event_source {
-	EVENT_SOURCE_IO,
 	EVENT_SOURCE_VOIP,
 	EVENT_SOURCE_SMARTCARD,
 	EVENT_SOURCE_HOOK,
 	EVENT_SOURCE_HANDSET,
 	EVENT_SOURCE_MAX,
-};
-
-struct event_io {
 };
 
 enum event_voip_state {
@@ -80,7 +76,6 @@ struct event {
 	enum event_source source;
 
 	union {
-		struct event_io io;
 		struct event_voip voip;
 		struct event_smartcard smartcard;
 		struct event_hook hook;
