@@ -22,30 +22,9 @@
  * event manager
  */
 enum event_source {
-	EVENT_SOURCE_VOIP,
 	EVENT_SOURCE_SMARTCARD,
 	EVENT_SOURCE_HOOK,
 	EVENT_SOURCE_MAX,
-};
-
-enum event_voip_state {
-	EVENT_VOIP_STATE_IDLE,
-	EVENT_VOIP_STATE_LOGGED_ON,
-	EVENT_VOIP_STATE_LOGGED_OFF,
-	EVENT_VOIP_STATE_OUTGOING,
-	EVENT_VOIP_STATE_OUTGOING_CONNECTED,
-	EVENT_VOIP_STATE_OUTGOING_DISCONNECTED,
-	EVENT_VOIP_STATE_INCOMING,
-	EVENT_VOIP_STATE_INCOMING_CONNECTED,
-	EVENT_VOIP_STATE_INCOMING_DISCONNECTED,
-	EVENT_VOIP_STATE_INCOMING_MISSED,
-	EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA,
-	EVENT_VOIP_STATE_INCOMING_EARLYMEDIA,
-	EVENT_VOIP_STATE_ERROR_USER_BUSY,
-};
-
-struct event_voip {
-	enum event_voip_state state;
 };
 
 enum event_smartcard_state {
@@ -70,7 +49,6 @@ struct event {
 	enum event_source source;
 
 	union {
-		struct event_voip voip;
 		struct event_smartcard smartcard;
 		struct event_hook hook;
 	};

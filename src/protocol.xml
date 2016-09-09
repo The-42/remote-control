@@ -288,9 +288,6 @@
 		<event name="card_event" opcode="10300">
 			<param name="type" type="uint32_t"/>
 		</event>
-		<event name="voip_event" opcode="10700">
-			<param name="type" type="uint32_t"/>
-		</event>
 		<event name="irq_event" opcode="10900">
 			<param name="type" type="uint32_t"/>
 		</event>

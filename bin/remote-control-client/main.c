@@ -177,12 +177,6 @@ static void readline_exit(void)
 }
 #endif
 
-static void on_voip_event(uint32_t type, void *data)
-{
-	printf("> %s(type=%08x, data=%p)\n", __func__, type, data);
-	printf("< %s()\n", __func__);
-}
-
 static const char *skip_spaces(const char *ptr)
 {
 	while (isspace(*ptr))
@@ -385,9 +379,6 @@ static int cli_init(struct cli *cli)
 		fprintf(stderr, "remote_init(): %s\n", strerror(-err));
 		return err;
 	}
-
-	remote_register_event_handler(cli->client, REMOTE_EVENT_VOIP,
-			on_voip_event, cli->client);
 
 	return 0;
 }
