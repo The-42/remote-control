@@ -67,13 +67,6 @@
 			<field name="password" type="string"/>
 			<field name="server" type="string"/>
 		</struct>
-		<!-- handset -->
-		<enum name="handset_icon" mnemonic="u8">
-			<value name="HANDSET_ICON_PHONE"/>
-			<value name="HANDSET_ICON_RADIO"/>
-			<value name="HANDSET_ICON_TV"/>
-			<value name="HANDSET_ICON_LOGO"/>
-		</enum>
 	</types>
 	<functions>
 		<!-- audio -->
@@ -289,31 +282,6 @@
 		<func name="task_manager_kill" returns="int32_t" opcode="1401">
 			<arg name="pid" type="int32_t" mode="in"/>
 			<arg name="sig" type="int32_t" mode="in"/>
-		</func>
-		<!-- handset -->
-		<func name="handset_display_clear" returns="int32_t" opcode="1500"/>
-		<func name="handset_display_sync" returns="int32_t" opcode="1501"/>
-		<func name="handset_display_set_brightness" returns="int32_t" opcode="1502">
-			<arg name="brightness" type="uint8_t" mode="in"/>
-		</func>
-		<func name="handset_keypad_set_brightness" returns="int32_t" opcode="1503">
-			<arg name="brightness" type="uint8_t" mode="in"/>
-		</func>
-		<func name="handset_show_icon" returns="int32_t" opcode="1504">
-			<arg name="id" type="handset_icon" mode="in"/>
-		</func>
-		<func name="handset_hide_icon" returns="int32_t" opcode="1505">
-			<arg name="id" type="handset_icon" mode="in"/>
-		</func>
-		<func name="handset_show_text" returns="int32_t" opcode="1506">
-			<arg name="x" type="uint32_t" mode="in"/>
-			<arg name="y" type="uint32_t" mode="in"/>
-			<arg name="text" type="const char *" mode="in"/>
-		</func>
-		<func name="handset_hide_text" returns="int32_t" opcode="1507">
-			<arg name="x" type="uint32_t" mode="in"/>
-			<arg name="y" type="uint32_t" mode="in"/>
-			<arg name="text" type="const char *" mode="in"/>
 		</func>
 	</functions>
 	<events>

@@ -1141,187 +1141,6 @@ const struct cli_command_info cmd_voip_dtmf _command_ = {
 };
 
 /*
- * "handset-display-clear" command
- */
-static int exec_handset_display_clear(struct cli *cli, int argc, char *argv[])
-{
-	int err;
-
-	err = remote_handset_display_clear(cli->client);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_handset_display_clear _command_ = {
-	.name = "handset-display-clear",
-	.summary = "clear the handset display",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_handset_display_clear,
-};
-
-/*
- * "handset-display-sync" command
- */
-static int exec_handset_display_sync(struct cli *cli, int argc, char *argv[])
-{
-	int err;
-
-	err = remote_handset_display_sync(cli->client);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_handset_display_sync _command_ = {
-	.name = "handset-display-sync",
-	.summary = "update the handset display",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_handset_display_sync,
-};
-
-/*
- * "handset-backlight" command
- */
-static int exec_handset_backlight(struct cli *cli, int argc, char *argv[])
-{
-	unsigned long brightness = 0;
-	char *end = NULL;
-	int err;
-
-	if (argc < 3)
-		return -EINVAL;
-
-	brightness = strtoul(argv[2], &end, 10);
-	if (end == argv[2])
-		return -EINVAL;
-
-	if (strcmp(argv[1], "display") == 0) {
-		err = remote_handset_display_set_brightness(cli->client,
-				brightness);
-		if (err < 0)
-			return err;
-	} else if (strcmp(argv[1], "keypad") == 0) {
-		err = remote_handset_keypad_set_brightness(cli->client,
-				brightness);
-		if (err < 0)
-			return err;
-	} else
-		return -EINVAL;
-
-	return 0;
-}
-
-const struct cli_command_info cmd_handset_backlight _command_ = {
-	.name = "handset-backlight",
-	.summary = "control the display or keypad backlight",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_handset_backlight,
-};
-
-/*
- * "handset-show-icon" command
- */
-static int exec_handset_show_icon(struct cli *cli, int argc, char *argv[])
-{
-	enum remote_handset_icon id;
-	int err;
-
-	if (argc < 2)
-		return -EINVAL;
-
-	if (strcmp(argv[1], "phone") == 0)
-		id = REMOTE_HANDSET_ICON_PHONE;
-	else if (strcmp(argv[1], "radio") == 0)
-		id = REMOTE_HANDSET_ICON_RADIO;
-	else if (strcmp(argv[1], "tv") == 0)
-		id = REMOTE_HANDSET_ICON_TV;
-	else if (strcmp(argv[1], "logo") == 0)
-		id = REMOTE_HANDSET_ICON_LOGO;
-	else
-		return -EINVAL;
-
-	err = remote_handset_show_icon(cli->client, id);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_handset_show_icon _command_ = {
-	.name = "handset-show-icon",
-	.summary = "show a given icon on the handset display",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_handset_show_icon,
-};
-
-/*
- * "handset-show-text" command
- */
-static int exec_handset_show_text(struct cli *cli, int argc, char *argv[])
-{
-	const char *text = argv[1];
-	unsigned long x = 8;
-	unsigned long y = 48;
-	int err;
-
-	if (argc < 2)
-		return -EINVAL;
-
-	if (argc > 2) {
-		char *end = NULL;
-
-		x = strtoul(argv[1], &end, 10);
-		if (end == argv[1]) {
-			printf("invalid X-coordinate: %s\n", argv[1]);
-			return -EINVAL;
-		}
-
-		text = argv[2];
-	}
-
-	if (argc > 3) {
-		char *end = NULL;
-
-		y = strtoul(argv[2], &end, 10);
-		if (end == argv[2]) {
-			printf("invalid Y-coordinate: %s\n", argv[2]);
-			return -EINVAL;
-		}
-
-		text = argv[3];
-	}
-
-	err = remote_handset_show_text(cli->client, x, y, text);
-	if (err < 0) {
-		printf("%s\n", strerror(-err));
-		return err;
-	}
-
-	return 0;
-}
-
-const struct cli_command_info cmd_handset_show_text _command_ = {
-	.name = "handset-show-text",
-	.summary = "show a given string on the handset display",
-	.help = NULL,
-	.options = NULL,
-	.exec = exec_handset_show_text,
-};
-
-/*
  * "irq-poll" command
  */
 static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
@@ -1330,7 +1149,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 		REMOTE_IRQ_SOURCE_HOOK,
 		REMOTE_IRQ_SOURCE_SMARTCARD,
 		REMOTE_IRQ_SOURCE_VOIP,
-		REMOTE_IRQ_SOURCE_HANDSET,
 	};
 	uint32_t mask = 0;
 	unsigned int i;
@@ -1364,10 +1182,6 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 
 			case REMOTE_IRQ_SOURCE_VOIP:
 				fprintf(stderr, "VOIP\n");
-				break;
-
-			case REMOTE_IRQ_SOURCE_HANDSET:
-				fprintf(stderr, "HANDSET\n");
 				break;
 			}
 

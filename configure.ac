@@ -241,22 +241,6 @@ AS_CASE([$with_mixer_backend],
 )
 
 #
-# Handset backend
-#
-enable_libptip=no
-
-AC_ARG_WITH(handset_backend,
-	[AS_HELP_STRING([--with-handset-backend=@<:@none/ptip@:>@],
-		[Use the specified handset backend. [default=none]])
-	], [], [with_handset_backend=none])
-
-AS_CASE([$with_handset_backend],
-	[none], [],
-	[ptip], [PKG_CHECK_MODULES(LIBPTIP, libptip, [enable_libptip=yes])],
-	[AC_MSG_ERROR([Invalid handset backend: must be none or ptip])]
-)
-
-#
 # GPIO backend
 #
 enable_gpio_gpiodev=no
@@ -359,7 +343,6 @@ AM_CONDITIONAL(ENABLE_LIBPCSCLITE, [test "x$enable_libpcsclite" = "xyes"])
 AM_CONDITIONAL(ENABLE_LIBSMARTCARD, [test "x$enable_libsmartcard" = "xyes"])
 AM_CONDITIONAL(ENABLE_SMARTCARD_INFO, [test "x$enable_smartcard_info" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
-AM_CONDITIONAL(ENABLE_LIBPTIP, [test "x$enable_libptip" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT, [test "x$enable_javascript" = "xyes"])
@@ -456,7 +439,6 @@ AS_ECHO("")
 AS_ECHO("  Smartcard info function:   $enable_smartcard_info")
 AS_ECHO("  VoIP Backend:              $with_voip_backend
   Mixer Backend:             $with_mixer_backend
-  Handset Backend:           $with_handset_backend
   GPIO Backend:              $with_gpio_backend
 
 Options:

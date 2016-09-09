@@ -25,7 +25,6 @@ libremote_control_la_SOURCES = \
 	backlight.c \
 	cursor-movement.c \
 	event-manager.c \
-	handset.c \
 	irq.c \
 	lldp.c \
 	media.c \
@@ -158,14 +157,6 @@ libremote_control_la_LIBADD += @LIBXML2_LIBS@
 else
 libremote_control_la_SOURCES += smartcard-info-null.c
 endif # ENABLE_SMARTCARD_INFO
-
-if ENABLE_LIBPTIP
-libremote_control_la_CFLAGS += @LIBPTIP_CFLAGS@
-libremote_control_la_LIBADD += @LIBPTIP_LIBS@
-libremote_control_la_SOURCES += handset-ptip.c
-else
-libremote_control_la_SOURCES += handset-null.c
-endif # ENABLE_LIBPTIP
 
 if ENABLE_GPIO_GPIODEV
 libremote_control_la_SOURCES += gpio-gpiodev.c

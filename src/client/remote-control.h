@@ -69,20 +69,11 @@ enum remote_card_type {
 	REMOTE_CARD_TYPE_MAX
 };
 
-enum remote_handset_icon {
-	REMOTE_HANDSET_ICON_PHONE,
-	REMOTE_HANDSET_ICON_RADIO,
-	REMOTE_HANDSET_ICON_TV,
-	REMOTE_HANDSET_ICON_LOGO,
-	REMOTE_HANDSET_ICON_MAX
-};
-
 enum remote_irq_source {
 	REMOTE_IRQ_SOURCE_UNKNOWN,
 	REMOTE_IRQ_SOURCE_HOOK,
 	REMOTE_IRQ_SOURCE_SMARTCARD,
 	REMOTE_IRQ_SOURCE_VOIP,
-	REMOTE_IRQ_SOURCE_HANDSET,
 	REMOTE_IRQ_SOURCE_MAX
 };
 
@@ -174,21 +165,6 @@ remote_public int remote_card_read(void *priv, off_t offset, void *buffer,
 		size_t size);
 remote_public int remote_card_write(void *priv, off_t offset,
 		const void *buffer, size_t size);
-
-remote_public int remote_handset_display_clear(void *priv);
-remote_public int remote_handset_display_sync(void *priv);
-remote_public int remote_handset_display_set_brightness(void *priv,
-		unsigned int brightness);
-remote_public int remote_handset_keypad_set_brightness(void *priv,
-		unsigned int brightness);
-remote_public int remote_handset_show_icon(void *priv,
-		enum remote_handset_icon id);
-remote_public int remote_handset_hide_icon(void *priv,
-		enum remote_handset_icon id);
-remote_public int remote_handset_show_text(void *priv, unsigned int x,
-		unsigned int y, const char *text);
-remote_public int remote_handset_hide_text(void *priv, unsigned int x,
-		unsigned int y, const char *text);
 
 /*
  * Note: The interrupt status returned by remote_irq_get_mask() is a bitmask
