@@ -531,6 +531,14 @@ int voip_login(struct voip *voip, const char *host, uint16_t port,
 	}
 
 	address = linphone_address_new(server);
+	if (!linphone_address_is_sip(address)) {
+		g_warning("voip-linphone: failed to create linphone address "
+			"using '%s'", server);
+		free(server);
+		free(user);
+		return -EINVAL;
+	}
+
 	linphone_address_set_display_name(address, user);
 	linphone_address_set_username(address, user);
 	linphone_address_set_domain(address, domain);
