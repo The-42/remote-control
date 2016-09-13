@@ -17,60 +17,31 @@
 
 int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *typep)
 {
-	struct smartcard *smartcard = remote_control_get_smartcard(priv);
-	enum smartcard_type type;
-	int32_t ret;
+	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, type=%p)", __func__, priv, typep);
 
-	ret = smartcard_get_type(smartcard, &type);
-	if (ret < 0)
-		goto out;
+	*typep = RPC_MACRO(CARD_TYPE_UNKNOWN);
 
-	switch (type) {
-	case SMARTCARD_TYPE_I2C:
-		*typep = RPC_MACRO(CARD_TYPE_I2C);
-		break;
-	case SMARTCARD_TYPE_T0:
-		*typep = RPC_MACRO(CARD_TYPE_T0);
-		break;
-	case SMARTCARD_TYPE_T1:
-		*typep = RPC_MACRO(CARD_TYPE_T1);
-		break;
-	default:
-		*typep = RPC_MACRO(CARD_TYPE_UNKNOWN);
-		break;
-	}
-
-out:
-	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(card_read)(void *priv, off_t offset, struct rpc_buffer *buffer)
 {
-	struct smartcard *smartcard = remote_control_get_smartcard(priv);
-	int32_t ret;
+	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, offset=%ld, buffer=%p)", __func__, priv, offset,
 			buffer);
 
-	ret = smartcard_read(smartcard, offset, buffer->tx_buf, buffer->tx_num);
-
-	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
 
 int32_t RPC_IMPL(card_write)(void *priv, off_t offset, struct rpc_buffer *buffer)
 {
-	struct smartcard *smartcard = remote_control_get_smartcard(priv);
-	int32_t ret;
+	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, offset=%ld, buffer=%p)", __func__, priv, offset,
 			buffer);
 
-	ret = smartcard_write(smartcard, offset, buffer->rx_buf, buffer->rx_num);
-
-	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
