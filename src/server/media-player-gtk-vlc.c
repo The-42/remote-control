@@ -36,6 +36,7 @@ struct media_player {
 
 	media_player_es_changed_cb es_changed_cb;
 	void *es_changed_data;
+	void *es_changed_owner;
 
 #if (LIBVLC_VERSION_INT < LIBVLC_VERSION(3, 0, 0, 0))
 	libvlc_track_description_t *audio_track_list;
@@ -812,18 +813,19 @@ int media_player_toggle_teletext_transparent(struct media_player *player)
 }
 
 int media_player_set_es_changed_callback(struct media_player *player,
-		media_player_es_changed_cb callback, void *data)
+		media_player_es_changed_cb callback, void *data,
+		void *owner_ref)
 {
 	g_return_val_if_fail(player != NULL, -EINVAL);
-	if (!callback) {
-		/* Only clear callback if it is the current owner */
-		if (player->es_changed_data == data) {
-			player->es_changed_cb = NULL;
-			player->es_changed_data = NULL;
-		}
-	} else {
-		player->es_changed_data = data;
-		player->es_changed_cb = callback;
-	}
+
+	player->es_changed_data = data;
+	player->es_changed_cb = callback;
+	player->es_changed_owner = owner_ref;
+
 	return 0;
+}
+
+void *media_player_get_es_changed_callback_owner(struct media_player *player)
+{
+	return player ? player->es_changed_owner : NULL;
 }

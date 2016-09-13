@@ -653,7 +653,8 @@ static bool js_media_player_set_on_es_changed(JSContextRef context, JSObjectRef 
 		JSValueUnprotect(context, priv->callback);
 
 	if (JSValueIsNull(context, value)) {
-		media_player_set_es_changed_callback(priv->player, NULL, priv);
+		media_player_set_es_changed_callback(priv->player, NULL, priv,
+			(void *)priv->context);
 		priv->callback = NULL;
 		return true;
 	}
@@ -667,7 +668,8 @@ static bool js_media_player_set_on_es_changed(JSContextRef context, JSObjectRef 
 	JSValueProtect(context, priv->callback);
 
 	err = media_player_set_es_changed_callback(priv->player,
-			js_media_player_es_changed_cb, priv);
+			js_media_player_es_changed_cb, priv,
+			(void *)priv->context);
 	if (err) {
 		javascript_set_exception_text(context, exception,
 			"failed to set es changed callback");
@@ -1093,11 +1095,15 @@ static void media_player_initialize(JSContextRef context, JSObjectRef object)
 
 static void media_player_finalize(JSObjectRef object)
 {
+	void *cb_owner;
 	struct js_media_player *priv = JSObjectGetPrivate(object);
 
 	if (priv->callback) {
-		media_player_set_es_changed_callback(priv->player,
-				NULL, priv);
+		cb_owner = media_player_get_es_changed_callback_owner(priv->player);
+		if (cb_owner == (void *)priv->context) {
+			media_player_set_es_changed_callback(priv->player,
+					NULL, priv, cb_owner);
+		}
 		JSValueUnprotect(priv->context, priv->callback);
 	}
 	g_source_destroy(&priv->source);

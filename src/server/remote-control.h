@@ -196,7 +196,9 @@ int media_player_get_teletext(struct media_player *player, int *page);
 int media_player_set_teletext(struct media_player *player, int page);
 int media_player_toggle_teletext_transparent(struct media_player *player);
 int media_player_set_es_changed_callback(struct media_player *player,
-		media_player_es_changed_cb callback, void *data);
+		media_player_es_changed_cb callback, void *data,
+		void *owner_ref);
+void *media_player_get_es_changed_callback_owner(struct media_player *player);
 
 /**
  * sound manager
