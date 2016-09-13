@@ -10,8 +10,6 @@
 #  include "config.h"
 #endif
 
-#include <errno.h>
-
 #include <glib.h>
 
 #include <alsa/use-case.h>

@@ -10,8 +10,6 @@
 #  include "config.h"
 #endif
 
-#include <errno.h>
-
 #include "remote-control.h"
 
 int media_player_create(struct media_player **playerp, GKeyFile *config)

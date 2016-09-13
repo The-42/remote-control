@@ -11,7 +11,6 @@
 #endif
 
 #include <dbus-watchdog.h>
-#include <errno.h>
 
 #include "remote-control.h"
 

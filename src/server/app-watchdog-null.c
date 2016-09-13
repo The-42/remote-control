@@ -10,8 +10,6 @@
 #  include "config.h"
 #endif
 
-#include <errno.h>
-
 #include "remote-control.h"
 
 struct app_watchdog {

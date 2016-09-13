@@ -12,8 +12,6 @@
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 
 #include <linux/fb.h>
 

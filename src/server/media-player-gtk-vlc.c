@@ -10,7 +10,6 @@
 #  include "config.h"
 #endif
 
-#include <errno.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
