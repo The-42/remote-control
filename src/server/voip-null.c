@@ -93,5 +93,5 @@ int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb *cb,
 
 void *voip_get_onstatechange_cb_owner(struct voip *voip)
 {
-	return -ENOSYS;
+	return NULL;
 }
