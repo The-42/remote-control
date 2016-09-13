@@ -15,7 +15,6 @@
 #include <sys/ioctl.h>
 #include <linux/gpiodev.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 static struct gpio_map {

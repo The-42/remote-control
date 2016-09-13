@@ -14,7 +14,6 @@
 
 #define pr_fmt(fmt) "smartcard-i2c: " fmt
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "gsysfsgpio.h"
 #include "glogging.h"
@@ -49,7 +48,7 @@ static void smartcard_disable_power(struct smartcard *smartcard)
 }
 
 int smartcard_create_i2c(struct smartcard **smartcardp,
-		struct rpc_server *server, GKeyFile *config)
+		struct remote_control *rc, GKeyFile *config)
 {
 	gchar **parts, *device, *bus;
 	struct smartcard *smartcard;

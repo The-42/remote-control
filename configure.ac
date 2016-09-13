@@ -28,10 +28,6 @@ PKG_CHECK_MODULES(GTKOSK, gtkosk,
 		  [ac_gtkosk_datadir=`$PKG_CONFIG --variable=pkgdatadir gtkosk`])
 AC_SUBST(GTKOSK_DATADIR, $ac_gtkosk_datadir)
 
-PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
-RPC_STUBGEN=rpc-stubgen
-AC_SUBST(RPC_STUBGEN)
-
 AS_IF([test "x$USE_NLS" = "xyes"],
 	[AC_DEFINE([ENABLE_NLS], [1], [Define to 1 if NLS support is enabled])],
 	[AC_DEFINE([ENABLE_NLS], [0], [Define to 0 if NLS support is disabled])]
@@ -393,17 +389,12 @@ AC_SUBST(COMMANDS_ALIGN)
 AC_OUTPUT([
 	bin/Makefile
 	bin/remote-control-browser/Makefile
-	bin/remote-control-client/Makefile
-	bin/remote-control-client/remote-control-client.lds
-	bin/remote-control-gtk/Makefile
 	bin/remote-control/Makefile
 	bin/utils/Makefile
 	data/de.avionic-design.RemoteControl.service
 	data/Makefile
 	doc/Makefile
 	Makefile
-	src/client/Makefile
-	src/client/remote-control.pc
 	src/common/Makefile
 	src/Makefile
 	src/server/Makefile

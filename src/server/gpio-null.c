@@ -10,7 +10,6 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *events,

@@ -9,14 +9,18 @@
 #ifndef REMOTE_CONTROL_H
 #define REMOTE_CONTROL_H 1
 
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
+#include <errno.h>
+#include <stdbool.h>
 
 #include <gtk/gtk.h>
 #include <glib.h>
 
-#include <librpc.h>
-
 #define BIT(x) (1 << (x))
+
+struct remote_control;
 
 /**
  * event manager
@@ -87,7 +91,8 @@ enum audio_state {
 
 struct audio;
 
-int audio_create(struct audio **audiop, struct rpc_server *server, GKeyFile *config);
+int audio_create(struct audio **audiop, struct remote_control *rc,
+		GKeyFile *config);
 int audio_free(struct audio *audio);
 int audio_set_state(struct audio *audio, enum audio_state state);
 int audio_get_state(struct audio *audio, enum audio_state *statep);
@@ -225,8 +230,8 @@ enum smartcard_type {
 
 struct smartcard;
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
-		     GKeyFile *config);
+int smartcard_create(struct smartcard **smartcardp, struct remote_control *rc,
+		GKeyFile *config);
 int smartcard_free(struct smartcard *smartcard);
 int smartcard_get_type(struct smartcard *smartcard, enum smartcard_type *typep);
 ssize_t smartcard_read(struct smartcard *smartcard, off_t offset, void *buffer, size_t size);
@@ -263,7 +268,7 @@ enum voip_state {
 typedef void(*voip_onstatechange_cb)(enum voip_state, void*);
 struct voip;
 
-int voip_create(struct voip **voipp, struct rpc_server *server,
+int voip_create(struct voip **voipp, struct remote_control *rc,
 		GKeyFile *config);
 int voip_free(struct voip *voip);
 GSource *voip_get_source(struct voip *voip);
@@ -318,20 +323,6 @@ int mixer_set_input_source(struct mixer *mixer, enum mixer_input_source source);
 int mixer_get_input_source(struct mixer *mixer, enum mixer_input_source *sourcep);
 int mixer_loopback_enable(struct mixer *mixer, bool enable);
 int mixer_loopback_is_enabled(struct mixer *mixer, bool *enabled);
-
-/**
- * network layer
- */
-struct net;
-
-int net_create(struct net **netp, struct rpc_server *server);
-int net_free(struct net *net);
-int net_configure(struct net *net, const char *hostname, uint16_t port,
-		unsigned long timeout, unsigned int repeat);
-ssize_t net_send_async(struct net *net, const void *buffer, size_t size);
-ssize_t net_send_sync(struct net *net, const void *buffer, size_t size);
-ssize_t net_recv_async(struct net *net, void *buffer, size_t size);
-ssize_t net_recv_sync(struct net *net, void *buffer, size_t size);
 
 /**
  * LLDP monitor
@@ -396,7 +387,6 @@ int app_watchdog_trigger(struct app_watchdog *watchdog);
 /**
  * remote control
  */
-struct remote_control;
 
 int remote_control_create(struct remote_control **rcp, GKeyFile *config);
 GSource *remote_control_get_source(struct remote_control *rc);
@@ -416,8 +406,6 @@ struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc);
 struct app_watchdog *remote_control_get_watchdog(struct remote_control *rc);
-
-int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
 
 /**
  * USB Handset

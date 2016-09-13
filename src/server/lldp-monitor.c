@@ -24,7 +24,6 @@
 #include <netlink/netlink.h>
 #include <netlink/route/link.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #ifndef min
