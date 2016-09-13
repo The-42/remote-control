@@ -54,8 +54,6 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 {
 	int ret = 0;
 
-	g_debug("> %s(manager=%p, event=%p)", __func__, manager, event);
-
 	if (manager->event_cb)
 		ret = manager->event_cb(manager->event_cb_data, event);
 
