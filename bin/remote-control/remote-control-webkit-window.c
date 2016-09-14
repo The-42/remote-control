@@ -189,7 +189,6 @@ static void webkit_finalize(GObject *object)
 	G_OBJECT_CLASS(remote_control_webkit_window_parent_class)->finalize(object);
 }
 
-#ifdef ENABLE_JAVASCRIPT
 #ifdef USE_WEBKIT2
 static void webkit_on_load_changed(WebKitWebView *webkit,
 	WebKitLoadEvent load_event, gpointer data)
@@ -253,7 +252,6 @@ static void webkit_on_notify_load_status(WebKitWebView *webkit,
 		}
 	}
 }
-#endif
 #endif
 
 static void remote_control_webkit_window_class_init(RemoteControlWebkitWindowClass *klass)
@@ -525,7 +523,6 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 
 	webkit_set_cache_model(WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
-#ifdef ENABLE_JAVASCRIPT
 	/*
 	 * Add a callback to listen for load-status property changes. This is
 	 * used to register the JavaScript binding within the frame.
@@ -537,7 +534,6 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 	g_signal_connect(GTK_WIDGET(priv->webkit), "notify::load-status",
 		G_CALLBACK(webkit_on_notify_load_status), self);
 #endif
-#endif // ENABLE_JAVASCRIPT
 
 #ifdef USE_WEBKIT2
 	g_signal_connect(G_OBJECT(priv->webkit), "decide-policy",

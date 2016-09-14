@@ -259,53 +259,42 @@ AS_IF([test "x$enable_gpio_sysfs" = "xyes"], [PKG_CHECK_MODULES(LIBGPIO, libgpio
 #
 # JavaScript binding
 #
-AC_MSG_CHECKING([whether to enable JavaScript binding])
-AC_ARG_ENABLE([javascript],
-	[AS_HELP_STRING([--enable-javascript],
-			[Enable JavaScript binding [default=no]])],
-	[], [enable_javascript=no])
-AC_MSG_RESULT([$enable_javascript])
+AC_MSG_CHECKING([whether to enable JavaScript IR input support])
+AC_ARG_ENABLE(javascript-ir,
+	[AS_HELP_STRING([--enable-javascript-ir],
+			[Enable JavaScript IR input support (default: no)])],
+	[], [enable_javascript_ir=no])
+AC_MSG_RESULT([$enable_javascript_ir])
 
-AS_IF([test "x$enable_javascript" = "xyes"], [
-	AC_DEFINE([ENABLE_JAVASCRIPT], [1], [whether JavaScript binding is enabled])
+AS_IF([test "x$enable_javascript_ir" = "xyes"], [
+	AC_DEFINE([ENABLE_JAVASCRIPT_IR], [1],
+		  [whether JavaScript IR input support is enabled])
+])
 
-	AC_MSG_CHECKING([whether to enable JavaScript IR input support])
-	AC_ARG_ENABLE(javascript-ir,
-		[AS_HELP_STRING([--enable-javascript-ir],
-				[Enable JavaScript IR input support (default: no)])],
-		[], [enable_javascript_ir=no])
-	AC_MSG_RESULT([$enable_javascript_ir])
+# LCD TV Serial support
+AC_MSG_CHECKING([whether to enable JavaScript LCD Serial support])
+AC_ARG_ENABLE(javascript-lcd,
+	[AS_HELP_STRING([--enable-javascript-lcd],
+			[Enable JavaScript LCD Serial support (default: no)])],
+	[], [enable_javascript_lcd=no])
+AC_MSG_RESULT([$enable_javascript_lcd])
 
-	AS_IF([test "x$enable_javascript_ir" = "xyes"], [
-		AC_DEFINE([ENABLE_JAVASCRIPT_IR], [1],
-			  [whether JavaScript IR input support is enabled])
-	])
+AS_IF([test "x$enable_javascript_lcd" = "xyes"], [
+	AC_DEFINE([ENABLE_JAVASCRIPT_LCD], [1],
+		  [whether JavaScript LCD Serial support is enabled])
+])
 
-	# LCD TV Serial support
-	AC_MSG_CHECKING([whether to enable JavaScript LCD Serial support])
-	AC_ARG_ENABLE(javascript-lcd,
-		[AS_HELP_STRING([--enable-javascript-lcd],
-				[Enable JavaScript LCD Serial support (default: no)])],
-		[], [enable_javascript_lcd=no])
-	AC_MSG_RESULT([$enable_javascript_lcd])
+# Watchdog support for the main webkit window.
+AC_MSG_CHECKING([whether to enable JavaScript Application Watchdog support])
+AC_ARG_ENABLE(javascript-app-watchdog,
+	[AS_HELP_STRING([--enable-javascript-app-watchdog],
+			[Enable JavaScript Application Watchdog support (default: no)])],
+	[], [enable_javascript_app_watchdog=no])
+AC_MSG_RESULT([$enable_javascript_app_watchdog])
 
-	AS_IF([test "x$enable_javascript_lcd" = "xyes"], [
-		AC_DEFINE([ENABLE_JAVASCRIPT_LCD], [1],
-			  [whether JavaScript LCD Serial support is enabled])
-	])
-
-	# Watchdog support for the main webkit window.
-	AC_MSG_CHECKING([whether to enable JavaScript Application Watchdog support])
-	AC_ARG_ENABLE(javascript-app-watchdog,
-		[AS_HELP_STRING([--enable-javascript-app-watchdog],
-				[Enable JavaScript Application Watchdog support (default: no)])],
-		[], [enable_javascript_app_watchdog=no])
-	AC_MSG_RESULT([$enable_javascript_app_watchdog])
-
-	AS_IF([test "x$enable_javascript_app_watchdog" = "xyes"], [
-		AC_DEFINE([ENABLE_JAVASCRIPT_APP_WATCHDOG], [1],
-			  [whether JavaScript Application Watchdog support is enabled])
-	])
+AS_IF([test "x$enable_javascript_app_watchdog" = "xyes"], [
+	AC_DEFINE([ENABLE_JAVASCRIPT_APP_WATCHDOG], [1],
+		  [whether JavaScript Application Watchdog support is enabled])
 ])
 
 #
@@ -341,7 +330,6 @@ AM_CONDITIONAL(ENABLE_SMARTCARD_INFO, [test "x$enable_smartcard_info" = "xyes"])
 AM_CONDITIONAL(ENABLE_LINPHONE, [test "x$enable_linphone" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
-AM_CONDITIONAL(ENABLE_JAVASCRIPT, [test "x$enable_javascript" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_LCD, [test "x$enable_javascript_lcd" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_APP_WATCHDOG, [test "x$enable_javascript_app_watchdog" = "xyes"])
@@ -436,15 +424,11 @@ Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
   WebKit Version:            $with_webkit
-  JavaScript Binding:        $enable_javascript")
-
-AS_IF([test "x$enable_javascript" = "xyes"], [
-	AS_ECHO("    IR Input Support:        $enable_javascript_ir")
-	AS_ECHO("    LCD Serial Support:      $enable_javascript_lcd")
-	AS_ECHO("    Application Watchdog Support: $enable_javascript_app_watchdog")
-])
-
-AS_ECHO("  D-Bus Watchdog support:    $enable_watchdog")
+  JavaScript Binding:        (always)
+    IR Input Support:        $enable_javascript_ir
+    LCD Serial Support:      $enable_javascript_lcd
+    Application Watchdog Support: $enable_javascript_app_watchdog
+  D-Bus Watchdog support:    $enable_watchdog")
 AS_IF([test "x$enable_lldpctl" = "xyes"],
 	[AS_ECHO("  LLDP monitor:              lldpctl")])
 AS_ECHO

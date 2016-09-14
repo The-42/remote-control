@@ -35,7 +35,6 @@ remote_control_LDADD = \
 	@LIBNETTLE_LIBS@ \
 	@LIBSOUP_LIBS@
 
-if ENABLE_JAVASCRIPT
 remote_control_SOURCES += \
 	javascript.c \
 	javascript.h \
@@ -90,8 +89,6 @@ javascript-input-%.c: $(srcdir)/javascript-input-%.awk
 
 clean-local:
 	rm -f $(patsubst %.awk,%.c,$(wildcard $(srcdir)/javascript-input-*.awk))
-
-endif # ENABLE_JAVASCRIPT
 
 EXTRA_DIST = \
 	javascript-input-codes.awk \
