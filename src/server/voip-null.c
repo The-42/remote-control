@@ -55,7 +55,7 @@ int voip_terminate(struct voip *voip)
 	return -ENOSYS;
 }
 
-int voip_get_login_state(struct voip *voip, enum voip_state *statep)
+int voip_get_login_state(struct voip *voip, enum voip_login_state *statep)
 {
 	return -ENOSYS;
 }
@@ -85,7 +85,7 @@ int voip_set_capture_gain(struct voip *voip, float gain)
 	return -ENOSYS;
 }
 
-int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb *cb,
+int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb cb,
 			      void *cb_data, void *owner_ref)
 {
 	return -ENOSYS;
