@@ -59,14 +59,19 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 
 	switch (event->source) {
 	case EVENT_SOURCE_SMARTCARD:
+		g_debug("SMARTCARD: %d -> %d (%d)", manager->smartcard_state,
+				event->smartcard.state, ret);
 		manager->smartcard_state = event->smartcard.state;
 		break;
 
 	case EVENT_SOURCE_HOOK:
+		g_debug("HOOK: %d -> %d (%d)", manager->hook_state,
+				event->hook.state, ret);
 		manager->hook_state = event->hook.state;
 		break;
 
 	default:
+		g_debug("Unknown event: %d (%d)", event->source, ret);
 		ret = -ENXIO;
 		break;
 	}

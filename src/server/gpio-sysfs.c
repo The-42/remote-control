@@ -74,8 +74,6 @@ static gboolean gpio_source_check(GSource *source)
 static int gpio_handle_irq(struct gpio_backend *backend, guint gpio,
 				struct event_manager *events)
 {
-	const char *state = NULL;
-	const char *name = NULL;
 	struct pollfd *poll;
 	struct event event;
 	uint8_t value;
@@ -104,45 +102,27 @@ static int gpio_handle_irq(struct gpio_backend *backend, guint gpio,
 	switch (gpio) {
 	case GPIO_HANDSET:
 		event.source = EVENT_SOURCE_HOOK;
-		name = "HOOK";
 
-		if (value) {
+		if (value)
 			event.hook.state = EVENT_HOOK_STATE_OFF;
-			state = "OFF";
-		} else {
+		else
 			event.hook.state = EVENT_HOOK_STATE_ON;
-			state = "ON";
-		}
 		break;
 
 	case GPIO_SMARTCARD:
 		event.source = EVENT_SOURCE_SMARTCARD;
-		name = "SMARTCARD";
 
-		if (value) {
+		if (value)
 			event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
-			state = "REMOVED";
-		} else {
+		else
 			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
-			state = "INSERTED";
-		}
 		break;
 
 	default:
-		break;
+		return -ENXIO;
 	}
 
-	if (name) {
-		g_debug("gpio-sysfs: %s --> %s", name, state);
-		err = event_manager_report(events, &event);
-		if (err < 0)
-			g_debug("gpio-sysfs: failed to report event: %s",
-				g_strerror(-err));
-	} else {
-		g_debug("gpio-sysfs: GPIO#%u --> %u", gpio, value);
-	}
-
-	return 0;
+	return event_manager_report(events, &event);
 }
 
 static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback,

@@ -77,24 +77,18 @@ static gboolean gpio_source_dispatch(GSource *source, GSourceFunc callback, gpoi
 	switch (type) {
 	case GPIO_HANDSET:
 		event.source = EVENT_SOURCE_HOOK;
-		if (data.value) {
-			g_debug("gpiodev: HOOK transitioned to OFF state");
+		if (data.value)
 			event.hook.state = EVENT_HOOK_STATE_OFF;
-		} else {
-			g_debug("gpiodev: HOOK transitioned to ON state");
+		else
 			event.hook.state = EVENT_HOOK_STATE_ON;
-		}
 		break;
 
 	case GPIO_SMARTCARD:
 		event.source = EVENT_SOURCE_SMARTCARD;
-		if (data.value) {
-			g_debug("gpiodev: SMARTCARD transitioned to REMOVED state");
+		if (data.value)
 			event.smartcard.state = EVENT_SMARTCARD_STATE_REMOVED;
-		} else {
-			g_debug("gpiodev: SMARTCARD transitioned to INSERTED state");
+		else
 			event.smartcard.state = EVENT_SMARTCARD_STATE_INSERTED;
-		}
 		break;
 
 	default:
