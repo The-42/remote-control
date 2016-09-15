@@ -15,13 +15,6 @@
 
 #include "remote-control.h"
 
-enum remote_control_state {
-	REMOTE_CONTROL_UNCONNECTED,
-	REMOTE_CONTROL_CONNECTED,
-	REMOTE_CONTROL_IDLE,
-	REMOTE_CONTROL_DISCONNECTED,
-};
-
 struct remote_control {
 	struct event_manager *event_manager;
 	struct gpio_backend *gpio;
