@@ -1,17 +1,4 @@
-* remote-control-gtk: Get rid of the g_client global variable.
-
-* Enhance medcom_voip_login() to allow a domain to be specified. The signature
-  will be changed eventually anyway to take the parameters from a VoIP account
-  structure, at which point the account structure could easily be extended by
-  an extra "domain" field.
-
-* Add manual pages for remote-control, remote-control-client and
-  remote-control-gtk. Also add documentation for the libremote-control client
-  library.
-
-* Remove V4L2 tuner implementation. The tm6010 driver can now switch channels
-  sufficiently fast to no longer require this dirty hack. Also it is much more
-  stable and opening/closing the device file no longer hangs the device.
+* Add manual pages for remote-control and the JavaScript API.
 
 * Remove linphone playback volume boost, because there is no indication that
   it makes any difference.
@@ -20,12 +7,7 @@
   - Refactor web-browser and pdf-viewer widgets (BrowserView interface?)
   - Add command line option to enable/disable the mouse cursor
 
-* JavaScript API:
-  - investigate garbage collection (when is finalize called?)
-  - refactor old JavaScript implementation:
-    * add AvionicDesign.Cursor object with enable, disable, setPosition and
-      click methods
-    * add AvionicDesign.IR object with callback for IR key codes
+* JavaScript API: investigate garbage collection (when is finalize called?)
 
 * Implement tests/gkeyfilemerge as proper unit test.
 
