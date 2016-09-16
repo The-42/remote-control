@@ -357,7 +357,7 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 	if (!input) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return NULL;
+		return false;
 	}
 
 	if (input->callback)
@@ -372,7 +372,7 @@ static bool input_set_onevent(JSContextRef context, JSObjectRef object,
 	if (!input->callback) {
 		javascript_set_exception_text(context, exception,
 			"failed to assign callback");
-		return NULL;
+		return false;
 	}
 	JSValueProtect(context, input->callback);
 

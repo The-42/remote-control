@@ -77,7 +77,7 @@ static bool js_audio_player_set_uri(
 	if (!player) {
 		javascript_set_exception_text(context, exception,
 			JS_ERR_INVALID_OBJECT_TEXT);
-		return NULL;
+		return false;
 	}
 
 	if (player->uri) {
