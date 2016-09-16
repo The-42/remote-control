@@ -4,7 +4,7 @@ bin_PROGRAMS = \
 remote_control_CPPFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
-	-I$(top_srcdir)/src/server \
+	-I$(top_srcdir)/src/lib \
 	-I$(top_srcdir)/bin/utils \
 	@GLIB_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
@@ -25,7 +25,7 @@ remote_control_SOURCES = \
 	remote-control-webkit-window.h
 
 remote_control_LDADD = \
-	../../src/server/libremote-control.la \
+	../../src/lib/libremote-control.la \
 	../../src/common/libcommon.la \
 	../utils/libutils.la \
 	@GLIB_LIBS@ \

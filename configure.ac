@@ -369,7 +369,7 @@ AC_OUTPUT([
 	Makefile
 	src/common/Makefile
 	src/Makefile
-	src/server/Makefile
+	src/lib/Makefile
 	tests/Makefile
 ])
 
