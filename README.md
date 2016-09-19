@@ -41,9 +41,9 @@ is mandatory. Apart from the usual dependencies like Autotools and things
 building things, internally developed libraries are available from our
 [public FTP][adftp]:
 
-* [gtkosk](ftp://ftp.avionic-design.de/pub/gtkosk/)
-* [libgpio](ftp://ftp.avionic-design.de/pub/libgpio/)
-* [libsmartcard](ftp://ftp.avionic-design.de/pub/libsmartcard/)
+* [gtkosk](http://ftp.avionic-design.de/pub/gtkosk/)
+* [libgpio](http://ftp.avionic-design.de/pub/libgpio/)
+* [libsmartcard](http://ftp.avionic-design.de/pub/libsmartcard/)
 
 # Installation #
 
@@ -62,7 +62,7 @@ docs/ subdirectory. We are hoping to improve the situation in the future.
 Issues may be reported via [GitHub][bugs-github]. Pull requests are welcome,
 bear in mind though we might have different plans or use cases.
 
-  [adftp]: ftp://ftp.avionic-design.de/pub/ "Avionic Design public FTP server"
+  [adftp]: http://ftp.avionic-design.de/pub/ "Avionic Design public FTP server"
   [pbs2]: https://github.com/avionic-design/pbs-stage2 "Platform Build System"
   [pbsad]: https://github.com/avionic-design/pbs-platform-avionic-design
     "AD platform for PBS"
