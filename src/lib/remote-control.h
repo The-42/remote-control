@@ -367,7 +367,6 @@ struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
-struct mixer *remote_control_get_mixer(struct remote_control *rc);
 struct net *remote_control_get_net(struct remote_control *rc);
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
