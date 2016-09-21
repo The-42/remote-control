@@ -23,7 +23,10 @@ PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5 gio-2.0 gio-unix-2.0)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(POPPLER, poppler-glib)
 PKG_CHECK_MODULES(GUDEV, gudev-1.0)
-PKG_CHECK_MODULES(LIBNETTLE, nettle)
+PKG_CHECK_MODULES(LIBNETTLE, nettle >= 3,
+	[AC_DEFINE([HAVE_NETTLE3], [1], [Nettle >= 3 available])],
+	[PKG_CHECK_MODULES(LIBNETTLE, nettle)]
+)
 PKG_CHECK_MODULES(LIBSOUP, libsoup-2.4)
 PKG_CHECK_MODULES(GTKOSK, gtkosk,
 		  [ac_gtkosk_datadir=`$PKG_CONFIG --variable=pkgdatadir gtkosk`])
