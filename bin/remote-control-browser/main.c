@@ -87,7 +87,9 @@ static void on_destroy(GtkWidget *widget, gpointer data)
 static void on_realize(GtkWidget *widget, gpointer data)
 {
 	if (!cursor) {
-		GdkCursor *cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+		GdkDisplay *display = gdk_display_get_default();
+		GdkCursor *cursor = gdk_cursor_new_for_display(display,
+			GDK_BLANK_CURSOR);
 		GdkWindow *window = gtk_widget_get_window(widget);
 
 		gdk_window_set_cursor(window, cursor);

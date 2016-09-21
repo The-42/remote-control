@@ -1296,8 +1296,14 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page,
 
 static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 {
+#if GTK_CHECK_VERSION(3, 16, 0)
+	GtkCssProvider *provider = gtk_css_provider_new();
+	GdkDisplay *display = gdk_display_get_default();
+	GdkScreen *screen = gdk_display_get_default_screen(display);
+#else
+	PangoFontDescription *font_desc = pango_font_description_new();
+#endif
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(browser);
-	PangoFontDescription *font_desc;
 	GtkWidget *toolbar;
 	GtkToolItem *item;
 	GtkWidget *widget;
@@ -1333,7 +1339,14 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 
 	/* address entry */
 	widget = gtk_entry_new();
-	font_desc = pango_font_description_new();
+#if GTK_CHECK_VERSION(3, 16, 0)
+	gtk_style_context_add_provider_for_screen(screen,
+		GTK_STYLE_PROVIDER(provider),
+		GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	gtk_css_provider_load_from_data(provider,
+		"GtkEntry { font-size: 16pt; }", -1, NULL);
+	g_object_unref(provider);
+#else
 	pango_font_description_set_size(font_desc, 16 * PANGO_SCALE);
 #if GTK_CHECK_VERSION(3, 0, 0)
 	gtk_widget_override_font(widget, font_desc);
@@ -1341,6 +1354,7 @@ static GtkWidget *webkit_browser_create_toolbar(WebKitBrowser *browser)
 	gtk_widget_modify_font(widget, font_desc);
 #endif
 	pango_font_description_free(font_desc);
+#endif /* GTK < 3.16.0 */
 
 	priv->entry = GTK_ENTRY(widget);
 	g_signal_connect(G_OBJECT(widget), "activate",

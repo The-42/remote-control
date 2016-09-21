@@ -92,7 +92,9 @@ static gboolean webkit_cursor_is_visible(GtkWidget *widget)
 
 static void webkit_cursor_hide(GtkWidget *widget, gboolean hide)
 {
-	GdkCursor *cursor = gdk_cursor_new(hide ? GDK_BLANK_CURSOR : GDK_X_CURSOR);
+	GdkDisplay *display = gdk_display_get_default();
+	GdkCursor *cursor = gdk_cursor_new_for_display(display,
+		hide ? GDK_BLANK_CURSOR : GDK_X_CURSOR);
 	GdkWindow *window = gtk_widget_get_window(widget);
 
 	gdk_window_set_cursor(window, cursor);
