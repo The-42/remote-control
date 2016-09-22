@@ -292,6 +292,25 @@ int voip_set_onstatechange_cb(struct voip *voip, voip_onstatechange_cb cb,
 void *voip_get_onstatechange_cb_owner(struct voip *voip);
 
 /**
+ * network layer for UDP
+ */
+struct net_udp;
+struct net_udp_channel;
+
+int net_udp_create(struct net_udp **netp);
+void net_udp_free(struct net_udp *net_udp);
+
+int net_udp_create_channel(struct net_udp *net, uint16_t local_port,
+	const char *hostname, uint16_t remote_port);
+int net_udp_destroy_channel(struct net_udp *net, int ref);
+struct net_udp_channel *net_udp_get_channel_by_ref(struct net_udp *net, int ref);
+
+ssize_t net_udp_send(struct net_udp_channel *channel, const void *buffer,
+		size_t size);
+ssize_t net_udp_recv(struct net_udp_channel *channel, void *buffer, size_t size);
+
+
+/**
  * LLDP monitor
  */
 #define LLDP_MAX_SIZE 1536
@@ -367,7 +386,7 @@ struct media_player *remote_control_get_media_player(struct remote_control *rc);
 struct sound_manager *remote_control_get_sound_manager(struct remote_control *rc);
 struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
-struct net *remote_control_get_net(struct remote_control *rc);
+struct net_udp *remote_control_get_net_udp(struct remote_control *rc);
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc);
