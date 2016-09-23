@@ -1,4 +1,5 @@
 # About remote-control #
+[![Travis build][travis-badge]][travis]
 
 This repository contains _remote-control_, a middleware for Avionic Design's
 Medcom Terminals, Linux-based entertainment and communication devices
@@ -67,4 +68,6 @@ bear in mind though we might have different plans or use cases.
   [pbsad]: https://github.com/avionic-design/pbs-platform-avionic-design
     "AD platform for PBS"
   [bugs-github]: https://github.com/avionic-design/remote-control/issues
+  [travis]: https://travis-ci.org/The-42/remote-control
+  [travis-badge]: https://travis-ci.org/The-42/remote-control.svg?branch=master
 

@@ -1,0 +1,21 @@
+language: c
+
+dist: trusty
+
+compiler:
+  - clang
+  - gcc
+
+before_install:
+  - sudo apt-get -qq update
+  - >
+    sudo apt-get -qq install libglib2.0-dev libgtk2.0-dev libwebkitgtk-3.0-dev
+    nettle-dev libnl-route-3-dev libpoppler-glib-dev libgudev-1.0-dev
+    libxtst-dev libatspi2.0-dev xsltproc docbook-xsl docbook-xsl-doc-html
+  - wget http://ftp.avionic-design.de/pub/gtkosk/gtkosk-0.3.20.tar.xz
+  - tar -xvf gtkosk-0.3.20.tar.xz
+  - >
+    pushd gtkosk-0.3.20 && ./configure --with-gtk=3.0 --disable-gtk-doc-html
+    --disable-werror --prefix=/usr && make && sudo make install && popd
+
+script: ./autogen.sh --with-gtk=3.0 --with-webkit=1.0 && make distcheck
