@@ -28,7 +28,7 @@ static gssize g_hex_dump_to_buffer(gchar *buffer, gsize length,
 		pos += num;
 	}
 
-	for (i = i; i < rowsize; i++) {
+	while (i++ < rowsize) {
 		num = g_snprintf(buffer + pos, length - pos, "   ");
 		pos += num;
 	}
@@ -49,7 +49,7 @@ static gssize g_hex_dump_to_buffer(gchar *buffer, gsize length,
 			pos += num;
 		}
 
-		for (i = i; i < rowsize; i++) {
+		while (i++ < rowsize) {
 			num = g_snprintf(buffer + pos, length - pos, " ");
 			pos += num;
 		}
