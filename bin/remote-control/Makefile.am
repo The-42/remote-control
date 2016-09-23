@@ -87,13 +87,13 @@ INPUT_H = $(or $(filter %/linux/input.h,$(INPUT_DEPS)),/dev/null)
 javascript-input-%.c: $(srcdir)/javascript-input-%.awk
 	$(AM_V_GEN)awk -f $< $(INPUT_H) > $@ || (rm -f $@ ; false)
 
-clean-local:
-	rm -f $(patsubst %.awk,%.c,$(wildcard $(srcdir)/javascript-input-*.awk))
-
 EXTRA_DIST = \
 	javascript-input-codes.awk \
 	javascript-input-led-codes.awk \
 	javascript-input-properties.awk
+
+CLEANFILES = \
+	$(patsubst %.awk,%.c,$(EXTRA_DIST))
 
 if ENABLE_WATCHDOG
 remote_control_CPPFLAGS += @WATCHDOG_CFLAGS@
