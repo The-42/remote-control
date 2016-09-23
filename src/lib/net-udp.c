@@ -18,8 +18,6 @@
 
 #include "remote-control.h"
 
-#define MAX_PACKET_SIZE 1536
-
 struct net_udp_packet {
 	void *data;
 	size_t len;
@@ -186,13 +184,13 @@ static int net_channel_create(struct net_udp_channel **channelp,
 		goto free_ad;
 	}
 
-	channel->buffer = malloc(MAX_PACKET_SIZE);
+	channel->buffer = malloc(NET_UDP_MAX_PACKET_SIZE);
 	if (!channel->buffer) {
 		err = -ENOMEM;
 		goto free_q;
 	}
 
-	channel->buffer_size = MAX_PACKET_SIZE;
+	channel->buffer_size = NET_UDP_MAX_PACKET_SIZE;
 
 	freeaddrinfo(result);
 	*channelp = channel;

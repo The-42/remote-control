@@ -41,6 +41,7 @@ remote_control_SOURCES += \
 	javascript-audio.c \
 	javascript-backlight.c \
 	javascript-cursor.c \
+	javascript-datagram.c \
 	javascript-event-manager.c \
 	javascript-fb.c \
 	javascript-http-request.c \

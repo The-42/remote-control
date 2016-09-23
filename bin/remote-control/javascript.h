@@ -16,7 +16,7 @@
 
 /* JS API version returned from the window.AvionicDesign.version property */
 #ifndef JS_API_VERSION
-  #define JS_API_VERSION	1
+  #define JS_API_VERSION	2
 #endif
 
 #define JS_ERR_INVALID_OBJECT_TEXT      "object not valid, context switched?"
