@@ -68,6 +68,6 @@ bear in mind though we might have different plans or use cases.
   [pbsad]: https://github.com/avionic-design/pbs-platform-avionic-design
     "AD platform for PBS"
   [bugs-github]: https://github.com/avionic-design/remote-control/issues
-  [travis]: https://travis-ci.org/The-42/remote-control
-  [travis-badge]: https://travis-ci.org/The-42/remote-control.svg?branch=master
+  [travis]: https://travis-ci.org/avionic-design/remote-control
+  [travis-badge]: https://travis-ci.org/avionic-design/remote-control.svg?branch=master
 
