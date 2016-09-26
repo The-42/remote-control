@@ -95,13 +95,13 @@ gint find_udev_devices(const struct udev_match *match,
 
 	client = g_udev_client_new(NULL);
 	if (!client) {
-		g_debug("%s: failed to create UDEV client", __func__);
+		g_warning("%s: failed to create UDEV client", __func__);
 		return -ENOMEM;
 	}
 
 	enumerator = g_udev_enumerator_new(client);
 	if (!enumerator) {
-		g_debug("%s: failed to create enumerator", __func__);
+		g_warning("%s: failed to create enumerator", __func__);
 		g_object_unref(client);
 		return -ENOMEM;
 	}
@@ -274,7 +274,7 @@ int parse_udev_matches(char *const *list, struct udev_match **matchp)
 		return -ENOMEM;
 
 	for (i = 0; i < count ; i++) {
-		g_warning("%s: Parsing rule %s", __func__, list[i]);
+		g_debug("%s: Parsing rule %s", __func__, list[i]);
 		err = parse_udev_match(list[i], &match[i]);
 		if (err) {
 			free_udev_matches(match);
