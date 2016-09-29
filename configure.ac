@@ -361,7 +361,7 @@ AC_DEFINE_UNQUOTED([COMMANDS_ALIGN], [$COMMANDS_ALIGN],
 	  [Define to the number of bytes to align commands to.])
 AC_SUBST(COMMANDS_ALIGN)
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 	bin/Makefile
 	bin/remote-control-browser/Makefile
 	bin/remote-control/Makefile
@@ -375,6 +375,8 @@ AC_OUTPUT([
 	src/lib/Makefile
 	tests/Makefile
 ])
+
+AC_OUTPUT
 
 AS_ECHO("
 remote-control was configured with the following options:
