@@ -84,9 +84,9 @@ int parse_udev_match(const char *str, struct udev_match *match);
  *
  * See \ref parse_udev_match() for a description of the supported syntax.
  *
- * @param list[in]    A null terminated array of strings
- * @param matchp[out] Return the newly allocated udev_match array.
- *                    The array must be freed with \ref free_udev_matches()
+ * @param [in]  list   A null terminated array of strings
+ * @param [out] matchp Return the newly allocated udev_match array.
+ * The array must be freed with free_udev_matches()
  * @return A negative error code in case of error, 0 otherwise
  */
 int parse_udev_matches(char *const *list, struct udev_match **matchp);
@@ -126,7 +126,6 @@ typedef int (*udev_device_found_cb)(gpointer user, GUdevDevice *dev);
  * Lookup devices in udev that match a set of criteria
  *
  * @param match    An array of matching critera
- * @param count    The number of matching critera in the array
  * @param callback The callback to call when a device has been found
  * @param user     Userdata pointer to pass to the callback
  * @return         The number of devices found, otherwise a negative
@@ -148,7 +147,7 @@ typedef int (*device_found_cb)(gpointer user, const gchar *filename,
 
 /**
  * @param devname  The name of the device.
- * @param function The function to call if device was found.
+ * @param callback The function to call if device was found.
  * @param user     User data passed to function.
  */
 gint
