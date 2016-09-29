@@ -9,3 +9,10 @@ SUBDIRS = \
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-gtk=3.0
+
+MOSTLYCLEANFILES = \
+	$(DX_CLEANFILES)
+
+@DX_RULES@
+
+all: doxygen-run

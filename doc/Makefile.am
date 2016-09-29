@@ -20,6 +20,7 @@ man_MANS = \
 
 EXTRA_DIST = \
 	browser.conf.xml.in \
+	Doxyfile.in \
 	remote-control.conf.xml.in
 
 CLEANFILES = \

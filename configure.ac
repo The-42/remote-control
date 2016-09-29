@@ -37,6 +37,16 @@ AS_IF([test "x$USE_NLS" = "xyes"],
 	[AC_DEFINE([ENABLE_NLS], [0], [Define to 0 if NLS support is disabled])]
 )
 
+DX_HTML_FEATURE(ON)
+DX_CHM_FEATURE(OFF)
+DX_CHI_FEATURE(OFF)
+DX_DOT_FEATURE(ON)
+DX_MAN_FEATURE(OFF)
+DX_RTF_FEATURE(OFF)
+DX_XML_FEATURE(OFF)
+DX_PDF_FEATURE(ON)
+DX_PS_FEATURE(OFF)
+DX_INIT_DOXYGEN([$PACKAGE_NAME], [doc/Doxyfile], [doc/doxygen])
 #
 # Verbosity
 #
@@ -368,6 +378,7 @@ AC_CONFIG_FILES([
 	bin/utils/Makefile
 	data/de.avionic-design.RemoteControl.service
 	data/Makefile
+	doc/Doxyfile
 	doc/Makefile
 	Makefile
 	src/common/Makefile
