@@ -47,6 +47,7 @@ DX_XML_FEATURE(OFF)
 DX_PDF_FEATURE(ON)
 DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([$PACKAGE_NAME], [doc/Doxyfile], [doc/doxygen])
+AM_CONDITIONAL([HAVE_DOXYGEN],[test -n "${DX_DOXYGEN}"])
 #
 # Verbosity
 #
