@@ -27,7 +27,6 @@ extern struct javascript_module javascript_taskmanager;
 extern struct javascript_module javascript_audio;
 extern struct javascript_module javascript_audio_player;
 extern struct javascript_module javascript_backlight;
-extern struct javascript_module javascript_datagram;
 extern struct javascript_module javascript_media_player;
 extern struct javascript_module javascript_voip;
 extern struct javascript_module javascript_output;
@@ -54,7 +53,6 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_audio,
 	&javascript_audio_player,
 	&javascript_backlight,
-	&javascript_datagram,
 	&javascript_media_player,
 	&javascript_voip,
 	&javascript_output,

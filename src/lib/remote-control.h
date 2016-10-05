@@ -294,8 +294,6 @@ void *voip_get_onstatechange_cb_owner(struct voip *voip);
 /**
  * network layer for UDP
  */
-#define NET_UDP_MAX_PACKET_SIZE 1536
-
 struct net_udp;
 struct net_udp_channel;
 
