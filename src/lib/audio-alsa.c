@@ -350,6 +350,27 @@ static struct soundcard *audio_get_card_by_name(struct audio *audio,
 	return card;
 }
 
+static int audio_ucm_open(snd_use_case_mgr_t **ucm, const char *card_name)
+{
+	gchar **splinters;
+	gchar *name;
+	int err;
+
+	err = snd_use_case_mgr_open(ucm, card_name);
+	if (err >= 0)
+		return 0;
+
+	/* retry after replacing spaces with underscores (PBS workaround) */
+	splinters = g_strsplit(card_name, " ", 0);
+	name = g_strjoinv("_", splinters);
+	g_strfreev(splinters);
+
+	err = snd_use_case_mgr_open(ucm, name);
+	g_free(name);
+
+	return err;
+}
+
 static int audio_find_cards(struct audio *audio)
 {
 	snd_ctl_card_info_t *info;
@@ -392,27 +413,6 @@ static int audio_find_cards(struct audio *audio)
 	}
 
 	return g_list_length(audio->cards) > 0 ? 0 : -ENODEV;
-}
-
-static int audio_ucm_open(snd_use_case_mgr_t **ucm, const char *card_name)
-{
-	gchar **splinters;
-	gchar *name;
-	int err;
-
-	err = snd_use_case_mgr_open(ucm, card_name);
-	if (err >= 0)
-		return 0;
-
-	/* retry after replacing spaces with underscores (PBS workaround) */
-	splinters = g_strsplit(card_name, " ", 0);
-	name = g_strjoinv("_", splinters);
-	g_strfreev(splinters);
-
-	err = snd_use_case_mgr_open(ucm, name);
-	g_free(name);
-
-	return err;
 }
 
 int audio_create(struct audio **audiop, struct remote_control *rc,
