@@ -12,6 +12,7 @@
 
 #define pr_fmt(fmt) "smartcard-pcsc: " fmt
 
+#include <regex.h>
 #include <winscard.h>
 
 #include "remote-control.h"
@@ -114,6 +115,41 @@ static int ensure_buffer(struct smartcard *smartcard, DWORD size)
 	smartcard->rcv_size = size;
 
 	return 0;
+}
+
+static void search_reader(struct smartcard *smartcard) {
+	DWORD dwReaders = SCARD_AUTOALLOCATE;
+	LPSTR mszReaders = NULL;
+	regex_t regex;
+	char *ptr;
+	LONG rv;
+
+	rv = SCardListReaders(smartcard->ctx, NULL, (LPSTR)&mszReaders,
+			&dwReaders);
+	if (rv != SCARD_S_SUCCESS) {
+		pr_debug("SCardListReaders: %s", pcsc_stringify_error(rv));
+		return;
+	}
+
+	if (!smartcard->device || regcomp(&regex, smartcard->device, 0)) {
+		pr_debug_readers(smartcard->ctx);
+		return;
+	}
+
+	ptr = mszReaders;
+	pr_debug("Search for reader: \"%s\"", smartcard->device);
+	while (*ptr) {
+		if (!regexec(&regex, ptr, 0, NULL, 0)) {
+			free(smartcard->device);
+			smartcard->device = strdup(ptr);
+			pr_debug("   \"%s\" <- match", ptr);
+		} else {
+			pr_debug("   \"%s\"", ptr);
+		}
+		ptr += strlen(ptr) + 1;
+	}
+	regfree(&regex);
+	(void)SCardFreeMemory(smartcard->ctx, mszReaders);
 }
 
 static void reconnect(struct smartcard *smartcard)
@@ -273,11 +309,11 @@ int smartcard_create_pcsc(struct smartcard **smartcardp,
 		goto nodevice;
 	}
 
+	search_reader(smartcard);
 	rv = SCardConnect(smartcard->ctx, smartcard->device, SCARD_SHARE_DIRECT,
 		SCARD_PROTOCOL_ANY, &smartcard->card, &smartcard->protocol);
 	if (rv != SCARD_S_SUCCESS) {
 		pr_debug("SCardConnect: %s", pcsc_stringify_error(rv));
-		pr_debug_readers(smartcard->ctx);
 		goto nodevice;
 	}
 
