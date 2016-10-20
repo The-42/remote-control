@@ -406,9 +406,15 @@ static int audio_find_cards(struct audio *audio)
 
 		card = soundcard_new(snd_ctl_card_info_get_name(info), number);
 		if (card) {
+			snd_use_case_mgr_t *mgr;
 			g_debug("audio-alsa-ucm: soundcard %s created (%s)",
 				card->name, snd_ctl_card_info_get_driver(info));
-			audio->cards = g_list_append(audio->cards, card);
+			if (audio_ucm_open(&mgr, card->name) < 0) {
+				audio->cards = g_list_append(audio->cards, card);
+			} else {
+				snd_use_case_mgr_close(mgr);
+				audio->cards = g_list_prepend(audio->cards, card);
+			}
 		}
 	}
 
