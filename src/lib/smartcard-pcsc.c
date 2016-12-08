@@ -160,6 +160,11 @@ static void reconnect(struct smartcard *smartcard)
 	if (rv != SCARD_S_SUCCESS)
 		smartcard->protocol = 0;
 
+	if (smartcard->state.cbAtr == 2 &&
+			smartcard->state.rgbAtr[0] == 0x3b &&
+			smartcard->state.rgbAtr[1] == 0)
+		smartcard->protocol = SCARD_PROTOCOL_RAW;
+
 	if (!ensure_buffer(smartcard, smartcard->state.cbAtr)) {
 		memcpy(smartcard->rcv_buffer, smartcard->state.rgbAtr,
 				smartcard->state.cbAtr);
@@ -345,10 +350,128 @@ int smartcard_get_type_pcsc(struct smartcard *smartcard, unsigned int *typep)
 	case SCARD_PROTOCOL_T1:
 		*typep = SMARTCARD_TYPE_T1;
 		break;
+	case SCARD_PROTOCOL_RAW:
+		*typep = SMARTCARD_TYPE_I2C;
+		break;
 	default:
 		*typep = SMARTCARD_TYPE_UNKNOWN;
 	}
 	return 0;
+}
+
+/*
+ * Reading memory cards using Advanced Card Systems Ltd. ACR38x (CCID)
+ *
+ * Currently only type 1 (1, 2, 4, 8 and 16 kilobit I2C Card) is supported
+ */
+static ssize_t smartcard_read_mc(struct smartcard *smartcard, off_t offset,
+		void *buffer, size_t size)
+{
+	const SCARD_IO_REQUEST *pioSendPci = SCARD_PCI_T0;
+	unsigned char type_buf[] = {0xFF, 0xA4, 0x00, 0x00, 0x01, 0x01};
+	unsigned char snd_buf[] = {0xFF, 0xB0,
+			(offset >> 8) & 0xFF, offset & 0xFF,
+			size > 0xFF ? 0xFF : size};
+	SCARDCONTEXT context;
+	ssize_t ret = -EIO;
+	SCARDHANDLE card;
+	DWORD protocol;
+	LONG rv;
+
+	if (!smartcard)
+		return -EINVAL;
+
+	rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, NULL, NULL, &context);
+	if (rv != SCARD_S_SUCCESS) {
+		pr_debug("%s SCardEstablishContext: %s", __FUNCTION__,
+				pcsc_stringify_error(rv));
+		goto cleanup;
+	}
+	rv = SCardConnect(context, smartcard->device, SCARD_SHARE_SHARED,
+			SCARD_PROTOCOL_T0, &card, &protocol);
+	if (rv != SCARD_S_SUCCESS) {
+		pr_debug("%s SCardEstablishContext: %s", __FUNCTION__,
+				pcsc_stringify_error(rv));
+		goto cleanup;
+	}
+
+	smartcard->rcv_len = smartcard->rcv_size;
+	rv = SCardTransmit(card, pioSendPci,
+			type_buf, sizeof(type_buf), NULL,
+			smartcard->rcv_buffer, &smartcard->rcv_len);
+	if (rv < 0) {
+		pr_debug("%s SCardTransmit set memory card: %s", __FUNCTION__,
+				pcsc_stringify_error(rv));
+		goto cleanup;
+	}
+	if (smartcard->rcv_len < 2 ||
+		smartcard->rcv_buffer[smartcard->rcv_len - 2] != 0x90 ||
+		smartcard->rcv_buffer[smartcard->rcv_len - 1] != 0) {
+
+		pr_debug("%s set memory card: %s", __FUNCTION__,
+				pcsc_stringify_error(rv));
+		goto cleanup;
+	}
+
+	rv = ensure_buffer(smartcard, size + 2);
+	if (rv < 0)
+		return rv;
+
+	smartcard->rcv_len = smartcard->rcv_size;
+	rv = SCardTransmit(card, pioSendPci,
+			snd_buf, sizeof(snd_buf), NULL,
+			smartcard->rcv_buffer, &smartcard->rcv_len);
+
+	switch (rv) {
+	case SCARD_S_SUCCESS:
+		if (smartcard->rcv_len < 2 ||
+			smartcard->rcv_buffer[smartcard->rcv_len - 2] != 0x90 ||
+			smartcard->rcv_buffer[smartcard->rcv_len - 1] != 0) {
+
+			pr_debug("%s SCardTransmit: %ld %02x%02x",
+				__FUNCTION__, smartcard->rcv_len,
+				smartcard->rcv_buffer[smartcard->rcv_len - 2],
+				smartcard->rcv_buffer[smartcard->rcv_len - 1]);
+			ret = -EIO;
+			break;
+		}
+		ret = smartcard->rcv_len -2;
+		goto cleanup;
+	case SCARD_W_RESET_CARD:
+		reconnect(smartcard);
+		ret = -EAGAIN;
+		break;
+	case SCARD_E_INSUFFICIENT_BUFFER:
+		(void)ensure_buffer(smartcard, smartcard->rcv_len);
+		ret = -EAGAIN;
+		break;
+	case SCARD_E_INVALID_HANDLE:
+	case SCARD_E_NO_SERVICE:
+	case SCARD_E_READER_UNAVAILABLE:
+	case SCARD_W_REMOVED_CARD:
+		ret = -EBADF;
+		break;
+	case SCARD_E_INVALID_VALUE:
+	case SCARD_E_INVALID_PARAMETER:
+		ret = -EINVAL;
+		break;
+	case SCARD_E_NOT_TRANSACTED:
+	case SCARD_E_PROTO_MISMATCH:
+	case SCARD_F_COMM_ERROR:
+	default:
+		ret = -EIO;
+	}
+
+	pr_debug("%s SCardTransmit: %s len %ld",  __FUNCTION__,
+			pcsc_stringify_error(rv), smartcard->rcv_len);
+
+	smartcard->rcv_len = 0;
+cleanup:
+	if (ret > 0)
+		memcpy(buffer, smartcard->rcv_buffer, ret);
+	(void)SCardDisconnect(card, SCARD_LEAVE_CARD);
+	(void)SCardReleaseContext(context);
+	return ret;
 }
 
 ssize_t smartcard_read_pcsc(struct smartcard *smartcard, off_t offset,
@@ -358,6 +481,9 @@ ssize_t smartcard_read_pcsc(struct smartcard *smartcard, off_t offset,
 
 	if (!smartcard || !buffer || !size)
 		return -EINVAL;
+
+	if (smartcard->protocol == SCARD_PROTOCOL_RAW)
+		return smartcard_read_mc(smartcard, offset, buffer, size);
 
 	if (offset >= smartcard->rcv_len)
 		return 0;
