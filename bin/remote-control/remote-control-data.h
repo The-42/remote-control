@@ -16,6 +16,7 @@ struct remote_control_data {
 	GKeyFile *config;
 	GMainLoop *loop;
 	GThread *thread;
+	gboolean started;
 
 	GMutex startup_mutex;
 	GCond startup_cond;
