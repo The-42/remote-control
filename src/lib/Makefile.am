@@ -120,6 +120,7 @@ libremote_control_la_LIBADD += @LIBPCSCLITE_LIBS@
 libremote_control_la_SOURCES += smartcard-pcsc.c
 endif # ENABLE_LIBPCSCLITE
 
+libremote_control_la_SOURCES += smartcard-nxp.c
 libremote_control_la_SOURCES += smartcard-generic.c
 
 if ENABLE_SMARTCARD_INFO

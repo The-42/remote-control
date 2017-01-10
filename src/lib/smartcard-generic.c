@@ -33,6 +33,7 @@ struct smartcard_data;
 	val->p_read     = smartcard_read_##TYPE;                               \
 	val->p_write    = smartcard_write_##TYPE
 
+REGISTER_SMARTCARD(nxp);
 #if ENABLE_LIBPCSCLITE
 REGISTER_SMARTCARD(pcsc);
 #endif
@@ -71,6 +72,12 @@ int smartcard_create(struct smartcard **smartcardp, struct remote_control *rc,
 	*smartcardp = smartcard;
 
 	//TODO: Force type if defined by configuration
+	ret = smartcard_create_nxp(&smartcard->data, rc, config);
+	if (ret >= 0) {
+		SET_SMARTCARD(smartcard, nxp);
+		return ret;
+	}
+
 #if ENABLE_LIBPCSCLITE
 	ret = smartcard_create_pcsc(&smartcard->data, rc, config);
 	if (ret >= 0) {
