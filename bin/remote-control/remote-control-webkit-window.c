@@ -536,7 +536,12 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 
 	priv->webkit = WEBKIT_WEB_VIEW(webkit_web_view_new());
 
+#ifdef USE_WEBKIT2
+	webkit_web_context_set_cache_model(webkit_web_context_get_default(),
+		WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+#else
 	webkit_set_cache_model(WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+#endif
 	/*
 	 * Add a callback to listen for load-status property changes. This is
 	 * used to register the JavaScript binding within the frame.
