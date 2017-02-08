@@ -46,11 +46,6 @@ struct net_udp {
 	/* Thread to receive packets */
 	GThread *thread;
 	gboolean done;
-
-	/* Callback for packet received events */
-	net_udp_recv_cb recv_cb;
-	void *callback_data;
-	void *callback_owner;
 };
 
 static bool addr_is_broadcast(struct sockaddr *addr, socklen_t addrlen)
@@ -365,9 +360,6 @@ static gpointer recv_thread(gpointer context)
 				}
 
 				g_queue_push_tail(channel->packets, packet);
-
-				if (net->recv_cb)
-					net->recv_cb(fds[i].fd, net->callback_data);
 			}
 		}
 	}
@@ -444,22 +436,4 @@ ssize_t net_udp_recv(struct net_udp_channel *channel, void *buffer, size_t size)
 	}
 
 	return ret;
-}
-
-int net_udp_set_recv_cb(struct net_udp *net_udp, net_udp_recv_cb cb,
-			void *cb_data, void *owner_ref)
-{
-	if (!net_udp)
-		return -EINVAL;
-
-	net_udp->recv_cb = cb;
-	net_udp->callback_data = cb_data;
-	net_udp->callback_owner = owner_ref;
-
-	return 0;
-}
-
-void *net_udp_get_recv_cb_owner(struct net_udp *net_udp)
-{
-	return net_udp ? net_udp->callback_owner : NULL;
 }
