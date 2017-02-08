@@ -21,7 +21,6 @@ libremote_control_la_LIBADD = \
 libremote_control_la_SOURCES = \
 	cursor-movement.c \
 	event-manager.c \
-	net-udp.c \
 	remote-control.c \
 	remote-control.h \
 	task-manager.c \

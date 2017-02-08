@@ -25,7 +25,7 @@ struct remote_control {
 	struct sound_manager *sound;
 	struct smartcard *smartcard;
 	struct voip *voip;
-	struct net_udp *net_udp;
+	struct net *net;
 	struct lldp_monitor *lldp;
 	struct task_manager *task_manager;
 	struct app_watchdog *watchdog;
@@ -154,12 +154,6 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		g_source_unref(source);
 	}
 
-	err = net_udp_create(&rc->net_udp);
-	if (err < 0) {
-		g_critical("net_udp_create(): %s", strerror(-err));
-		return err;
-	}
-
 	err = task_manager_create(&rc->task_manager);
 	if (err < 0) {
 		g_critical("task_manager_create(): %s", strerror(-err));
@@ -205,7 +199,6 @@ int remote_control_free(struct remote_control *rc)
 		return -EINVAL;
 
 	task_manager_free(rc->task_manager);
-	net_udp_free(rc->net_udp);
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);
 	sound_manager_free(rc->sound);
@@ -261,9 +254,9 @@ struct voip *remote_control_get_voip(struct remote_control *rc)
 	return rc ? rc->voip : NULL;
 }
 
-struct net_udp *remote_control_get_net_udp(struct remote_control *rc)
+struct net *remote_control_get_net(struct remote_control *rc)
 {
-	return rc ? rc->net_udp : NULL;
+	return rc ? rc->net : NULL;
 }
 
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc)
