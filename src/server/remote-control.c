@@ -168,6 +168,18 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
+	err = mixer_create(&rc->mixer);
+	if (err < 0) {
+		g_critical("mixer_create(): %s", strerror(-err));
+		return err;
+	}
+
+	source = mixer_get_source(rc->mixer);
+	if (source) {
+		g_source_add_child_source(rc->source, source);
+		g_source_unref(source);
+	}
+
 	err = gpio_backend_create(&rc->gpio, rc->event_manager, config);
 	if (err < 0) {
 		g_critical("gpio_backend_create(): %s", strerror(-err));

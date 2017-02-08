@@ -236,6 +236,22 @@ AS_CASE([$with_voip_backend],
 )
 
 #
+# Mixer backend
+#
+enable_mixer_alsa=no
+
+AC_ARG_WITH(mixer_backend,
+	[AS_HELP_STRING([--with-mixer-backend=@<:@none/alsa@:>@],
+		[Use the specified mixer backend. [default=alsa]])
+	], [], [with_mixer_backend=alsa])
+
+AS_CASE([$with_mixer_backend],
+	[none], [],
+	[alsa], [PKG_CHECK_MODULES(ALSA, alsa, [enable_mixer_alsa=yes])],
+	[AC_MSG_ERROR([Invalid mixer backend: must be none or alsa])]
+)
+
+#
 # GPIO backend
 #
 enable_gpio_gpiodev=no
@@ -316,6 +332,7 @@ AS_IF([test "x$enable_watchdog" = "xyes"], [
 #
 AM_CONDITIONAL(ENABLE_AUDIO_ALSA, [test "x$enable_audio_alsa" = "xyes"])
 AM_CONDITIONAL(ENABLE_AUDIO_PULSE, [test "x$enable_audio_pulse" = "xyes"])
+AM_CONDITIONAL(ENABLE_MIXER_ALSA, [test "x$enable_mixer_alsa" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_DPMS, [test "x$enable_backlight_dpms" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_MEDATOM, [test "x$enable_backlight_medatom" = "xyes"])
 AM_CONDITIONAL(ENABLE_BACKLIGHT_SYSFS, [test "x$enable_backlight_sysfs" = "xyes"])
@@ -418,6 +435,7 @@ AS_IF([test "x$smartcard_none" = "xyes"],
 AS_ECHO("")
 AS_ECHO("  Smartcard info function:   $enable_smartcard_info")
 AS_ECHO("  VoIP Backend:              $with_voip_backend
+  Mixer Backend:             $with_mixer_backend
   GPIO Backend:              $with_gpio_backend
 
 Options:
