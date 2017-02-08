@@ -25,6 +25,7 @@ struct remote_control {
 	struct sound_manager *sound;
 	struct smartcard *smartcard;
 	struct voip *voip;
+	struct mixer *mixer;
 	struct net *net;
 	struct lldp_monitor *lldp;
 	struct task_manager *task_manager;
@@ -252,6 +253,11 @@ struct smartcard *remote_control_get_smartcard(struct remote_control *rc)
 struct voip *remote_control_get_voip(struct remote_control *rc)
 {
 	return rc ? rc->voip : NULL;
+}
+
+struct mixer *remote_control_get_mixer(struct remote_control *rc)
+{
+	return rc ? rc->mixer : NULL;
 }
 
 struct net *remote_control_get_net(struct remote_control *rc)
