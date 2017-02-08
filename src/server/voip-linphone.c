@@ -15,6 +15,7 @@
 #include <lpconfig.h>
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct voip {
@@ -296,10 +297,11 @@ static void voip_codec_enable(struct voip *voip, const char *mime_type,
 	}
 }
 
-int voip_create(struct voip **voipp, struct remote_control *rc,
+int voip_create(struct voip **voipp, struct rpc_server *server,
 		GKeyFile *config)
 {
 	const char *factory_config = SYSCONF_DIR "/linphone.conf";
+	struct remote_control *rc = rpc_server_priv(server);
 	struct voip *voip;
 	gchar **codecs;
 	gboolean ec;

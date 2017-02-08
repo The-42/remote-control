@@ -22,6 +22,7 @@
 
 #include "gsysfsbacklight.h"
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
 #include "smbus.h"

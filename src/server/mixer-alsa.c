@@ -16,6 +16,7 @@
 
 #define pr_fmt(fmt) "mixer-alsa: " fmt
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
 #include "glogging.h"

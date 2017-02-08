@@ -15,6 +15,7 @@
 
 #include <glib.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct backlight {

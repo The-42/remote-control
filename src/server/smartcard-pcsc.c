@@ -15,6 +15,7 @@
 #include <regex.h>
 #include <winscard.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "glogging.h"
 
@@ -283,8 +284,9 @@ int smartcard_free_pcsc(struct smartcard *smartcard)
 }
 
 int smartcard_create_pcsc(struct smartcard **smartcardp,
-		struct remote_control *rc, GKeyFile *config)
+		struct rpc_server *server, GKeyFile *config)
 {
+	struct remote_control *rc = rpc_server_priv(server);
 	struct smartcard *smartcard;
 	LONG rv;
 

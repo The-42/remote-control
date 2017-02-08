@@ -5,6 +5,7 @@ libremote_control_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
 	@LIBNL_CFLAGS@ \
+	@LIBRPC_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@GLIB_CFLAGS@ \
 	@GTK_CFLAGS@ \
@@ -13,19 +14,33 @@ libremote_control_la_CFLAGS = \
 libremote_control_la_LIBADD = \
 	../common/libcommon.la \
 	@LIBNL_LIBS@ \
+	@LIBRPC_LIBS@ \
 	@GUDEV_LIBS@ \
 	@GLIB_LIBS@ \
 	@GTK_LIBS@ \
 	@WATCHDOG_LIBS@
 
 libremote_control_la_SOURCES = \
+	audio.c \
+	backlight.c \
 	cursor-movement.c \
 	event-manager.c \
+	irq.c \
+	lldp.c \
+	media.c \
+	media-player.c \
+	mixer.c \
+	net.c \
+	net-unix.c \
 	remote-control.c \
 	remote-control.h \
+	smartcard.c \
+	sound.c \
+	system.c \
 	task-manager.c \
 	usb-handset.c \
-	utils.c
+	utils.c \
+	voip.c
 
 if ENABLE_LLDPCTL
 libremote_control_la_CFLAGS += @LLDPCTL_CFLAGS@
@@ -34,6 +49,10 @@ libremote_control_la_SOURCES += lldp-monitor-lldpctl.c
 else
 libremote_control_la_SOURCES += lldp-monitor.c
 endif
+
+nodist_libremote_control_la_SOURCES = \
+	remote-control-stub.c \
+	remote-control-stub.h
 
 if ENABLE_AUDIO_ALSA
 libremote_control_la_CFLAGS += @ALSA_CFLAGS@
@@ -158,6 +177,12 @@ else
 libremote_control_la_SOURCES += app-watchdog-null.c
 endif # ENABLE_WATCHDOG
 
+remote-control-stub.c: $(srcdir)/../protocol.xml
+	$(AM_V_GEN)$(RPC_STUBGEN) --server --source -o $@ $<
+
+remote-control-stub.h: $(srcdir)/../protocol.xml
+	$(AM_V_GEN)$(RPC_STUBGEN) --server --header -o $@ $<
+
 libremote_control_la_SOURCES += gtkosk-dbus.c
 
 gtkosk-dbus.c: gtkosk-dbus.h
@@ -171,6 +196,8 @@ gtkosk-dbus.h:
 		@GTKOSK_DATADIR@/com.avionicdesign.gtkosk.control.xml
 
 BUILT_SOURCES = \
+	remote-control-stub.c \
+	remote-control-stub.h \
 	gtkosk-dbus.c \
 	gtkosk-dbus.h
 

@@ -10,6 +10,7 @@
 #  include "config.h"
 #endif
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int backlight_create(struct backlight **backlightp)

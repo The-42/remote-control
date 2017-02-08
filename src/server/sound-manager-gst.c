@@ -12,6 +12,7 @@
 
 #include <gst/gst.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #if GST_CHECK_VERSION(1, 0, 0)

@@ -16,6 +16,7 @@
 #include <vlc/vlc.h>
 #include <vlc/libvlc_version.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "guri.h"
 

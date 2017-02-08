@@ -15,6 +15,7 @@
 #include <X11/Xlib.h>
 #include <poll.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #define CURSOR_MOVEMENT_SLEEP 100000

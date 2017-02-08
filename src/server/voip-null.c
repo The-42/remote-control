@@ -10,9 +10,10 @@
 #  include "config.h"
 #endif
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
-int voip_create(struct voip **voipp, struct remote_control *rc,
+int voip_create(struct voip **voipp, struct rpc_server *server,
 		GKeyFile *config)
 {
 	return 0;

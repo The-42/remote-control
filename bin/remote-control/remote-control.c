@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include <X11/Xlib.h>
+#include <librpc.h>
 #include <glib.h>
 #include <glib-unix.h>
 #include <gio/gio.h>

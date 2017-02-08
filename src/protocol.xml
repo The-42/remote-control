@@ -1,0 +1,297 @@
+<?xml version="1.0"?>
+<interface name="de.avionic-design.RemoteControl" prefix="rpc_">
+	<types>
+		<!-- audio -->
+		<enum name="audio_state" mnemonic="u32">
+			<value name="AUDIO_STATE_UNKNOWN" value="-1"/>
+			<value name="AUDIO_STATE_INACTIVE" value="0"/>
+			<value name="AUDIO_STATE_HIFI_PLAYBACK_SPEAKER" value="10"/>
+			<value name="AUDIO_STATE_HIFI_PLAYBACK_HEADSET"/>
+			<value name="AUDIO_STATE_VOICECALL_HANDSET" value="20"/>
+			<value name="AUDIO_STATE_VOICECALL_HEADSET"/>
+			<value name="AUDIO_STATE_VOICECALL_SPEAKER"/>
+			<value name="AUDIO_STATE_VOICECALL_IP_HANDSET" value="30"/>
+			<value name="AUDIO_STATE_VOICECALL_IP_HEADSET"/>
+			<value name="AUDIO_STATE_VOICECALL_IP_SPEAKER"/>
+			<value name="AUDIO_STATE_LINEIN_SPEAKER" value="40"/>
+			<value name="AUDIO_STATE_LINEIN_HEADSET"/>
+			<value name="AUDIO_STATE_MAX"/>
+		</enum>
+		<enum name="mixer_control" mnemonic="u32">
+			<description short="audio control"/>
+			<value name="MIXER_CONTROL_UNKNOWN" value="0"/>
+			<value name="MIXER_CONTROL_PLAYBACK_MASTER"/>
+			<value name="MIXER_CONTROL_PLAYBACK_PCM"/>
+			<value name="MIXER_CONTROL_PLAYBACK_HEADSET"/>
+			<value name="MIXER_CONTROL_PLAYBACK_SPEAKER"/>
+			<value name="MIXER_CONTROL_PLAYBACK_HANDSET"/>
+			<value name="MIXER_CONTROL_CAPTURE_MASTER"/>
+			<value name="MIXER_CONTROL_CAPTURE_HEADSET"/>
+			<value name="MIXER_CONTROL_CAPTURE_HANDSET"/>
+			<value name="MIXER_CONTROL_CAPTURE_LINE"/>
+			<value name="MIXER_CONTROL_MAX"/>
+		</enum>
+		<enum name="mixer_input_source" mnemonic="u32">
+			<description short="audio input source"/>
+			<value name="MIXER_INPUT_SOURCE_UNKNOWN" value="0"/>
+			<value name="MIXER_INPUT_SOURCE_HEADSET"/>
+			<value name="MIXER_INPUT_SOURCE_HANDSET"/>
+			<value name="MIXER_INPUT_SOURCE_LINE"/>
+			<value name="MIXER_INPUT_SOURCE_MAX"/>
+		</enum>
+		<!-- Integrated Circuit Card (ICC) -->
+		<enum name="card_type" mnemonic="u32">
+			<value name="CARD_TYPE_NONE" VALUE="100"/>
+			<value name="CARD_TYPE_UNKNOWN"/>
+			<value name="CARD_TYPE_SERIAL"/>
+			<value name="CARD_TYPE_T0"/>
+			<value name="CARD_TYPE_T1"/>
+			<value name="CARD_TYPE_I2C"/>
+			<value name="CARD_TYPE_SLE4418"/>
+			<value name="CARD_TYPE_SLE4428"/>
+			<value name="CARD_TYPE_SLE4432"/>
+			<value name="CARD_TYPE_SLE4442"/>
+		</enum>
+		<!-- IRQ -->
+		<enum name="irq_source" mnemonic="u32">
+			<value name="IRQ_SOURCE_UNKNOWN"/>
+			<value name="IRQ_SOURCE_HOOK"/>
+			<value name="IRQ_SOURCE_CARD"/>
+			<value name="IRQ_SOURCE_VOIP"/>
+			<value name="IRQ_SOURCE_IO"/>
+			<value name="IRQ_SOURCE_HANDSET"/>
+		</enum>
+		<struct name="voip_account">
+			<field name="port" type="uint16_t"/>
+			<field name="username" type="string"/>
+			<field name="password" type="string"/>
+			<field name="server" type="string"/>
+		</struct>
+	</types>
+	<functions>
+		<!-- audio -->
+		<func name="audio_set_state" returns="int32_t" opcode="100">
+			<arg name="state" type="audio_state" mode="in"/>
+			<arg name="force" type="bool" mode="in"/>
+		</func>
+		<func name="audio_get_state" returns="int32_t" opcode="101">
+			<arg name="state" type="audio_state" mode="out"/>
+		</func>
+		<func name="audio_set_volume" returns="int32_t" opcode="102">
+			<arg name="volume" type="uint8_t" mode="in"/>
+		</func>
+		<func name="audio_get_volume" returns="int32_t" opcode="103">
+			<arg name="volume" type="uint8_t" mode="out"/>
+		</func>
+		<func name="audio_enable_speakers" returns="int32_t" opcode="104">
+			<arg name="enable" type="bool" mode="in"/>
+		</func>
+		<func name="audio_speakers_enabled" returns="int32_t" opcode="105">
+			<arg name="enable" type="bool" mode="out"/>
+		</func>
+		<func name="audio_call_function" returns="int32_t" opcode="106">
+			<arg name="opcode" type="uint32_t" mode="in"/>
+			<arg name="param" type="uint16_t" mode="in"/>
+		</func>
+		<!-- audio mixer -->
+		<func name="mixer_set_volume" returns="int32_t" opcode="150">
+			<arg name="control" type="mixer_control" mode="in"/>
+			<arg name="volume" type="uint8_t" mode="in"/>
+		</func>
+		<func name="mixer_get_volume" returns="int32_t" opcode="151">
+			<arg name="control" type="mixer_control" mode="in"/>
+			<arg name="volume" type="uint8_t" mode="out"/>
+		</func>
+		<func name="mixer_set_mute" returns="int32_t" opcode="152">
+			<arg name="control" type="mixer_control" mode="in"/>
+			<arg name="mute" type="bool" mode="in"/>
+		</func>
+		<func name="mixer_is_muted" returns="int32_t" opcode="153">
+			<arg name="control" type="mixer_control" mode="in"/>
+			<arg name="mute" type="bool" mode="out"/>
+		</func>
+		<func name="mixer_set_input_source" returns="int32_t" opcode="154">
+			<arg name="source" type="mixer_input_source" mode="in"/>
+		</func>
+		<func name="mixer_get_input_source" returns="int32_t" opcode="155">
+			<arg name="source" type="mixer_input_source" mode="out"/>
+		</func>
+		<func name="mixer_loopback_enable" returns="int32_t" opcode="156">
+			<arg name="enable" type="bool" mode="in"/>
+		</func>
+		<func name="mixer_loopback_is_enabled" returns="int32_t" opcode="157">
+			<arg name="enabled" type="bool" mode="out"/>
+		</func>
+		<!-- backlight -->
+		<func name="backlight_enable" returns="int32_t" opcode="200">
+			<arg name="flags" type="uint32_t" mode="in"/>
+		</func>
+		<func name="backlight_set" returns="int32_t" opcode="201">
+			<arg name="brightness" type="uint8_t" mode="in"/>
+		</func>
+		<func name="backlight_get" returns="int32_t" opcode="202">
+			<arg name="brightness" type="uint8_t" mode="out"/>
+		</func>
+		<!-- Integrated Circuit Card (ICC) -->
+		<func name="card_get_type" returns="int32_t" opcode="300">
+			<arg name="type" type="card_type" mode="out"/>
+		</func>
+		<func name="card_read" returns="int32_t" opcode="301">
+			<arg name="offset" type="off_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<func name="card_write" returns="int32_t" opcode="302">
+			<arg name="offset" type="off_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<!-- ADMP -->
+		<func name="media_player_start" returns="int32_t" opcode="500"/>
+		<func name="media_player_stop" returns="int32_t" opcode="501"/>
+		<func name="media_player_is_running" returns="int32_t" opcode="502">
+			<arg name="running" type="bool" mode="out"/>
+		</func>
+		<func name="media_player_set_stream" returns="int32_t" opcode="503">
+			<arg name="url" type="const char *" mode="in"/>
+		</func>
+		<func name="media_player_get_stream" returns="int32_t" opcode="504">
+			<arg name="url" type="char *" mode="out"/>
+		</func>
+		<func name="media_player_set_output_window" returns="int32_t" opcode="505">
+			<arg name="x" type="uint16_t" mode="in"/>
+			<arg name="y" type="uint16_t" mode="in"/>
+			<arg name="width" type="uint16_t" mode="in"/>
+			<arg name="height" type="uint16_t" mode="in"/>
+		</func>
+		<func name="media_player_pause" returns="int32_t" opcode="506"/>
+		<func name="media_player_resume" returns="int32_t" opcode="507"/>
+		<func name="media_player_get_duration" returns="int32_t" opcode="508">
+			<arg name="duration" type="uint32_t" mode="out"/>
+		</func>
+		<func name="media_player_get_position" returns="int32_t" opcode="509">
+			<arg name="position" type="uint32_t" mode="out"/>
+		</func>
+		<func name="media_player_set_position" returns="int32_t" opcode="510">
+			<arg name="position" type="uint32_t" mode="in"/>
+		</func>
+		<func name="media_player_set_crop" returns="int32_t" opcode="511">
+			<arg name="left" type="uint16_t" mode="in"/>
+			<arg name="right" type="uint16_t" mode="in"/>
+			<arg name="top" type="uint16_t" mode="in"/>
+			<arg name="bottom" type="uint16_t" mode="in"/>
+		</func>
+		<!-- VOIP -->
+		<func name="voip_get_version" returns="int32_t" opcode="700">
+			<arg name="version" type="uint32_t" mode="out"/>
+		</func>
+		<func name="voip_get_status" returns="int32_t" opcode="701">
+			<arg name="status" type="uint32_t" mode="out"/>
+		</func>
+		<func name="voip_get_status_string" returns="int32_t" opcode="702">
+			<arg name="status" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="char *" mode="out"/>
+		</func>
+		<!-- this is currently completely fucked up -->
+		<func name="voip_login" returns="int32_t" opcode="703">
+			<arg name="options" type="buffer" mode="inout"/>
+		</func>
+		<!--
+		<func name="voip_login" returns="int32_t" opcode="703">
+			<arg name="account" type="voip_account" mode="in"/>
+		</func>
+		-->
+		<func name="voip_logout" returns="int32_t" opcode="704"/>
+		<func name="voip_still_logged_in" returns="int32_t" opcode="705">
+			<arg name="status" type="bool" mode="out"/>
+		</func>
+		<func name="voip_connect_to" returns="int32_t" opcode="706">
+			<arg name="uri" type="const char *" mode="in"/>
+		</func>
+		<func name="voip_accept_incoming" returns="int32_t" opcode="707">
+			<arg name="uri" type="char *" mode="out"/>
+		</func>
+		<func name="voip_disconnect" returns="int32_t" opcode="708"/>
+		<func name="voip_is_connected" returns="int32_t" opcode="709">
+			<arg name="state" type="bool" mode="out"/>
+		</func>
+		<func name="voip_is_calling" returns="int32_t" opcode="710">
+			<arg name="state" type="bool" mode="out"/>
+		</func>
+		<func name="voip_get_last_contact" returns="int32_t" opcode="711">
+			<arg name="contact" type="char *" mode="out"/>
+		</func>
+		<func name="voip_dial" returns="int32_t" opcode="712">
+			<arg name="dtmf" type="int8_t" mode="in"/>
+		</func>
+		<!-- miscellaneous -->
+		<func name="reset" returns="int32_t" opcode="800"/>
+		<!-- IRQ functions -->
+		<func name="irq_enable" returns="int32_t" opcode="900">
+			<arg name="virtkey" type="uint8_t" mode="in"/>
+		</func>
+		<func name="irq_get_mask" returns="int32_t" opcode="901">
+			<arg name="mask" type="uint32_t" mode="out"/>
+		</func>
+		<func name="irq_get_info" returns="int32_t" opcode="902">
+			<arg name="source" type="irq_source" mode="in"/>
+			<arg name="info" type="uint32_t" mode="out"/>
+		</func>
+		<!-- network functions -->
+		<func name="net_config" returns="int32_t" opcode="1000">
+			<arg name="port" type="uint32_t" mode="in"/>
+			<arg name="timeout" type="uint32_t" mode="in"/>
+			<arg name="repeat" type="uint32_t" mode="in"/>
+			<arg name="host" type="const char *" mode="in"/>
+		</func>
+		<func name="net_read" returns="int32_t" opcode="1001">
+			<arg name="mode" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<func name="net_write" returns="int32_t" opcode="1002">
+			<arg name="mode" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<!-- sound functions -->
+		<func name="sound_play_async" returns="int32_t" opcode="1100">
+			<arg name="filename" type="const char *" mode="in"/>
+		</func>
+		<func name="sound_play_sync" returns="int32_t" opcode="1101">
+			<arg name="filename" type="const char *" mode="in"/>
+		</func>
+		<!-- media functions -->
+		<func name="sound_play" returns="int32_t" opcode="1200">
+			<arg name="uri" type="const char *" mode="in"/>
+		</func>
+		<func name="sound_stop" returns="int32_t" opcode="1202" />
+		<func name="media_command" returns="int32_t" opcode="1201">
+			<arg name="command" type="uint32_t" mode="in"/>
+			<arg name="p1" type="int32_t" mode="in"/>
+			<arg name="p2" type="const char *" mode="in"/>
+		</func>
+		<!-- LLDP functions -->
+		<func name="lldp_enable" returns="int32_t" opcode="1300">
+			<arg name="enable" type="bool" mode="in"/>
+		</func>
+		<func name="lldp_read" returns="int32_t" opcode="1301">
+			<arg name="mode" type="uint32_t" mode="in"/>
+			<arg name="buffer" type="buffer" mode="inout"/>
+		</func>
+		<!-- Task Manager -->
+		<func name="task_manager_exec" returns="int32_t" opcode="1400">
+			<arg name="command_line" type="const char *" mode="in"/>
+		</func>
+		<func name="task_manager_kill" returns="int32_t" opcode="1401">
+			<arg name="pid" type="int32_t" mode="in"/>
+			<arg name="sig" type="int32_t" mode="in"/>
+		</func>
+	</functions>
+	<events>
+		<event name="card_event" opcode="10300">
+			<param name="type" type="uint32_t"/>
+		</event>
+		<event name="irq_event" opcode="10900">
+			<param name="type" type="uint32_t"/>
+		</event>
+	</events>
+</interface>
+
+<!-- vim: set sts=4 sw=4 ts=4: -->

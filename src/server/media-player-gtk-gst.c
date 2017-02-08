@@ -64,6 +64,7 @@ typedef enum {
 	GST_PLAY_FLAG_DOWNLOAD | GST_PLAY_FLAG_BUFFERING | \
 	GST_PLAY_FLAG_DEINTERLACE)
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #define SCALE_PREVIEW    0

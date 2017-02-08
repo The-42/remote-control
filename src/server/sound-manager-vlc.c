@@ -12,6 +12,7 @@
 
 #include <vlc/vlc.h>
 
+#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct sound_manager {
