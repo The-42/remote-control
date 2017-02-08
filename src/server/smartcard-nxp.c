@@ -296,11 +296,11 @@ static int sc_transmit(int fd, uint8_t cmd, uint8_t *buf, int payload_len)
 	return ret == payload_len + 5 ? 0 : ret < 0 ? ret : -EIO;
 }
 
-static void sc_wake_up(int fd)
+static int sc_wake_up(int fd)
 {
 	uint8_t buf[] = { 0xAA };
 
-	write(fd, buf, sizeof(buf));
+	return write(fd, buf, sizeof(buf));
 }
 
 static void nxp_fire_event(struct smartcard *smartcard, gboolean inserted)
