@@ -384,7 +384,7 @@ AC_CONFIG_FILES([
 	Makefile
 	src/common/Makefile
 	src/Makefile
-	src/lib/Makefile
+	src/server/Makefile
 	tests/Makefile
 ])
 

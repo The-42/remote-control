@@ -1,3 +1,3 @@
 SUBDIRS = \
 	common \
-	lib
+	server
