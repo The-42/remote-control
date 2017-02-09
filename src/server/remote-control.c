@@ -360,7 +360,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	g_source_add_child_source(rc->source, source);
 	g_source_unref(source);
 
-	err = event_manager_create(&rc->event_manager);
+	err = event_manager_create(&rc->event_manager, server);
 	if (err < 0) {
 		g_critical("event_manager_create(): %s", strerror(-err));
 		return err;
