@@ -32,6 +32,7 @@ libremote_control_la_SOURCES = \
 	media.c \
 	media-player.c \
 	mixer.c \
+	modem.c \
 	net.c \
 	net-unix.c \
 	remote-control.c \
@@ -162,6 +163,14 @@ libremote_control_la_LIBADD += @LIBXML2_LIBS@
 else
 libremote_control_la_SOURCES += smartcard-info-null.c
 endif # ENABLE_SMARTCARD_INFO
+
+if ENABLE_LIBMODEM
+libremote_control_la_CFLAGS += @LIBMODEM_CFLAGS@
+libremote_control_la_LIBADD += @LIBMODEM_LIBS@
+libremote_control_la_SOURCES += modem-manager-libmodem.c
+else
+libremote_control_la_SOURCES += modem-manager-null.c
+endif # ENABLE_LIBMODEM
 
 if ENABLE_LIBPTIP
 libremote_control_la_CFLAGS += @LIBPTIP_CFLAGS@

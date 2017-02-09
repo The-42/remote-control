@@ -28,6 +28,7 @@ extern struct javascript_module javascript_audio;
 extern struct javascript_module javascript_audio_player;
 extern struct javascript_module javascript_backlight;
 extern struct javascript_module javascript_media_player;
+extern struct javascript_module javascript_modem;
 extern struct javascript_module javascript_voip;
 extern struct javascript_module javascript_output;
 extern struct javascript_module javascript_smartcard;
@@ -54,6 +55,7 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_audio_player,
 	&javascript_backlight,
 	&javascript_media_player,
+	&javascript_modem,
 	&javascript_voip,
 	&javascript_output,
 	&javascript_smartcard,

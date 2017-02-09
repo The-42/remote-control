@@ -22,6 +22,7 @@ enum {
 	IRQ_SMARTCARD,
 	IRQ_VOIP,
 	IRQ_IO,
+	IRQ_MODEM,
 	IRQ_HANDSET,
 };
 
@@ -55,6 +56,9 @@ int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 	ret = event_manager_get_status(manager, &status);
 	g_debug("  event_manager_get_status(): %d", ret);
 	g_debug("  status: %08x", status);
+
+	if (status & BIT(EVENT_SOURCE_MODEM))
+		*mask |= BIT(IRQ_MODEM);
 
 	if (status & BIT(EVENT_SOURCE_VOIP))
 		*mask |= BIT(IRQ_VOIP);
@@ -224,6 +228,39 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 
 	case RPC_MACRO(IRQ_SOURCE_IO):
 		g_debug("  IRQ_SOURCE_IO");
+		break;
+
+	case RPC_MACRO(IRQ_SOURCE_MODEM):
+		g_debug("  IRQ_SOURCE_MODEM");
+		event.source = EVENT_SOURCE_MODEM;
+
+		err = event_manager_get_source_state(manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		switch (event.modem.state) {
+		case EVENT_MODEM_STATE_RINGING:
+			*info = 7;
+			break;
+
+		case EVENT_MODEM_STATE_CONNECTED:
+			*info = 3;
+			break;
+
+		case EVENT_MODEM_STATE_DISCONNECTED:
+			*info = 4;
+			break;
+
+		case EVENT_MODEM_STATE_ERROR:
+			*info = -10;
+			break;
+
+		default:
+			ret = -ENXIO;
+			break;
+		}
 		break;
 
 	case RPC_MACRO(IRQ_SOURCE_HANDSET):
