@@ -52,6 +52,17 @@
 			<value name="CARD_TYPE_SLE4432"/>
 			<value name="CARD_TYPE_SLE4442"/>
 		</enum>
+		<!-- Tuner -->
+		<enum name="tuner_source" mnemonic="u32">
+			<value name="TUNER_SOURCE_FM"/>
+			<value name="TUNER_SOURCE_TV_PAL"/>
+			<value name="TUNER_SOURCE_TV_SECAM_I"/>
+		</enum>
+		<enum name="tuner_channel" mnemonic="u32">
+			<value name="TUNER_CHANNEL_OFF"/>
+			<value name="TUNER_CHANNEL_AUX"/>
+			<value name="TUNER_CHANNEL_TV"/>
+		</enum>
 		<!-- IRQ -->
 		<enum name="irq_source" mnemonic="u32">
 			<value name="IRQ_SOURCE_UNKNOWN"/>
@@ -185,6 +196,22 @@
 			<arg name="right" type="uint16_t" mode="in"/>
 			<arg name="top" type="uint16_t" mode="in"/>
 			<arg name="bottom" type="uint16_t" mode="in"/>
+		</func>
+		<!-- Tuner -->
+		<func name="tuner_set_output_window" returns="int32_t" opcode="600">
+			<arg name="x" type="uint16_t" mode="in"/>
+			<arg name="y" type="uint16_t" mode="in"/>
+			<arg name="width" type="uint16_t" mode="in"/>
+			<arg name="height" type="uint16_t" mode="in"/>
+		</func>
+		<func name="tuner_set_output_channel" returns="int32_t" opcode="601">
+			<arg name="channel" type="tuner_channel" mode="in"/>
+		</func>
+		<func name="tuner_set_source" returns="int32_t" opcode="602">
+			<arg name="source" type="tuner_source" mode="in"/>
+		</func>
+		<func name="tuner_set_frequency" returns="int32_t" opcode="603">
+			<arg name="frequency" type="uint32_t" mode="in"/>
 		</func>
 		<!-- VOIP -->
 		<func name="voip_get_version" returns="int32_t" opcode="700">

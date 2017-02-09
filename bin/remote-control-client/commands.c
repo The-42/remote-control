@@ -1141,6 +1141,41 @@ const struct cli_command_info cmd_voip_dtmf _command_ = {
 };
 
 /*
+ * "tuner-frequency" command
+ */
+static int exec_tuner_frequency(struct cli *cli, int argc, char *argv[])
+{
+	unsigned long frequency;
+	char *end = NULL;
+	int err;
+
+	if (argc < 2)
+		return -EINVAL;
+
+	frequency = strtoul(argv[1], &end, 0);
+	if (end == argv[1]) {
+		printf("%s\n", strerror(errno));
+		return -EINVAL;
+	}
+
+	err = remote_tuner_set_frequency(cli->client, frequency);
+	if (err < 0) {
+		printf("%s\n", strerror(-err));
+		return err;
+	}
+
+	return 0;
+}
+
+const struct cli_command_info cmd_tuner_frequency _command_ = {
+	.name = "tuner-frequency",
+	.summary = "set the tuner frequency",
+	.help = NULL,
+	.options = NULL,
+	.exec = exec_tuner_frequency,
+};
+
+/*
  * "handset-display-clear" command
  */
 static int exec_handset_display_clear(struct cli *cli, int argc, char *argv[])

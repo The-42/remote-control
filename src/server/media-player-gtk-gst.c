@@ -1410,6 +1410,21 @@ void media_player_parse_uri_options(struct media_player *player, const char **ur
 			player->http_proxy = g_strdup(proxy);
 			g_debug("  select http-proxy for stream: %s",
 				player->http_proxy);
+		} else if (g_ascii_strncasecmp(*uri_options, "standard=", 9) == 0) {
+			const gchar *standard = g_strrstr(*uri_options, "=") + 1;
+			g_debug("  select v4l input standard: %s", standard);
+			tuner_set_standard(NULL, standard);
+		} else if (g_ascii_strncasecmp(*uri_options, "input=", 6) == 0) {
+			const gchar *input_str = g_strrstr(*uri_options, "=") + 1;
+			const gint64 input = g_ascii_strtoll(input_str, NULL, 10);
+			g_debug("  select v4l input: %lld", input);
+			tuner_set_input(NULL, input);
+		} else if (g_ascii_strncasecmp(*uri_options, "tuner-frequency=", 16) == 0) {
+			const gchar *frequency_str = g_strrstr(*uri_options, "=") + 1;
+			const gint64 frequency = g_ascii_strtoll(frequency_str, NULL, 10);
+			g_debug("  select v4l input frequency: %lld", frequency);
+			tuner_set_frequency(NULL, frequency);
+			player->v4l_frequency = frequency * 1000;
 		}
 		uri_options++;
 	}

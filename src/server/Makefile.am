@@ -40,6 +40,8 @@ libremote_control_la_SOURCES = \
 	sound.c \
 	system.c \
 	task-manager.c \
+	tuner.c \
+	tuner-v4l2.c \
 	usb-handset.c \
 	utils.c \
 	voip.c
@@ -210,6 +212,11 @@ BUILT_SOURCES = \
 	remote-control-stub.h \
 	gtkosk-dbus.c \
 	gtkosk-dbus.h
+
+if ENABLE_LIBTNJ3324
+libremote_control_la_CFLAGS += @LIBTNJ3324_CFLAGS@
+libremote_control_la_LIBADD += @LIBTNJ3324_LIBS@
+endif
 
 CLEANFILES = \
 	$(BUILT_SOURCES)
