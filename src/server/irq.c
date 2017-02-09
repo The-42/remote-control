@@ -20,6 +20,7 @@
 enum {
 	IRQ_HOOK,
 	IRQ_SMARTCARD,
+	IRQ_VOIP,
 };
 
 int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
@@ -52,6 +53,9 @@ int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 	ret = event_manager_get_status(manager, &status);
 	g_debug("  event_manager_get_status(): %d", ret);
 	g_debug("  status: %08x", status);
+
+	if (status & BIT(EVENT_SOURCE_VOIP))
+		*mask |= BIT(IRQ_VOIP);
 
 	if (status & BIT(EVENT_SOURCE_SMARTCARD))
 		*mask |= BIT(IRQ_SMARTCARD);
@@ -124,6 +128,87 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 
 		case EVENT_SMARTCARD_STATE_REMOVED:
 			*info = 0;
+			break;
+
+		default:
+			ret = -ENXIO;
+			break;
+		}
+		break;
+
+	case RPC_MACRO(IRQ_SOURCE_VOIP):
+		g_debug("  IRQ_SOURCE_VOIP");
+		event.source = EVENT_SOURCE_VOIP;
+
+		err = event_manager_get_source_state(manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		switch (event.voip.state) {
+		case EVENT_VOIP_STATE_IDLE:
+			g_debug("    EVENT_VOIP_STATE_IDLE");
+			*info = 0; /* VOIP_EVT_IDLE */
+			break;
+
+		case EVENT_VOIP_STATE_LOGGED_ON:
+			g_debug("    EVENT_VOIP_STATE_LOGGED_ON");
+			*info = 1; /* VOIP_EVT_LOGON */
+			break;
+
+		case EVENT_VOIP_STATE_LOGGED_OFF:
+			g_debug("    EVENT_VOIP_STATE_LOGGED_OFF");
+			*info = 2; /* VOIP_EVT_LOGOFF */
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING");
+			*info = 5; /* VOIP_EVT_TRYING */
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING_CONNECTED:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING_CONNECTED");
+			*info = 3; /* VOIP_EVT_CONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING_DISCONNECTED:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING_DISCONNECTED");
+			*info = 4; /* VOIP_EVT_DISCONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING:
+			g_debug("    EVENT_VOIP_STATE_INCOMING");
+			*info = 7; /* VOIP_EVT_INCOMMING [sic] */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_CONNECTED:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_CONNECTED");
+			*info = 3; /* VOIP_EVT_CONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_DISCONNECTED:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_DISCONNECTED");
+			*info = 4; /* VOIP_EVT_DISCONNECT */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_MISSED:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_MISSED");
+			*info = 8; /* VOIP_EVT_MISSEDCALL */
+			break;
+
+		case EVENT_VOIP_STATE_ERROR_USER_BUSY:
+			*info = 9; /* VOIP_EVT_OUT_RINGING -> used as user busy*/
+			break;
+
+		case EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA:
+			g_debug("    EVENT_VOIP_STATE_OUTGOING_EARLYMEDIA");
+			*info = 10; /* undefined under windows ce */
+			break;
+
+		case EVENT_VOIP_STATE_INCOMING_EARLYMEDIA:
+			g_debug("    EVENT_VOIP_STATE_INCOMING_EARLYMEDIA");
+			*info = 11; /* undefined under windows ce */
 			break;
 
 		default:

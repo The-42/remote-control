@@ -73,6 +73,7 @@ enum remote_irq_source {
 	REMOTE_IRQ_SOURCE_UNKNOWN,
 	REMOTE_IRQ_SOURCE_HOOK,
 	REMOTE_IRQ_SOURCE_SMARTCARD,
+	REMOTE_IRQ_SOURCE_VOIP,
 	REMOTE_IRQ_SOURCE_MAX
 };
 
@@ -85,6 +86,7 @@ struct remote_voip_account {
 
 enum remote_event {
 	REMOTE_EVENT_CARD,
+	REMOTE_EVENT_VOIP,
 	REMOTE_EVENT_MAX,
 };
 

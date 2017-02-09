@@ -1148,6 +1148,7 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 	static enum remote_irq_source sources[] = {
 		REMOTE_IRQ_SOURCE_HOOK,
 		REMOTE_IRQ_SOURCE_SMARTCARD,
+		REMOTE_IRQ_SOURCE_VOIP,
 	};
 	uint32_t mask = 0;
 	unsigned int i;
@@ -1177,6 +1178,10 @@ static int exec_irq_poll(struct cli *cli, int argc, char *argv[])
 
 			case REMOTE_IRQ_SOURCE_SMARTCARD:
 				fprintf(stderr, "SMARTCARD\n");
+				break;
+
+			case REMOTE_IRQ_SOURCE_VOIP:
+				fprintf(stderr, "VOIP\n");
 				break;
 			}
 
