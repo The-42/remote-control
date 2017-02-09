@@ -21,6 +21,7 @@ enum {
 	IRQ_HOOK,
 	IRQ_SMARTCARD,
 	IRQ_VOIP,
+	IRQ_HANDSET,
 };
 
 int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
@@ -62,6 +63,9 @@ int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 
 	if (status & BIT(EVENT_SOURCE_HOOK))
 		*mask |= BIT(IRQ_HOOK);
+
+	if (status & BIT(EVENT_SOURCE_HANDSET))
+		*mask |= BIT(IRQ_HANDSET);
 
 out:
 	g_debug("< %s() = %d", __func__, ret);
@@ -215,6 +219,23 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 			ret = -ENXIO;
 			break;
 		}
+		break;
+
+	case RPC_MACRO(IRQ_SOURCE_HANDSET):
+		g_debug("  IRQ_SOURCE_HANDSET");
+		event.source = EVENT_SOURCE_HANDSET;
+
+		err = event_manager_get_source_state(manager, &event);
+		if (err < 0) {
+			ret = err;
+			break;
+		}
+
+		*info = event.handset.keycode & 0xffff;
+
+		if (event.handset.pressed)
+			*info |= (1 << 16);
+
 		break;
 
 	default:

@@ -25,6 +25,8 @@ struct event_manager {
 	enum event_smartcard_state smartcard_state;
 	enum event_hook_state hook_state;
 
+	GQueue *handset_events;
+
 	event_manager_event_cb event_cb;
 	void *event_cb_data;
 	void *event_cb_owner;
@@ -34,6 +36,7 @@ int event_manager_create(struct event_manager **managerp,
 		struct rpc_server *server)
 {
 	struct event_manager *manager;
+	int err = 0;
 
 	if (!managerp || !server)
 		return -EINVAL;
@@ -49,8 +52,19 @@ int event_manager_create(struct event_manager **managerp,
 	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
 	manager->hook_state = EVENT_HOOK_STATE_ON;
 
+	manager->handset_events = g_queue_new();
+	if (!manager->handset_events) {
+		err = -ENOMEM;
+		goto free;
+	}
+
 	*managerp = manager;
 	return 0;
+
+free:
+	g_queue_free(manager->handset_events);
+	g_free(manager);
+	return err;
 }
 
 int event_manager_free(struct event_manager *manager)
@@ -58,6 +72,7 @@ int event_manager_free(struct event_manager *manager)
 	if (!manager)
 		return -EINVAL;
 
+	g_queue_free(manager->handset_events);
 	g_free(manager);
 	return 0;
 }
@@ -65,6 +80,7 @@ int event_manager_free(struct event_manager *manager)
 int event_manager_report(struct event_manager *manager, struct event *event)
 {
 	uint32_t irq_status = 0;
+	gpointer item;
 	int ret = 0;
 
 	if (manager->event_cb)
@@ -88,6 +104,18 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 				event->hook.state, ret);
 		manager->hook_state = event->hook.state;
 		irq_status |= BIT(EVENT_SOURCE_HOOK);
+		break;
+
+	case EVENT_SOURCE_HANDSET:
+		item = g_new(struct event_handset, 1);
+		if (!item) {
+			ret = -ENOMEM;
+			goto out;
+		}
+
+		memcpy(item, &event->handset, sizeof(event->handset));
+		g_queue_push_tail(manager->handset_events, item);
+		irq_status |= BIT(EVENT_SOURCE_HANDSET);
 		break;
 
 	default:
@@ -120,6 +148,7 @@ int event_manager_get_status(struct event_manager *manager, uint32_t *statusp)
 int event_manager_get_source_state(struct event_manager *manager, struct event *event)
 {
 	uint32_t irq_status;
+	gpointer item;
 	int err = 0;
 
 	if (!manager || !event)
@@ -141,6 +170,20 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 	case EVENT_SOURCE_HOOK:
 		event->hook.state = manager->hook_state;
 		irq_status &= ~BIT(EVENT_SOURCE_HOOK);
+		break;
+
+	case EVENT_SOURCE_HANDSET:
+		item = g_queue_pop_head(manager->handset_events);
+		if (item) {
+			memcpy(&event->handset, item, sizeof(event->handset));
+			g_free(item);
+		} else {
+			err = -ENODATA;
+		}
+
+		if (g_queue_is_empty(manager->handset_events))
+			irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
+
 		break;
 
 	default:
