@@ -85,6 +85,9 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	gpointer item;
 	int ret = 0;
 
+	if (!manager || !event)
+		return -EINVAL;
+
 	if (manager->event_cb)
 		ret = manager->event_cb(manager->event_cb_data, event);
 
