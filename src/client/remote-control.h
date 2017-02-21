@@ -12,17 +12,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#  define remote_public __declspec(dllexport)
-#  define remote_private
+#if __GNUC__ >= 4
+#  define remote_public __attribute__((visibility("default")))
+#  define remote_private __attribute__((visibility("hidden")))
 #else
-#  if __GNUC__ >= 4
-#    define remote_public __attribute__((visibility("default")))
-#    define remote_private __attribute__((visibility("hidden")))
-#  else
-#    define remote_public
-#    define remote_private
-#  endif
+#  define remote_public
+#  define remote_private
 #endif
 
 enum remote_audio_state {
