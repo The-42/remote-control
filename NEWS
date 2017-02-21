@@ -174,7 +174,7 @@ Release 0.10.0 (2015-03-24)
   - Report all pending es changed events during dispatch
 
 * task-manager
-  - Also inherit DBUS Address enviroment variable
+  - Also inherit DBUS Address environment variable
 
 Release 0.9.14 (2015-02-03)
 ==========================
@@ -246,8 +246,8 @@ Release 0.9.6 (2014-09-29)
  - Add helpers to convert buffers
  - Rework the outputs config to allow multiple config files
  - Always prefix exception text with the function name
- - Add formating support when setting JS exception
- - Add helpers to create formated javascript strings
+ - Add formatting support when setting JS exception
+ - Add helpers to create formatted javascript strings
  - Signal state change errors in media-player
  - Return NULL when no URI is set
 

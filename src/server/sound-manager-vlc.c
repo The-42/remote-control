@@ -31,7 +31,7 @@ static void sound_manager_update_alsa_device(struct sound_manager *manager)
 	const char* device = "default";
 
 	if (audio_get_state(manager->audio, &state) < 0) {
-		g_warning("sound-manager: failed to recieve audio state");
+		g_warning("sound-manager: failed to receive audio state");
 		return;
 	}
 

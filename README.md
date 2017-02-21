@@ -25,7 +25,7 @@ used Windows CE instead. After switching from daylight openings to penguins,
 the RPC interface was gradually converted to a JavaScript extension for
 performance reasons. Especially in large networks saving the round-trip to the
 server for simple operations like changing the backlight brightness led to a
-noticable speed increase.
+noticeable speed increase.
 
 Since _remote-control_ v1.0.0 the conversion to JS is complete for every
 function required on current and future devices, dropping the dated RPC API in

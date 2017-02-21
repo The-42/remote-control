@@ -57,7 +57,7 @@ static void *alsaloop_thread(void *ptr)
 		aloop_set_option(loops[i], ALOOP_OPT_THREAD, opt);
 	}
 
-	/* aloop_run is blocking, return immediatly on errors but some spawned
+	/* aloop_run is blocking, return immediately on errors but some spawned
 	 * thread may be still running, "signaled" to exit but running. */
 	if (aloop_run(ctx) < 0)
 		g_warning("alsaloop: aloop_run failed");

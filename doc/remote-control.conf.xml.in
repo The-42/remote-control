@@ -361,7 +361,7 @@
 						<varlistentry>
 							<term><varname>preferred-languages</varname></term>
 							<listitem><para>
-								Specifies a colon seperated list of iso-639-2 language codes. The
+								Specifies a colon separated list of iso-639-2 language codes. The
 								media-player tries to select the best matching available audio
 								track. The first entry in the list has the highest priority.
 							</para></listitem>
@@ -427,7 +427,7 @@
 						<varlistentry>
 							<term><varname>expose</varname></term>
 							<listitem><para>
-								Colon seperated list of gpio offsets which are exposed as
+								Colon separated list of gpio offsets which are exposed as
 								gpios through the RPC interface. The absolute gpio address
 								of each exposed gpio is compute as base+exposed-gpio.
 							</para></listitem>

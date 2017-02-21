@@ -47,7 +47,7 @@ typedef enum {
 } GstPlayFlags;
 
 /* defined in OMX gstomx-walvideosink */
-#define NV_RENDER_TARGET_MIXER    0 /* prefered */
+#define NV_RENDER_TARGET_MIXER    0 /* preferred */
 #define NV_RENDER_TARGET_EGLIMAGE 1
 #define NV_RENDER_TARGET_OVERLAY  2 /* default */
 

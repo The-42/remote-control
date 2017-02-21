@@ -217,7 +217,7 @@ int parse_udev_match(const char *str, struct udev_match *match)
 	else if (!g_strcmp0(name, "TAG"))
 		type = UDEV_MATCH_TAG;
 	else {
-		g_warning("%s: udev match is unkown: %s", __func__, name);
+		g_warning("%s: udev match is unknown: %s", __func__, name);
 		goto on_error;
 	}
 

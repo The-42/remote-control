@@ -332,7 +332,7 @@ adblock_is_matched_by_key(const gchar* req_uri, const gchar* page_uri)
 		strncpy(sig, uri + pos, SIGNATURE_SIZE);
 		regex = g_hash_table_lookup(keys, sig);
 
-		/* Dont check if regex is already blacklisted */
+		/* Don't check if regex is already blacklisted */
 		if (!regex || g_list_find(regex_bl, regex))
 			continue;
 		ret = adblock_check_rule(regex, sig, req_uri, page_uri);
@@ -709,7 +709,7 @@ adblock_fixup_regexp(const gchar* prefix,
 	} while (*src);
 
 	len = str->len;
-	/* We dont need .* in the end of url. Thats stupid */
+	/* We don't need .* in the end of a url. That's stupid */
 	if (str->str && str->str[len-1] == '*' && str->str[len-2] == '.')
 		g_string_erase(str, len-2, 2);
 

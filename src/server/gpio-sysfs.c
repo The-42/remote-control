@@ -312,7 +312,7 @@ int gpio_backend_create(struct gpio_backend **backendp, struct event_manager *ev
 	}
 	free(syspath);
 
-	/* remove the hook from active mask, when usb handset is avaliable */
+	/* remove the hook from active mask when usb handset is available */
 	if (find_input_devices(USB_HANDSET_NAME, NULL, NULL)) {
 		g_debug("gpio-sysfs: found usb-handset, disabling HOOK event");
 		active_mask &= ~(1 << GPIO_HANDSET);
