@@ -21,6 +21,8 @@
 
 #define BIT(x) (1 << (x))
 
+struct remote_control;
+
 /**
  * event manager
  */
@@ -339,7 +341,7 @@ enum voip_state {
 typedef void(*voip_onstatechange_cb)(enum voip_state, void*);
 struct voip;
 
-int voip_create(struct voip **voipp, struct rpc_server *server,
+int voip_create(struct voip **voipp, struct remote_control *rc,
 		GKeyFile *config);
 int voip_free(struct voip *voip);
 GSource *voip_get_source(struct voip *voip);
@@ -501,8 +503,6 @@ int app_watchdog_trigger(struct app_watchdog *watchdog);
 /**
  * remote control
  */
-struct remote_control;
-
 int remote_control_create(struct remote_control **rcp, GKeyFile *config);
 GSource *remote_control_get_source(struct remote_control *rc);
 int remote_control_free(struct remote_control *rc);

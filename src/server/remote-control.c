@@ -417,7 +417,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		g_source_unref(source);
 	}
 
-	err = voip_create(&rc->voip, server, config);
+	err = voip_create(&rc->voip, rc, config);
 	if (err < 0) {
 		g_critical("voip_create(): %s", strerror(-err));
 		return err;
