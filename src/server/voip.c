@@ -59,26 +59,6 @@ int32_t RPC_IMPL(voip_get_status_string)(void *priv, uint32_t status, char **buf
 	return ret;
 }
 
-#if 0
-int32_t RPC_IMPL(voip_login)(void *priv, struct RPC_TYPE(voip_account) *account)
-{
-	struct remote_control *rc = priv;
-	int32_t ret;
-
-	g_debug("> %s(priv=%p, account=%p)", __func__, priv, account);
-	g_debug("  account:");
-	g_debug("    server: %s", account->server);
-	g_debug("    port: %u", account->port);
-	g_debug("    username: %s", account->username);
-	g_debug("    password: %s", account->password);
-
-	ret = voip_login(rc->voip, account->server, account->port,
-			account->username, account->password);
-
-	g_debug("< %s() = %d", __func__, ret);
-	return ret;
-}
-#else
 struct RPC_TYPE(voip_login_options) {
 	uint32_t server_ptr;
 	uint32_t auth;
@@ -122,7 +102,6 @@ out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
-#endif
 
 int32_t RPC_IMPL(voip_logout)(void *priv)
 {

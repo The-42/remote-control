@@ -116,24 +116,6 @@ static int player_xrandr_configure_screen(struct media_player *player,
                                           int width, int height, int rate);
 #endif
 
-#if 0
-static void player_dump(struct media_player *player)
-{
-	g_printf(" struct media_player:... %p\n", player);
-	if (!player)
-		return;
-
-	g_printf("   pipeline:............ %p\n", player->pipeline);
-	g_printf("   window:.............. %p\n", player->window);
-	g_printf("   xid:................. %d\n", (int)player->xid);
-	g_printf("   state:............... %d\n", player->state);
-	g_printf("   uri:................. [%s]\n", player->uri);
-	g_printf("   scale:............... %d\n", player->scale);
-	g_printf("   displaytype:......... %d\n", player->displaytype);
-	g_printf("   have_nv_omx:......... %d\n", player->have_nv_omx);
-}
-#endif
-
 static enum media_player_state player_gst_state_2_media_state(GstState state)
 {
 	switch (state) {

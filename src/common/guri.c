@@ -26,30 +26,6 @@ static inline void safe_free(gchar **ptr)
 	}
 }
 
-#if 0
-static const struct {
-	const gchar *scheme;
-	guint port;
-} default_ports[] = {
-	{ "ftp",    21 },
-	{ "ssh",    22 },
-	{ "http",   80 },
-	{ "https", 443 },
-	{ "ftps",  990 },
-};
-
-static guint g_uri_get_default_port(const gchar *scheme)
-{
-	guint i;
-
-	for (i = 0; i < G_N_ELEMENTS(default_ports); i++)
-		if (g_str_equal(scheme, default_ports[i].scheme))
-			return default_ports[i].port;
-
-	return 0;
-}
-#endif
-
 static void g_uri_init(GURI *uri)
 {
 }

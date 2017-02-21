@@ -15,27 +15,6 @@
 #include "remote-control-stub.h"
 #include "remote-control.h"
 
-#if 0
-int remote_voip_login(void *priv, struct remote_voip_account *account)
-{
-	struct rpc_client *rpc = rpc_client_from_priv(priv);
-	struct RPC_TYPE(voip_account) login;
-	int32_t ret = 0;
-	int err;
-
-	memset(&login, 0, sizeof(login));
-	login.server = account->proxy;
-	login.port = account->port;
-	login.username = account->username;
-	login.password = account->password;
-
-	err = RPC_STUB(voip_login)(rpc, &ret, &login);
-	if (err < 0)
-		return err;
-
-	return ret;
-}
-#else
 struct RPC_TYPE(voip_login_options) {
 	uint32_t server_ptr;
 	uint32_t auth;
@@ -77,7 +56,6 @@ out:
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
-#endif
 
 remote_public
 int remote_voip_logout(void *priv)
