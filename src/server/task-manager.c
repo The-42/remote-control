@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Avionic Design GmbH
+ * Copyright (C) 2011-2017 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -10,7 +10,6 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #include "gtkosk-dbus.h"
@@ -231,11 +230,6 @@ out:
 	return ret;
 }
 
-int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
-{
-	return task_manager_exec(priv, command_line, NULL, NULL);
-}
-
 int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig)
 {
 	struct task_manager *manager = remote_control_get_task_manager(priv);
@@ -260,9 +254,4 @@ int32_t task_manager_kill(void *priv, int32_t pid, int32_t sig)
 		gtk_osk_control_set_visible(manager->osk, FALSE);
 
 	return ret;
-}
-
-int32_t RPC_IMPL(task_manager_kill)(void *priv, int32_t pid, int32_t sig)
-{
-	return task_manager_kill(priv, pid, sig);
 }

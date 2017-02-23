@@ -41,6 +41,7 @@ libremote_control_la_SOURCES = \
 	sound.c \
 	system.c \
 	task-manager.c \
+	task-manager-rpc.c \
 	tuner.c \
 	tuner-v4l2.c \
 	usb-handset.c \
