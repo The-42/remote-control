@@ -21,7 +21,6 @@
 #include <netlink/route/route.h>
 #include <netlink/route/rtnl.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct nexthop_lookup_result {

@@ -22,7 +22,6 @@
 #define TNJ3324_DEFAULT_I2CBUS 0
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "guri.h"
 

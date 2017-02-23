@@ -10,7 +10,6 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int smartcard_read_info(struct smartcard *smartcard,

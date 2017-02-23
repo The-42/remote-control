@@ -14,7 +14,6 @@
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 static const char V4L2_DEVICE[] = "/dev/video0";

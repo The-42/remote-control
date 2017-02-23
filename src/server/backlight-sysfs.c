@@ -15,7 +15,6 @@
 
 #include <linux/fb.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #define SYSFS_PATH "/sys"

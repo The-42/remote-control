@@ -12,7 +12,6 @@
 
 #define pr_fmt(fmt) "smartcard-info: " fmt
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 #include "glogging.h"
 
