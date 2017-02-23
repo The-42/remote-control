@@ -32,7 +32,7 @@ PKG_CHECK_MODULES(GTKOSK, gtkosk,
 		  [ac_gtkosk_datadir=`$PKG_CONFIG --variable=pkgdatadir gtkosk`])
 AC_SUBST(GTKOSK_DATADIR, $ac_gtkosk_datadir)
 
-PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.10)
+PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.18)
 RPC_STUBGEN=rpc-stubgen
 AC_SUBST(RPC_STUBGEN)
 
