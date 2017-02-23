@@ -10,10 +10,9 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
-int handset_create(struct handset **handsetp, struct rpc_server *server)
+int handset_create(struct handset **handsetp, struct remote_control *rc)
 {
 	return 0;
 }

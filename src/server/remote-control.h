@@ -455,7 +455,7 @@ int tuner_set_standard(struct tuner *tuner, const char *standard);
  */
 struct handset;
 
-int handset_create(struct handset **handsetp, struct rpc_server *server);
+int handset_create(struct handset **handsetp, struct remote_control *rc);
 int handset_free(struct handset *handset);
 
 int handset_display_clear(struct handset *handset);

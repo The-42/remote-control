@@ -12,7 +12,6 @@
 
 #include <ptip.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct handset {
@@ -111,7 +110,7 @@ static gpointer handset_thread(gpointer data)
 	return NULL;
 }
 
-int handset_create(struct handset **handsetp, struct rpc_server *server)
+int handset_create(struct handset **handsetp, struct remote_control *rc)
 {
 	struct handset *handset;
 	int err;
@@ -129,7 +128,7 @@ int handset_create(struct handset **handsetp, struct rpc_server *server)
 
 	g_debug("PT-IP: connection established");
 
-	handset->rc = rpc_server_priv(server);
+	handset->rc = rc;
 	handset->done = FALSE;
 
 #if !GLIB_CHECK_VERSION(2, 31, 0)

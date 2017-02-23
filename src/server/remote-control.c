@@ -447,7 +447,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = handset_create(&rc->handset, server);
+	err = handset_create(&rc->handset, rc);
 	if (err < 0) {
 		g_critical("handset_create(): %s", strerror(-err));
 		return err;
