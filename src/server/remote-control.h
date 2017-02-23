@@ -282,7 +282,7 @@ enum smartcard_type {
 
 struct smartcard;
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
+int smartcard_create(struct smartcard **smartcardp, struct remote_control *rc,
 		     GKeyFile *config);
 int smartcard_free(struct smartcard *smartcard);
 int smartcard_get_type(struct smartcard *smartcard, enum smartcard_type *typep);

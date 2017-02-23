@@ -10,10 +10,9 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
+int smartcard_create(struct smartcard **smartcardp, struct remote_control *rc,
 		     GKeyFile *config)
 {
 	return 0;

@@ -10,14 +10,13 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct smartcard_data;
 
 #define REGISTER_SMARTCARD(TYPE)                                               \
 	int smartcard_create_##TYPE(struct smartcard_data **smartcardp,        \
-		struct rpc_server *server, GKeyFile *config);                  \
+		struct remote_control *rc, GKeyFile *config);                  \
 	int smartcard_free_##TYPE(struct smartcard_data *smartcard);           \
 	int smartcard_get_type_##TYPE(struct smartcard_data *smartcard_data,   \
 		unsigned int *typep);                                          \
@@ -53,7 +52,7 @@ struct smartcard {
 		off_t offset, const void *buffer, size_t size);
 };
 
-int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
+int smartcard_create(struct smartcard **smartcardp, struct remote_control *rc,
 		     GKeyFile *config)
 {
 	int ret = 0;
@@ -73,21 +72,21 @@ int smartcard_create(struct smartcard **smartcardp, struct rpc_server *server,
 	*smartcardp = smartcard;
 
 	//TODO: Force type if defined by configuration
-	ret = smartcard_create_nxp(&smartcard->data, server, config);
+	ret = smartcard_create_nxp(&smartcard->data, rc, config);
 	if (ret >= 0) {
 		SET_SMARTCARD(smartcard, nxp);
 		return ret;
 	}
 
 #if ENABLE_LIBPCSCLITE
-	ret = smartcard_create_pcsc(&smartcard->data, server, config);
+	ret = smartcard_create_pcsc(&smartcard->data, rc, config);
 	if (ret >= 0) {
 		SET_SMARTCARD(smartcard, pcsc);
 		return ret;
 	}
 #endif
 #if ENABLE_LIBSMARTCARD
-	ret = smartcard_create_i2c(&smartcard->data, server, config);
+	ret = smartcard_create_i2c(&smartcard->data, rc, config);
 	if (ret >= 0) {
 		SET_SMARTCARD(smartcard, i2c);
 		return ret;
