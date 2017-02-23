@@ -17,7 +17,6 @@
 #include <pulse/pulseaudio.h>
 #include <pulse/glib-mainloop.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 
@@ -207,7 +206,7 @@ free:
 	return false;
 }
 
-int audio_create(struct audio **audiop, struct rpc_server *server,
+int audio_create(struct audio **audiop, struct remote_control *rc,
 		 GKeyFile *config)
 {
 	struct audio *self;

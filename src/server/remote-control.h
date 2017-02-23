@@ -142,7 +142,7 @@ enum audio_state {
 
 struct audio;
 
-int audio_create(struct audio **audiop, struct rpc_server *server, GKeyFile *config);
+int audio_create(struct audio **audiop, struct remote_control *rc, GKeyFile *config);
 int audio_free(struct audio *audio);
 int audio_set_state(struct audio *audio, enum audio_state state);
 int audio_get_state(struct audio *audio, enum audio_state *statep);

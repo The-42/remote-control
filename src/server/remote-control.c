@@ -387,7 +387,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = audio_create(&rc->audio, server, config);
+	err = audio_create(&rc->audio, rc, config);
 	if (err < 0) {
 		g_critical("audio_create(): %s", strerror(-err));
 		return err;

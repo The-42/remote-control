@@ -14,7 +14,6 @@
 #include <alsa/use-case.h>
 #include <glib.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #include "find-device.h"
@@ -422,7 +421,7 @@ static int audio_find_cards(struct audio *audio)
 	return g_list_length(audio->cards) > 0 ? 0 : -ENODEV;
 }
 
-int audio_create(struct audio **audiop, struct rpc_server *server,
+int audio_create(struct audio **audiop, struct remote_control *rc,
 		 GKeyFile *config)
 {
 	struct soundcard *card;
@@ -433,7 +432,7 @@ int audio_create(struct audio **audiop, struct rpc_server *server,
 	if (!audio)
 		return -ENOMEM;
 
-	audio->rc = rpc_server_priv(server);
+	audio->rc = rc;
 
 	err = audio_find_cards(audio);
 	if (err < 0) {
