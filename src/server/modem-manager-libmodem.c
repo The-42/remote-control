@@ -10,7 +10,6 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 #include <ctype.h>
@@ -472,14 +471,14 @@ static int modem_manager_open(struct modem_manager *manager, GKeyFile *config)
 }
 
 int modem_manager_create(struct modem_manager **managerp,
-		struct rpc_server *server, GKeyFile *config)
+		struct remote_control *rc, GKeyFile *config)
 {
 	struct modem_manager *manager;
 	GSource *source;
 	int err;
 
 	g_return_val_if_fail(managerp != NULL, -EINVAL);
-	g_return_val_if_fail(server != NULL, -EINVAL);
+	g_return_val_if_fail(rc != NULL, -EINVAL);
 
 	modem_set_logv_func(modem_manager_logv);
 
@@ -488,7 +487,7 @@ int modem_manager_create(struct modem_manager **managerp,
 		return -ENOMEM;
 
 	manager = (struct modem_manager *)source;
-	manager->rc = rpc_server_priv(server);
+	manager->rc = rc;
 	manager->state = MODEM_STATE_IDLE;
 
 	err = modem_manager_open(manager, config);

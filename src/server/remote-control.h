@@ -304,7 +304,7 @@ enum modem_state {
 struct modem_manager;
 
 int modem_manager_create(struct modem_manager **managerp,
-		struct rpc_server *server, GKeyFile *config);
+		struct remote_control *rc, GKeyFile *config);
 GSource *modem_manager_get_source(struct modem_manager *manager);
 int modem_manager_initialize(struct modem_manager *manager);
 int modem_manager_shutdown(struct modem_manager *manager);

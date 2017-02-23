@@ -10,11 +10,10 @@
 #  include "config.h"
 #endif
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 int modem_manager_create(struct modem_manager **managerp,
-		struct rpc_server *server, GKeyFile *config)
+		struct remote_control *rc, GKeyFile *config)
 {
 	return 0;
 }

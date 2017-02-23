@@ -405,7 +405,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	err = modem_manager_create(&rc->modem, server, config);
+	err = modem_manager_create(&rc->modem, rc, config);
 	if (err < 0) {
 		g_critical("modem_manager_create(): %s", strerror(-err));
 		return err;
