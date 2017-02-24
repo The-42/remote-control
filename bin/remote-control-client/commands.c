@@ -84,7 +84,7 @@ static int exec_audio_volume(struct cli *cli, int argc, char *argv[])
 		}
 	}
 	else if (argc == 2) {
-		uint32_t volume;
+		int32_t volume;
 
 		volume = atol(argv[1]);
 		if (volume < 0 || volume > 255)
