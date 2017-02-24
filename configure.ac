@@ -445,7 +445,7 @@ AC_SUBST(READLINE_LIBS)
 AX_CFLAGS_GCC_OPTION(-fvisibility=hidden, VISIBILITY_CFLAGS)
 AC_SUBST(VISIBILITY_CFLAGS)
 
-CFLAGS="$CFLAGS -Wall"
+CFLAGS="$CFLAGS -Wall -D_FORTIFY_SOURCE=2 -fstack-protector-strong -Werror=format-security"
 
 AC_ARG_ENABLE([werror],
 	[AS_HELP_STRING([--disable-werror],
