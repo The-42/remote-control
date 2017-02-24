@@ -10,6 +10,7 @@
 #define REMOTE_CONTROL_H 1
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
