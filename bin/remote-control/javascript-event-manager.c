@@ -184,7 +184,8 @@ static bool js_event_manager_set_on_state_changed(JSContextRef context,
 		JSValueUnprotect(context, priv->callback);
 
 	if (JSValueIsNull(context, value)) {
-		void *owner = event_manager_get_event_cb_owner(priv->manager);
+		void *owner = event_manager_get_event_cb_owner(priv->manager,
+			js_event_manager_event_cb);
 
 		if ((void *)priv->context == owner) /* Only if we have set the callback */
 			event_manager_set_event_cb(priv->manager,
@@ -271,7 +272,8 @@ static void event_manager_initialize(JSContextRef context, JSObjectRef object)
 static void event_manager_finalize(JSObjectRef object)
 {
 	struct js_event_manager *priv = JSObjectGetPrivate(object);
-	void *owner = event_manager_get_event_cb_owner(priv->manager);
+	void *owner = event_manager_get_event_cb_owner(priv->manager,
+		js_event_manager_event_cb);
 
 	if (priv->callback) {
 		if ((void *)priv->context == owner) /* Only if we have set the callback */

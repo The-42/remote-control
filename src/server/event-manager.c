@@ -27,10 +27,13 @@ struct event_manager {
 	enum event_modem_state modem_state;
 
 	GQueue *handset_events;
+	GList *callbacks;
+};
 
-	event_manager_event_cb event_cb;
-	void *event_cb_data;
-	void *event_cb_owner;
+struct event_callback {
+	event_manager_event_cb func_cb;
+	void *data;
+	void *owner;
 };
 
 int event_manager_create(struct event_manager **managerp,
@@ -74,6 +77,7 @@ int event_manager_free(struct event_manager *manager)
 	if (!manager)
 		return -EINVAL;
 
+	g_list_free_full(manager->callbacks, g_free);
 	g_queue_free(manager->handset_events);
 	g_free(manager);
 	return 0;
@@ -84,12 +88,23 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	uint32_t irq_status = 0;
 	gpointer item;
 	int ret = 0;
+	GList *cb;
 
 	if (!manager || !event)
 		return -EINVAL;
 
-	if (manager->event_cb)
-		ret = manager->event_cb(manager->event_cb_data, event);
+	for (cb = manager->callbacks; cb != NULL; cb = cb->next) {
+		struct event_callback *ecb = cb->data;
+
+		if (!ecb)
+			continue;
+
+		ret = ecb->func_cb(ecb->data, event);
+		if (ret) {
+			g_debug("%s: callback failed: %s", __func__,
+				strerror(ret));
+		}
+	}
 
 	switch (event->source) {
 	case EVENT_SOURCE_MODEM:
@@ -221,16 +236,45 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 int event_manager_set_event_cb(struct event_manager *manager,
 		event_manager_event_cb callback, void *data, void *owner_ref)
 {
+	struct event_callback *ecb;
+	GList *cb;
+
 	g_return_val_if_fail(manager != NULL, -EINVAL);
 
-	manager->event_cb_owner = owner_ref;
-	manager->event_cb_data = data;
-	manager->event_cb = callback;
+	for (cb = manager->callbacks; cb != NULL; cb = cb->next) {
+		ecb = cb->data;
+		if (ecb && ecb->owner == owner_ref) {
+			manager->callbacks = g_list_remove(manager->callbacks,
+				ecb);
+			g_free(ecb);
+		}
+	}
+
+	ecb = g_new0(struct event_callback, 1);
+
+	ecb->owner = owner_ref;
+	ecb->data = data;
+	ecb->func_cb = callback;
+
+	manager->callbacks = g_list_insert(manager->callbacks, ecb, 0);
 
 	return 0;
 }
 
-void *event_manager_get_event_cb_owner(struct event_manager *manager)
+void *event_manager_get_event_cb_owner(struct event_manager *manager,
+		event_manager_event_cb callback)
 {
-	return manager ? manager->event_cb_owner : NULL;
+	struct event_callback *ecb;
+	GList *cb;
+
+	if (!manager)
+		return NULL;
+
+	for (cb = manager->callbacks; cb != NULL; cb = cb->next) {
+		ecb = cb->data;
+		if (ecb && ecb->func_cb == callback)
+			return ecb->owner;
+	}
+
+	return NULL;
 }

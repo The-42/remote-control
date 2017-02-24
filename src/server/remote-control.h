@@ -119,7 +119,8 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
  * Blame Bert and Julian for this construct ;) */
 int event_manager_set_event_cb(struct event_manager *manager,
 		event_manager_event_cb callback, void *data, void *owner_ref);
-void *event_manager_get_event_cb_owner(struct event_manager *manager);
+void *event_manager_get_event_cb_owner(struct event_manager *manager,
+	event_manager_event_cb callback);
 
 /**
  * audio state
