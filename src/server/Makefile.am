@@ -34,7 +34,7 @@ libremote_control_la_SOURCES = \
 	mixer.c \
 	modem.c \
 	net.c \
-	net-unix.c \
+	net-udp.c \
 	remote-control.c \
 	remote-control.h \
 	smartcard.c \

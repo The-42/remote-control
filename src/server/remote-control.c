@@ -45,7 +45,7 @@ struct remote_control {
 	struct modem_manager *modem;
 	struct voip *voip;
 	struct mixer *mixer;
-	struct net *net;
+	struct net_udp *net_udp;
 	struct lldp_monitor *lldp;
 	struct task_manager *task_manager;
 	struct tuner *tuner;
@@ -429,9 +429,9 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		g_source_unref(source);
 	}
 
-	err = net_create(&rc->net, server);
+	err = net_udp_create(&rc->net_udp);
 	if (err < 0) {
-		g_critical("net_create(): %s", strerror(-err));
+		g_critical("net_udp_create(): %s", strerror(-err));
 		return err;
 	}
 
@@ -508,7 +508,7 @@ int remote_control_free(struct remote_control *rc)
 	handset_free(rc->handset);
 	tuner_free(rc->tuner);
 	task_manager_free(rc->task_manager);
-	net_free(rc->net);
+	net_udp_free(rc->net_udp);
 	voip_free(rc->voip);
 	smartcard_free(rc->smartcard);
 	sound_manager_free(rc->sound);
@@ -522,6 +522,7 @@ int remote_control_free(struct remote_control *rc)
 	lldp_monitor_free(rc->lldp);
 	rpc_server_free(server);
 	rpc_irq_cleanup();
+	rpc_net_cleanup();
 
 	return 0;
 }
@@ -576,9 +577,9 @@ struct mixer *remote_control_get_mixer(struct remote_control *rc)
 	return rc ? rc->mixer : NULL;
 }
 
-struct net *remote_control_get_net(struct remote_control *rc)
+struct net_udp *remote_control_get_net_udp(struct remote_control *rc)
 {
-	return rc ? rc->net : NULL;
+	return rc ? rc->net_udp : NULL;
 }
 
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc)

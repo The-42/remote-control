@@ -399,18 +399,31 @@ int mixer_loopback_enable(struct mixer *mixer, bool enable);
 int mixer_loopback_is_enabled(struct mixer *mixer, bool *enabled);
 
 /**
- * network layer
+ * network layer for UDP
  */
-struct net;
+struct net_udp;
+struct net_udp_channel;
 
-int net_create(struct net **netp, struct rpc_server *server);
-int net_free(struct net *net);
-int net_configure(struct net *net, const char *hostname, uint16_t port,
-		unsigned long timeout, unsigned int repeat);
-ssize_t net_send_async(struct net *net, const void *buffer, size_t size);
-ssize_t net_send_sync(struct net *net, const void *buffer, size_t size);
-ssize_t net_recv_async(struct net *net, void *buffer, size_t size);
-ssize_t net_recv_sync(struct net *net, void *buffer, size_t size);
+typedef void(*net_udp_recv_cb)(int ref, void*);
+
+int net_udp_create(struct net_udp **netp);
+void net_udp_free(struct net_udp *net_udp);
+
+int net_udp_create_channel(struct net_udp *net, uint16_t local_port,
+	const char *hostname, uint16_t remote_port);
+int net_udp_destroy_channel(struct net_udp *net, int ref);
+struct net_udp_channel *net_udp_get_channel_by_ref(struct net_udp *net,
+	int ref);
+
+ssize_t net_udp_send(struct net_udp_channel *channel, const void *buffer,
+	size_t size);
+ssize_t net_udp_recv(struct net_udp_channel *channel, void *buffer,
+	size_t size);
+
+int net_udp_set_recv_cb(struct net_udp *net_udp, net_udp_recv_cb cb,
+	void *cb_data, void *owner_ref);
+void *net_udp_get_recv_cb_owner(struct net_udp *net_udp);
+
 
 /**
  * LLDP monitor
@@ -518,7 +531,7 @@ struct smartcard *remote_control_get_smartcard(struct remote_control *rc);
 struct modem_manager *remote_control_get_modem_manager(struct remote_control *rc);
 struct voip *remote_control_get_voip(struct remote_control *rc);
 struct mixer *remote_control_get_mixer(struct remote_control *rc);
-struct net *remote_control_get_net(struct remote_control *rc);
+struct net_udp *remote_control_get_net_udp(struct remote_control *rc);
 struct lldp_monitor *remote_control_get_lldp_monitor(struct remote_control *rc);
 struct task_manager *remote_control_get_task_manager(struct remote_control *rc);
 struct tuner *remote_control_get_tuner(struct remote_control *rc);
@@ -542,6 +555,11 @@ unsigned int if_lookup_default(void);
  * irq.c
  */
 void rpc_irq_cleanup(void);
+
+/**
+ * net.c
+ */
+void rpc_net_cleanup(void);
 
 #if GTK_CHECK_VERSION(2, 91, 0)
 void gdk_window_clear(GdkWindow *window);
