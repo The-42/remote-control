@@ -363,7 +363,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	g_source_add_child_source(rc->source, source);
 	g_source_unref(source);
 
-	err = event_manager_create(&rc->event_manager, server);
+	err = event_manager_create(&rc->event_manager);
 	if (err < 0) {
 		g_critical("event_manager_create(): %s", strerror(-err));
 		return err;
@@ -521,6 +521,7 @@ int remote_control_free(struct remote_control *rc)
 	event_manager_free(rc->event_manager);
 	lldp_monitor_free(rc->lldp);
 	rpc_server_free(server);
+	rpc_irq_cleanup();
 
 	return 0;
 }

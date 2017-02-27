@@ -26,10 +26,162 @@ enum {
 	IRQ_HANDSET,
 };
 
+struct irq_data {
+	struct rpc_server *server;
+	uint32_t irq_status;
+
+	struct event_manager *manager;
+};
+
+static struct irq_data *irq_event_data;
+
+static struct irq_data *irq_data_from_manager(struct event_manager *manager)
+{
+	if (irq_event_data && irq_event_data->manager == manager)
+		return irq_event_data;
+
+	return NULL;
+}
+
+static int irq_event_cb(void *data, struct event *event)
+{
+	struct irq_data *irq_data = data;
+	uint32_t irq_status = 0;
+	int ret = 0;
+
+	if (!irq_data || !event)
+		return -EINVAL;
+
+	switch (event->source) {
+	case EVENT_SOURCE_MODEM:
+		irq_status |= BIT(EVENT_SOURCE_MODEM);
+		break;
+
+	case EVENT_SOURCE_IO:
+		irq_status |= BIT(EVENT_SOURCE_IO);
+		break;
+
+	case EVENT_SOURCE_VOIP:
+		irq_status |= BIT(EVENT_SOURCE_VOIP);
+		break;
+
+	case EVENT_SOURCE_SMARTCARD:
+		g_debug("SMARTCARD: -> %d", event->smartcard.state);
+		irq_status |= BIT(EVENT_SOURCE_SMARTCARD);
+		break;
+
+	case EVENT_SOURCE_HOOK:
+		g_debug("HOOK: -> %d", event->hook.state);
+		irq_status |= BIT(EVENT_SOURCE_HOOK);
+		break;
+
+	case EVENT_SOURCE_HANDSET:
+		irq_status |= BIT(EVENT_SOURCE_HANDSET);
+		break;
+
+	default:
+		g_debug("Unknown event: %d", event->source);
+		ret = -ENXIO;
+		goto out;
+	}
+
+	g_debug("  IRQ: %08x", irq_status);
+
+	if (irq_status != irq_data->irq_status) {
+		ret = RPC_STUB(irq_event)(irq_data->server, 0);
+		irq_data->irq_status |= irq_status;
+	}
+
+out:
+	g_debug("< %s() = %d", __func__, ret);
+	return ret;
+}
+
+static int irq_data_get_status(struct irq_data *irqd, uint32_t *statusp)
+{
+	if (!irqd || !statusp)
+		return -EINVAL;
+
+	*statusp = irqd->irq_status;
+	return 0;
+}
+
+static int irq_data_update_from_source(struct event_manager *manager, struct event *event)
+{
+	struct irq_data *irqd;
+	uint32_t irq_status;
+	int err = 0;
+
+	if (!manager || !event)
+		return -EINVAL;
+
+	irqd = irq_data_from_manager(manager);
+	if (!irqd)
+		return -EINVAL;
+
+	irq_status = irqd->irq_status;
+
+	err = event_manager_get_source_state(manager, event);
+	if (err == -ENODATA && event->source == EVENT_SOURCE_HANDSET) {
+		err = 0;
+		irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
+	}
+
+	switch (event->source) {
+	case EVENT_SOURCE_MODEM:
+		irq_status &= ~BIT(EVENT_SOURCE_MODEM);
+		break;
+
+	case EVENT_SOURCE_VOIP:
+		irq_status &= ~BIT(EVENT_SOURCE_VOIP);
+		break;
+
+	case EVENT_SOURCE_SMARTCARD:
+		irq_status &= ~BIT(EVENT_SOURCE_SMARTCARD);
+		break;
+
+	case EVENT_SOURCE_HOOK:
+		irq_status &= ~BIT(EVENT_SOURCE_HOOK);
+		break;
+
+	case EVENT_SOURCE_HANDSET:
+		break;
+
+	default:
+		err = -ENOSYS;
+		break;
+	}
+
+	if (irq_status == irqd->irq_status)
+		err = RPC_STUB(irq_event)(irqd->server, 0);
+	else
+		irqd->irq_status = irq_status;
+
+	return err;
+}
+
+void rpc_irq_cleanup(void)
+{
+	if (irq_event_data) {
+		g_free(irq_event_data);
+		irq_event_data = NULL;
+	}
+}
+
 int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
 {
 	struct rpc_server *server = rpc_server_from_priv(priv);
 	int err;
+
+	rpc_irq_cleanup();
+	irq_event_data = g_new0(struct irq_data, 1);
+	irq_event_data->server = server;
+	irq_event_data->manager = remote_control_get_event_manager(priv);
+
+	if (event_manager_set_event_cb(irq_event_data->manager, irq_event_cb,
+			irq_event_data, server)) {
+		g_debug("irq_enable(): Failed to set event callback.");
+	}
 
 	err = RPC_STUB(irq_event)(server, 0);
 	if (err < 0) {
@@ -53,8 +205,8 @@ int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 		goto out;
 	}
 
-	ret = event_manager_get_status(manager, &status);
-	g_debug("  event_manager_get_status(): %d", ret);
+	ret = irq_data_get_status(irq_data_from_manager(manager), &status);
+	g_debug("  irq_data_get_status(): %d", ret);
 	g_debug("  status: %08x", status);
 
 	if (status & BIT(EVENT_SOURCE_MODEM))
@@ -97,7 +249,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 		g_debug("  IRQ_SOURCE_HOOK");
 		event.source = EVENT_SOURCE_HOOK;
 
-		err = event_manager_get_source_state(manager, &event);
+		err = irq_data_update_from_source(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
@@ -124,7 +276,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 		g_debug("  IRQ_SOURCE_CARD");
 		event.source = EVENT_SOURCE_SMARTCARD;
 
-		err = event_manager_get_source_state(manager, &event);
+		err = irq_data_update_from_source(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
@@ -149,7 +301,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 		g_debug("  IRQ_SOURCE_VOIP");
 		event.source = EVENT_SOURCE_VOIP;
 
-		err = event_manager_get_source_state(manager, &event);
+		err = irq_data_update_from_source(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
@@ -234,7 +386,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 		g_debug("  IRQ_SOURCE_MODEM");
 		event.source = EVENT_SOURCE_MODEM;
 
-		err = event_manager_get_source_state(manager, &event);
+		err = irq_data_update_from_source(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;
@@ -267,7 +419,7 @@ int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uin
 		g_debug("  IRQ_SOURCE_HANDSET");
 		event.source = EVENT_SOURCE_HANDSET;
 
-		err = event_manager_get_source_state(manager, &event);
+		err = irq_data_update_from_source(manager, &event);
 		if (err < 0) {
 			ret = err;
 			break;

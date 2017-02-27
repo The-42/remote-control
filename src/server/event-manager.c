@@ -12,15 +12,9 @@
 
 #include <glib.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
-#define BIT(x) (1 << (x))
-
 struct event_manager {
-	struct rpc_server *server;
-	uint32_t irq_status;
-
 	enum event_voip_state voip_state;
 	enum event_smartcard_state smartcard_state;
 	enum event_hook_state hook_state;
@@ -36,21 +30,17 @@ struct event_callback {
 	void *owner;
 };
 
-int event_manager_create(struct event_manager **managerp,
-		struct rpc_server *server)
+int event_manager_create(struct event_manager **managerp)
 {
 	struct event_manager *manager;
 	int err = 0;
 
-	if (!managerp || !server)
+	if (!managerp)
 		return -EINVAL;
 
 	manager = g_new0(struct event_manager, 1);
 	if (!manager)
 		return -ENOMEM;
-
-	manager->server = server;
-	manager->irq_status = 0;
 
 	manager->voip_state = EVENT_VOIP_STATE_IDLE;
 	manager->smartcard_state = EVENT_SMARTCARD_STATE_REMOVED;
@@ -85,7 +75,6 @@ int event_manager_free(struct event_manager *manager)
 
 int event_manager_report(struct event_manager *manager, struct event *event)
 {
-	uint32_t irq_status = 0;
 	gpointer item;
 	int ret = 0;
 	GList *cb;
@@ -109,101 +98,67 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 	switch (event->source) {
 	case EVENT_SOURCE_MODEM:
 		manager->modem_state = event->modem.state;
-		irq_status |= BIT(EVENT_SOURCE_MODEM);
-		break;
-
-	case EVENT_SOURCE_IO:
-		irq_status |= BIT(EVENT_SOURCE_IO);
 		break;
 
 	case EVENT_SOURCE_VOIP:
 		manager->voip_state = event->voip.state;
-		irq_status |= BIT(EVENT_SOURCE_VOIP);
 		break;
 
 	case EVENT_SOURCE_SMARTCARD:
 		g_debug("SMARTCARD: %d -> %d (%d)", manager->smartcard_state,
 				event->smartcard.state, ret);
 		manager->smartcard_state = event->smartcard.state;
-		irq_status |= BIT(EVENT_SOURCE_SMARTCARD);
 		break;
 
 	case EVENT_SOURCE_HOOK:
 		g_debug("HOOK: %d -> %d (%d)", manager->hook_state,
 				event->hook.state, ret);
 		manager->hook_state = event->hook.state;
-		irq_status |= BIT(EVENT_SOURCE_HOOK);
 		break;
 
 	case EVENT_SOURCE_HANDSET:
 		item = g_new(struct event_handset, 1);
 		if (!item) {
 			ret = -ENOMEM;
-			goto out;
+			break;
 		}
 
 		memcpy(item, &event->handset, sizeof(event->handset));
 		g_queue_push_tail(manager->handset_events, item);
-		irq_status |= BIT(EVENT_SOURCE_HANDSET);
 		break;
 
 	default:
 		g_debug("Unknown event: %d (%d)", event->source, ret);
 		ret = -ENXIO;
-		goto out;
+		break;
 	}
 
-	g_debug("  IRQ: %08x", irq_status);
-
-	if (irq_status != manager->irq_status) {
-		ret = RPC_STUB(irq_event)(manager->server, 0);
-		manager->irq_status |= irq_status;
-	}
-
-out:
-	g_debug("< %s() = %d", __func__, ret);
 	return ret;
-}
-
-int event_manager_get_status(struct event_manager *manager, uint32_t *statusp)
-{
-	if (!manager || !statusp)
-		return -EINVAL;
-
-	*statusp = manager->irq_status;
-	return 0;
 }
 
 int event_manager_get_source_state(struct event_manager *manager, struct event *event)
 {
-	uint32_t irq_status;
 	gpointer item;
 	int err = 0;
 
 	if (!manager || !event)
 		return -EINVAL;
 
-	irq_status = manager->irq_status;
-
 	switch (event->source) {
 	case EVENT_SOURCE_MODEM:
 		event->modem.state = manager->modem_state;
-		irq_status &= ~BIT(EVENT_SOURCE_MODEM);
 		break;
 
 	case EVENT_SOURCE_VOIP:
 		event->voip.state = manager->voip_state;
-		irq_status &= ~BIT(EVENT_SOURCE_VOIP);
 		break;
 
 	case EVENT_SOURCE_SMARTCARD:
 		event->smartcard.state = manager->smartcard_state;
-		irq_status &= ~BIT(EVENT_SOURCE_SMARTCARD);
 		break;
 
 	case EVENT_SOURCE_HOOK:
 		event->hook.state = manager->hook_state;
-		irq_status &= ~BIT(EVENT_SOURCE_HOOK);
 		break;
 
 	case EVENT_SOURCE_HANDSET:
@@ -214,21 +169,12 @@ int event_manager_get_source_state(struct event_manager *manager, struct event *
 		} else {
 			err = -ENODATA;
 		}
-
-		if (g_queue_is_empty(manager->handset_events))
-			irq_status &= ~BIT(EVENT_SOURCE_HANDSET);
-
 		break;
 
 	default:
 		err = -ENOSYS;
 		break;
 	}
-
-	if (irq_status == manager->irq_status)
-		err = RPC_STUB(irq_event)(manager->server, 0);
-	else
-		manager->irq_status = irq_status;
 
 	return err;
 }
