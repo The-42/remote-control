@@ -102,7 +102,7 @@ int event_manager_report(struct event_manager *manager, struct event *event)
 		ret = ecb->func_cb(ecb->data, event);
 		if (ret) {
 			g_debug("%s: callback failed: %s", __func__,
-				strerror(ret));
+				strerror(-ret));
 		}
 	}
 
