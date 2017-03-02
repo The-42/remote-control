@@ -404,7 +404,7 @@ int mixer_loopback_is_enabled(struct mixer *mixer, bool *enabled);
 struct net_udp;
 struct net_udp_channel;
 
-typedef void(*net_udp_recv_cb)(int ref, void*);
+typedef void(*net_udp_recv_cb)(struct net_udp_channel*, void*);
 
 int net_udp_create(struct net_udp **netp);
 void net_udp_free(struct net_udp *net_udp);
@@ -420,9 +420,9 @@ ssize_t net_udp_send(struct net_udp_channel *channel, const void *buffer,
 ssize_t net_udp_recv(struct net_udp_channel *channel, void *buffer,
 	size_t size);
 
-int net_udp_set_recv_cb(struct net_udp *net_udp, net_udp_recv_cb cb,
-	void *cb_data, void *owner_ref);
-void *net_udp_get_recv_cb_owner(struct net_udp *net_udp);
+int net_udp_set_recv_cb(struct net_udp *net_udp, struct net_udp_channel *chan,
+	net_udp_recv_cb cb, void *cb_data);
+void *net_udp_get_recv_cb_channel(struct net_udp *net_udp);
 
 
 /**

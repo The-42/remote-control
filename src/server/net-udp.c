@@ -52,7 +52,7 @@ struct net_udp {
 	/* Callback for packet received events */
 	net_udp_recv_cb recv_cb;
 	void *callback_data;
-	void *callback_owner;
+	void *callback_chan;
 };
 
 static bool addr_is_broadcast(struct sockaddr *addr, socklen_t addrlen)
@@ -403,8 +403,8 @@ static gpointer recv_thread(gpointer context)
 
 			g_queue_push_tail(channel->packets, packet);
 
-			if (net->recv_cb)
-				net->recv_cb(fds[i].fd, net->callback_data);
+			if (net->recv_cb && net->callback_chan == channel)
+				net->recv_cb(channel, net->callback_data);
 		}
 		g_mutex_unlock(&net->fds_mutex);
 	}
@@ -487,20 +487,20 @@ ssize_t net_udp_recv(struct net_udp_channel *channel, void *buffer, size_t size)
 	return ret;
 }
 
-int net_udp_set_recv_cb(struct net_udp *net_udp, net_udp_recv_cb cb,
-			void *cb_data, void *owner_ref)
+int net_udp_set_recv_cb(struct net_udp *net_udp, struct net_udp_channel *chan,
+			net_udp_recv_cb cb, void *cb_data)
 {
 	if (!net_udp)
 		return -EINVAL;
 
 	net_udp->recv_cb = cb;
 	net_udp->callback_data = cb_data;
-	net_udp->callback_owner = owner_ref;
+	net_udp->callback_chan = chan;
 
 	return 0;
 }
 
-void *net_udp_get_recv_cb_owner(struct net_udp *net_udp)
+void *net_udp_get_recv_cb_channel(struct net_udp *net_udp)
 {
-	return net_udp ? net_udp->callback_owner : NULL;
+	return net_udp ? net_udp->callback_chan : NULL;
 }
