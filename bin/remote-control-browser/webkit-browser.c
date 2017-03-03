@@ -657,23 +657,46 @@ static gboolean on_destroy(GtkWidget *widget, gpointer data)
 
 static void webkit_browser_realize(GtkWidget *widget)
 {
+#if !GTK_CHECK_VERSION(3, 20, 0)
+	/*
+	 * Window geometry support has been removed from Gtk+ 3.20, because
+	 * "nobody uses it". Hooray for almost not breaking APIs...
+	 *
+	 * See https://git.gnome.org/browse/gtk+/commit/?id=08974a1
+	 */
 	WebKitBrowserPrivate *priv = WEBKIT_BROWSER_GET_PRIVATE(widget);
 
-	if (!priv->geometry) {
-		GdkScreen *screen = gtk_widget_get_screen(widget);
-		const char *wm = gdk_x11_screen_get_window_manager_name(screen);
-		g_debug("Window manager: %s", wm);
-
-		if (!wm || (strcmp(wm, "unknown") == 0)) {
-			gint width = gdk_screen_get_width(screen);
-			gint height = gdk_screen_get_height(screen);
-
-			gtk_window_set_default_size(GTK_WINDOW(widget), width, height);
-		} else {
-			gtk_window_fullscreen(GTK_WINDOW(widget));
-		}
-	} else {
+	if (priv->geometry) {
 		gtk_window_parse_geometry(GTK_WINDOW(widget), priv->geometry);
+		GTK_WIDGET_CLASS(webkit_browser_parent_class)->realize(widget);
+		return;
+	}
+#endif
+	GdkScreen *screen = gtk_widget_get_screen(widget);
+	const char *wm = gdk_x11_screen_get_window_manager_name(screen);
+	g_debug("Window manager: %s", wm);
+
+	if (!wm || (strcmp(wm, "unknown") == 0)) {
+		gint width;
+		gint height;
+#if GTK_CHECK_VERSION(3, 22, 0)
+		GdkMonitor *monitor;
+		GdkDisplay *display;
+		GdkRectangle mon_geo;
+
+		display = gdk_screen_get_display(screen);
+		monitor = gdk_display_get_primary_monitor(display);
+		gdk_monitor_get_geometry(monitor, &mon_geo);
+		width = mon_geo.width;
+		height = mon_geo.height;
+#else
+		width = gdk_screen_get_width(screen);
+		height = gdk_screen_get_height(screen);
+#endif
+
+		gtk_window_set_default_size(GTK_WINDOW(widget), width, height);
+	} else {
+		gtk_window_fullscreen(GTK_WINDOW(widget));
 	}
 
 	GTK_WIDGET_CLASS(webkit_browser_parent_class)->realize(widget);
