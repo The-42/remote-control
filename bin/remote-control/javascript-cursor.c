@@ -123,9 +123,14 @@ static JSValueRef cursor_moveto_callback(JSContextRef context,
 		}
 	} else {
 #if GTK_CHECK_VERSION(3, 0, 0)
+		GdkDevice *device;
+#if GTK_CHECK_VERSION(3, 20, 0)
+		GdkSeat *seat = gdk_display_get_default_seat(priv->display);
+		device = gdk_seat_get_pointer(seat);
+#else
 		GdkDeviceManager *manager = gdk_display_get_device_manager(priv->display);
-		GdkDevice *device = gdk_device_manager_get_client_pointer(manager);
-
+		device = gdk_device_manager_get_client_pointer(manager);
+#endif
 		gdk_device_warp(device, priv->screen, x, y);
 #else
 		gdk_display_warp_pointer(priv->display, priv->screen, x, y);
@@ -332,8 +337,20 @@ static int cursor_uinput_create(struct cursor *priv)
 		return -ENOENT;
 	}
 
+#if GTK_CHECK_VERSION(3, 22, 0)
+	GdkMonitor *monitor;
+	GdkDisplay *display;
+	GdkRectangle mon_geo;
+
+	display = gdk_screen_get_display(priv->screen);
+	monitor = gdk_display_get_primary_monitor(display);
+	gdk_monitor_get_geometry(monitor, &mon_geo);
+	width = mon_geo.width - 1;
+	height = mon_geo.height - 1;
+#else
 	width = gdk_screen_get_width(priv->screen) - 1;
 	height = gdk_screen_get_height(priv->screen) - 1;
+#endif
 
 	memset(&dev, 0, sizeof(dev));
 	strncpy(dev.name, "Avionic Design GmbH virtual touch",

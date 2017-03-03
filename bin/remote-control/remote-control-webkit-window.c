@@ -504,8 +504,20 @@ static void remote_control_webkit_window_init(RemoteControlWebkitWindow *self)
 			(GCallback)on_realize, NULL);
 
 	screen = gtk_window_get_screen(window);
+#if GTK_CHECK_VERSION(3, 22, 0)
+	GdkMonitor *monitor;
+	GdkDisplay *display;
+	GdkRectangle mon_geo;
+
+	display = gdk_screen_get_display(screen);
+	monitor = gdk_display_get_primary_monitor(display);
+	gdk_monitor_get_geometry(monitor, &mon_geo);
+	cx = mon_geo.width;
+	cy = mon_geo.height;
+#else
 	cx = gdk_screen_get_width(screen);
 	cy = gdk_screen_get_height(screen);
+#endif
 
 #if GTK_CHECK_VERSION(3, 0, 0)
 	css_provider = gtk_css_provider_new();
