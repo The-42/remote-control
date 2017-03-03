@@ -144,6 +144,12 @@ free:
 	return ret;
 }
 
+#if GTK_CHECK_VERSION(3, 20, 0)
+void gdk_window_clear(GdkWindow *window)
+{
+	/* not needed anymore for our use cases */
+}
+#else
 #if GTK_CHECK_VERSION(2, 91, 0)
 void gdk_window_clear(GdkWindow *window)
 {
@@ -158,4 +164,5 @@ void gdk_window_clear(GdkWindow *window)
 		cairo_destroy(cr);
 	}
 }
+#endif
 #endif
