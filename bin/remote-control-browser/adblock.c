@@ -525,12 +525,20 @@ adblock_populate_popup_cb(WebKitWebView* web_view, GtkWidget* menu)
 	gchar *uri;
 	gint x, y;
 #if GTK_CHECK_VERSION(3, 0, 0)
-	GdkDeviceManager *device_manager;
 	GdkDevice *pointer;
 	GdkWindow *win = gtk_widget_get_window(GTK_WIDGET(web_view));
 
+#if GTK_CHECK_VERSION(3, 20, 0)
+	GdkSeat *seat;
+
+	seat = gdk_display_get_default_seat(gdk_window_get_display(win));
+	pointer = gdk_seat_get_pointer(seat);
+#else
+	GdkDeviceManager *device_manager;
+
 	device_manager = gdk_display_get_device_manager(gdk_window_get_display(win));
 	pointer = gdk_device_manager_get_client_pointer(device_manager);
+#endif
 	gdk_window_get_device_position(win, pointer, &x, &y, NULL);
 #else
 	gdk_window_get_pointer(gtk_widget_get_window(GTK_WIDGET(web_view)), &x, &y, NULL);
