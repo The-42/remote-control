@@ -442,17 +442,18 @@ AC_SUBST(READLINE_LIBS)
 #
 # add compiler and linker flags
 #
-AX_CFLAGS_GCC_OPTION(-fvisibility=hidden, VISIBILITY_CFLAGS)
+AX_APPEND_COMPILE_FLAGS([-fvisibility=hidden], VISIBILITY_CFLAGS)
 AC_SUBST(VISIBILITY_CFLAGS)
 
-CFLAGS="$CFLAGS -Wall -D_FORTIFY_SOURCE=2 -fstack-protector-strong -Werror=format-security"
+AX_APPEND_COMPILE_FLAGS([-Wall -D_FORTIFY_SOURCE=2])
+AX_APPEND_COMPILE_FLAGS([-fstack-protector-strong -Werror=format-security])
 
 AC_ARG_ENABLE([werror],
 	[AS_HELP_STRING([--disable-werror],
 		[Do not treat warnings as errors (default: warnings are errors)])],
 		[enable_werror="$enableval"],
 		[enable_werror=yes])
-AS_IF([test "x$enable_werror" = "xyes"], [CFLAGS="$CFLAGS -Werror"])
+AS_IF([test "x$enable_werror" = "xyes"], [AX_APPEND_COMPILE_FLAGS([-Werror])])
 
 COMMANDS_ALIGN=32
 AC_DEFINE_UNQUOTED([COMMANDS_ALIGN], [$COMMANDS_ALIGN],
