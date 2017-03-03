@@ -36,6 +36,10 @@ struct net_udp_channel {
 	GQueue *packets;
 	size_t buffer_size;
 	void *buffer;
+
+	/* Callback for packet received events */
+	net_udp_recv_cb recv_cb;
+	void *callback_data;
 };
 
 struct net_udp {
@@ -48,11 +52,6 @@ struct net_udp {
 	/* Thread to receive packets */
 	GThread *thread;
 	gboolean done;
-
-	/* Callback for packet received events */
-	net_udp_recv_cb recv_cb;
-	void *callback_data;
-	void *callback_chan;
 };
 
 static bool addr_is_broadcast(struct sockaddr *addr, socklen_t addrlen)
@@ -403,8 +402,10 @@ static gpointer recv_thread(gpointer context)
 
 			g_queue_push_tail(channel->packets, packet);
 
-			if (net->recv_cb && net->callback_chan == channel)
-				net->recv_cb(channel, net->callback_data);
+			if (channel->recv_cb) {
+				channel->recv_cb(channel,
+					channel->callback_data);
+			}
 		}
 		g_mutex_unlock(&net->fds_mutex);
 	}
@@ -487,20 +488,14 @@ ssize_t net_udp_recv(struct net_udp_channel *channel, void *buffer, size_t size)
 	return ret;
 }
 
-int net_udp_set_recv_cb(struct net_udp *net_udp, struct net_udp_channel *chan,
-			net_udp_recv_cb cb, void *cb_data)
+int net_udp_set_recv_cb(struct net_udp_channel *channel, net_udp_recv_cb cb,
+			void *cb_data)
 {
-	if (!net_udp)
+	if (!channel)
 		return -EINVAL;
 
-	net_udp->recv_cb = cb;
-	net_udp->callback_data = cb_data;
-	net_udp->callback_chan = chan;
+	channel->recv_cb = cb;
+	channel->callback_data = cb_data;
 
 	return 0;
-}
-
-void *net_udp_get_recv_cb_channel(struct net_udp *net_udp)
-{
-	return net_udp ? net_udp->callback_chan : NULL;
 }

@@ -59,9 +59,8 @@ int main(int argc, char **argv)
 	secondary = net_udp_get_channel_by_ref(net, cref_sec);
 	g_assert_nonnull(secondary);
 
-	ret = net_udp_set_recv_cb(net, secondary, recv_callback, &netcb_data);
+	ret = net_udp_set_recv_cb(secondary, recv_callback, &netcb_data);
 	g_assert_cmpint(ret, ==, 0);
-	g_assert_true(net_udp_get_recv_cb_channel(net) == secondary);
 
 	packet_len = net_udp_send(primary, send_buffer, sizeof(send_buffer));
 	g_assert_cmpint(packet_len, ==, sizeof(send_buffer));
@@ -76,9 +75,8 @@ int main(int argc, char **argv)
 	for (i = 0; i < sizeof(recv_buffer); i++)
 		recv_buffer[i] = 0;
 
-	ret = net_udp_set_recv_cb(net, primary, recv_callback, &netcb_data);
+	ret = net_udp_set_recv_cb(primary, recv_callback, &netcb_data);
 	g_assert_cmpint(ret, ==, 0);
-	g_assert_true(net_udp_get_recv_cb_channel(net) == primary);
 
 	packet_len = net_udp_send(secondary, send_buffer, sizeof(send_buffer));
 	g_assert_cmpint(packet_len, ==, sizeof(send_buffer));
