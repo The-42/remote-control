@@ -94,7 +94,7 @@ static int irq_event_cb(void *data, struct event *event)
 
 out:
 	g_debug("< %s() = %d", __func__, ret);
-	return ret;
+	return ret < 0 ? ret : 0;
 }
 
 static int irq_data_get_status(struct irq_data *irqd, uint32_t *statusp)
