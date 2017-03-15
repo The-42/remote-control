@@ -66,12 +66,10 @@ static int irq_event_cb(void *data, struct event *event)
 		break;
 
 	case EVENT_SOURCE_SMARTCARD:
-		g_debug("SMARTCARD: -> %d", event->smartcard.state);
 		irq_status |= BIT(EVENT_SOURCE_SMARTCARD);
 		break;
 
 	case EVENT_SOURCE_HOOK:
-		g_debug("HOOK: -> %d", event->hook.state);
 		irq_status |= BIT(EVENT_SOURCE_HOOK);
 		break;
 
@@ -80,20 +78,14 @@ static int irq_event_cb(void *data, struct event *event)
 		break;
 
 	default:
-		g_debug("Unknown event: %d", event->source);
-		ret = -ENXIO;
-		goto out;
+		return -ENXIO;
 	}
-
-	g_debug("  IRQ: %08x", irq_status);
 
 	if (irq_status != irq_data->irq_status) {
 		ret = RPC_STUB(irq_event)(irq_data->server, 0);
 		irq_data->irq_status |= irq_status;
 	}
 
-out:
-	g_debug("< %s() = %d", __func__, ret);
 	return ret < 0 ? ret : 0;
 }
 
