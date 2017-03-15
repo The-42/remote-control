@@ -351,6 +351,8 @@ static gpointer recv_thread(gpointer context)
 	guint num;
 
 	while (!net->done) {
+		/* Important: sleep a bit so others get a chance to lock */
+		g_usleep(500);
 		g_mutex_lock(&net->fds_mutex);
 		num = g_list_length(net->channels);
 		if (!num) {
@@ -359,7 +361,7 @@ static gpointer recv_thread(gpointer context)
 			continue;
 		}
 
-		err = g_poll(net->fds, num, 1000);
+		err = g_poll(net->fds, num, 500);
 		if (err <= 0) {
 			if ((err == 0) || (errno == EINTR)) {
 				g_mutex_unlock(&net->fds_mutex);
