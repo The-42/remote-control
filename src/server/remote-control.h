@@ -553,6 +553,7 @@ unsigned int if_lookup_default(void);
 /**
  * irq.c
  */
+void rpc_irq_init(void *priv);
 void rpc_irq_cleanup(void);
 
 /**

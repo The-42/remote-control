@@ -489,6 +489,8 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
+	rpc_irq_init(rc);
+
 	*rcp = rc;
 	return 0;
 }

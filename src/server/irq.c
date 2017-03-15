@@ -160,6 +160,20 @@ static int irq_data_update_from_source(struct event_manager *manager, struct eve
 	return err;
 }
 
+void rpc_irq_init(void *priv)
+{
+	struct rpc_server *server = rpc_server_from_priv(priv);
+
+	irq_event_data = g_new0(struct irq_data, 1);
+	irq_event_data->server = server;
+	irq_event_data->manager = remote_control_get_event_manager(priv);
+
+	if (event_manager_set_event_cb(irq_event_data->manager, irq_event_cb,
+			irq_event_data, server)) {
+		g_debug("%s: Failed to set event callback.", __func__);
+	}
+}
+
 void rpc_irq_cleanup(void)
 {
 	if (irq_event_data) {
@@ -172,16 +186,6 @@ int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
 {
 	struct rpc_server *server = rpc_server_from_priv(priv);
 	int err;
-
-	rpc_irq_cleanup();
-	irq_event_data = g_new0(struct irq_data, 1);
-	irq_event_data->server = server;
-	irq_event_data->manager = remote_control_get_event_manager(priv);
-
-	if (event_manager_set_event_cb(irq_event_data->manager, irq_event_cb,
-			irq_event_data, server)) {
-		g_debug("irq_enable(): Failed to set event callback.");
-	}
 
 	err = RPC_STUB(irq_event)(server, 0);
 	if (err < 0) {
