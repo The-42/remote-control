@@ -17,7 +17,7 @@
 
 int32_t RPC_IMPL(backlight_enable)(void *priv, uint32_t flags)
 {
-	struct backlight *backlight = remote_control_get_backlight(priv);
+	struct backlight *backlight = remote_control_get_backlight(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, flags=%x)", __func__, priv, flags);
@@ -30,7 +30,7 @@ int32_t RPC_IMPL(backlight_enable)(void *priv, uint32_t flags)
 
 int32_t RPC_IMPL(backlight_set)(void *priv, uint8_t brightness)
 {
-	struct backlight *backlight = remote_control_get_backlight(priv);
+	struct backlight *backlight = remote_control_get_backlight(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, brightness=%02x)", __func__, priv, brightness);
@@ -43,7 +43,7 @@ int32_t RPC_IMPL(backlight_set)(void *priv, uint8_t brightness)
 
 int32_t RPC_IMPL(backlight_get)(void *priv, uint8_t *brightness)
 {
-	struct backlight *backlight = remote_control_get_backlight(priv);
+	struct backlight *backlight = remote_control_get_backlight(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, brightness=%p)", __func__, priv, brightness);

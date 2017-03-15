@@ -17,7 +17,7 @@
 
 int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *typep)
 {
-	struct smartcard *smartcard = remote_control_get_smartcard(priv);
+	struct smartcard *smartcard = remote_control_get_smartcard(RCPTR(priv));
 	enum smartcard_type type;
 	int32_t ret;
 
@@ -49,7 +49,7 @@ out:
 
 int32_t RPC_IMPL(card_read)(void *priv, off_t offset, struct rpc_buffer *buffer)
 {
-	struct smartcard *smartcard = remote_control_get_smartcard(priv);
+	struct smartcard *smartcard = remote_control_get_smartcard(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, offset=%ld, buffer=%p)", __func__, priv, offset,
@@ -63,7 +63,7 @@ int32_t RPC_IMPL(card_read)(void *priv, off_t offset, struct rpc_buffer *buffer)
 
 int32_t RPC_IMPL(card_write)(void *priv, off_t offset, struct rpc_buffer *buffer)
 {
-	struct smartcard *smartcard = remote_control_get_smartcard(priv);
+	struct smartcard *smartcard = remote_control_get_smartcard(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, offset=%ld, buffer=%p)", __func__, priv, offset,

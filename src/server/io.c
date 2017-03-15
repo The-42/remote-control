@@ -25,7 +25,7 @@ int32_t RPC_IMPL(check_io)(void *priv, uint8_t *value)
 
 int32_t RPC_IMPL(gpio_set_mask)(void *priv, uint32_t mask)
 {
-	struct gpio_backend *backend = remote_control_get_gpio_backend(priv);
+	struct gpio_backend *backend = remote_control_get_gpio_backend(RCPTR(priv));
 	unsigned int num;
 	unsigned int i;
 	int32_t ret;
@@ -61,7 +61,7 @@ out:
 
 int32_t RPC_IMPL(gpio_get_mask)(void *priv, uint32_t *mask)
 {
-	struct gpio_backend *backend = remote_control_get_gpio_backend(priv);
+	struct gpio_backend *backend = remote_control_get_gpio_backend(RCPTR(priv));
 	uint32_t value = 0;
 	unsigned int num;
 	unsigned int i;

@@ -17,7 +17,7 @@
 
 int32_t RPC_IMPL(handset_display_clear)(void *priv)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -30,7 +30,7 @@ int32_t RPC_IMPL(handset_display_clear)(void *priv)
 
 int32_t RPC_IMPL(handset_display_sync)(void *priv)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -44,7 +44,7 @@ int32_t RPC_IMPL(handset_display_sync)(void *priv)
 int32_t RPC_IMPL(handset_display_set_brightness)(void *priv,
 		uint8_t brightness)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, brightness=%u)", __func__, priv, brightness);
@@ -58,7 +58,7 @@ int32_t RPC_IMPL(handset_display_set_brightness)(void *priv,
 int32_t RPC_IMPL(handset_keypad_set_brightness)(void *priv,
 		uint8_t brightness)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, brightness=%u)", __func__, priv, brightness);
@@ -71,7 +71,7 @@ int32_t RPC_IMPL(handset_keypad_set_brightness)(void *priv,
 
 int32_t RPC_IMPL(handset_show_icon)(void *priv, enum RPC_TYPE(handset_icon) id)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, id=%d)", __func__, priv, id);
@@ -84,7 +84,7 @@ int32_t RPC_IMPL(handset_show_icon)(void *priv, enum RPC_TYPE(handset_icon) id)
 
 int32_t RPC_IMPL(handset_hide_icon)(void *priv, enum RPC_TYPE(handset_icon) id)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, id=%d)", __func__, priv, id);
@@ -98,7 +98,7 @@ int32_t RPC_IMPL(handset_hide_icon)(void *priv, enum RPC_TYPE(handset_icon) id)
 int32_t RPC_IMPL(handset_show_text)(void *priv, uint32_t x, uint32_t y,
 		const char *text)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, x=%u, y=%u, text=%p[%s])", __func__, priv, x,
@@ -113,7 +113,7 @@ int32_t RPC_IMPL(handset_show_text)(void *priv, uint32_t x, uint32_t y,
 int32_t RPC_IMPL(handset_hide_text)(void *priv, uint32_t x, uint32_t y,
 		const char *text)
 {
-	struct handset *handset = remote_control_get_handset(priv);
+	struct handset *handset = remote_control_get_handset(RCPTR(priv));
 	int32_t ret = 0;
 
 	g_debug("> %s(priv=%p, x=%u, y=%u, text=%p[%s])", __func__, priv, x,

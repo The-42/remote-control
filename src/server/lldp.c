@@ -34,7 +34,7 @@ int32_t RPC_IMPL(lldp_enable)(void *priv, bool enable)
 int32_t RPC_IMPL(lldp_read)(void *priv, uint32_t mode,
 		struct rpc_buffer *buffer)
 {
-	struct lldp_monitor *lldp = remote_control_get_lldp_monitor(priv);
+	struct lldp_monitor *lldp = remote_control_get_lldp_monitor(RCPTR(priv));
 	int32_t err = -ENOSYS;
 
 	g_debug("> %s(priv=%p, mode=%#x, buffer=%p)", __func__, priv, mode,

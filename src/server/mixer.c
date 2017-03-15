@@ -18,14 +18,14 @@
 int32_t RPC_IMPL(mixer_set_volume)(void *priv, enum RPC_TYPE(mixer_control) control,
 		uint8_t volume)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 	return mixer_set_volume(mixer, control, volume);
 }
 
 int32_t RPC_IMPL(mixer_get_volume)(void *priv, enum RPC_TYPE(mixer_control) control,
 		uint8_t *volumep)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 	unsigned int volume = 0;
 	int32_t ret;
 
@@ -39,19 +39,19 @@ int32_t RPC_IMPL(mixer_get_volume)(void *priv, enum RPC_TYPE(mixer_control) cont
 
 int32_t RPC_IMPL(mixer_set_mute)(void *priv, enum RPC_TYPE(mixer_control) control, bool mute)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 	return mixer_set_mute(mixer, control, mute);
 }
 
 int32_t RPC_IMPL(mixer_is_muted)(void *priv, enum RPC_TYPE(mixer_control) control, bool *mutep)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 	return mixer_is_muted(mixer, control, mutep);
 }
 
 int32_t RPC_IMPL(mixer_set_input_source)(void *priv, enum RPC_TYPE(mixer_input_source) source)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 	unsigned short input = MIXER_INPUT_SOURCE_UNKNOWN;
 
 	switch (source) {
@@ -77,7 +77,7 @@ int32_t RPC_IMPL(mixer_set_input_source)(void *priv, enum RPC_TYPE(mixer_input_s
 int32_t RPC_IMPL(mixer_get_input_source)(void *priv, enum RPC_TYPE(mixer_input_source) *sourcep)
 {
 	enum mixer_input_source input = MIXER_INPUT_SOURCE_UNKNOWN;
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 	int32_t err;
 
 	err = mixer_get_input_source(mixer, &input);
@@ -107,14 +107,14 @@ int32_t RPC_IMPL(mixer_get_input_source)(void *priv, enum RPC_TYPE(mixer_input_s
 
 int32_t RPC_IMPL(mixer_loopback_enable)(void *priv, bool enable)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 
 	return mixer_loopback_enable(mixer, enable);
 }
 
 int32_t RPC_IMPL(mixer_loopback_is_enabled)(void *priv, bool *enabled)
 {
-	struct mixer *mixer = remote_control_get_mixer(priv);
+	struct mixer *mixer = remote_control_get_mixer(RCPTR(priv));
 
 	return mixer_loopback_is_enabled(mixer, enabled);
 }

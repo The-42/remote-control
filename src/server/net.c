@@ -98,7 +98,7 @@ void rpc_net_cleanup(void)
 
 int32_t RPC_IMPL(net_config)(void *priv, uint32_t port, uint32_t timeout, uint32_t repeat, const char *host)
 {
-	struct net_udp *net = remote_control_get_net_udp(priv);
+	struct net_udp *net = remote_control_get_net_udp(RCPTR(priv));
 	int ret;
 
 	g_debug("> %s(priv=%p, port=%u, timeout=%u, repeat=%u, host=%s)",
@@ -125,7 +125,7 @@ int32_t RPC_IMPL(net_config)(void *priv, uint32_t port, uint32_t timeout, uint32
 
 int32_t RPC_IMPL(net_read)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
-	struct net_udp *net = remote_control_get_net_udp(priv);
+	struct net_udp *net = remote_control_get_net_udp(RCPTR(priv));
 	struct net_udp_channel *async_chan;
 	struct net_udp_channel *sync_chan;
 	int32_t timeout;
@@ -184,7 +184,7 @@ int32_t RPC_IMPL(net_read)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 
 int32_t RPC_IMPL(net_write)(void *priv, uint32_t mode, struct rpc_buffer *buffer)
 {
-	struct net_udp *net = remote_control_get_net_udp(priv);
+	struct net_udp *net = remote_control_get_net_udp(RCPTR(priv));
 	struct net_udp_channel *async_chan;
 	struct net_udp_channel *sync_chan;
 	struct timeval timeout;

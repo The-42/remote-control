@@ -42,7 +42,7 @@ int32_t RPC_IMPL(tuner_set_source)(void *priv, enum RPC_TYPE(tuner_source) sourc
 
 int32_t RPC_IMPL(tuner_set_frequency)(void *priv, uint32_t frequency)
 {
-	struct tuner *tuner = remote_control_get_tuner(priv);
+	struct tuner *tuner = remote_control_get_tuner(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, frequency=%u)", __func__, priv, frequency);

@@ -294,6 +294,7 @@ static gboolean config_get_socket_keepalive(GKeyFile *config)
 int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 {
 	struct rpc_server *server;
+	struct remote_control **rpc_priv;
 	struct remote_control *rc;
 	struct rpc_source *src;
 	GSource *source;
@@ -302,7 +303,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	if (!rcp)
 		return -EINVAL;
 
-	err = rpc_server_create(&server, NULL, sizeof(*rc));
+	err = rpc_server_create(&server, NULL, sizeof(struct remote_control *));
 	if (err < 0) {
 		g_critical("rpc_server_create(): %s", strerror(-err));
 		return err;
@@ -314,7 +315,9 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	rc = rpc_server_priv(server);
+	rc = g_new0(struct remote_control, 1);
+	rpc_priv = rpc_server_priv(server);
+	*rpc_priv = rc;
 
 	rc->source = g_source_new(&remote_control_source_funcs, sizeof(GSource));
 	if (!rc->source) {
@@ -489,7 +492,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 		return err;
 	}
 
-	rpc_irq_init(rc);
+	rpc_irq_init(rpc_priv);
 
 	*rcp = rc;
 	return 0;
@@ -520,6 +523,7 @@ int remote_control_free(struct remote_control *rc)
 	gpio_backend_free(rc->gpio);
 	event_manager_free(rc->event_manager);
 	lldp_monitor_free(rc->lldp);
+	g_free(rc);
 
 	return 0;
 }

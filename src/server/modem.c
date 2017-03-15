@@ -17,7 +17,7 @@
 
 int32_t RPC_IMPL(modem_init)(void *priv)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -30,7 +30,7 @@ int32_t RPC_IMPL(modem_init)(void *priv)
 
 int32_t RPC_IMPL(modem_deinit)(void *priv)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -43,7 +43,7 @@ int32_t RPC_IMPL(modem_deinit)(void *priv)
 
 int32_t RPC_IMPL(modem_pick_up)(void *priv)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -56,7 +56,7 @@ int32_t RPC_IMPL(modem_pick_up)(void *priv)
 
 int32_t RPC_IMPL(modem_hang_up)(void *priv)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -69,7 +69,7 @@ int32_t RPC_IMPL(modem_hang_up)(void *priv)
 
 int32_t RPC_IMPL(modem_dial)(void *priv, const char *number)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, number=%s)", __func__, priv, number);
@@ -82,7 +82,7 @@ int32_t RPC_IMPL(modem_dial)(void *priv, const char *number)
 
 int32_t RPC_IMPL(modem_is_calling)(void *priv, bool *calling)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	enum modem_state state = MODEM_STATE_IDLE;
 	int32_t ret;
 
@@ -106,7 +106,7 @@ out:
 
 int32_t RPC_IMPL(modem_is_connected)(void *priv, bool *connected)
 {
-	struct modem_manager *modem = remote_control_get_modem_manager(priv);
+	struct modem_manager *modem = remote_control_get_modem_manager(RCPTR(priv));
 	enum modem_state state = MODEM_STATE_IDLE;
 	int32_t ret;
 

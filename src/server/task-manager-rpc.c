@@ -15,10 +15,10 @@
 
 int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 {
-	return task_manager_exec(priv, command_line, NULL, NULL);
+	return task_manager_exec(RCPTR(priv), command_line, NULL, NULL);
 }
 
 int32_t RPC_IMPL(task_manager_kill)(void *priv, int32_t pid, int32_t sig)
 {
-	return task_manager_kill(priv, pid, sig);
+	return task_manager_kill(RCPTR(priv), pid, sig);
 }

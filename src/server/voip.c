@@ -73,7 +73,7 @@ struct RPC_TYPE(voip_login_options) {
 int32_t RPC_IMPL(voip_login)(void *priv, struct rpc_buffer *options)
 {
 	struct RPC_TYPE(voip_login_options) *account = options->rx_buf;
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	enum voip_transport transport;
 	int32_t ret;
 
@@ -105,7 +105,7 @@ out:
 
 int32_t RPC_IMPL(voip_logout)(void *priv)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -118,7 +118,7 @@ int32_t RPC_IMPL(voip_logout)(void *priv)
 
 int32_t RPC_IMPL(voip_still_logged_in)(void *priv, bool *status)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	enum voip_login_state state = VOIP_LOGIN_STATE_LOGGED_OUT;
 	int32_t ret = 0;
 
@@ -140,7 +140,7 @@ out:
 
 int32_t RPC_IMPL(voip_connect_to)(void *priv, const char *uri)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, uri=%p)", __func__, priv, uri);
@@ -153,7 +153,7 @@ int32_t RPC_IMPL(voip_connect_to)(void *priv, const char *uri)
 
 int32_t RPC_IMPL(voip_accept_incoming)(void *priv, char **uri)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, uri=%p)", __func__, priv, uri);
@@ -166,7 +166,7 @@ int32_t RPC_IMPL(voip_accept_incoming)(void *priv, char **uri)
 
 int32_t RPC_IMPL(voip_disconnect)(void *priv)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
@@ -195,7 +195,7 @@ int32_t RPC_IMPL(voip_is_calling)(void *priv, bool *state)
 
 int32_t RPC_IMPL(voip_get_last_contact)(void *priv, char **contact)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	const char *name = NULL;
 	int32_t ret;
 
@@ -225,7 +225,7 @@ out:
 
 int32_t RPC_IMPL(voip_dial)(void *priv, int8_t dtmf)
 {
-	struct voip *voip = remote_control_get_voip(priv);
+	struct voip *voip = remote_control_get_voip(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, dtmf=%c)", __func__, priv, dtmf);

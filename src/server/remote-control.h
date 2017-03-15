@@ -562,6 +562,12 @@ void rpc_irq_cleanup(void);
  */
 void rpc_net_cleanup(void);
 
+/**
+ * Macro dealing with the fact RPC private data now only contains a pointer to
+ * remote-control private data.
+ */
+#define RCPTR(priv)	(priv ? *((struct remote_control **)priv) : NULL)
+
 #if GTK_CHECK_VERSION(2, 91, 0)
 void gdk_window_clear(GdkWindow *window);
 #endif

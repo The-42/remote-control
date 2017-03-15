@@ -16,7 +16,7 @@
 int32_t RPC_IMPL(audio_set_state)(void *priv, enum RPC_TYPE(audio_state) state,
 		bool force)
 {
-	struct audio *audio = remote_control_get_audio(priv);
+	struct audio *audio = remote_control_get_audio(RCPTR(priv));
 	enum audio_state as;
 	int32_t ret;
 
@@ -82,7 +82,7 @@ out:
 
 int32_t RPC_IMPL(audio_get_state)(void *priv, enum RPC_TYPE(audio_state) *statep)
 {
-	struct audio *audio = remote_control_get_audio(priv);
+	struct audio *audio = remote_control_get_audio(RCPTR(priv));
 	enum audio_state as;
 	int32_t ret;
 
@@ -149,7 +149,7 @@ out:
 
 int32_t RPC_IMPL(audio_set_volume)(void *priv, uint8_t volume)
 {
-	struct audio *audio = remote_control_get_audio(priv);
+	struct audio *audio = remote_control_get_audio(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, volume=%u)", __func__, priv, volume);
@@ -162,7 +162,7 @@ int32_t RPC_IMPL(audio_set_volume)(void *priv, uint8_t volume)
 
 int32_t RPC_IMPL(audio_get_volume)(void *priv, uint8_t *volumep)
 {
-	struct audio *audio = remote_control_get_audio(priv);
+	struct audio *audio = remote_control_get_audio(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, volumep=%p)", __func__, priv, volumep);
@@ -175,7 +175,7 @@ int32_t RPC_IMPL(audio_get_volume)(void *priv, uint8_t *volumep)
 
 int32_t RPC_IMPL(audio_enable_speakers)(void *priv, bool enable)
 {
-	struct audio* audio = remote_control_get_audio(priv);
+	struct audio* audio = remote_control_get_audio(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, enable=%d)", __func__, priv, enable);
@@ -188,7 +188,7 @@ int32_t RPC_IMPL(audio_enable_speakers)(void *priv, bool enable)
 
 int32_t RPC_IMPL(audio_speakers_enabled)(void *priv, bool *enablep)
 {
-	struct audio* audio = remote_control_get_audio(priv);
+	struct audio* audio = remote_control_get_audio(RCPTR(priv));
 	int32_t ret;
 
 	g_debug("> %s(priv=%p, enablep=%p)", __func__, priv, enablep);

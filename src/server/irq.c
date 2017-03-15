@@ -158,7 +158,7 @@ void rpc_irq_init(void *priv)
 
 	irq_event_data = g_new0(struct irq_data, 1);
 	irq_event_data->server = server;
-	irq_event_data->manager = remote_control_get_event_manager(priv);
+	irq_event_data->manager = remote_control_get_event_manager(RCPTR(priv));
 
 	if (event_manager_set_event_cb(irq_event_data->manager, irq_event_cb,
 			irq_event_data, server)) {
@@ -190,7 +190,7 @@ int32_t RPC_IMPL(irq_enable)(void *priv, uint8_t virtkey)
 
 int32_t RPC_IMPL(irq_get_mask)(void *priv, uint32_t *mask)
 {
-	struct event_manager *manager = remote_control_get_event_manager(priv);
+	struct event_manager *manager = remote_control_get_event_manager(RCPTR(priv));
 	uint32_t status = 0;
 	int32_t ret;
 
@@ -227,7 +227,7 @@ out:
 
 int32_t RPC_IMPL(irq_get_info)(void *priv, enum RPC_TYPE(irq_source) source, uint32_t *info)
 {
-	struct event_manager *manager = remote_control_get_event_manager(priv);
+	struct event_manager *manager = remote_control_get_event_manager(RCPTR(priv));
 	struct event event;
 	int32_t ret = 0;
 	int err;

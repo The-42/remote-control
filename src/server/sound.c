@@ -33,7 +33,7 @@ int32_t RPC_IMPL(sound_play_sync)(void *priv, const char *filename)
 
 int32_t RPC_IMPL(sound_play)(void *priv, const char *uri)
 {
-	struct sound_manager *sound = remote_control_get_sound_manager(priv);
+	struct sound_manager *sound = remote_control_get_sound_manager(RCPTR(priv));
 	int32_t ret = -ENOSYS;
 
 	g_debug("> %s(priv=%p, uri=%s)", __func__, priv, uri);
@@ -44,7 +44,7 @@ int32_t RPC_IMPL(sound_play)(void *priv, const char *uri)
 
 int32_t RPC_IMPL(sound_stop)(void *priv)
 {
-	struct sound_manager *sound = remote_control_get_sound_manager(priv);
+	struct sound_manager *sound = remote_control_get_sound_manager(RCPTR(priv));
 	int32_t ret = -ENOSYS;
 
 	g_debug("> %s(priv=%p)", __func__, priv);
