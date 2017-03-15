@@ -522,6 +522,8 @@ static gpointer remote_control_thread(gpointer data)
 	g_source_destroy(source);
 	g_main_loop_unref(rcd->loop);
 
+	remote_control_free(rc);
+
 	return ret;
 }
 

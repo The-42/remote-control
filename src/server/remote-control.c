@@ -26,7 +26,7 @@ enum remote_control_state {
 struct rpc_source {
 	GSource source;
 
-	struct remote_control *rc;
+	struct rpc_server *server;
 	enum remote_control_state state;
 	char peer[NI_MAXHOST + 1];
 	GPollFD poll_listen;
@@ -70,7 +70,7 @@ static int rpc_log(int priority, const char *fmt, ...)
 static gboolean rpc_source_prepare(GSource *source, gint *timeout)
 {
 	struct rpc_source *src = (struct rpc_source *)source;
-	struct rpc_server *server = rpc_server_from_priv(src->rc);
+	struct rpc_server *server = src->server;
 	int err;
 
 	switch (src->state) {
@@ -141,7 +141,7 @@ static gboolean rpc_source_check(GSource *source)
 static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
 {
 	struct rpc_source *src = (struct rpc_source *)source;
-	struct rpc_server *server = rpc_server_from_priv(src->rc);
+	struct rpc_server *server = src->server;
 	struct rpc_packet *request = NULL;
 	struct sockaddr *addr = NULL;
 	gboolean ret = TRUE;
@@ -222,7 +222,7 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 static void rpc_source_finalize(GSource *source)
 {
 	struct rpc_source *src = (struct rpc_source *)source;
-	remote_control_free(src->rc);
+	rpc_server_free(src->server);
 }
 
 static GSourceFuncs rpc_source_funcs = {
@@ -341,7 +341,7 @@ int remote_control_create(struct remote_control **rcp, GKeyFile *config)
 	}
 
 	src = (struct rpc_source *)source;
-	src->rc = rc;
+	src->server = server;
 
 	socket = rpc_server_get_listen_socket(server);
 	if (socket < 0) {
@@ -502,8 +502,6 @@ GSource *remote_control_get_source(struct remote_control *rc)
 
 int remote_control_free(struct remote_control *rc)
 {
-	struct rpc_server *server = rpc_server_from_priv(rc);
-
 	if (!rc)
 		return -EINVAL;
 
@@ -522,9 +520,18 @@ int remote_control_free(struct remote_control *rc)
 	gpio_backend_free(rc->gpio);
 	event_manager_free(rc->event_manager);
 	lldp_monitor_free(rc->lldp);
-	rpc_server_free(server);
+
+	return 0;
+}
+
+int rpc_server_free(struct rpc_server *server)
+{
+	if (!server)
+		return -EINVAL;
+
 	rpc_irq_cleanup();
 	rpc_net_cleanup();
+	rpc_server_free(server);
 
 	return 0;
 }
