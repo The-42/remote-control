@@ -61,10 +61,15 @@ static ssize_t gethwaddr(char *hwaddr, size_t len)
 	memset(&req, 0, sizeof(req));
 	req.ifr_addr.sa_family = AF_INET;
 	ifindex = if_lookup_default();
-	if (ifindex == 0)
+	if (ifindex == 0) {
+		close(skt);
 		return -ENODEV;
-	if (!if_indextoname(ifindex, ifname))
-		return -errno;
+	}
+	if (!if_indextoname(ifindex, ifname)) {
+		err = -errno;
+		close(skt);
+		return err;
+	}
 	g_debug("%s: using MAC from %s", __func__, ifname);
 	strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
 
