@@ -161,7 +161,6 @@ void alsaloop_finalize(struct alsaloop *alsaloop)
 
 		pthread_mutex_destroy(&alsaloop->ctx_mutex);
 		free(alsaloop);
-		alsaloop = NULL;
 
 		aloop_free_global();
 	}
