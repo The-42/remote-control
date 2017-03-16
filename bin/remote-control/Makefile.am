@@ -49,7 +49,6 @@ remote_control_SOURCES += \
 	javascript-input.c \
 	javascript-lldp.c \
 	javascript-media-player.c \
-	javascript-modem.c \
 	javascript-output.c \
 	javascript-output.h \
 	javascript-output-hid-led.c \
@@ -71,6 +70,10 @@ if ENABLE_JAVASCRIPT_APP_WATCHDOG
 remote_control_SOURCES += \
 	javascript-app-watchdog.c
 endif
+if ENABLE_LIBMODEM
+remote_control_SOURCES += \
+	javascript-modem.c
+endif  # ENABLE_LIBMODEM
 
 # javascript-input.c needs some generated tables
 $(srcdir)/javascript-input.c: \

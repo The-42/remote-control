@@ -55,7 +55,9 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_audio_player,
 	&javascript_backlight,
 	&javascript_media_player,
+#ifdef ENABLE_LIBMODEM
 	&javascript_modem,
+#endif
 	&javascript_voip,
 	&javascript_output,
 	&javascript_smartcard,
