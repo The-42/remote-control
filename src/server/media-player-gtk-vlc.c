@@ -16,12 +16,6 @@
 #include <vlc/vlc.h>
 #include <vlc/libvlc_version.h>
 
-#ifdef ENABLE_LIBTNJ3324
-#include <tnj3324.h>
-
-#define TNJ3324_DEFAULT_I2CBUS 0
-#endif
-
 #include "remote-control.h"
 #include "guri.h"
 
@@ -37,10 +31,6 @@ struct media_player {
 	libvlc_media_player_t *player;
 	libvlc_event_manager_t *evman;
 	libvlc_media_t *media;
-
-#ifdef ENABLE_LIBTNJ3324
-	struct tnj3324_t tnj3324;
-#endif
 
 	struct options opts;
 
@@ -256,9 +246,6 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 #else
 	GdkRegion *region;
 #endif
-#ifdef ENABLE_LIBTNJ3324
-	int i2cbus;
-#endif
 	GError *err = NULL;
 	gint64 duration;
 	int volume;
@@ -337,16 +324,6 @@ int media_player_create(struct media_player **playerp, GKeyFile *config)
 #else
 	libvlc_event_attach(player->evman, libvlc_MediaPlayerPositionChanged,
 			on_position_changed, player);
-#endif
-
-#ifdef ENABLE_LIBTNJ3324
-	i2cbus = g_key_file_get_integer(config, "media-player",
-	                                "tnj3324-i2cbus", &err);
-	if (err) {
-		g_clear_error(&err);
-		i2cbus = TNJ3324_DEFAULT_I2CBUS;
-	}
-	tnj3324_init(&player->tnj3324, i2cbus);
 #endif
 
 	duration = g_key_file_get_int64(config, "media-player",
@@ -472,17 +449,6 @@ int media_player_set_uri(struct media_player *player, const char *uri)
 	 */
 	option = &split_uri[0];
 	while (++option && *option) {
-#ifdef ENABLE_LIBTNJ3324
-		if (g_str_equal(scheme, "v4l2") &&
-		    g_str_has_prefix(*option ,":frequency=")) {
-			const gchar *value = g_strrstr(*option, "=") + 1;
-			float freq = (float)g_ascii_strtoll(value, NULL, 10) / 1000;
-
-			g_debug("   select tnj3324 input frequency = %.02f\n", freq);
-			tnj3324_set_frequency(&player->tnj3324, freq);
-			continue;
-		}
-#endif
 		/* uri option overrides config entry */
 		if (g_str_has_prefix(*option, ":network-caching=")) {
 			const gchar *value = g_strrstr(*option, "=") + 1;

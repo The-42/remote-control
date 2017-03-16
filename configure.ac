@@ -217,21 +217,6 @@ AS_CASE([$with_video_backend],
 	], [AC_MSG_ERROR([Invalid video backend: must be none, libvlc or gst])]
 )
 
-with_libtnj3324=no
-
-AS_IF([test "x$enable_libvlc" = "xyes"], [
-	AC_ARG_ENABLE([libtnj3324],
-		[AS_HELP_STRING([--enable-libtnj3324],
-			[Enable tuner support using libtnj3324 [default=no]])],
-			[with_libtnj3324="$enableval"], [with_libtnj3324=no])
-
-	AS_IF([test "x$with_libtnj3324" = "xyes"], [
-		PKG_CHECK_MODULES([LIBTNJ3324], [libtnj3324],
-			[AC_DEFINE([ENABLE_LIBTNJ3324], [1],
-				[Enable tnj3324 tuner support])])
-	])
-])
-
 dnl FIXME: This is not the way to go, try to do this in AC_CASE[gst]
 if test "x$enable_gst" = "xyes"; then
 	PKG_CHECK_MODULES([XRANDR], [xrandr >= 1.3 xrender x11 xproto >= 7.0.17],
@@ -418,7 +403,6 @@ AM_CONDITIONAL(ENABLE_JAVASCRIPT_LCD, [test "x$enable_javascript_lcd" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_APP_WATCHDOG, [test "x$enable_javascript_app_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_webkit" = "x2.0"])
-AM_CONDITIONAL(ENABLE_LIBTNJ3324, [test "x$with_libtnj3324" = "xyes"])
 AM_CONDITIONAL(ENABLE_ALSALOOP, [test "x$with_libalsaloop" = "xyes"])
 AM_CONDITIONAL(ENABLE_GTK3, [test "x$with_gtk" = "x3.0"])
 
@@ -492,8 +476,6 @@ Features:
 AS_IF([test "x$enable_gst" = "xyes"],
 	[AS_ECHO("  Video Backend:             $with_video_backend ($gst_version)")],
 	[AS_ECHO("  Video Backend:             $with_video_backend")])
-AS_IF([test "x$with_video_backend" = "xlibvlc"],
-	[AS_ECHO("     Tuner Support:          $with_libtnj3324")])
 
 smartcard_none=yes
 AS_ECHO_N("  SmartCard Backends:  ")

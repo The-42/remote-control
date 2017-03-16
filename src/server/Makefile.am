@@ -225,10 +225,5 @@ BUILT_SOURCES = \
 	gtkosk-dbus.c \
 	gtkosk-dbus.h
 
-if ENABLE_LIBTNJ3324
-libremote_control_la_CFLAGS += @LIBTNJ3324_CFLAGS@
-libremote_control_la_LIBADD += @LIBTNJ3324_LIBS@
-endif
-
 CLEANFILES = \
 	$(BUILT_SOURCES)
