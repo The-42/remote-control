@@ -14,7 +14,6 @@
 
 #include "remote-control-stub.h"
 #include "remote-control-rpc.h"
-#include "remote-control.h"
 
 int32_t RPC_IMPL(tuner_set_output_window)(void *priv, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
@@ -43,13 +42,9 @@ int32_t RPC_IMPL(tuner_set_source)(void *priv, enum RPC_TYPE(tuner_source) sourc
 
 int32_t RPC_IMPL(tuner_set_frequency)(void *priv, uint32_t frequency)
 {
-	struct tuner *tuner = remote_control_get_tuner(RCPTR(priv));
-	int32_t ret;
+	int32_t ret = -ENOSYS;
 
 	g_debug("> %s(priv=%p, frequency=%u)", __func__, priv, frequency);
-
-	ret = tuner_set_frequency(tuner, frequency);
-
 	g_debug("< %s() = %d", __func__, ret);
 	return ret;
 }
