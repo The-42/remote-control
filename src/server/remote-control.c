@@ -13,7 +13,6 @@
 #include <netdb.h>
 #include <glib.h>
 
-#include "remote-control-stub.h"
 #include "remote-control.h"
 
 struct remote_control {
