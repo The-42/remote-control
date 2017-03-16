@@ -688,7 +688,7 @@ adblock_fixup_regexp(const gchar* prefix,
 
 	/* lets strip first .* */
 	if (src[0] == '*') {
-		(void)*src++;
+		src++;
 	}
 
 	do {
@@ -836,8 +836,8 @@ adblock_frame_add(gchar* line)
 {
 	const gchar* separator = " , ";
 
-	(void)*line++;
-	(void)*line++;
+	line++;
+	line++;
 
 	if (strchr(line, '\'') ||
 	   (strchr(line, ':') && !g_regex_match_simple(".*\\[.*:.*\\].*",
@@ -941,12 +941,12 @@ adblock_parse_line(gchar* line)
 
 	/* Got URL blocker rule */
 	if (line[0] == '|' && line[1] == '|' ) {
-		(void)*line++;
-		(void)*line++;
+		line++;
+		line++;
 		return adblock_add_url_pattern("", "fulluri", line);
 	}
 	if (line[0] == '|') {
-		(void)*line++;
+		line++;
 		return adblock_add_url_pattern("^", "fulluri", line);
 	}
 	return adblock_add_url_pattern("", "uri", line);
