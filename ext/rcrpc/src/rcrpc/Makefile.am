@@ -3,7 +3,7 @@ noinst_LTLIBRARIES = \
 
 librcrpc_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
-	-I$(top_srcdir)/src/server \
+	-I$(top_srcdir)/src/core \
 	@LIBNL_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
@@ -12,7 +12,7 @@ librcrpc_la_CFLAGS = \
 	@WATCHDOG_CFLAGS@
 
 librcrpc_la_LIBADD = \
-	../../../../src/server/libremote-control.la \
+	../../../../src/core/libremote-control.la \
 	@LIBNL_LIBS@ \
 	@LIBRPC_LIBS@ \
 	@GUDEV_LIBS@ \

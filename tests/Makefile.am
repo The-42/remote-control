@@ -16,6 +16,6 @@ gkeyfilemerge_CFLAGS = -I$(top_srcdir)/src/common @GLIB_CFLAGS@
 gkeyfilemerge_SOURCES = gkeyfilemerge.c
 gkeyfilemerge_LDADD = @GLIB_LIBS@ ../src/common/libcommon.la
 
-net_udp_CFLAGS = @WEBKIT_CFLAGS@ -I$(top_srcdir)/src/server
+net_udp_CFLAGS = @WEBKIT_CFLAGS@ -I$(top_srcdir)/src/core
 net_udp_SOURCES = net-udp.c
-net_udp_LDADD = @GLIB_LIBS@ ../src/server/libremote-control.la
+net_udp_LDADD = @GLIB_LIBS@ ../src/core/libremote-control.la
