@@ -4,17 +4,17 @@ include_HEADERS = \
 	remote-control.h
 
 lib_LTLIBRARIES = \
-	libremote-control.la
+	librcrpc-client.la
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = remote-control.pc
 
-libremote_control_la_CPPFLAGS = \
+librcrpc_client_la_CPPFLAGS = \
 	@VISIBILITY_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@GLIB_CFLAGS@
 
-libremote_control_la_SOURCES = \
+librcrpc_client_la_SOURCES = \
 	audio.c \
 	backlight.c \
 	card.c \
@@ -33,13 +33,13 @@ libremote_control_la_SOURCES = \
 	tuner.c \
 	voip.c
 
-nodist_libremote_control_la_SOURCES = \
+nodist_librcrpc_client_la_SOURCES = \
 	remote-control-stub.c \
 	remote-control-stub.h
 
-libremote_control_la_LDFLAGS = -version-info $(VERSION_INFO)
+librcrpc_client_la_LDFLAGS = -version-info $(VERSION_INFO)
 
-libremote_control_la_LIBADD = \
+librcrpc_client_la_LIBADD = \
 	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \
 	-lpthread

@@ -6,6 +6,7 @@ remote_control_CPPFLAGS = \
 	-I$(top_srcdir)/src/common \
 	-I$(top_srcdir)/src/server \
 	-I$(top_srcdir)/bin/utils \
+	-I$(top_srcdir)/ext/rcrpc/src/rcrpc \
 	@GLIB_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
@@ -28,6 +29,7 @@ remote_control_SOURCES = \
 remote_control_LDADD = \
 	../../src/server/libremote-control.la \
 	../../src/common/libcommon.la \
+	../../ext/rcrpc/src/rcrpc/librcrpc.la \
 	../utils/libutils.la \
 	@GLIB_LIBS@ \
 	@LIBRPC_LIBS@ \

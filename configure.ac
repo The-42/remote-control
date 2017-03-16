@@ -447,17 +447,22 @@ AC_SUBST(COMMANDS_ALIGN)
 AC_CONFIG_FILES([
 	bin/Makefile
 	bin/remote-control-browser/Makefile
-	bin/remote-control-client/Makefile
-	bin/remote-control-client/remote-control-client.lds
 	bin/remote-control/Makefile
 	bin/utils/Makefile
 	data/de.avionic-design.RemoteControl.service
 	data/Makefile
 	doc/Doxyfile
 	doc/Makefile
+	ext/Makefile
+	ext/rcrpc/Makefile
+	ext/rcrpc/bin/Makefile
+	ext/rcrpc/bin/remote-control-client.lds
+	ext/rcrpc/src/Makefile
+	ext/rcrpc/src/rcrpc/Makefile
+	ext/rcrpc/src/rcrpc-client/Makefile
+	ext/rcrpc/src/rcrpc-client/remote-control.pc
+	ext/rcrpc/tests/Makefile
 	Makefile
-	src/client/Makefile
-	src/client/remote-control.pc
 	src/common/Makefile
 	src/Makefile
 	src/server/Makefile

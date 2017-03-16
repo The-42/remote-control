@@ -2,8 +2,7 @@ bin_PROGRAMS = \
 	remote-control-client
 
 remote_control_client_CFLAGS = \
-	-I ../../src/client \
-	-I $(srcdir)/../../src/client \
+	-I ../src/rcrpc-client \
 	-DLOCALEBASEDIR=\""$(datadir)/locale"\" \
 	-DGETTEXT_PACKAGE=\"$(PACKAGE)\" \
 	@READLINE_CFLAGS@ \
@@ -16,7 +15,7 @@ remote_control_client_SOURCES = \
 	utils.c
 
 remote_control_client_LDADD = \
-	../../src/client/libremote-control.la \
+	../src/rcrpc-client/librcrpc-client.la \
 	remote-control-client.lds \
 	@READLINE_LIBS@ \
 	@LIBRPC_LIBS@

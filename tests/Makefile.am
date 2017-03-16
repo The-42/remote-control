@@ -2,7 +2,6 @@ noinst_PROGRAMS = \
 	ajax-dead-lock \
 	alert-dead-lock \
 	gkeyfilemerge \
-	media-player-test \
 	net-udp
 
 ajax_dead_lock_CFLAGS = @WEBKIT_CFLAGS@
@@ -16,10 +15,6 @@ alert_dead_lock_LDADD = @WEBKIT_LIBS@
 gkeyfilemerge_CFLAGS = -I$(top_srcdir)/src/common @GLIB_CFLAGS@
 gkeyfilemerge_SOURCES = gkeyfilemerge.c
 gkeyfilemerge_LDADD = @GLIB_LIBS@ ../src/common/libcommon.la
-
-media_player_test_CFLAGS = -I$(top_srcdir)/src/client
-media_player_test_SOURCES = media-player-test.c
-media_player_test_LDADD = ../src/client/libremote-control.la
 
 net_udp_CFLAGS = @WEBKIT_CFLAGS@ -I$(top_srcdir)/src/server
 net_udp_SOURCES = net-udp.c
