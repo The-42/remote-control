@@ -62,7 +62,7 @@ struct ir {
 	JSObjectRef thisptr;
 };
 
-static ssize_t read_all(int fd, void *buffer, size_t count, ulong timeout)
+static ssize_t read_all(int fd, uint8_t *buffer, size_t count, ulong timeout)
 {
 	struct timeval to;
 	ssize_t pos = 0;
