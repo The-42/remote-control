@@ -56,7 +56,7 @@ static void remote_control_stdio_log_handler(const gchar *log_domain,
 	const gchar *level_prefix = "LOG";
 	const gchar *program;
 	gchar buffer[16];
-	struct tm *tmp;
+	struct tm tmp;
 	time_t now;
 
 	switch (log_level & G_LOG_LEVEL_MASK) {
@@ -96,8 +96,8 @@ static void remote_control_stdio_log_handler(const gchar *log_domain,
 	}
 
 	now = time(NULL);
-	tmp = localtime(&now);
-	strftime(buffer, sizeof(buffer), "%b %e %H:%M:%S", tmp);
+	localtime_r(&now, &tmp);
+	strftime(buffer, sizeof(buffer), "%b %e %H:%M:%S", &tmp);
 	print("%s ", buffer);
 
 	if (log_domain)
