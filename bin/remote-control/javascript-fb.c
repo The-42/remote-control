@@ -382,7 +382,7 @@ static const JSStaticFunction js_fb_functions[] = {
 static int js_fb_init_fb(GKeyFile *config, const char *name,
 		struct js_fb_data *data)
 {
-	char **match = NULL;
+	char **match;
 	int ret = 0;
 
 	data->device = javascript_config_get_string(config, JS_FB_CONFIG_GROUP,

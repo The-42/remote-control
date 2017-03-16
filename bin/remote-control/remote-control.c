@@ -304,10 +304,10 @@ GtkWidget *create_rdp_window(GKeyFile *conf, GMainLoop *loop, int argc,
 GtkWidget *create_browser_window(GKeyFile *conf, GMainLoop *loop,
 		struct remote_control_data *rcd, int argc, char *argv[])
 {
-	gboolean check_origin = true;
-	gboolean inspector = false;
 	GtkWidget *window = NULL;
-	const gchar *uri = NULL;
+	gboolean check_origin;
+	gboolean inspector;
+	const gchar *uri;
 
 	uri = g_key_file_get_value(conf, "browser", "uri", NULL);
 	if (!uri && (argc > 0))

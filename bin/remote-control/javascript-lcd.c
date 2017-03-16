@@ -407,7 +407,7 @@ static const struct lcd_command* lcd_find_command(struct lcd *lcd, int command)
 
 static int lcd_send_command(struct lcd *lcd, int command, int value)
 {
-	const struct lcd_command *cmd = NULL;
+	const struct lcd_command *cmd;
 	GPollFD *poll = lcd->tty;
 	guint8 *buf;
 	int len;

@@ -542,9 +542,9 @@ gint javascript_config_get_integer(GKeyFile *config, const char *group,
 
 gchar **javascript_config_get_groups(GKeyFile *config, const char *group)
 {
-	gchar **names = NULL;
 	gchar **ret = NULL;
 	gsize num_groups;
+	gchar **names;
 	int i, j = 0;
 
 	names = g_key_file_get_groups(config, &num_groups);

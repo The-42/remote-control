@@ -54,9 +54,9 @@ static char *sysinfo_get_release_info(JSContextRef context, const char *type,
 	GFileInputStream *read = NULL;
 	GKeyFile *keyfile = NULL;
 	GFileInfo *info = NULL;
-	GFile *file = NULL;
 	char *buff = NULL;
 	char *ret = NULL;
+	GFile *file;
 
 	file = g_file_new_for_path(SYSINFO_RELEASE_FILE);
 	if (!file) {
