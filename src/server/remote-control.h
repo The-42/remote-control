@@ -18,10 +18,6 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 
-#include <librpc.h>
-
-#define BIT(x) (1 << (x))
-
 struct remote_control;
 
 /**
@@ -519,7 +515,6 @@ int app_watchdog_trigger(struct app_watchdog *watchdog);
 int remote_control_create(struct remote_control **rcp, GKeyFile *config);
 GSource *remote_control_get_source(struct remote_control *rc);
 int remote_control_free(struct remote_control *rc);
-int rpc_server_free(struct rpc_server *server);
 
 struct event_manager *remote_control_get_event_manager(struct remote_control *rc);
 struct audio* remote_control_get_audio(struct remote_control *rc);
@@ -539,8 +534,6 @@ struct handset *remote_control_get_handset(struct remote_control *rc);
 struct gpio_backend *remote_control_get_gpio_backend(struct remote_control *rc);
 struct app_watchdog *remote_control_get_watchdog(struct remote_control *rc);
 
-int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request);
-
 /**
  * USB Handset
  */
@@ -550,23 +543,6 @@ int usb_handset_create(struct remote_control *rc);
  * utilities
  */
 unsigned int if_lookup_default(void);
-
-/**
- * irq.c
- */
-void rpc_irq_init(void *priv);
-void rpc_irq_cleanup(void);
-
-/**
- * net.c
- */
-void rpc_net_cleanup(void);
-
-/**
- * Macro dealing with the fact RPC private data now only contains a pointer to
- * remote-control private data.
- */
-#define RCPTR(priv)	(priv ? *((struct remote_control **)priv) : NULL)
 
 #if GTK_CHECK_VERSION(2, 91, 0)
 void gdk_window_clear(GdkWindow *window);

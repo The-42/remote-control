@@ -13,6 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 
 int32_t RPC_IMPL(mixer_set_volume)(void *priv, enum RPC_TYPE(mixer_control) control,

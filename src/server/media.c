@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "remote-control-rpc.h"
 
 int32_t RPC_IMPL(media_command)(void *priv, uint32_t command, int32_t p1, const char *p2)
 {

@@ -26,6 +26,7 @@
 
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
 #include "javascript.h"
@@ -504,6 +505,14 @@ static gpointer remote_control_thread(gpointer data)
 	if (err < 0) {
 		g_critical("remote_control_create(): %s", strerror(-err));
 		g_mutex_unlock(&rcd->startup_mutex);
+		return NULL;
+	}
+
+	err = rpc_create(rc, rcd->config);
+	if (err < 0) {
+		g_critical("rpc_create(): %s", strerror(-err));
+		g_mutex_unlock(&rcd->startup_mutex);
+		remote_control_free(rc);
 		return NULL;
 	}
 

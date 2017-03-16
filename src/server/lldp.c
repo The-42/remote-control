@@ -21,6 +21,7 @@
 #include <linux/if_packet.h>
 
 #include "remote-control-stub.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 
 int32_t RPC_IMPL(lldp_enable)(void *priv, bool enable)

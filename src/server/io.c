@@ -13,6 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 
 int32_t RPC_IMPL(check_io)(void *priv, uint8_t *value)

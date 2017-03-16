@@ -21,6 +21,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 
 enum net_read_mode {

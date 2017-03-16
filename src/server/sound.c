@@ -13,6 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 
 int32_t RPC_IMPL(sound_play_async)(void *priv, const char *filename)

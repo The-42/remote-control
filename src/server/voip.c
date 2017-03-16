@@ -13,6 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
+#include "remote-control-rpc.h"
 #include "remote-control.h"
 
 static const char *voip_transport_name(enum voip_transport transport)

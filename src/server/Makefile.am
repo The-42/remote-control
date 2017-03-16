@@ -37,6 +37,8 @@ libremote_control_la_SOURCES = \
 	net-udp.c \
 	remote-control.c \
 	remote-control.h \
+	remote-control-rpc.c \
+	remote-control-rpc.h \
 	smartcard.c \
 	sound.c \
 	system.c \
