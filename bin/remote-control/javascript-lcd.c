@@ -460,7 +460,6 @@ static JSValueRef lcd_function_send(JSContextRef context,
                                     JSValueRef *exception)
 {
 	struct lcd *priv = JSObjectGetPrivate(object);
-	GPollFD *poll = priv->tty;
 	JSStringRef string;
 	char *command;
 	size_t length;
@@ -496,7 +495,7 @@ static JSValueRef lcd_function_send(JSContextRef context,
 
 	hexdump(command, length);
 
-	ret = write(poll->fd, command, length);
+	ret = write(priv->tty->fd, command, length);
 	if (ret < 0) {
 		javascript_set_exception_text(context, exception,
 			"write failed");
