@@ -1,4 +1,9 @@
-noinst_LTLIBRARIES = \
+VERSION_INFO = 1:0:0
+
+include_HEADERS = \
+	remote-control.h
+
+lib_LTLIBRARIES = \
 	libremote-control.la
 
 libremote_control_la_CFLAGS = \
@@ -10,6 +15,8 @@ libremote_control_la_CFLAGS = \
 	@GLIB_CFLAGS@ \
 	@GTK_CFLAGS@ \
 	@WATCHDOG_CFLAGS@
+
+libremote_control_la_LDFLAGS = -version-info $(VERSION_INFO)
 
 libremote_control_la_LIBADD = \
 	../common/libcommon.la \
