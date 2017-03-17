@@ -1,0 +1,9 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libremote-control
+Description: remote-control core library
+Version: @VERSION@
+Libs: -L${libdir} -lremote-control

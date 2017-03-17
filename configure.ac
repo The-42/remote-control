@@ -466,6 +466,7 @@ AC_CONFIG_FILES([
 	src/common/Makefile
 	src/Makefile
 	src/core/Makefile
+	src/core/remote-control.pc
 	tests/Makefile
 ])
 

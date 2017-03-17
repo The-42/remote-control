@@ -6,6 +6,9 @@ include_HEADERS = \
 lib_LTLIBRARIES = \
 	libremote-control.la
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = remote-control.pc
+
 libremote_control_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
