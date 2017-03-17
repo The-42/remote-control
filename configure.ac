@@ -476,7 +476,7 @@ AS_ECHO("
 remote-control was configured with the following options:
 
 Features:
-  readline support:          $use_readline
+  Readline support:          $use_readline
   Audio (UCM) Backend:       $with_audio_backend
   Backlight Backend:         $with_backlight_backend")
 AS_IF([test "x$enable_gst" = "xyes"],
@@ -484,7 +484,7 @@ AS_IF([test "x$enable_gst" = "xyes"],
 	[AS_ECHO("  Video Backend:             $with_video_backend")])
 
 smartcard_none=yes
-AS_ECHO_N("  SmartCard Backends:  ")
+AS_ECHO_N("  SmartCard Backends:       ")
 AS_IF([test "x$enable_libsmartcard" = "xyes"],
 	[
 	AS_ECHO_N(" libsmartcard")
@@ -496,7 +496,7 @@ AS_IF([test "x$enable_libpcsclite" = "xyes"],
 	smartcard_none=no
 	])
 AS_IF([test "x$smartcard_none" = "xyes"],
-	[AS_ECHO_N("      none")])
+	[AS_ECHO_N(" none")])
 AS_ECHO("")
 AS_ECHO("  Smartcard info function:   $enable_smartcard_info")
 AS_ECHO("  VoIP Backend:              $with_voip_backend
@@ -511,10 +511,10 @@ Options:
   Treat warnings as errors:  $enable_werror
   Gtk+ Version:              $with_gtk
   WebKit Version:            $with_webkit
-  JavaScript Binding:        (always)
+  JavaScript API Options:
     IR Input Support:        $enable_javascript_ir
     LCD Serial Support:      $enable_javascript_lcd
-    Application Watchdog Support: $enable_javascript_app_watchdog
+    App. Watchdog Support:   $enable_javascript_app_watchdog
   D-Bus Watchdog support:    $enable_watchdog")
 AS_IF([test "x$enable_lldpctl" = "xyes"],
 	[AS_ECHO("  LLDP monitor:              lldpctl")])
