@@ -323,7 +323,7 @@ adjust_scrollbar (KatzeScrolled* scrolled,
         if (horizontal)
         {
             gdk_window_resize (scrollbar_window, 10, size);
-            gdk_window_clear (scrollbar_window);
+            util_gdk_window_clear (scrollbar_window);
             gdk_draw_line (scrollbar_window, priv->hilight_gc, 0, 0, 9, 0);
             gdk_draw_line (scrollbar_window, priv->hilight_gc, 0, 1, 0, size - 1);
             gdk_draw_line (scrollbar_window, priv->shadow_gc, 9, 1, 9, size - 1);
@@ -332,7 +332,7 @@ adjust_scrollbar (KatzeScrolled* scrolled,
         else
         {
             gdk_window_resize (scrollbar_window, size, 10);
-            gdk_window_clear (scrollbar_window);
+            util_gdk_window_clear (scrollbar_window);
             gdk_draw_line (scrollbar_window, priv->hilight_gc, 0, 0, size - 1, 0);
             gdk_draw_line (scrollbar_window, priv->hilight_gc, 0, 1, 0, 9);
             gdk_draw_line (scrollbar_window, priv->shadow_gc, size - 1, 1, size - 1, 9);

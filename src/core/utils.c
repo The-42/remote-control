@@ -21,6 +21,8 @@
 #include <netlink/route/route.h>
 #include <netlink/route/rtnl.h>
 
+#include <gtk/gtk.h>
+
 #include "remote-control.h"
 
 struct nexthop_lookup_result {
@@ -144,15 +146,17 @@ free:
 	return ret;
 }
 
+/**
+ * gdk_window_clear() wrapper. Native before 2.91.0, deprecated and thus wrapped
+ * thereafter and until 3.20.0, devoid of code from then on due to automatisms.
+ */
+void util_gdk_window_clear(void *gdkwindow)
+{
 #if GTK_CHECK_VERSION(3, 20, 0)
-void gdk_window_clear(GdkWindow *window)
-{
 	/* not needed anymore for our use cases */
-}
 #else
+	GdkWindow *window = gdkwindow;
 #if GTK_CHECK_VERSION(2, 91, 0)
-void gdk_window_clear(GdkWindow *window)
-{
 	cairo_pattern_t *pattern;
 	cairo_t *cr;
 
@@ -163,6 +167,8 @@ void gdk_window_clear(GdkWindow *window)
 		cairo_paint(cr);
 		cairo_destroy(cr);
 	}
+#else
+	gdk_window_clear(window);
+#endif
+#endif
 }
-#endif
-#endif

@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include <gtk/gtk.h>
 #include <glib.h>
 
 struct remote_control;
@@ -543,9 +542,6 @@ int usb_handset_create(struct remote_control *rc);
  * utilities
  */
 unsigned int if_lookup_default(void);
-
-#if GTK_CHECK_VERSION(2, 91, 0)
-void gdk_window_clear(GdkWindow *window);
-#endif
+void util_gdk_window_clear(void *gdkwindow);
 
 #endif /* REMOTE_CONTROL_H */

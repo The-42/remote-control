@@ -502,7 +502,7 @@ static void player_show_output(struct media_player *player, gboolean show)
 		} else if (gdk_window_is_visible(player->window)) {
 			gdk_window_hide(player->window);
 			gdk_window_thaw_updates (player->window);
-			gdk_window_clear(player->window);
+			util_gdk_window_clear(player->window);
 		}
 		gdk_threads_leave();
 	} else {
@@ -1561,7 +1561,7 @@ int media_player_set_output_window(struct media_player *player,
 	if (player->window) {
 		gdk_threads_enter();
 		gdk_window_move_resize(player->window, x, y, width, height);
-		gdk_window_clear(player->window);
+		util_gdk_window_clear(player->window);
 		gdk_threads_leave();
 	}
 
