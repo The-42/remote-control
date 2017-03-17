@@ -7,7 +7,7 @@ lib_LTLIBRARIES = \
 	librcrpc-client.la
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = remote-control.pc
+pkgconfig_DATA = rcrpc-client.pc
 
 librcrpc_client_la_CPPFLAGS = \
 	@VISIBILITY_CFLAGS@ \

@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libremote-control
-Description: remote-control (via RPC) library
+Name: librcrpc-client
+Description: remote-control RPC extension, client library
 Version: @VERSION@
-Requires.private: librpc >= 0.4.18
-Libs: -L${libdir} -lremote-control
+Requires.private: librpc >= 0.4.18, libremote-control >= 1.0.0
+Libs: -L${libdir} -lrcrpc-client

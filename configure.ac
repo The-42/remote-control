@@ -460,7 +460,7 @@ AC_CONFIG_FILES([
 	ext/rcrpc/src/Makefile
 	ext/rcrpc/src/rcrpc/Makefile
 	ext/rcrpc/src/rcrpc-client/Makefile
-	ext/rcrpc/src/rcrpc-client/remote-control.pc
+	ext/rcrpc/src/rcrpc-client/rcrpc-client.pc
 	ext/rcrpc/tests/Makefile
 	Makefile
 	src/common/Makefile
