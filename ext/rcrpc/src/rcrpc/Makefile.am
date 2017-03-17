@@ -4,21 +4,13 @@ noinst_LTLIBRARIES = \
 librcrpc_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/core \
-	@LIBNL_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
-	@GUDEV_CFLAGS@ \
-	@GLIB_CFLAGS@ \
-	@GTK_CFLAGS@ \
-	@WATCHDOG_CFLAGS@
+	@GLIB_CFLAGS@
 
 librcrpc_la_LIBADD = \
 	../../../../src/core/libremote-control.la \
-	@LIBNL_LIBS@ \
 	@LIBRPC_LIBS@ \
-	@GUDEV_LIBS@ \
-	@GLIB_LIBS@ \
-	@GTK_LIBS@ \
-	@WATCHDOG_LIBS@
+	@GLIB_LIBS@
 
 librcrpc_la_SOURCES = \
 	audio.c \
