@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <glib.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <gpio.h>
 
 #include "remote-control.h"

@@ -16,6 +16,7 @@
 #define pr_fmt(fmt) "smartcard-nxp: " fmt
 
 #include <termios.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

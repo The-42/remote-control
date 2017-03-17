@@ -12,6 +12,7 @@
 
 #define pr_fmt(fmt) "smartcard-pcsc: " fmt
 
+#include <stdio.h>
 #include <regex.h>
 #include <winscard.h>
 
