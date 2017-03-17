@@ -32,10 +32,6 @@ PKG_CHECK_MODULES(GTKOSK, gtkosk,
 		  [ac_gtkosk_datadir=`$PKG_CONFIG --variable=pkgdatadir gtkosk`])
 AC_SUBST(GTKOSK_DATADIR, $ac_gtkosk_datadir)
 
-PKG_CHECK_MODULES(LIBRPC, librpc >= 0.4.18)
-RPC_STUBGEN=rpc-stubgen
-AC_SUBST(RPC_STUBGEN)
-
 AS_IF([test "x$USE_NLS" = "xyes"],
 	[AC_DEFINE([ENABLE_NLS], [1], [Define to 1 if NLS support is enabled])],
 	[AC_DEFINE([ENABLE_NLS], [0], [Define to 0 if NLS support is disabled])]
@@ -414,15 +410,6 @@ AS_IF([test "x$enable_gpio_gpiodev" = "xyes"],
 		[AC_MSG_ERROR([linux/gpiodev.h is required for gpiodev backend])]
 	)])
 
-AC_CHECK_HEADER([readline/readline.h])
-AC_CHECK_LIB([readline], [readline], [use_readline=yes], [use_readline=no])
-AS_IF([test "x$use_readline" = "xyes"], [
-	READLINE_CFLAGS="-DUSE_READLINE"
-	READLINE_LIBS="-lreadline"
-])
-AC_SUBST(READLINE_CFLAGS)
-AC_SUBST(READLINE_LIBS)
-
 #
 # add compiler and linker flags
 #
@@ -454,14 +441,6 @@ AC_CONFIG_FILES([
 	doc/Doxyfile
 	doc/Makefile
 	ext/Makefile
-	ext/rcrpc/Makefile
-	ext/rcrpc/bin/Makefile
-	ext/rcrpc/bin/remote-control-client.lds
-	ext/rcrpc/src/Makefile
-	ext/rcrpc/src/rcrpc/Makefile
-	ext/rcrpc/src/rcrpc-client/Makefile
-	ext/rcrpc/src/rcrpc-client/rcrpc-client.pc
-	ext/rcrpc/tests/Makefile
 	Makefile
 	src/common/Makefile
 	src/Makefile
@@ -469,6 +448,8 @@ AC_CONFIG_FILES([
 	src/core/remote-control.pc
 	tests/Makefile
 ])
+
+AC_CONFIG_SUBDIRS([ext/rcrpc])
 
 AC_OUTPUT
 
