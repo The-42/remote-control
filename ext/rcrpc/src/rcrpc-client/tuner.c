@@ -11,7 +11,7 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 remote_public
 int32_t remote_tuner_set_frequency(void *priv, unsigned long frequency)

@@ -11,7 +11,7 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 remote_public
 int remote_register_event_handler(struct remote_client *client,

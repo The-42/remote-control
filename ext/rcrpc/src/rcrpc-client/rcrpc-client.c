@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 struct remote_client {
 	pthread_t thread;

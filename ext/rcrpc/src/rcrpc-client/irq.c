@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 void RPC_IMPL(irq_event)(void *priv, uint32_t type)
 {

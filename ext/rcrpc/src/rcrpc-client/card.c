@@ -11,7 +11,7 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 remote_public
 int remote_card_get_type(void *priv, enum remote_card_type *typep)

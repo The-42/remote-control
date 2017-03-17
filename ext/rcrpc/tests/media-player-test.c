@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))

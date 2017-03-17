@@ -11,7 +11,7 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 #define BIT(x) (1 << (x))
 

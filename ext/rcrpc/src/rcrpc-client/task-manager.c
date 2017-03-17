@@ -11,7 +11,7 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 remote_public
 int remote_task_manager_exec(void *priv, const char *command)

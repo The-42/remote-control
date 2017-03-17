@@ -11,7 +11,7 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 remote_public
 int remote_lldp_read(void *priv, void *data, size_t size)

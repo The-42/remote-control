@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 remote_public
 int remote_sound_play(void *priv, const char *url)

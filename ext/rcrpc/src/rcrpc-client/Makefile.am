@@ -1,7 +1,7 @@
 VERSION_INFO = 3:0:3
 
 include_HEADERS = \
-	remote-control.h
+	rcrpc-client.h
 
 lib_LTLIBRARIES = \
 	librcrpc-client.la
@@ -26,8 +26,8 @@ librcrpc_client_la_SOURCES = \
 	media-player.c \
 	mixer.c \
 	modem.c \
-	remote-control.c \
-	remote-control.h \
+	rcrpc-client.c \
+	rcrpc-client.h \
 	sound-manager.c \
 	task-manager.c \
 	tuner.c \

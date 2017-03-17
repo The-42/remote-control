@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control.h"
+#include "rcrpc-client.h"
 
 struct RPC_TYPE(voip_login_options) {
 	uint32_t server_ptr;

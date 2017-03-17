@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2010-2012 Avionic Design GmbH
+ * Copyright (C) 2010-2017 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
 
-#ifndef REMOTE_CONTROL_H
-#define REMOTE_CONTROL_H 1
+#ifndef RCRPC_CLIENT_H
+#define RCRPC_CLIENT_H 1
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -227,4 +227,4 @@ remote_public int remote_tuner_set_frequency(void *priv, unsigned long frequency
 remote_public int remote_sound_play(void *priv, const char *url);
 remote_public int remote_sound_stop(void *priv);
 
-#endif /* REMOTE_CONTROL_H */
+#endif /* RCRPC_CLIENT_H */
