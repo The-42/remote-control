@@ -13,7 +13,6 @@ libremote_control_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
 	@LIBNL_CFLAGS@ \
-	@LIBRPC_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@GLIB_CFLAGS@ \
 	@GTK_CFLAGS@ \
@@ -24,7 +23,6 @@ libremote_control_la_LDFLAGS = -version-info $(VERSION_INFO)
 libremote_control_la_LIBADD = \
 	../common/libcommon.la \
 	@LIBNL_LIBS@ \
-	@LIBRPC_LIBS@ \
 	@GUDEV_LIBS@ \
 	@GLIB_LIBS@ \
 	@GTK_LIBS@ \

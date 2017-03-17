@@ -8,7 +8,6 @@ remote_control_CPPFLAGS = \
 	-I$(top_srcdir)/bin/utils \
 	-I$(top_srcdir)/ext/rcrpc/src/rcrpc \
 	@GLIB_CFLAGS@ \
-	@LIBRPC_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@ALSA_CFLAGS@ \
@@ -32,7 +31,6 @@ remote_control_LDADD = \
 	../../ext/rcrpc/src/rcrpc/librcrpc.la \
 	../utils/libutils.la \
 	@GLIB_LIBS@ \
-	@LIBRPC_LIBS@ \
 	@WEBKIT_LIBS@ \
 	@GUDEV_LIBS@ \
 	@ALSA_LIBS@ \
