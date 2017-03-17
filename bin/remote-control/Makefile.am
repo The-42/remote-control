@@ -6,7 +6,6 @@ remote_control_CPPFLAGS = \
 	-I$(top_srcdir)/src/common \
 	-I$(top_srcdir)/src/core \
 	-I$(top_srcdir)/bin/utils \
-	-I$(top_srcdir)/ext/rcrpc/src/rcrpc \
 	@GLIB_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
@@ -28,7 +27,6 @@ remote_control_SOURCES = \
 remote_control_LDADD = \
 	../../src/core/libremote-control.la \
 	../../src/common/libcommon.la \
-	../../ext/rcrpc/src/rcrpc/librcrpc.la \
 	../utils/libutils.la \
 	@GLIB_LIBS@ \
 	@WEBKIT_LIBS@ \
@@ -104,4 +102,9 @@ CLEANFILES = \
 if ENABLE_WATCHDOG
 remote_control_CPPFLAGS += @WATCHDOG_CFLAGS@
 remote_control_LDADD += @WATCHDOG_LIBS@
+endif
+
+if ENABLE_EXT_RCRPC
+remote_control_CPPFLAGS += -I$(top_srcdir)/ext/rcrpc/src/rcrpc
+remote_control_LDADD += ../../ext/rcrpc/src/rcrpc/librcrpc.la
 endif

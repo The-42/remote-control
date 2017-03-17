@@ -26,7 +26,6 @@
 
 #include "remote-control-webkit-window.h"
 #include "remote-control-rdp-window.h"
-#include "remote-control-rpc.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
 #include "javascript.h"
@@ -34,6 +33,10 @@
 #include "glogging.h"
 #include "utils.h"
 #include "log.h"
+
+#if ENABLE_EXT_RCRPC
+#  include "remote-control-rpc.h"
+#endif
 
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
@@ -508,6 +511,7 @@ static gpointer remote_control_thread(gpointer data)
 		return NULL;
 	}
 
+#if ENABLE_EXT_RCRPC
 	err = rpc_create(rc, rcd->config);
 	if (err < 0) {
 		g_critical("rpc_create(): %s", strerror(-err));
@@ -515,7 +519,7 @@ static gpointer remote_control_thread(gpointer data)
 		remote_control_free(rc);
 		return NULL;
 	}
-
+#endif
 	rcd->rc = rc;
 
 	source = remote_control_get_source(rc);

@@ -1,2 +1,6 @@
+if ENABLE_EXT_RCRPC
+   EXT_RCRPC = rcrpc
+endif
+
 SUBDIRS = \
-	rcrpc
+	$(EXT_RCRPC)
