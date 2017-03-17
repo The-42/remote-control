@@ -2,7 +2,7 @@ bin_PROGRAMS = \
 	remote-control-client
 
 remote_control_client_CFLAGS = \
-	-I ../src/rcrpc-client \
+	-I $(srcdir)/../src/rcrpc-client \
 	-DLOCALEBASEDIR=\""$(datadir)/locale"\" \
 	-DGETTEXT_PACKAGE=\"$(PACKAGE)\" \
 	@READLINE_CFLAGS@ \
