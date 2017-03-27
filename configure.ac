@@ -462,7 +462,6 @@ AS_ECHO("
 remote-control was configured with the following options:
 
 Features:
-  Readline support:          $use_readline
   Audio (UCM) Backend:       $with_audio_backend
   Backlight Backend:         $with_backlight_backend")
 AS_IF([test "x$enable_gst" = "xyes"],
