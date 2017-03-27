@@ -3,12 +3,12 @@ noinst_LTLIBRARIES = \
 
 librcrpc_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
-	-I$(top_srcdir)/src/core \
+	@REMOTE_CONTROL_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@GLIB_CFLAGS@
 
 librcrpc_la_LIBADD = \
-	../../../../src/core/libremote-control.la \
+	@REMOTE_CONTROL_LIBS@ \
 	@LIBRPC_LIBS@ \
 	@GLIB_LIBS@
 

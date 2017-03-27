@@ -29,6 +29,19 @@ AS_IF([test "x$USE_NLS" = "xyes"],
 )
 
 #
+# Standalone mode for when building independently of remote-control itself
+#
+AC_ARG_ENABLE([standalone],
+	[AS_HELP_STRING([--enable-standalone],
+		[Enable standalone build mode outside remote-control itself
+			(default: disabled)])],
+		[enable_standalone="$enableval"],
+		[enable_standalone=no])
+
+AS_IF([test "x$enable_standalone" = "xyes"],
+	[PKG_CHECK_MODULES(REMOTE_CONTROL, remote-control >= 1.0.0)])
+
+#
 # Verbosity
 #
 if test x"$AM_DEFAULT_VERBOSITY" = x"0"; then
@@ -88,5 +101,6 @@ AS_ECHO("
 rcrpc was configured with the following options:
 
   Readline support:          $use_readline
+  Standalone build:          $enable_standalone
   Treat warnings as errors:  $enable_werror")
 AS_ECHO
