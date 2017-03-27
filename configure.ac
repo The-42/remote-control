@@ -436,11 +436,6 @@ AC_ARG_ENABLE([werror],
 		[enable_werror=yes])
 AS_IF([test "x$enable_werror" = "xyes"], [AX_APPEND_COMPILE_FLAGS([-Werror])])
 
-COMMANDS_ALIGN=32
-AC_DEFINE_UNQUOTED([COMMANDS_ALIGN], [$COMMANDS_ALIGN],
-	  [Define to the number of bytes to align commands to.])
-AC_SUBST(COMMANDS_ALIGN)
-
 AC_CONFIG_FILES([
 	bin/Makefile
 	bin/remote-control-browser/Makefile
