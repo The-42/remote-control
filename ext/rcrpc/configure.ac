@@ -100,6 +100,7 @@ AC_OUTPUT
 AS_ECHO("
 rcrpc was configured with the following options:
 
+  Command alignment:         $COMMANDS_ALIGN
   Readline support:          $use_readline
   Standalone build:          $enable_standalone
   Treat warnings as errors:  $enable_werror")
