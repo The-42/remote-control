@@ -19,6 +19,21 @@ AC_PROG_SED
 AX_PROG_XSLTPROC
 AM_NLS
 
+# Extra flags for any configured extensions. This primarily targets build flags
+# for the remote-control core library to prevent the extensions from building
+# against anything provided by the host environment.
+ac_configure_args_pre="$ac_configure_args"
+ac_configure_args_post="$ac_configure_args \
+REMOTE_CONTROL_CFLAGS=-I$(realpath $srcdir)/src/core \
+REMOTE_CONTROL_LIBS=$(pwd)/src/core/libremote-control.la"
+ac_configure_args="$ac_configure_args_post"
+
+# Make sure config.status doesn't get the changed configure arguments so it can
+# rerun configure in the root directory correctly. This is necessary for
+# Makefile rules which would regenerate files after configure.ac was updated.
+AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
+AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
+
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5 gio-2.0 gio-unix-2.0)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(POPPLER, poppler-glib)
