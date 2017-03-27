@@ -11,6 +11,7 @@
 #endif
 
 #include <ctype.h>
+#include <unistd.h>
 #include <glib.h>
 #include <arpa/inet.h>
 #include <net/ethernet.h>
