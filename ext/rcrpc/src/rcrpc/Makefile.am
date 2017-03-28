@@ -24,7 +24,8 @@ librcrpc_la_SOURCES = \
 	mixer.c \
 	modem.c \
 	net.c \
-	remote-control-rpc.c \
+	rcrpc.c \
+	rcrpc.h \
 	remote-control-rpc.h \
 	smartcard.c \
 	sound.c \

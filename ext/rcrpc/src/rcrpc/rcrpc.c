@@ -13,8 +13,10 @@
 #include <netdb.h>
 #include <glib.h>
 
-#include "remote-control-stub.h"
 #include "remote-control-rpc.h"
+#include "remote-control-stub.h"
+#include "remote-control.h"
+#include "rcrpc.h"
 
 enum remote_control_state {
 	REMOTE_CONTROL_UNCONNECTED,
@@ -43,6 +45,12 @@ static int rpc_log(int priority, const char *fmt, ...)
 	va_end(ap);
 
 	return ret;
+}
+
+static int remote_control_dispatch(struct rpc_server *server,
+		struct rpc_packet *request)
+{
+	return rpc_dispatch(server, request);
 }
 
 static gboolean rpc_source_prepare(GSource *source, gint *timeout)
@@ -305,9 +313,4 @@ int rpc_server_free(struct rpc_server *server)
 	rpc_server_free(server);
 
 	return 0;
-}
-
-int remote_control_dispatch(struct rpc_server *server, struct rpc_packet *request)
-{
-	return rpc_dispatch(server, request);
 }

@@ -13,8 +13,8 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
 #include "remote-control.h"
+#include "rcrpc.h"
 
 int32_t RPC_IMPL(backlight_enable)(void *priv, uint32_t flags)
 {

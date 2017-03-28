@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
+#include "rcrpc.h"
 
 int32_t RPC_IMPL(reset)(void *priv)
 {

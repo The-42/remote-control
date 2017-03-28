@@ -21,8 +21,8 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
 #include "remote-control.h"
+#include "rcrpc.h"
 
 enum net_read_mode {
 	NET_READ_MODE_UDP_NONBLOCK = 0x0,

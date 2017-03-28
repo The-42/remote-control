@@ -13,8 +13,8 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
 #include "remote-control.h"
+#include "rcrpc.h"
 
 int32_t RPC_IMPL(card_get_type)(void *priv, enum RPC_TYPE(card_type) *typep)
 {

@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
+#include "rcrpc.h"
 
 int32_t RPC_IMPL(tuner_set_output_window)(void *priv, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {

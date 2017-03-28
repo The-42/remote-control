@@ -11,8 +11,8 @@
 #endif
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
 #include "remote-control.h"
+#include "rcrpc.h"
 
 int32_t RPC_IMPL(task_manager_exec)(void *priv, const char *command_line)
 {

@@ -13,8 +13,8 @@
 #include <glib.h>
 
 #include "remote-control-stub.h"
-#include "remote-control-rpc.h"
 #include "remote-control.h"
+#include "rcrpc.h"
 
 int32_t RPC_IMPL(handset_display_clear)(void *priv)
 {
