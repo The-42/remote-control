@@ -1,0 +1,3 @@
+[submodule "ext/rcrpc"]
+	path = ext/rcrpc
+	url = https://github.com/avionic-design/rcrpc.git
