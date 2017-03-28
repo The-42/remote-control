@@ -12,7 +12,6 @@
 #include <glib.h>
 #include <librpc.h>
 
-int rpc_create(void *rcpriv, GKeyFile *config);
-int rpc_server_free(struct rpc_server *server);
+int rcrpc_create(void *rcpriv, GKeyFile *config);
 
 #endif /* REMOTE_CONTROL_RPC_H */

@@ -47,6 +47,18 @@ static int rpc_log(int priority, const char *fmt, ...)
 	return ret;
 }
 
+static int rcrpc_free(struct rpc_server *server)
+{
+	if (!server)
+		return -EINVAL;
+
+	rpc_irq_cleanup();
+	rpc_net_cleanup();
+	rpc_server_free(server);
+
+	return 0;
+}
+
 static int remote_control_dispatch(struct rpc_server *server,
 		struct rpc_packet *request)
 {
@@ -208,7 +220,7 @@ static gboolean rpc_source_dispatch(GSource *source, GSourceFunc callback, gpoin
 static void rpc_source_finalize(GSource *source)
 {
 	struct rpc_source *src = (struct rpc_source *)source;
-	rpc_server_free(src->server);
+	rcrpc_free(src->server);
 }
 
 static GSourceFuncs rpc_source_funcs = {
@@ -243,7 +255,7 @@ static gboolean config_get_socket_keepalive(GKeyFile *config)
 	return enable;
 }
 
-int rpc_create(void *rcpriv, GKeyFile *config)
+int rcrpc_create(void *rcpriv, GKeyFile *config)
 {
 	struct remote_control *rc = (struct remote_control *)rcpriv;
 	struct remote_control **rpc_priv;
@@ -299,18 +311,6 @@ int rpc_create(void *rcpriv, GKeyFile *config)
 	g_source_unref(source);
 
 	rpc_irq_init(rpc_priv);
-
-	return 0;
-}
-
-int rpc_server_free(struct rpc_server *server)
-{
-	if (!server)
-		return -EINVAL;
-
-	rpc_irq_cleanup();
-	rpc_net_cleanup();
-	rpc_server_free(server);
 
 	return 0;
 }
