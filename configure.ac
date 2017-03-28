@@ -392,11 +392,21 @@ AS_IF([test "x$enable_watchdog" = "xyes"], [
 #
 # Extensions
 #
+AC_ARG_ENABLE([extensions],
+	[AS_HELP_STRING([--disable-extensions],
+		[Disable remote-control extensions (default: enabled)])],
+		[enable_extensions="$enableval"],
+		[enable_extensions=yes])
+
+AS_IF([test "x$enable_extensions" = "xyes"], [
+
 AC_ARG_ENABLE([extensions-rcrpc],
 	[AS_HELP_STRING([--disable-extensions-rcrpc],
 		[Disable remote-control RPC extension (default: enabled)])],
 		[enable_extension_rcrpc="$enableval"],
 		[enable_extension_rcrpc=yes])
+
+])
 
 #
 # define automake conditionals according to select backends
@@ -425,7 +435,8 @@ AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_webkit" = "x2.0"])
 AM_CONDITIONAL(ENABLE_ALSALOOP, [test "x$with_libalsaloop" = "xyes"])
 AM_CONDITIONAL(ENABLE_GTK3, [test "x$with_gtk" = "x3.0"])
-AM_CONDITIONAL(ENABLE_EXT_RCRPC, [test "x$enable_extension_rcrpc" != "xno"])
+AM_CONDITIONAL(ENABLE_EXTENSIONS, [test "x$enable_extensions" = "xyes"])
+AM_CONDITIONAL(ENABLE_EXT_RCRPC, [test "x$enable_extension_rcrpc" = "xyes"])
 
 #
 # check for required files and packages
@@ -469,7 +480,7 @@ AC_CONFIG_FILES([
 	tests/Makefile
 ])
 
-AS_IF([test "x$enable_extension_rcrpc" != "xno"], AC_CONFIG_SUBDIRS([ext/rcrpc]))
+AS_IF([test "x$enable_extension_rcrpc" = "xyes"], AC_CONFIG_SUBDIRS([ext/rcrpc]))
 
 AC_OUTPUT
 
@@ -519,6 +530,7 @@ Options:
 AS_IF([test "x$enable_lldpctl" = "xyes"],
 	[AS_ECHO("  LLDP monitor:              lldpctl")])
 AS_ECHO("
-Extensions:
-  RPC (rcrpc):               $enable_extension_rcrpc")
+Extensions:                  $enable_extensions")
+AS_IF([test "x$enable_extensions" = "xyes"],
+	[AS_ECHO("  RPC (rcrpc):               $enable_extension_rcrpc")])
 AS_ECHO
