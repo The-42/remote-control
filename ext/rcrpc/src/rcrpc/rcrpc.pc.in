@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: librcrpc
+Description: remote-control RPC extension, server
+Version: @VERSION@
+Requires.private: libremote-control >= 1.0.0
+Libs: -L${libdir} -lrcrpc

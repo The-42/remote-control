@@ -1,11 +1,21 @@
-noinst_LTLIBRARIES = \
+VERSION_INFO = 3:0:3
+
+include_HEADERS = \
+	remote-control-rpc.h
+
+lib_LTLIBRARIES = \
 	librcrpc.la
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = rcrpc.pc
 
 librcrpc_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	@REMOTE_CONTROL_CFLAGS@ \
 	@LIBRPC_CFLAGS@ \
 	@GLIB_CFLAGS@
+
+librcrpc_la_LDFLAGS = -version-info $(VERSION_INFO)
 
 librcrpc_la_LIBADD = \
 	@REMOTE_CONTROL_LIBS@ \

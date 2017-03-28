@@ -90,6 +90,7 @@ AC_CONFIG_FILES([
 	bin/remote-control-client.lds
 	src/Makefile
 	src/rcrpc/Makefile
+	src/rcrpc/rcrpc.pc
 	src/rcrpc-client/Makefile
 	src/rcrpc-client/rcrpc-client.pc
 	tests/Makefile
