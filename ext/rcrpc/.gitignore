@@ -1,5 +1,6 @@
 aclocal.m4
 autom4te.cache
+bin/remote-control-client
 bin/remote-control-client.lds
 build-aux/*
 compile
@@ -17,10 +18,11 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 Makefile
 Makefile.in
-src/rcrpc/remote-control-stub.[ch]
+remote-control-stub.[ch]
 stamp-h1
 tests/media-player-test
 .deps
+.libs
 .*.log
 *.pc
 .*.swp

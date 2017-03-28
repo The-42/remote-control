@@ -33,8 +33,10 @@ tests/alert-dead-lock
 tests/gkeyfilemerge
 tests/net-udp
 .deps
+.libs
 .*.log
 .*.swp
+*.pc
 *.tap
 *.[oa]
 *.l[oa]
