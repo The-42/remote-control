@@ -400,11 +400,17 @@ AC_ARG_ENABLE([extensions],
 
 AS_IF([test "x$enable_extensions" = "xyes"], [
 
+AC_DEFINE([ENABLE_EXTENSIONS], [1], [whether extensions support is enabled])
+
 AC_ARG_ENABLE([extensions-rcrpc],
 	[AS_HELP_STRING([--disable-extensions-rcrpc],
 		[Disable remote-control RPC extension (default: enabled)])],
 		[enable_extension_rcrpc="$enableval"],
 		[enable_extension_rcrpc=yes])
+
+AS_IF([test "x$enable_extension_rcrpc" = "xyes"], [
+	AC_DEFINE([ENABLE_EXT_RCRPC], [1], [whether RCRPC extension is enabled])
+])
 
 ])
 

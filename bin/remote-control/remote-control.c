@@ -28,15 +28,12 @@
 #include "remote-control-rdp-window.h"
 #include "remote-control.h"
 #include "gdevicetree.h"
+#include "extensions.h"
 #include "javascript.h"
 #include "gkeyfile.h"
 #include "glogging.h"
 #include "utils.h"
 #include "log.h"
-
-#if ENABLE_EXT_RCRPC
-#  include "remote-control-rpc.h"
-#endif
 
 #define RDP_DELAY_MIN  90
 #define RDP_DELAY_MAX 120
@@ -511,15 +508,9 @@ static gpointer remote_control_thread(gpointer data)
 		return NULL;
 	}
 
-#if ENABLE_EXT_RCRPC
-	err = rpc_create(rc, rcd->config);
-	if (err < 0) {
-		g_critical("rpc_create(): %s", strerror(-err));
-		g_mutex_unlock(&rcd->startup_mutex);
-		remote_control_free(rc);
-		return NULL;
-	}
-#endif
+	extensions_init(rc);
+
+	ext_rpc_create(rc, rcd->config);
 	rcd->rc = rc;
 
 	source = remote_control_get_source(rc);
@@ -534,6 +525,8 @@ static gpointer remote_control_thread(gpointer data)
 
 	g_source_destroy(source);
 	g_main_loop_unref(rcd->loop);
+
+	extensions_free(rc);
 
 	remote_control_free(rc);
 

@@ -15,6 +15,7 @@ remote_control_CPPFLAGS = \
 	@LIBSOUP_CFLAGS@
 
 remote_control_SOURCES = \
+	extensions.h \
 	log.c \
 	log.h \
 	remote-control.c \
@@ -73,6 +74,12 @@ remote_control_SOURCES += \
 	javascript-modem.c
 endif  # ENABLE_LIBMODEM
 
+if ENABLE_EXTENSIONS
+remote_control_SOURCES += \
+	extensions.c
+remote_control_LDADD += -ldl
+endif
+
 # javascript-input.c needs some generated tables
 $(srcdir)/javascript-input.c: \
 	javascript-input-codes.c \
@@ -102,9 +109,4 @@ CLEANFILES = \
 if ENABLE_WATCHDOG
 remote_control_CPPFLAGS += @WATCHDOG_CFLAGS@
 remote_control_LDADD += @WATCHDOG_LIBS@
-endif
-
-if ENABLE_EXT_RCRPC
-remote_control_CPPFLAGS += -I$(top_srcdir)/ext/rcrpc/src/rcrpc
-remote_control_LDADD += ../../ext/rcrpc/src/rcrpc/librcrpc.la
 endif
