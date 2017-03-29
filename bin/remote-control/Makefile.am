@@ -78,7 +78,6 @@ endif  # ENABLE_LIBMODEM
 if ENABLE_EXTENSIONS
 remote_control_SOURCES += \
 	extensions.c
-remote_control_LDADD += -ldl
 endif
 
 # javascript-input.c needs some generated tables

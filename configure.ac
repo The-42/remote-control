@@ -401,6 +401,8 @@ AC_ARG_ENABLE([extensions],
 
 AS_IF([test "x$enable_extensions" = "xyes"], [
 
+AC_SEARCH_LIBS([dlopen], [dl dld])
+
 AC_DEFINE([ENABLE_EXTENSIONS], [1], [whether extensions support is enabled])
 
 AC_ARG_ENABLE([extensions-rcrpc],
