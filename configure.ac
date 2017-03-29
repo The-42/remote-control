@@ -35,6 +35,7 @@ AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
 AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.27.5 gio-2.0 gio-unix-2.0)
+PKG_CHECK_MODULES(X11, x11 xext)
 PKG_CHECK_MODULES(LIBNL, libnl-route-3.0)
 PKG_CHECK_MODULES(POPPLER, poppler-glib)
 PKG_CHECK_MODULES(GUDEV, gudev-1.0)
@@ -105,7 +106,7 @@ AS_CASE([$with_gtk:$with_webkit],
 	[3.0:1.0], [REQUIRED_WEBKIT=webkitgtk-3.0],
 	[3.0:2.0], [REQUIRED_WEBKIT=webkit2gtk-3.0])
 
-PKG_CHECK_MODULES(GTK, gtk+-x11-$with_gtk x11 xext)
+PKG_CHECK_MODULES(GTK, gtk+-x11-$with_gtk)
 PKG_CHECK_MODULES(WEBKIT, $REQUIRED_WEBKIT)
 
 #

@@ -12,6 +12,7 @@ pkgconfig_DATA = remote-control.pc
 libremote_control_la_CFLAGS = \
 	-DSYSCONF_DIR=\"$(sysconfdir)\" \
 	-I$(top_srcdir)/src/common \
+	@X11_CFLAGS@ \
 	@LIBNL_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@GLIB_CFLAGS@ \
@@ -22,6 +23,7 @@ libremote_control_la_LDFLAGS = -version-info $(VERSION_INFO)
 
 libremote_control_la_LIBADD = \
 	../common/libcommon.la \
+	@X11_CFLAGS@ \
 	@LIBNL_LIBS@ \
 	@GUDEV_LIBS@ \
 	@GLIB_LIBS@ \

@@ -7,10 +7,10 @@ remote_control_CPPFLAGS = \
 	-I$(top_srcdir)/src/core \
 	-I$(top_srcdir)/bin/utils \
 	@GLIB_CFLAGS@ \
+	@X11_CFLAGS@ \
 	@WEBKIT_CFLAGS@ \
 	@GUDEV_CFLAGS@ \
 	@ALSA_CFLAGS@ \
-	@GTK_CFLAGS@ \
 	@LIBNETTLE_CFLAGS@ \
 	@LIBSOUP_CFLAGS@
 
@@ -30,6 +30,7 @@ remote_control_LDADD = \
 	../../src/common/libcommon.la \
 	../utils/libutils.la \
 	@GLIB_LIBS@ \
+	@X11_LIBS@ \
 	@WEBKIT_LIBS@ \
 	@GUDEV_LIBS@ \
 	@ALSA_LIBS@ \
