@@ -113,7 +113,7 @@ const char lldp_end_tlv[] = {
 	0, 0
 };
 
-static char *lldp_write_neighbor(lldpctl_atom_t *n, int *len)
+static char *lldp_write_neighbor(lldpctl_atom_t *n, ssize_t *len)
 {
 	size_t port_id_len, port_descr_len, chassis_name_len, chassis_descr_len;
 	const uint8_t *chassis_id;
