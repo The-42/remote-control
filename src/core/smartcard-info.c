@@ -170,7 +170,7 @@ static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 	inflateEnd(&strm);
 
 	if (ret != Z_STREAM_END) {
-		pr_debug("smartcard_gunzip failed with %d", ret);
+		pr_debug("smartcard_gunzip failed with %zd", ret);
 		return -EIO;
 	}
 	ret = dst_len - strm.avail_out;
@@ -194,8 +194,8 @@ static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 	val = strm.next_in[4] | strm.next_in[5] << 8 | strm.next_in[6] << 16 |
 			strm.next_in[7] << 24;
 	if (ret != val) {
-		pr_debug("smartcard_gunzip wrong length %ld (expected %ld)",
-				(unsigned long)ret, val);
+		pr_debug("smartcard_gunzip wrong length %zd (expected %ld)",
+				ret, val);
 		return -EIO;
 	}
 
