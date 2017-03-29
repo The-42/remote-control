@@ -1,5 +1,5 @@
 AC_PREREQ(2.66)
-AC_INIT([remote-control], [1.0.3],
+AC_INIT([remote-control], [2.0.0],
 	[https://github.com/avionic-design/remote-control/issues],
 	[remote-control], [https://github.com/avionic-design/remote-control])
 AC_CONFIG_MACRO_DIR([m4])
