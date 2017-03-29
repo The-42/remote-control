@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <modem.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #ifdef ENABLE_ALSALOOP
 #include "find-device.h"
