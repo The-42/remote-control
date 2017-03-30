@@ -19,6 +19,7 @@
 #include <libxml/tree.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <zlib.h>
@@ -141,7 +142,7 @@ static int smartcard_read_file(struct smartcard *smartcard, int short_id,
 static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 		unsigned char *dst, int dst_len)
 {
-	unsigned long crc, val;
+	uint32_t crc, val;
 	z_stream strm;
 	ssize_t ret;
 
@@ -186,7 +187,7 @@ static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 	val = strm.next_in[0] | strm.next_in[1] << 8 | strm.next_in[2] << 16 |
 			strm.next_in[3] << 24;
 	if (crc != val) {
-		pr_debug("smartcard_gunzip wrong crc 0x%08lx (expected 0x%08lx)",
+		pr_debug("smartcard_gunzip wrong crc 0x%08x (expected 0x%08x)",
 				crc, val);
 		return -EIO;
 	}
@@ -194,7 +195,7 @@ static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 	val = strm.next_in[4] | strm.next_in[5] << 8 | strm.next_in[6] << 16 |
 			strm.next_in[7] << 24;
 	if (ret != val) {
-		pr_debug("smartcard_gunzip wrong length %zd (expected %ld)",
+		pr_debug("smartcard_gunzip wrong length %zd (expected %d)",
 				ret, val);
 		return -EIO;
 	}
