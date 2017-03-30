@@ -26,6 +26,8 @@
 #include "remote-control.h"
 #include "glogging.h"
 
+#define SC_NXP_FALLBACK_DEVICE		"/dev/ttyUSB0"
+
 #define ALPAR_ACK 0x60
 #define ALPAR_NACK 0xE0
 #define ALPAR_MAX_PAYLOAD 506
@@ -606,7 +608,7 @@ int smartcard_create_nxp(struct smartcard **smartcardp,
 		return -EINVAL;
 
 	if (!g_key_file_has_group(config, "smartcard"))
-		return -EIO;
+		pr_debug("Warning: No 'smartcard' section in config");
 
 	smartcard = malloc(sizeof(*smartcard));
 	if (!smartcard)
@@ -619,8 +621,11 @@ int smartcard_create_nxp(struct smartcard **smartcardp,
 
 	smartcard->device = g_key_file_get_string(config, "smartcard", "device",
 			NULL);
-	if (!smartcard->device)
-		goto nodevice;
+	if (!smartcard->device) {
+		pr_debug("Warning: falling back to default device %s",
+			SC_NXP_FALLBACK_DEVICE);
+		smartcard->device = g_strdup(SC_NXP_FALLBACK_DEVICE);
+	}
 
 	ret = nxp_open(smartcard);
 	if (ret < 0) {

@@ -61,9 +61,6 @@ int smartcard_create(struct smartcard **smartcardp, struct remote_control *rc,
 	if (!smartcardp)
 		return -EINVAL;
 
-	if (!g_key_file_has_group(config, "smartcard"))
-		return -EIO;
-
 	smartcard = malloc(sizeof(*smartcard));
 	if (!smartcard)
 		return -ENOMEM;
