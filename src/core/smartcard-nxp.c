@@ -593,6 +593,7 @@ int smartcard_free_nxp(struct smartcard *smartcard)
 		close(smartcard->fd);
 	}
 	g_mutex_clear(&smartcard->serial_mutex);
+	g_free(smartcard->device);
 	free(smartcard);
 
 	return 0;
