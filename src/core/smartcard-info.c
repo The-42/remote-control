@@ -171,14 +171,13 @@ static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 	inflateEnd(&strm);
 
 	if (ret != Z_STREAM_END) {
-		pr_debug("smartcard_gunzip failed with %zd", ret);
+		pr_debug("gunzip failed with %zd", ret);
 		return -EIO;
 	}
 	ret = dst_len - strm.avail_out;
 
 	if (strm.avail_in < GZIP_FOOTER_LEN) {
-		pr_debug("smartcard_gunzip missing crc and size (%d)",
-				strm.avail_in);
+		pr_debug("gunzip: missing crc and size (%d)", strm.avail_in);
 		return -EIO;
 	}
 
@@ -187,16 +186,16 @@ static ssize_t smartcard_gunzip(unsigned char *src, int src_len,
 	val = strm.next_in[0] | strm.next_in[1] << 8 | strm.next_in[2] << 16 |
 			strm.next_in[3] << 24;
 	if (crc != val) {
-		pr_debug("smartcard_gunzip wrong crc 0x%08x (expected 0x%08x)",
-				crc, val);
+		pr_debug("gunzip: wrong crc 0x%08" PRIx32 " (expected 0x%08"
+				PRIx32 ")", crc, val);
 		return -EIO;
 	}
 
 	val = strm.next_in[4] | strm.next_in[5] << 8 | strm.next_in[6] << 16 |
 			strm.next_in[7] << 24;
 	if (ret != val) {
-		pr_debug("smartcard_gunzip wrong length %zd (expected %d)",
-				ret, val);
+		pr_debug("gunzip: wrong length %zd (expected %" PRIu32 ")", ret,
+				val);
 		return -EIO;
 	}
 
