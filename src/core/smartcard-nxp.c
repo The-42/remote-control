@@ -262,11 +262,11 @@ static int sc_receive(int fd, uint8_t *buf, int *payload_len, int max_wait)
 		return pos;
 
 	if (buf[0] != ALPAR_ACK && buf[0] != ALPAR_NACK)
-		return -EIO;
+		return -EPROTO;
 
 	*payload_len = (buf[1] << 8) | buf[2];
 	if (*payload_len > ALPAR_MAX_PAYLOAD)
-		return -EIO;
+		return -EMSGSIZE;
 
 	len += *payload_len + 1;
 	pos = sc_read(fd, &buf[pos], len - pos, max_wait);
@@ -274,7 +274,7 @@ static int sc_receive(int fd, uint8_t *buf, int *payload_len, int max_wait)
 		return pos;
 
 	if (sc_lrc(buf, len))
-		return -EIO;
+		return -EBADMSG;
 
 	if (buf[0] == ALPAR_NACK)
 		pr_debug("%s failed with status %d (%s)",  __FUNCTION__,
