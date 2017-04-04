@@ -39,6 +39,7 @@
 #define NXP_CARD_COMMAND 0x00
 #define NXP_CHECK_PRES_CARD 0x09
 #define NXP_SET_CARD_BAUD_RATE 0x0B
+#define NXP_READ_I2C 0x12
 #define NXP_READ_I2C_EXTENDED 0x13
 #define NXP_POWER_UP_ISO 0x69
 #define NXP_POWER_UP_I2C 0x6C
@@ -465,6 +466,7 @@ static ssize_t nxp_read_i2c(struct smartcard *smartcard, off_t offset,
 	uint8_t buf[ALPAR_MAX_BUFFER];
 	uint8_t *payload = sc_payload(buf);
 	size_t pos = 0;
+	uint8_t cmd;
 	ssize_t ret;
 
 	if (size > ALPAR_MAX_PAYLOAD)
@@ -475,8 +477,10 @@ static ssize_t nxp_read_i2c(struct smartcard *smartcard, off_t offset,
 	payload[pos++] = offset & 0xFF;
 	payload[pos++] = (size & 0xFF00) >> 8;
 	payload[pos++] = size & 0xFF;
+	/* I2C extended does not work on some cards, offset gets ignored */
+	cmd = offset > 0xFF ? NXP_READ_I2C_EXTENDED : NXP_READ_I2C;
 
-	if ((ret = nxp_command(smartcard, NXP_READ_I2C_EXTENDED, buf, pos)) < 0)
+	if ((ret = nxp_command(smartcard, cmd, buf, pos)) < 0)
 		return ret;
 
 	if (ret)
