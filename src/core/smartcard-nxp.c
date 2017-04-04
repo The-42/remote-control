@@ -41,6 +41,7 @@
 #define NXP_SET_CARD_BAUD_RATE 0x0B
 #define NXP_READ_I2C 0x12
 #define NXP_READ_I2C_EXTENDED 0x13
+#define NXP_WRITE_I2C 0x02
 #define NXP_POWER_UP_ISO 0x69
 #define NXP_POWER_UP_I2C 0x6C
 #define NXP_GET_CARD_PARAM 0xA6
@@ -489,6 +490,31 @@ static ssize_t nxp_read_i2c(struct smartcard *smartcard, off_t offset,
 	return ret;
 }
 
+static ssize_t nxp_write_i2c(struct smartcard *smartcard, off_t offset,
+		const void *buffer, size_t size)
+{
+	uint8_t buf[ALPAR_MAX_BUFFER];
+	uint8_t *payload = sc_payload(buf);
+	size_t pos = 0;
+
+	if (size > ALPAR_MAX_PAYLOAD - 3)
+		size = ALPAR_MAX_PAYLOAD - 3;
+
+	payload[pos++] = 0xA0;
+	/*
+	 * The NXP docs helpfully say that 'it is up to the application layer to
+	 * determine whether the I2C card supports extended mode'. Use extended
+	 * only for larger cards for now.
+	 */
+	if (offset > 0xFF)
+		payload[pos++] = (offset & 0xFF00) >> 8;
+	payload[pos++] = offset & 0xFF;
+
+	memcpy(&payload[pos], buffer, size);
+
+	return nxp_command(smartcard, NXP_WRITE_I2C, buf, pos);
+}
+
 static ssize_t nxp_read_async(struct smartcard *smartcard, off_t offset,
 		void *buffer, size_t size)
 {
@@ -702,7 +728,7 @@ ssize_t smartcard_write_nxp(struct smartcard *smartcard, off_t offset,
 	g_mutex_lock(&smartcard->serial_mutex);
 	switch (smartcard->type) {
 	case SMARTCARD_TYPE_I2C:
-		ret = -EOPNOTSUPP;
+		ret = nxp_write_i2c(smartcard, offset, buffer, size);
 		break;
 	case SMARTCARD_TYPE_T0:
 	case SMARTCARD_TYPE_T1:
