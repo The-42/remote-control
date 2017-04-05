@@ -41,9 +41,12 @@
 #define NXP_SET_CARD_BAUD_RATE 0x0B
 #define NXP_READ_I2C 0x12
 #define NXP_READ_I2C_EXTENDED 0x13
+#define NXP_READ_S9 0x03
 #define NXP_WRITE_I2C 0x02
+#define NXP_WRITE_S9 0x06
 #define NXP_POWER_UP_ISO 0x69
 #define NXP_POWER_UP_I2C 0x6C
+#define NXP_POWER_UP_S9 0x6B
 #define NXP_GET_CARD_PARAM 0xA6
 
 const unsigned char NXP_EGK_SUCCESS[] = { 0x90, 0x00 };
@@ -118,6 +121,36 @@ static int sc_is_bad_fidi(uint8_t * buf)
 {
 	return (buf[0] == ALPAR_NACK && buf[1] == 0 && buf[2] == 1 &&
 			buf[4] == 0x86);
+}
+
+static int sc_is_s9(uint8_t *buf)
+{
+	if (!buf[0] || buf[0] == 0xFF)
+		return 0;
+
+	if (!(buf[0] & 0x8D))
+		pr_debug("S9 ATR: Reserved for ISO/IEC protocols");
+	else if ((buf[0] & 0x8F) == 0x82)
+		pr_debug("S9 ATR: Industry specific protocols");
+	else if (buf[0] & 1)
+		pr_debug("S9 ATR: Assigned by registration authority");
+	else
+		pr_debug("S9 ATR: Proprietary ATR");
+
+	if ((buf[0] & 0x0F) != 0x02)
+		return 1;
+
+	if (buf[1] >= 0x78) {
+		pr_debug("S9 ATR: Unrecognized size data (RFU)");
+	} else if (buf[1] < 0x08) {
+		pr_debug("S9 ATR: No size indicated");
+	} else {
+		unsigned long size = 64 << (buf[1] >> 3);
+		unsigned char width = 1 << (buf[1] & 0x07);
+		pr_debug("S9 ATR: Size: %lu * %u bits", size, width);
+	}
+
+	return 1;
 }
 
 static const char* sc_err_str(uint8_t err)
@@ -357,11 +390,23 @@ static void nxp_check_card(struct smartcard *smartcard, gboolean inserted)
 
 	if (smartcard->rcv_len < 0) {
 		smartcard->rcv_len = nxp_command(smartcard,
-				NXP_POWER_UP_I2C,
-				smartcard->rcv_buffer, 0);
-		if (!smartcard->rcv_len) {
-			smartcard->type = SMARTCARD_TYPE_I2C;
-			pr_debug("I2C card detected");
+			NXP_POWER_UP_S9,
+			smartcard->rcv_buffer, 0);
+
+		if (smartcard->rcv_len == 4 && sc_is_s9(payload)) {
+			smartcard->type = SMARTCARD_TYPE_S9;
+			memcpy(smartcard->atr_buffer, payload,
+				smartcard->rcv_len);
+			smartcard->atr_len = smartcard->rcv_len;
+			pr_debug("S9 card detected");
+		} else {
+			smartcard->rcv_len = nxp_command(smartcard,
+					NXP_POWER_UP_I2C,
+					smartcard->rcv_buffer, 0);
+			if (!smartcard->rcv_len) {
+				smartcard->type = SMARTCARD_TYPE_I2C;
+				pr_debug("I2C card detected");
+			}
 		}
 	} else {
 		uint8_t buf[ALPAR_MAX_BUFFER];
@@ -461,7 +506,7 @@ static int nxp_check_card_presence(struct smartcard *smartcard)
 	return 0;
 }
 
-static ssize_t nxp_read_i2c(struct smartcard *smartcard, off_t offset,
+static ssize_t nxp_read_sync(struct smartcard *smartcard, off_t offset,
 		void *buffer, size_t size)
 {
 	uint8_t buf[ALPAR_MAX_BUFFER];
@@ -473,13 +518,18 @@ static ssize_t nxp_read_i2c(struct smartcard *smartcard, off_t offset,
 	if (size > ALPAR_MAX_PAYLOAD)
 		size = ALPAR_MAX_PAYLOAD;
 
-	payload[pos++] = 0xA0; // i2c address
+	if (smartcard->type == SMARTCARD_TYPE_I2C)
+		payload[pos++] = 0xA0; // i2c address
 	payload[pos++] = (offset & 0xFF00) >> 8;
 	payload[pos++] = offset & 0xFF;
 	payload[pos++] = (size & 0xFF00) >> 8;
 	payload[pos++] = size & 0xFF;
+
 	/* I2C extended does not work on some cards, offset gets ignored */
-	cmd = offset > 0xFF ? NXP_READ_I2C_EXTENDED : NXP_READ_I2C;
+	if (smartcard->type == SMARTCARD_TYPE_I2C)
+		cmd = offset > 0xFF ? NXP_READ_I2C_EXTENDED : NXP_READ_I2C;
+	else
+		cmd = NXP_READ_S9;
 
 	if ((ret = nxp_command(smartcard, cmd, buf, pos)) < 0)
 		return ret;
@@ -490,29 +540,34 @@ static ssize_t nxp_read_i2c(struct smartcard *smartcard, off_t offset,
 	return ret;
 }
 
-static ssize_t nxp_write_i2c(struct smartcard *smartcard, off_t offset,
+static ssize_t nxp_write_sync(struct smartcard *smartcard, off_t offset,
 		const void *buffer, size_t size)
 {
 	uint8_t buf[ALPAR_MAX_BUFFER];
 	uint8_t *payload = sc_payload(buf);
+	uint8_t cmd = NXP_WRITE_S9;
 	size_t pos = 0;
 
 	if (size > ALPAR_MAX_PAYLOAD - 3)
 		size = ALPAR_MAX_PAYLOAD - 3;
 
-	payload[pos++] = 0xA0;
+	/* S9: Write ops probably will not work without PIN verification */
+	if (smartcard->type == SMARTCARD_TYPE_I2C) {
+		payload[pos++] = 0xA0;
+		cmd = NXP_WRITE_I2C;
+	}
 	/*
 	 * The NXP docs helpfully say that 'it is up to the application layer to
 	 * determine whether the I2C card supports extended mode'. Use extended
 	 * only for larger cards for now.
 	 */
-	if (offset > 0xFF)
+	if (offset > 0xFF || smartcard->type != SMARTCARD_TYPE_I2C)
 		payload[pos++] = (offset & 0xFF00) >> 8;
 	payload[pos++] = offset & 0xFF;
 
 	memcpy(&payload[pos], buffer, size);
 
-	return nxp_command(smartcard, NXP_WRITE_I2C, buf, pos);
+	return nxp_command(smartcard, cmd, buf, pos + size);
 }
 
 static ssize_t nxp_read_async(struct smartcard *smartcard, off_t offset,
@@ -703,7 +758,8 @@ ssize_t smartcard_read_nxp(struct smartcard *smartcard, off_t offset,
 	g_mutex_lock(&smartcard->serial_mutex);
 	switch (smartcard->type) {
 	case SMARTCARD_TYPE_I2C:
-		ret = nxp_read_i2c(smartcard, offset, buffer, size);
+	case SMARTCARD_TYPE_S9:
+		ret = nxp_read_sync(smartcard, offset, buffer, size);
 		break;
 	case SMARTCARD_TYPE_T0:
 	case SMARTCARD_TYPE_T1:
@@ -728,7 +784,8 @@ ssize_t smartcard_write_nxp(struct smartcard *smartcard, off_t offset,
 	g_mutex_lock(&smartcard->serial_mutex);
 	switch (smartcard->type) {
 	case SMARTCARD_TYPE_I2C:
-		ret = nxp_write_i2c(smartcard, offset, buffer, size);
+	case SMARTCARD_TYPE_S9:
+		ret = nxp_write_sync(smartcard, offset, buffer, size);
 		break;
 	case SMARTCARD_TYPE_T0:
 	case SMARTCARD_TYPE_T1:

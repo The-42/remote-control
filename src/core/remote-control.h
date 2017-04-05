@@ -272,6 +272,7 @@ enum smartcard_type {
 	SMARTCARD_TYPE_I2C,
 	SMARTCARD_TYPE_T0,
 	SMARTCARD_TYPE_T1,
+	SMARTCARD_TYPE_S9,
 };
 
 struct smartcard;
