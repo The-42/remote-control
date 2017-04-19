@@ -28,6 +28,7 @@ extern struct javascript_module javascript_audio;
 extern struct javascript_module javascript_audio_player;
 extern struct javascript_module javascript_backlight;
 extern struct javascript_module javascript_media_player;
+extern struct javascript_module javascript_medial;
 extern struct javascript_module javascript_modem;
 extern struct javascript_module javascript_voip;
 extern struct javascript_module javascript_output;
@@ -55,6 +56,9 @@ static struct javascript_module *ad_modules[] = {
 	&javascript_audio_player,
 	&javascript_backlight,
 	&javascript_media_player,
+#ifdef ENABLE_JAVASCRIPT_MEDIAL
+	&javascript_medial,
+#endif
 #ifdef ENABLE_LIBMODEM
 	&javascript_modem,
 #endif

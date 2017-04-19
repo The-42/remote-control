@@ -66,6 +66,10 @@ if ENABLE_JAVASCRIPT_LCD
 remote_control_SOURCES += \
 	javascript-lcd.c
 endif  # ENABLE_JAVASCRIPT_LCD
+if ENABLE_JAVASCRIPT_MEDIAL
+remote_control_SOURCES += \
+	javascript-medial.c
+endif  # ENABLE_JAVASCRIPT_MEDIAL
 if ENABLE_JAVASCRIPT_APP_WATCHDOG
 remote_control_SOURCES += \
 	javascript-app-watchdog.c

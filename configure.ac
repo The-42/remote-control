@@ -362,6 +362,19 @@ AS_IF([test "x$enable_javascript_lcd" = "xyes"], [
 		  [whether JavaScript LCD Serial support is enabled])
 ])
 
+# Medial client support
+AC_MSG_CHECKING([whether to enable JavaScript Medial client support])
+AC_ARG_ENABLE(javascript-medial,
+	[AS_HELP_STRING([--enable-javascript-medial],
+			[Enable JavaScript Medial client support (default: no)])],
+	[], [enable_javascript_medial=no])
+AC_MSG_RESULT([$enable_javascript_medial])
+
+AS_IF([test "x$enable_javascript_medial" = "xyes"], [
+	AC_DEFINE([ENABLE_JAVASCRIPT_MEDIAL], [1],
+		  [whether JavaScript Medial client support is enabled])
+])
+
 # Watchdog support for the main webkit window.
 AC_MSG_CHECKING([whether to enable JavaScript Application Watchdog support])
 AC_ARG_ENABLE(javascript-app-watchdog,
@@ -439,6 +452,7 @@ AM_CONDITIONAL(ENABLE_GPIO_GPIODEV, [test "x$enable_gpio_gpiodev" = "xyes"])
 AM_CONDITIONAL(ENABLE_GPIO_SYSFS, [test "x$enable_gpio_sysfs" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_IR, [test "x$enable_javascript_ir" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_LCD, [test "x$enable_javascript_lcd" = "xyes"])
+AM_CONDITIONAL(ENABLE_JAVASCRIPT_MEDIAL, [test "x$enable_javascript_medial" = "xyes"])
 AM_CONDITIONAL(ENABLE_JAVASCRIPT_APP_WATCHDOG, [test "x$enable_javascript_app_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WATCHDOG, [test "x$enable_watchdog" = "xyes"])
 AM_CONDITIONAL(ENABLE_WEBKIT2, [test "x$with_webkit" = "x2.0"])
@@ -534,6 +548,7 @@ Options:
   JavaScript API Options:
     IR Input Support:        $enable_javascript_ir
     LCD Serial Support:      $enable_javascript_lcd
+    Medial client Support:   $enable_javascript_medial
     App. Watchdog Support:   $enable_javascript_app_watchdog
   D-Bus Watchdog support:    $enable_watchdog")
 AS_IF([test "x$enable_lldpctl" = "xyes"],
