@@ -31,6 +31,7 @@ stamp-h1
 tests/ajax-dead-lock
 tests/alert-dead-lock
 tests/gkeyfilemerge
+tests/medial
 tests/net-udp
 .deps
 .libs
