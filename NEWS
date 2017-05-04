@@ -1,5 +1,19 @@
-Release x.y.z (YYYY-MM-DD)
+Release 2.1.0 (2017-05-04)
 ==========================
+* smartcarc-nxp:
+- add support for S9 cards
+- add support for writing I2C cards, improve reading
+- fix memleak
+- use a /dev/ttyUSB0 as device when none given in config
+
+* smartcard-info:
+- fix crc32 mismatch on 64 bit hosts
+- fix log strings
+
+* js:
+- add object for Medial interaction
+- update rcrpc extension to 1.0.4
+- change license to GPLv3
 
 Release 2.0.0 (2017-03-29)
 ==========================
